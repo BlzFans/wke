@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioPropertySheet
+	ProjectType="Visual C++"
+	Version="8.00"
+	Name="wkeDebug"
+	InheritedPropertySheets="
+      ..\..\WebKitLibraries\win\tools\vsprops\FeatureDefinesCairo.vsprops;
+      common.vsprops;
+      ..\..\WebKitLibraries\win\tools\vsprops\debug.vsprops;
+      ..\..\WebKitLibraries\win\tools\vsprops\debug_wincairo.vsprops;
+      ..\..\WebKitLibraries\win\tools\vsprops\cURL.vsprops;
+      ..\..\WebKitLibraries\win\tools\vsprops\WinCairo.vsprops;
+      wkeCommon.vsprops"
+	>
+</VisualStudioPropertySheet>

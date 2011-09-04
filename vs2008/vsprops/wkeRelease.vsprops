@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioPropertySheet
+	ProjectType="Visual C++"
+	Version="8.00"
+	Name="wkeRelease"
+	InheritedPropertySheets="
+      ..\..\WebKitLibraries\win\tools\vsprops\FeatureDefinesCairo.vsprops;
+      common.vsprops;
+      ..\..\WebKitLibraries\win\tools\vsprops\releaseproduction.vsprops;
+      ..\..\WebKitLibraries\win\tools\vsprops\release.vsprops;
+      ..\..\WebKitLibraries\win\tools\vsprops\cURL.vsprops;
+      ..\..\WebKitLibraries\win\tools\vsprops\WinCairo.vsprops;
+      wkeCommon.vsprops"
+	>
+</VisualStudioPropertySheet>

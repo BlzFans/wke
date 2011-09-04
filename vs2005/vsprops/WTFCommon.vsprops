@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioPropertySheet
+	ProjectType="Visual C++"
+	Version="8.00"
+	Name="WTFCommon"
+	OutputDirectory="$(ConfigurationBuildDir)\lib"
+	>
+	<Tool
+		Name="VCCLCompilerTool"
+		AdditionalIncludeDirectories="&quot;$(ConfigurationBuildDir)\obj\JavaScriptCore\DerivedSources\&quot;;../Source/JavaScriptCore/;&quot;../Source/JavaScriptCore/os-win32/&quot;;../Source/JavaScriptCore/wtf/;../Source/JavaScriptCore/wtf/unicode/;&quot;$(ConfigurationBuildDir)\include\private&quot;;&quot;$(WebKitLibrariesDir)\include&quot;;&quot;$(ConfigurationBuildDir)\include\JavaScriptCore&quot;;&quot;$(WebKitLibrariesDir)\include\pthreads&quot;"
+		PreprocessorDefinitions="__STD_C"
+		ForcedIncludeFiles="ICUVersion.h"
+		ProgramDataBaseFileName="$(OutDir)\$(TargetName).vc80.pdb"
+	/>
+	<Tool
+		Name="VCLibrarianTool"
+		AdditionalDependencies="user32.lib"
+		OutputFile="$(OutDir)\$(ProjectName)$(WebKitConfigSuffix).lib"
+	/>
+</VisualStudioPropertySheet>

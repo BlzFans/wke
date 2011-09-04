@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioPropertySheet
+	ProjectType="Visual C++"
+	Version="8.00"
+	Name="WebCoreCairo"
+	>
+	<Tool
+		Name="VCCLCompilerTool"
+		AdditionalIncludeDirectories="&quot;$(ProjectDir)..\Source\WebCore\platform\graphics\cairo&quot;;&quot;$(ProjectDir)..\Source\WebCore\platform\graphics\win\cairo&quot;;&quot;$(ProjectDir)..\Source\WebCore\svg\graphics\cairo&quot;;&quot;$(ProjectDir)..\Source\WebCore\platform\image-decoders&quot;;&quot;$(ProjectDir)..\Source\WebCore\platform\image-decoders\bmp&quot;;&quot;$(ProjectDir)..\Source\WebCore\platform\image-decoders\cairo&quot;;&quot;$(ProjectDir)..\Source\WebCore\platform\image-decoders\gif&quot;;&quot;$(ProjectDir)..\Source\WebCore\platform\image-decoders\ico&quot;;&quot;$(ProjectDir)..\Source\WebCore\platform\image-decoders\jpeg&quot;;&quot;$(ProjectDir)..\Source\WebCore\platform\image-decoders\png&quot;;&quot;$(ProjectDir)..\Source\WebCore\platform\image-decoders\webp&quot;;&quot;$(WebKitLibrariesDir)\include\cairo&quot;"
+	/>
+</VisualStudioPropertySheet>

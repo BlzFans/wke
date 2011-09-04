@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioPropertySheet
+	ProjectType="Visual C++"
+	Version="8.00"
+	Name="JavaScriptCoreCommon"
+	OutputDirectory="$(ConfigurationBuildDir)\lib"
+	>
+	<Tool
+		Name="VCCLCompilerTool"
+		AdditionalIncludeDirectories="&quot;$(ConfigurationBuildDir)\obj\JavaScriptCore\DerivedSources\&quot;;../Source/JavaScriptCore/;../Source/JavaScriptCore/API/;../Source/JavaScriptCore/parser/;../Source/JavaScriptCore/bytecompiler/;../Source/JavaScriptCore/jit/;../Source/JavaScriptCore/runtime/;../Source/JavaScriptCore/bytecode/;../Source/JavaScriptCore/interpreter/;../Source/JavaScriptCore/wtf/;../Source/JavaScriptCore/profiler;../Source/JavaScriptCore/assembler/;../Source/JavaScriptCore/debugger/;../Source/JavaScriptCore/heap/;&quot;$(WebKitLibrariesDir)\include&quot;;&quot;$(WebKitLibrariesDir)\include\private&quot;;&quot;$(ConfigurationBuildDir)\include&quot;;&quot;$(ConfigurationBuildDir)\include\JavaScriptCore&quot;;&quot;$(ConfigurationBuildDir)\include\private&quot;;&quot;$(WebKitLibrariesDir)\include\pthreads&quot;"
+		PreprocessorDefinitions="__STD_C"
+		ForcedIncludeFiles="ICUVersion.h"
+	/>
+	<Tool
+		Name="VCLibrarianTool"
+		OutputFile="$(OutDir)\$(ProjectName)$(WebKitConfigSuffix).lib"
+	/>
+</VisualStudioPropertySheet>

@@ -1,0 +1,85 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 9.00
+# Visual Studio 2005
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "JavaScriptCore Folder", "JavaScriptCore Folder", "{65AA684F-0694-4922-81CE-C9FEA9039823}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "JavaScriptCoreGenerated", "JavaScriptCoreGenerated.vcproj", "{4FF5BA11-59EC-4C24-8F52-F235C2E7D43A}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WTF", "WTF.vcproj", "{AA8A5A85-592B-4357-BC60-E0E91E026AF6}"
+	ProjectSection(ProjectDependencies) = postProject
+		{4FF5BA11-59EC-4C24-8F52-F235C2E7D43A} = {4FF5BA11-59EC-4C24-8F52-F235C2E7D43A}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "JavaScriptCore", "JavaScriptCore.vcproj", "{011D10F1-B656-4A1B-A0C3-3842F02122C5}"
+	ProjectSection(ProjectDependencies) = postProject
+		{AA8A5A85-592B-4357-BC60-E0E91E026AF6} = {AA8A5A85-592B-4357-BC60-E0E91E026AF6}
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "WebCore Folder", "WebCore Folder", "{0E50E567-2DE0-49A9-A34F-7984F3809FE3}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WebCoreGenerated", "WebCoreGenerated.vcproj", "{0A324352-B3B6-496C-9E5B-4C7E923E628B}"
+	ProjectSection(ProjectDependencies) = postProject
+		{011D10F1-B656-4A1B-A0C3-3842F02122C5} = {011D10F1-B656-4A1B-A0C3-3842F02122C5}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WebCore", "WebCore.vcproj", "{1C16337B-ACF3-4D03-AA90-851C5B5EADA6}"
+	ProjectSection(ProjectDependencies) = postProject
+		{0A324352-B3B6-496C-9E5B-4C7E923E628B} = {0A324352-B3B6-496C-9E5B-4C7E923E628B}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "wke", "wke.vcproj", "{011D10F1-B656-4A1B-A0C3-3842F02122C6}"
+	ProjectSection(ProjectDependencies) = postProject
+		{1C16337B-ACF3-4D03-AA90-851C5B5EADA6} = {1C16337B-ACF3-4D03-AA90-851C5B5EADA6}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "wkeBrowser", "wkeBrowser.vcproj", "{5C21D8AD-3930-4AC3-9E32-21FCA602DB76}"
+	ProjectSection(ProjectDependencies) = postProject
+		{011D10F1-B656-4A1B-A0C3-3842F02122C6} = {011D10F1-B656-4A1B-A0C3-3842F02122C6}
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug_Cairo_CFLite|Win32 = Debug_Cairo_CFLite|Win32
+		Release_Cairo_CFLite|Win32 = Release_Cairo_CFLite|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{4FF5BA11-59EC-4C24-8F52-F235C2E7D43A}.Debug_Cairo_CFLite|Win32.ActiveCfg = Debug_Cairo_CFLite|Win32
+		{4FF5BA11-59EC-4C24-8F52-F235C2E7D43A}.Debug_Cairo_CFLite|Win32.Build.0 = Debug_Cairo_CFLite|Win32
+		{4FF5BA11-59EC-4C24-8F52-F235C2E7D43A}.Release_Cairo_CFLite|Win32.ActiveCfg = Release_Cairo_CFLite|Win32
+		{4FF5BA11-59EC-4C24-8F52-F235C2E7D43A}.Release_Cairo_CFLite|Win32.Build.0 = Release_Cairo_CFLite|Win32
+		{AA8A5A85-592B-4357-BC60-E0E91E026AF6}.Debug_Cairo_CFLite|Win32.ActiveCfg = Debug_Cairo_CFLite|Win32
+		{AA8A5A85-592B-4357-BC60-E0E91E026AF6}.Debug_Cairo_CFLite|Win32.Build.0 = Debug_Cairo_CFLite|Win32
+		{AA8A5A85-592B-4357-BC60-E0E91E026AF6}.Release_Cairo_CFLite|Win32.ActiveCfg = Release_Cairo_CFLite|Win32
+		{AA8A5A85-592B-4357-BC60-E0E91E026AF6}.Release_Cairo_CFLite|Win32.Build.0 = Release_Cairo_CFLite|Win32
+		{011D10F1-B656-4A1B-A0C3-3842F02122C5}.Debug_Cairo_CFLite|Win32.ActiveCfg = Debug_Cairo_CFLite|Win32
+		{011D10F1-B656-4A1B-A0C3-3842F02122C5}.Debug_Cairo_CFLite|Win32.Build.0 = Debug_Cairo_CFLite|Win32
+		{011D10F1-B656-4A1B-A0C3-3842F02122C5}.Release_Cairo_CFLite|Win32.ActiveCfg = Release_Cairo_CFLite|Win32
+		{011D10F1-B656-4A1B-A0C3-3842F02122C5}.Release_Cairo_CFLite|Win32.Build.0 = Release_Cairo_CFLite|Win32
+		{0A324352-B3B6-496C-9E5B-4C7E923E628B}.Debug_Cairo_CFLite|Win32.ActiveCfg = Debug_Cairo_CFLite|Win32
+		{0A324352-B3B6-496C-9E5B-4C7E923E628B}.Debug_Cairo_CFLite|Win32.Build.0 = Debug_Cairo_CFLite|Win32
+		{0A324352-B3B6-496C-9E5B-4C7E923E628B}.Release_Cairo_CFLite|Win32.ActiveCfg = Release_Cairo_CFLite|Win32
+		{0A324352-B3B6-496C-9E5B-4C7E923E628B}.Release_Cairo_CFLite|Win32.Build.0 = Release_Cairo_CFLite|Win32
+		{1C16337B-ACF3-4D03-AA90-851C5B5EADA6}.Debug_Cairo_CFLite|Win32.ActiveCfg = Debug_Cairo_CFLite|Win32
+		{1C16337B-ACF3-4D03-AA90-851C5B5EADA6}.Debug_Cairo_CFLite|Win32.Build.0 = Debug_Cairo_CFLite|Win32
+		{1C16337B-ACF3-4D03-AA90-851C5B5EADA6}.Release_Cairo_CFLite|Win32.ActiveCfg = Release_Cairo_CFLite|Win32
+		{1C16337B-ACF3-4D03-AA90-851C5B5EADA6}.Release_Cairo_CFLite|Win32.Build.0 = Release_Cairo_CFLite|Win32
+		{011D10F1-B656-4A1B-A0C3-3842F02122C6}.Debug_Cairo_CFLite|Win32.ActiveCfg = Debug_Cairo_CFLite|Win32
+		{011D10F1-B656-4A1B-A0C3-3842F02122C6}.Debug_Cairo_CFLite|Win32.Build.0 = Debug_Cairo_CFLite|Win32
+		{011D10F1-B656-4A1B-A0C3-3842F02122C6}.Release_Cairo_CFLite|Win32.ActiveCfg = Release_Cairo_CFLite|Win32
+		{011D10F1-B656-4A1B-A0C3-3842F02122C6}.Release_Cairo_CFLite|Win32.Build.0 = Release_Cairo_CFLite|Win32
+		{5C21D8AD-3930-4AC3-9E32-21FCA602DB76}.Debug_Cairo_CFLite|Win32.ActiveCfg = Debug_Cairo_CFLite|Win32
+		{5C21D8AD-3930-4AC3-9E32-21FCA602DB76}.Debug_Cairo_CFLite|Win32.Build.0 = Debug_Cairo_CFLite|Win32
+		{5C21D8AD-3930-4AC3-9E32-21FCA602DB76}.Release_Cairo_CFLite|Win32.ActiveCfg = Release_Cairo_CFLite|Win32
+		{5C21D8AD-3930-4AC3-9E32-21FCA602DB76}.Release_Cairo_CFLite|Win32.Build.0 = Release_Cairo_CFLite|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{4FF5BA11-59EC-4C24-8F52-F235C2E7D43A} = {65AA684F-0694-4922-81CE-C9FEA9039823}
+		{AA8A5A85-592B-4357-BC60-E0E91E026AF6} = {65AA684F-0694-4922-81CE-C9FEA9039823}
+		{011D10F1-B656-4A1B-A0C3-3842F02122C5} = {65AA684F-0694-4922-81CE-C9FEA9039823}
+		{0A324352-B3B6-496C-9E5B-4C7E923E628B} = {0E50E567-2DE0-49A9-A34F-7984F3809FE3}
+		{1C16337B-ACF3-4D03-AA90-851C5B5EADA6} = {0E50E567-2DE0-49A9-A34F-7984F3809FE3}
+	EndGlobalSection
+EndGlobal

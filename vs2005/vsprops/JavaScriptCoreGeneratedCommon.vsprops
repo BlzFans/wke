@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioPropertySheet
+	ProjectType="Visual C++"
+	Version="8.00"
+	Name="JavaScriptCoreGeneratedCommon"
+	InheritedPropertySheets="common.vsprops"
+	>
+	<Tool
+		Name="VCNMakeTool"
+		BuildCommandLine="set PATH=$(ProjectDir)\..\cygwin\bin;%PATH%&#x0D;&#x0A; cd ..\Source\JavaScriptCore\JavaScriptCore.vcproj\JavaScriptCore&#x0D;&#x0A;cmd /c &#x0D;&#x0A; &#x0D;&#x0A;set CONFIGURATIONBUILDDIR=$(ConfigurationBuildDir)&#x0D;&#x0A;nmake /nologo -f JavaScriptCoreGenerated.make"
+		ReBuildCommandLine="set PATH=$(ProjectDir)\..\cygwin\bin;%PATH%&#x0D;&#x0A;cd ..\Source\JavaScriptCore\JavaScriptCore.vcproj\JavaScriptCore&#x0D;&#x0A;cmd /c &#x0D;&#x0A; &#x0D;&#x0A;set CONFIGURATIONBUILDDIR=$(ConfigurationBuildDir)&#x0D;&#x0A;nmake /nologo -f JavaScriptCoreGenerated.make clean&#x0D;&#x0A;nmake -f JavaScriptCoreGenerated.make"
+		CleanCommandLine="set PATH=$(ProjectDir)\..\cygwin\bin;%PATH%&#x0D;&#x0A;cd ..\Source\JavaScriptCore\JavaScriptCore.vcproj\JavaScriptCore&#x0D;&#x0A;cmd /c &#x0D;&#x0A; &#x0D;&#x0A;set CONFIGURATIONBUILDDIR=$(ConfigurationBuildDir)&#x0D;&#x0A;nmake /nologo -f JavaScriptCoreGenerated.make clean"
+	/>
+</VisualStudioPropertySheet>
