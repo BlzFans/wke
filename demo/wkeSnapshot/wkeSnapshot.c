@@ -30,7 +30,7 @@ int main(int argc, char** argv)
     wkeResize(webView, VIEW_WIDTH, VIEW_HEIGHT);
 
     url = argc >= 2 ? argv[1] : "http://www.google.com";
-    printf("url  %s\n", url);    
+    printf("loading url %s ...\n", url);    
     wkeLoadURL(webView, url);
 
     while (1)
