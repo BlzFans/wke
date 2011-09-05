@@ -380,6 +380,7 @@ LRESULT CALLBACK UrlEditProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
                 if (len == 0)
                     return 0;
 
+                url[len] = L'\0';
                 g_webView->loadURL(url);
                 return 0;
             } 
