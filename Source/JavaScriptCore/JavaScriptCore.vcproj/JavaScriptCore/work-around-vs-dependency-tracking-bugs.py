@@ -13,7 +13,7 @@ TOP_LEVEL_DIRECTORY = os.path.dirname(os.path.dirname(os.path.dirname(os.path.di
 
 def main():
     react_to_vsprops_changes()
-    react_to_webkit1_interface_changes()
+    #react_to_webkit1_interface_changes()
 
 
 def react_to_vsprops_changes():
