@@ -1,0 +1,159 @@
+2011-08-25  Alexey Proskuryakov  <ap@apple.com>
+
+        Fix build when GCC 4.2 is not installed.
+
+        * gtest/xcode/Config/CompilerVersion.xcconfig: Copied from Source/WebCore/Configurations/CompilerVersion.xcconfig.
+        * gtest/xcode/Config/General.xcconfig:
+        Use the same compiler version as other projects do.
+
+2011-08-19  Sheriff Bot  <webkit.review.bot@gmail.com>
+
+        Unreviewed, rolling out r93426.
+        http://trac.webkit.org/changeset/93426
+        https://bugs.webkit.org/show_bug.cgi?id=66607
+
+        Broke the Mac build by not building gtest.framework anymore
+        (Requested by andersca on #webkit).
+
+        * gtest/README.WebKit:
+        * gtest/include/gtest/internal/gtest-port.h:
+        * gtest/msvc/gtest-md.vcproj:
+        * gtest/xcode/Config/General.xcconfig:
+        * gtest/xcode/gtest.xcodeproj/project.pbxproj:
+
+2011-08-18  Dmitry Lomov  <dslomov@google.com>
+
+        TestWebKitAPI breaks on Windows due to fast malloc incompatibility.
+        https://bugs.webkit.org/show_bug.cgi?id=66521
+
+        This patch ensures that gtest uses new and delete operators that are defined in JavaScriptCore.
+
+        Reviewed by David Levin.
+
+        * gtest/include/gtest/internal/gtest-port.h:
+        * gtest/msvc/gtest-md.vcproj:
+        * gtest/README.WebKit:
+        * gtest/xcode/Config/General.xcconfig:
+        * gtest/xcode/gtest.xcodeproj/project.pbxproj:
+
+2011-08-09  Mark Rowe  <mrowe@apple.com>
+
+        Fix gtest to compile in the release configuration with clang.
+
+        This change was made upstream in r443.
+
+        * gtest/src/gtest.cc:
+
+2011-08-04  Mark Rowe  <mrowe@apple.com>
+
+        Future-proof Xcode configuration settings.
+
+        * gtest/xcode/Config/General.xcconfig:
+
+2011-08-03  Dmitry Lomov  <dslomov@google.com>
+
+        https://bugs.webkit.org/show_bug.cgi?id=61812
+        TestWebKitApi breaks in release mode due to gtest incompatibility with fast malloc
+
+        Disable fast malloc for offending class (::std::strstream) in gtest.
+        This looks like the most non-intrusive solution.
+
+        Reviewed by David Levin.
+
+        * gtest/include/gtest/internal/gtest-port.h:
+        (testing::internal::StrStream::operator new):
+        (testing::internal::StrStream::operator new[]):
+        (testing::internal::StrStream::operator delete):
+        (testing::internal::StrStream::operator delete[]):
+
+2011-07-05  Adam Barth  <abarth@webkit.org>
+
+        Import qunit JavaScript unit testing framework
+        https://bugs.webkit.org/show_bug.cgi?id=63967
+
+        Reviewed by Eric Seidel.
+
+        We're going to use this unit testing framework to test garden-o-matic.
+
+        * qunit: Added.
+
+2011-06-04  Adam Barth  <abarth@webkit.org>
+
+        * glu: Added property svn:ignore.
+            - For glu.xcodeproj, which is generated from glu.gyp.
+
+2011-05-24  Stephen White  <senorblanco@chromium.org>
+
+        Reviewed by Kenneth Russell.
+
+        Unfork glu sources as much as possible.
+        https://bugs.webkit.org/show_bug.cgi?id=61365
+
+        Restore the glu sources closer to the original version on oss.sgi.com
+        by removing the WebKit-specific include paths, restoring the include
+        order, and renaming the glu* functions via #defines rather than in
+        the source.
+
+        * glu/README.webkit:
+        Update the README to reflect the changes from trunk.
+        * glu/glu.gyp:
+        Add Source/Thirdparty/glu as an include path, so we can remove the
+        hardcoded paths from the source files.
+        * glu/gluos.h:
+        Add #defines to rename the glu entry points to internal_*.
+        * glu/internal_glu.h:
+        * glu/libtess/dict.c:
+        * glu/libtess/geom.c:
+        * glu/libtess/geom.h:
+        * glu/libtess/memalloc.c:
+        * glu/libtess/mesh.c:
+        * glu/libtess/mesh.h:
+        * glu/libtess/normal.c:
+        * glu/libtess/normal.h:
+        * glu/libtess/priorityq-heap.c:
+        * glu/libtess/priorityq-sort.h:
+        * glu/libtess/priorityq.c:
+        * glu/libtess/priorityq.h:
+        * glu/libtess/render.c:
+        * glu/libtess/render.h:
+        * glu/libtess/sweep.c:
+        * glu/libtess/sweep.h:
+        * glu/libtess/tess.c:
+        * glu/libtess/tess.h:
+        * glu/libtess/tessmono.c:
+        Remove WebKit-specific include paths, and internal_ prefixes from glu
+        entry points.  Restore include order to original source order.
+
+2011-05-19  Evan Martin  <evan@chromium.org>
+
+        Reviewed by Tony Chang.
+
+        [chromium] remove <(library) variable
+        https://bugs.webkit.org/show_bug.cgi?id=61158
+
+        This was for a build experiment; we can just use the correct value now.
+
+        * glu/glu.gyp:
+        * gyp/test/library/src/library.gyp:
+
+2011-05-12  Jeff Miller  <jeffm@apple.com>
+
+        Ignore Visual Studio *.user files.
+
+        * gtest/msvc: Added property svn:ignore.
+
+2011-05-12  Adam Roben  <aroben@apple.com>
+
+        Windows production build fix
+
+        * gtest/msvc/gtest-md.vcproj: Fix the OutputDirectory and IntermediateDirectory attributes
+        for all configurations.
+
+2011-05-12  Adam Roben  <aroben@apple.com>
+
+        A little gtest cleanup after r86287
+
+        * gtest/msvc/gtest-md.vcproj: Added Debug_All and Production configurations to match our
+        other projects. (At some point all the settings should be moved into .vsprops files to match
+        our other projects, too.)
+
