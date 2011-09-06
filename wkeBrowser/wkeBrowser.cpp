@@ -370,28 +370,18 @@ bool registerWebViewWindowClass()
 
 LRESULT CALLBACK UrlEditProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
-    switch (message) {
-        case WM_CHAR:
-            if (wParam == 13) // Enter Key 
-            {
-                wchar_t url[MAX_URL_LENGTH];
-                *((LPWORD)url) = MAX_URL_LENGTH; 
-                int len = SendMessage(hDlg, EM_GETLINE, 0, (LPARAM)url);
-                if (len == 0)
-                    return 0;
+    if (message == WM_CHAR && wParam == 13) //Enter Key
+    {
+        wchar_t url[MAX_URL_LENGTH];
+        *((LPWORD)url) = MAX_URL_LENGTH; 
+        int len = SendMessage(hDlg, EM_GETLINE, 0, (LPARAM)url);
+        if (len == 0)
+            return 0;
 
-                url[len] = L'\0';
-                g_webView->loadURL(url);
-                return 0;
-            } 
-            else
-            {
-                return (LRESULT)CallWindowProc((WNDPROC)DefEditProc, hDlg, message, wParam, lParam);
-            }
-            break;
-
-        default:
-             return (LRESULT)CallWindowProc((WNDPROC)DefEditProc,hDlg,message,wParam,lParam);
-        break;
+        url[len] = L'\0';
+        g_webView->loadURL(url);
+        return 0;
     }
+    
+    return (LRESULT)CallWindowProc((WNDPROC)DefEditProc,hDlg,message,wParam,lParam);
 }
