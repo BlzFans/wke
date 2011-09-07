@@ -162,23 +162,56 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		case IDM_ABOUT:
 			DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
 			break;
+
+        case ID_FILE_GOBACK:
+            if (g_webView)
+                g_webView->goBack();
+            break;
+
+        case ID_FILE_GOFORWARD:
+            if (g_webView)
+                g_webView->goForward();
+            break;
+
 		case IDM_EXIT:
 			DestroyWindow(hWnd);
 			break;
+
 		default:
 			return DefWindowProc(hWnd, message, wParam, lParam);
 		}
 		break;
+
+    case WM_INITMENU:
+        {
+            bool canGoBack = false;
+            bool canGoForward = false;
+
+            if (g_webView && g_webView->canGoBack())
+                canGoBack = true;
+
+            if (g_webView && g_webView->canGoForward())
+                canGoForward = true;
+
+            EnableMenuItem((HMENU)wParam, ID_FILE_GOBACK, canGoBack ? MF_ENABLED : MF_DISABLED);
+            EnableMenuItem((HMENU)wParam, ID_FILE_GOFORWARD, canGoForward ? MF_ENABLED : MF_DISABLED);
+        }
+        break;
+
+
 	case WM_PAINT:
 		hdc = BeginPaint(hWnd, &ps);
 		EndPaint(hWnd, &ps);
 		break;
+
 	case WM_DESTROY:
 		PostQuitMessage(0);
 		break;
+
     case WM_SIZE:
         resizeSubViews();
         break;
+
 	default:
 		return DefWindowProc(hWnd, message, wParam, lParam);
 	}
