@@ -10,7 +10,7 @@ then
     echo "#define U_DISABLE_RENAMING $?" > "${ICUVERSION_H_PATH}"
 fi
 
-NUMCPUS=`../../../../Tools/Scripts/num-cpus`
+NUMCPUS=2
 
 XSRCROOT="`pwd`/../.."
 XSRCROOT=`realpath "$XSRCROOT"`
