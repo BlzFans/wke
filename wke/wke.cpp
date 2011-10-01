@@ -24,6 +24,7 @@
 #include <WebCore/WebCoreInstanceHandle.h>
 #include <WebCore/RenderThemeWin.h>
 #include <WebCore/TextEncoding.h>
+#include <WebCore/ResourceHandleManager.h>
 
 #include "wke.h"
 
@@ -104,21 +105,14 @@ namespace wke
 
         virtual void loadURL(const utf8* inUrl)
         {
-            char url[1024] = "http://";
+            WebCore::KURL url(WebCore::KURL(), inUrl, WebCore::UTF8Encoding());
+            if (!url.isValid())
+                url.setProtocol("http:");
 
-            if( strnicmp(inUrl, "http://", 7) != 0 
-             && strnicmp(inUrl, "file://", 7) != 0)
-            {
-                strcat(url, inUrl);
-            }
-            else
-            {
-                strcpy(url, inUrl);
-            }
+            if (!url.isValid())
+                return;
 
-            WebCore::KURL k(WebCore::KURL(), url, WebCore::UTF8Encoding());
-
-            WebCore::ResourceRequest request(k);
+            WebCore::ResourceRequest request(url);
             request.setCachePolicy(WebCore::UseProtocolCachePolicy);
             request.setTimeoutInterval(60.f);
             request.setHTTPMethod("GET");
@@ -694,6 +688,8 @@ WKE_API void wkeInit()
     JSC::initializeThreading();
     WTF::initializeMainThread();
     wke::PlatformStrategies::initialize();
+
+    //WebCore::ResourceHandleManager::sharedInstance()->setCookieJarFileName("cookie.txt");
 }
 
 WKE_API void wkeShutdown()
@@ -939,6 +935,7 @@ extern void __CFInitialize(void);
 
 void init_libs()
 {
+    _putenv("WEBKIT_IGNORE_SSL_ERRORS=1");
     pthread_win32_process_attach_np ();
     __CFInitialize();
 }

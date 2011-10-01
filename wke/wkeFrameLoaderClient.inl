@@ -112,7 +112,7 @@ namespace wke
         {
         }
 #endif
-        virtual void dispatchDidReceiveResponse(WebCore::DocumentLoader*, unsigned long identifier, const WebCore::ResourceResponse&) override
+        virtual void dispatchDidReceiveResponse(WebCore::DocumentLoader*, unsigned long identifier, const WebCore::ResourceResponse& response) override
         {
         }
 
@@ -122,10 +122,12 @@ namespace wke
 
         virtual void dispatchDidFinishLoading(WebCore::DocumentLoader*, unsigned long identifier) override
         {
+            dbgMsg("dispatchDidFinishLoading\n");
         }
 
         virtual void dispatchDidFailLoading(WebCore::DocumentLoader*, unsigned long identifier, const WebCore::ResourceError&) override
         {
+            dbgMsg("dispatchDidFailLoading\n");
         }
 
         virtual bool dispatchDidLoadResourceFromMemoryCache(WebCore::DocumentLoader*, const WebCore::ResourceRequest&, const WebCore::ResourceResponse&, int length) override
