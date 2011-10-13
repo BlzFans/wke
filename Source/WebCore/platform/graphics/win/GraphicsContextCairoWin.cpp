@@ -80,6 +80,7 @@ void GraphicsContext::platformInit(HDC dc, bool hasAlpha)
 
     m_data = new GraphicsContextPlatformPrivateToplevel(new PlatformContextCairo(cr));
     m_data->m_hdc = dc;
+    cairo_destroy(cr);
     if (platformContext()->cr()) {
         // Make sure the context starts in sync with our state.
         setPlatformFillColor(fillColor(), fillColorSpace());
