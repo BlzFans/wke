@@ -694,6 +694,17 @@ WKE_API void wkeInit()
 
 WKE_API void wkeShutdown()
 {
+    HWND hTimer = FindWindow(L"TimerWindowClass", NULL);
+    if (hTimer)
+    {
+        MSG msg;
+        while(PeekMessage(&msg, hTimer, 0, 0, PM_REMOVE))
+        {
+            TranslateMessage(&msg);
+            DispatchMessage(&msg);
+        }
+    }
+
     WebCore::iconDatabase().close();
     WebCore::PageGroup::closeLocalStorage();
 
