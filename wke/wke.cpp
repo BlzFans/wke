@@ -39,6 +39,8 @@
 #include "wkeDragClient.inl"
 #include "wkePlatformStrategies.inl"
 
+#include "icuwin.h"
+
 namespace wke
 {
     #define SPI_GETWHEELSCROLLCHARS (0x006C)
@@ -83,7 +85,7 @@ namespace wke
             settings->setJavaScriptEnabled(true);
             settings->setPluginsEnabled(true);
             settings->setLoadsImagesAutomatically(true);
-            //settings->setDefaultTextEncodingName("GBK");
+            settings->setDefaultTextEncodingName(icuwin_getDefaultEncoding());
 
             FrameLoaderClient* loader = new FrameLoaderClient(this, page_.get());
             mainFrame_ = WebCore::Frame::create(page_.get(), NULL, loader).get();
@@ -693,6 +695,7 @@ WKE_API void wkeInit()
 {
     CoInitialize(NULL);
 
+    icuwin_init();
     JSC::initializeThreading();
     WTF::initializeMainThread();
     wke::PlatformStrategies::initialize();

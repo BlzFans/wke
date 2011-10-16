@@ -53,7 +53,7 @@ namespace wke
 
         virtual void frameLoaderDestroyed() override
         {
-            dbgMsg("frameLoaderDestroyed");
+            dbgMsg("frameLoaderDestroyed\n");
             delete this;
         }
 
@@ -529,7 +529,7 @@ namespace wke
             Vector<String> newParamNames = paramNames;
             Vector<String> newParamValues = paramValues;
 
-            unsigned i = 0;
+            unsigned int i = 0;
             for (; i < newParamNames.size(); i++) {
                 if (equalIgnoringCase(paramNames[i], "wmode"))
                     break;

@@ -2,7 +2,6 @@
 #include <WebCore/FileIconLoader.h>
 #include <WebCore/Icon.h>
 
-
 namespace wke
 {
     class ChromeClient : public WebCore::ChromeClient
@@ -14,7 +13,7 @@ namespace wke
 
         virtual void chromeDestroyed() override
         {
-            dbgMsg("frameLoaderDestroyed");
+            dbgMsg("frameLoaderDestroyed\n");
             delete this;
         }
         
@@ -176,18 +175,19 @@ namespace wke
         virtual void invalidateWindow(const WebCore::IntRect& rect, bool immediate) override
         {
             webView_->addDirtyArea(rect.x(), rect.y(), rect.width(), rect.height());
-            dbgMsg("invalidateWindow\n");
+            //dbgMsg("invalidateWindow\n");
         }
 
         virtual void invalidateContentsAndWindow(const WebCore::IntRect& rect, bool immediate) override
         {
             webView_->addDirtyArea(rect.x(), rect.y(), rect.width(), rect.height());
-            dbgMsg("invalidateContentsAndWindow\n");
+            //dbgMsg("invalidateContentsAndWindow\n");
         }
 
-        virtual void invalidateContentsForSlowScroll(const WebCore::IntRect&, bool) override
+        virtual void invalidateContentsForSlowScroll(const WebCore::IntRect& rect, bool immediate) override
         {
-            dbgMsg("invalidateContentsForSlowScroll");
+            webView_->addDirtyArea(rect.x(), rect.y(), rect.width(), rect.height());
+            //dbgMsg("invalidateContentsForSlowScroll\n");
         }
 
         virtual void scroll(const WebCore::IntSize&, const WebCore::IntRect&, const WebCore::IntRect&) override
@@ -206,7 +206,7 @@ namespace wke
 
         virtual PlatformPageClient platformPageClient() const override
         {
-            dbgMsg("platformPageClient");
+            dbgMsg("platformPageClient\n");
             
             //test...
             return GetDesktopWindow();
@@ -241,8 +241,12 @@ namespace wke
         {
         }
 
-        virtual void setToolTip(const WTF::String&, WebCore::TextDirection) override
+        virtual void setToolTip(const WTF::String& toolTip, WebCore::TextDirection) override
         {
+            if (!toolTip.isEmpty())
+            {
+                dbgMsg("setToolTip %S\n", toolTip.characters());
+            }
         }
 
         virtual void print(WebCore::Frame*) override
@@ -327,13 +331,15 @@ namespace wke
             return false;
         }
 
-        virtual PassRefPtr<WebCore::PopupMenu> createPopupMenu(WebCore::PopupMenuClient*) const override
+        virtual PassRefPtr<WebCore::PopupMenu> createPopupMenu(WebCore::PopupMenuClient* client) const override
         {
+            dbgMsg("createPopupMenu\n");
             return 0;
         }
 
-        virtual PassRefPtr<WebCore::SearchPopupMenu> createSearchPopupMenu(WebCore::PopupMenuClient*) const override
+        virtual PassRefPtr<WebCore::SearchPopupMenu> createSearchPopupMenu(WebCore::PopupMenuClient* client) const override
         {
+            dbgMsg("createSearchPopupMenu\n");
             return 0;
         }
 

@@ -176,6 +176,14 @@
 			RelativePath="..\wke\wkePlatformStrategies.inl"
 			>
 		</File>
+		<File
+			RelativePath="..\wke\icuwin.cpp"
+			>
+		</File>
+		<File
+			RelativePath="..\wke\icuwin.h"
+			>
+		</File>
 	</Files>
 	<Globals>
 	</Globals>
