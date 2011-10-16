@@ -65,6 +65,7 @@ namespace wke
             :dirty_(false)
             ,width_(0)
             ,height_(0)
+            ,gfxContext_(NULL)
         {
             WebCore::Page::PageClients pageClients;
             pageClients.chromeClient = new ChromeClient(this);
@@ -95,6 +96,7 @@ namespace wke
 
         virtual ~CWebView()
         {
+            delete gfxContext_;
             mainFrame_->loader()->detachFromParent();
         }
 
@@ -212,6 +214,9 @@ namespace wke
                 SelectObject(hdc_.get(), hbmp);
                 hbmp_ = adoptPtr(hbmp);
 
+                delete gfxContext_;
+                gfxContext_ = new WebCore::GraphicsContext(hdc_.get());
+
                 dirtyArea_ = WebCore::IntRect(0, 0, w, h);
                 setDirty(true);
             }
@@ -249,10 +254,12 @@ namespace wke
         {
             layoutIfNeeded();
 
-            WebCore::GraphicsContext gc(hdc_.get());
-            gc.clip(dirtyArea_);
+            gfxContext_->save();
+            gfxContext_->clip(dirtyArea_);
 
-            mainFrame_->view()->paint(&gc, dirtyArea_);
+            mainFrame_->view()->paint(gfxContext_, dirtyArea_);
+
+            gfxContext_->restore();
 
             dirty_ = false;
             dirtyArea_ = WebCore::IntRect(0, 0, 0, 0);
@@ -673,6 +680,7 @@ namespace wke
         bool dirty_;
         WebCore::IntRect dirtyArea_;
 
+        WebCore::GraphicsContext* gfxContext_;
         OwnPtr<HDC> hdc_;
         OwnPtr<HBITMAP> hbmp_;
         void* pixels_;
