@@ -250,11 +250,7 @@ LRESULT CALLBACK WebViewWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
         break;
 
     case WM_KEYDOWN:
-        if (g_webView->keyDown(wParam, lParam, false))
-        {
-            MSG msg;
-            ::PeekMessage(&msg, hWnd, WM_CHAR, WM_CHAR, PM_REMOVE);
-        }
+        g_webView->keyDown(wParam, lParam, false);
         break;
 
     case WM_KEYUP:

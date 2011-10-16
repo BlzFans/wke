@@ -563,6 +563,8 @@ namespace wke
                 return false;
 
             if (handled) {
+                MSG msg;
+                ::PeekMessage(&msg, NULL, WM_CHAR, WM_CHAR, PM_REMOVE);
                 return true;
             }
 
@@ -614,7 +616,14 @@ namespace wke
                     return false;
             }
 
-            return frame->eventHandler()->scrollRecursively(direction, granularity);
+            if (frame->eventHandler()->scrollRecursively(direction, granularity))
+            {
+                MSG msg;
+                ::PeekMessage(&msg, NULL, WM_CHAR, WM_CHAR, PM_REMOVE);
+                return true;
+            }
+
+            return false;
         }
 
         virtual bool keyPress(unsigned int charCode, int keyData, bool systemKey)
