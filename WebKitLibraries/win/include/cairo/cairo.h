@@ -50,7 +50,13 @@
 # define CAIRO_END_DECLS
 #endif
 
-#define cairo_public
+#ifndef cairo_public
+# if defined (_MSC_VER) && ! defined (CAIRO_WIN32_STATIC_BUILD)
+#  define cairo_public __declspec(dllimport)
+# else
+#  define cairo_public
+# endif
+#endif
 
 CAIRO_BEGIN_DECLS
 
