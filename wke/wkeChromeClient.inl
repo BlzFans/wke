@@ -13,7 +13,7 @@ namespace wke
 
         virtual void chromeDestroyed() override
         {
-            dbgMsg("frameLoaderDestroyed\n");
+            dbgMsg(L"frameLoaderDestroyed\n");
             delete this;
         }
         
@@ -59,7 +59,7 @@ namespace wke
 
         virtual WebCore::Page* createWindow(WebCore::Frame*, const WebCore::FrameLoadRequest&, const WebCore::WindowFeatures&, const WebCore::NavigationAction&) override
         {
-            dbgMsg("createWindow\n");
+            dbgMsg(L"createWindow\n");
             return NULL;
         }
 
@@ -118,7 +118,7 @@ namespace wke
         
         virtual void addMessageToConsole(WebCore::MessageSource, WebCore::MessageType, WebCore::MessageLevel, const WTF::String& message, unsigned int lineNumber, const WTF::String& url) override
         {
-            dbgMsg("console message %S %d %S\n", message.characters(), lineNumber, url.characters());
+            outputMsg(L"console message %s %d %s\n", CSTR(message), lineNumber, CSTR(url));
         }
 
         virtual bool canRunBeforeUnloadConfirmPanel() override
@@ -137,24 +137,24 @@ namespace wke
         
         virtual void runJavaScriptAlert(WebCore::Frame*, const WTF::String& msg) override
         {
-            dbgMsg("JavaScript Alert %S\n", msg.characters());
+            outputMsg(L"JavaScript Alert %s\n", CSTR(msg));
         }
 
         virtual bool runJavaScriptConfirm(WebCore::Frame*, const WTF::String& msg) override
         {
-            dbgMsg("JavaScript Confirm %S\n", msg.characters());
+            outputMsg(L"JavaScript Confirm %s\n", CSTR(msg));
             return true;
         }
 
-        virtual bool runJavaScriptPrompt(WebCore::Frame*, const WTF::String& message, const WTF::String& defaultValue, WTF::String& result) override
+        virtual bool runJavaScriptPrompt(WebCore::Frame*, const WTF::String& msg, const WTF::String& defaultValue, WTF::String& result) override
         {
-            dbgMsg("JavaScript Prompt %S %S\n", message.characters(), defaultValue.characters());
+            outputMsg(L"JavaScript Prompt %s %s\n", CSTR(msg), CSTR(defaultValue));
             return true;
         }
 
         virtual void setStatusbarText(const WTF::String& text) override
         {
-            dbgMsg("setStatusbarText %S\n", text.characters());
+            dbgMsg(L"setStatusbarText %s\n", CSTR(text));
         }
 
         virtual bool shouldInterruptJavaScript() override
@@ -175,19 +175,19 @@ namespace wke
         virtual void invalidateWindow(const WebCore::IntRect& rect, bool immediate) override
         {
             webView_->addDirtyArea(rect.x(), rect.y(), rect.width(), rect.height());
-            //dbgMsg("invalidateWindow\n");
+            //dbgMsg(L"invalidateWindow\n");
         }
 
         virtual void invalidateContentsAndWindow(const WebCore::IntRect& rect, bool immediate) override
         {
             webView_->addDirtyArea(rect.x(), rect.y(), rect.width(), rect.height());
-            //dbgMsg("invalidateContentsAndWindow\n");
+            //dbgMsg(L"invalidateContentsAndWindow\n");
         }
 
         virtual void invalidateContentsForSlowScroll(const WebCore::IntRect& rect, bool immediate) override
         {
             webView_->addDirtyArea(rect.x(), rect.y(), rect.width(), rect.height());
-            //dbgMsg("invalidateContentsForSlowScroll\n");
+            //dbgMsg(L"invalidateContentsForSlowScroll\n");
         }
 
         virtual void scroll(const WebCore::IntSize&, const WebCore::IntRect&, const WebCore::IntRect&) override
@@ -206,7 +206,7 @@ namespace wke
 
         virtual PlatformPageClient platformPageClient() const override
         {
-            dbgMsg("platformPageClient\n");
+            dbgMsg(L"platformPageClient\n");
             
             //test...
             return GetDesktopWindow();
@@ -245,7 +245,7 @@ namespace wke
         {
             if (!toolTip.isEmpty())
             {
-                dbgMsg("setToolTip %S\n", toolTip.characters());
+                dbgMsg(L"setToolTip %s\n", CSTR(toolTip));
             }
         }
 
@@ -333,13 +333,13 @@ namespace wke
 
         virtual PassRefPtr<WebCore::PopupMenu> createPopupMenu(WebCore::PopupMenuClient* client) const override
         {
-            dbgMsg("createPopupMenu\n");
+            dbgMsg(L"createPopupMenu\n");
             return 0;
         }
 
         virtual PassRefPtr<WebCore::SearchPopupMenu> createSearchPopupMenu(WebCore::PopupMenuClient* client) const override
         {
-            dbgMsg("createSearchPopupMenu\n");
+            dbgMsg(L"createSearchPopupMenu\n");
             return 0;
         }
 

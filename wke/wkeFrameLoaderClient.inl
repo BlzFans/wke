@@ -53,7 +53,7 @@ namespace wke
 
         virtual void frameLoaderDestroyed() override
         {
-            dbgMsg("frameLoaderDestroyed\n");
+            dbgMsg(L"frameLoaderDestroyed\n");
             delete this;
         }
 
@@ -122,12 +122,12 @@ namespace wke
 
         virtual void dispatchDidFinishLoading(WebCore::DocumentLoader*, unsigned long identifier) override
         {
-            dbgMsg("dispatchDidFinishLoading\n");
+            dbgMsg(L"dispatchDidFinishLoading\n");
         }
 
         virtual void dispatchDidFailLoading(WebCore::DocumentLoader*, unsigned long identifier, const WebCore::ResourceError&) override
         {
-            dbgMsg("dispatchDidFailLoading\n");
+            dbgMsg(L"dispatchDidFailLoading\n");
         }
 
         virtual bool dispatchDidLoadResourceFromMemoryCache(WebCore::DocumentLoader*, const WebCore::ResourceRequest&, const WebCore::ResourceResponse&, int length) override
@@ -286,7 +286,7 @@ namespace wke
 
         virtual void startDownload(const WebCore::ResourceRequest&, const String& suggestedName = String()) override
         {
-            dbgMsg("startDownload\n");
+            dbgMsg(L"startDownload\n");
         }
 
         virtual void willChangeTitle(WebCore::DocumentLoader*) override
