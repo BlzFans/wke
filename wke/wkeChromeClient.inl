@@ -4,6 +4,25 @@
 
 namespace wke
 {
+    class EmptyPopupMenu : public WebCore::PopupMenu {
+    public:
+        virtual void show(const WebCore::IntRect&, WebCore::FrameView*, int) {}
+        virtual void hide() {}
+        virtual void updateFromElement() {}
+        virtual void disconnectClient() {}
+    };
+
+    class EmptySearchPopupMenu : public WebCore::SearchPopupMenu {
+    public:
+        virtual WebCore::PopupMenu* popupMenu() { return m_popup.get(); }
+        virtual void saveRecentSearches(const AtomicString&, const Vector<String>&) {}
+        virtual void loadRecentSearches(const AtomicString&, Vector<String>&) {}
+        virtual bool enabled() { return false; }
+
+    private:
+        RefPtr<EmptyPopupMenu> m_popup;
+    };
+
     class ChromeClient : public WebCore::ChromeClient
     {
     public:
@@ -333,14 +352,12 @@ namespace wke
 
         virtual PassRefPtr<WebCore::PopupMenu> createPopupMenu(WebCore::PopupMenuClient* client) const override
         {
-            dbgMsg(L"createPopupMenu\n");
-            return 0;
+            return adoptRef(new EmptyPopupMenu);
         }
 
         virtual PassRefPtr<WebCore::SearchPopupMenu> createSearchPopupMenu(WebCore::PopupMenuClient* client) const override
         {
-            dbgMsg(L"createSearchPopupMenu\n");
-            return 0;
+            return adoptRef(new EmptySearchPopupMenu);
         }
 
         virtual bool shouldRubberBandInDirection(WebCore::ScrollDirection) const override 
