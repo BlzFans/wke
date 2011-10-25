@@ -58,7 +58,11 @@ public:
     String shadowPseudoId(Element*, ExceptionCode&);
     PassRefPtr<Element> createShadowContentElement(Document*, ExceptionCode&);
     Element* getElementByIdInShadowRoot(Node* shadowRoot, const String& id, ExceptionCode&);
-    void disableMemoryCache(bool disabled);
+
+#if ENABLE(INPUT_COLOR)
+    bool connectColorChooserClient(Element*);
+    void selectColorInColorChooser(const String& colorValue);
+#endif
 
 #if ENABLE(INSPECTOR)
     void setInspectorResourcesDataSizeLimits(Document*, int maximumResourcesContentSize, int maximumSingleResourceContentSize, ExceptionCode&);
@@ -73,8 +77,26 @@ public:
 
     void setForceCompositingMode(Document*, bool enabled, ExceptionCode&);
 
+    void setEnableScrollAnimator(Document*, bool enabled, ExceptionCode&);
+    void setZoomAnimatorTransform(Document*, float scale, float tx, float ty, ExceptionCode&);
+    float getPageScaleFactor(Document*,  ExceptionCode&);
+    void setZoomParameters(Document*, float scale, float x, float y, ExceptionCode&);
+
     void setPasswordEchoEnabled(Document*, bool enabled, ExceptionCode&);
     void setPasswordEchoDurationInSeconds(Document*, double durationInSeconds, ExceptionCode&);
+
+    void setScrollViewPosition(Document*, long x, long y, ExceptionCode&);
+
+    bool wasLastChangeUserEdit(Element* textField, ExceptionCode&);
+    String suggestedValue(Element* inputElement, ExceptionCode&);
+    void setSuggestedValue(Element* inputElement, const String&, ExceptionCode&);
+    void scrollElementToRect(Element*, long x, long y, long w, long h, ExceptionCode&);
+
+    void paintControlTints(Document*, ExceptionCode&);
+
+    PassRefPtr<Range> rangeFromLocationAndLength(Element* scope, int rangeLocation, int rangeLength, ExceptionCode&);
+    unsigned locationFromRange(Element* scope, const Range*, ExceptionCode&);
+    unsigned lengthFromRange(Element* scope, const Range*, ExceptionCode&);
 
     static const char* internalsId;
 

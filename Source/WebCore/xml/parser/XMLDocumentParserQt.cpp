@@ -58,11 +58,6 @@
 #include <wtf/Vector.h>
 #include <wtf/text/CString.h>
 
-#if ENABLE(XHTMLMP)
-#include "HTMLNames.h"
-#include "HTMLScriptElement.h"
-#endif
-
 using namespace std;
 
 namespace WebCore {
@@ -94,16 +89,12 @@ XMLDocumentParser::XMLDocumentParser(Document* document, FrameView* frameView)
     , m_sawXSLTransform(false)
     , m_sawFirstElement(false)
     , m_isXHTMLDocument(false)
-#if ENABLE(XHTMLMP)
-    , m_isXHTMLMPDocument(false)
-    , m_hasDocTypeDeclaration(false)
-#endif
     , m_parserPaused(false)
     , m_requestingScript(false)
     , m_finishCalled(false)
     , m_xmlErrors(document)
     , m_pendingScript(0)
-    , m_scriptStartPosition(TextPosition1::belowRangePosition())
+    , m_scriptStartPosition(TextPosition::belowRangePosition())
     , m_parsingFragment(false)
     , m_scriptingPermission(FragmentScriptingAllowed)
 {
@@ -120,16 +111,12 @@ XMLDocumentParser::XMLDocumentParser(DocumentFragment* fragment, Element* parent
     , m_sawXSLTransform(false)
     , m_sawFirstElement(false)
     , m_isXHTMLDocument(false)
-#if ENABLE(XHTMLMP)
-    , m_isXHTMLMPDocument(false)
-    , m_hasDocTypeDeclaration(false)
-#endif
     , m_parserPaused(false)
     , m_requestingScript(false)
     , m_finishCalled(false)
     , m_xmlErrors(fragment->document())
     , m_pendingScript(0)
-    , m_scriptStartPosition(TextPosition1::belowRangePosition())
+    , m_scriptStartPosition(TextPosition::belowRangePosition())
     , m_parsingFragment(true)
     , m_scriptingPermission(permission)
 {
@@ -183,7 +170,7 @@ void XMLDocumentParser::doWrite(const String& parseString)
 
     if (document()->decoder() && document()->decoder()->sawError()) {
         // If the decoder saw an error, report it as fatal (stops parsing)
-        handleError(XMLErrors::fatal, "Encoding error", lineNumber(), columnNumber());
+        handleError(XMLErrors::fatal, "Encoding error", textPosition());
         return;
     }
 
@@ -223,29 +210,22 @@ void XMLDocumentParser::doEnd()
 
     if (m_stream.error() == QXmlStreamReader::PrematureEndOfDocumentError
         || (m_wroteText && !m_sawFirstElement && !m_sawXSLTransform && !m_sawError))
-        handleError(XMLErrors::fatal, qPrintable(m_stream.errorString()), lineNumber(), columnNumber());
+        handleError(XMLErrors::fatal, qPrintable(m_stream.errorString()), textPosition());
 }
 
-int XMLDocumentParser::lineNumber() const
+OrdinalNumber XMLDocumentParser::lineNumber() const
 {
-    return m_stream.lineNumber();
+    return OrdinalNumber::fromOneBasedInt(m_stream.lineNumber());
 }
 
-int XMLDocumentParser::columnNumber() const
+OrdinalNumber XMLDocumentParser::columnNumber() const
 {
-    return m_stream.columnNumber();
+    return OrdinalNumber::fromOneBasedInt(m_stream.columnNumber());
 }
 
-TextPosition0 XMLDocumentParser::textPosition() const
+TextPosition XMLDocumentParser::textPosition() const
 {
-    return TextPosition0(WTF::ZeroBasedNumber::fromZeroBasedInt(lineNumber()), WTF::ZeroBasedNumber::fromZeroBasedInt(columnNumber()));
-}
-
-// This method incorrectly reinterprets zero-base lineNumber method as one-based number.
-// FIXME: This error is kept for compatibility. We should fix it eventually. 
-TextPosition1 XMLDocumentParser::textPositionOneBased() const
-{
-    return TextPosition1(WTF::OneBasedNumber::fromOneBasedInt(lineNumber()), WTF::OneBasedNumber::fromOneBasedInt(columnNumber()));
+    return TextPosition(lineNumber(), columnNumber());
 }
 
 void XMLDocumentParser::stopParsing()
@@ -369,27 +349,17 @@ void XMLDocumentParser::parse()
     while (!isStopped() && !m_parserPaused && !m_stream.atEnd()) {
         m_stream.readNext();
         switch (m_stream.tokenType()) {
-        case QXmlStreamReader::StartDocument: {
+        case QXmlStreamReader::StartDocument:
             startDocument();
-        }
             break;
-        case QXmlStreamReader::EndDocument: {
+        case QXmlStreamReader::EndDocument:
             endDocument();
-        }
             break;
-        case QXmlStreamReader::StartElement: {
-#if ENABLE(XHTMLMP)
-            if (document()->isXHTMLMPDocument() && !m_hasDocTypeDeclaration) {
-                handleError(XMLErrors::fatal, "DOCTYPE declaration lost.", lineNumber(), columnNumber());
-                break;
-            }
-#endif
+        case QXmlStreamReader::StartElement:
             parseStartElement();
-        }
             break;
-        case QXmlStreamReader::EndElement: {
+        case QXmlStreamReader::EndElement:
             parseEndElement();
-        }
             break;
         case QXmlStreamReader::Characters: {
             if (m_stream.isCDATA()) {
@@ -399,28 +369,19 @@ void XMLDocumentParser::parse()
                 //characters
                 parseCharacters();
             }
-        }
             break;
-        case QXmlStreamReader::Comment: {
+        }
+        case QXmlStreamReader::Comment:
             parseComment();
-        }
             break;
-        case QXmlStreamReader::DTD: {
+        case QXmlStreamReader::DTD:
             //qDebug()<<"------------- DTD";
             parseDtd();
-#if ENABLE(XHTMLMP)
-            m_hasDocTypeDeclaration = true;
-#endif
-        }
             break;
         case QXmlStreamReader::EntityReference: {
             //qDebug()<<"---------- ENTITY = "<<m_stream.name().toString()
             //        <<", t = "<<m_stream.text().toString();
-            if (isXHTMLDocument()
-#if ENABLE(XHTMLMP)
-                || isXHTMLMPDocument()
-#endif
-               ) {
+            if (isXHTMLDocument()) {
                 QString entity = m_stream.name().toString();
                 UChar c = decodeNamedEntity(entity.toUtf8().constData());
                 if (!m_leafTextNode)
@@ -430,21 +391,19 @@ void XMLDocumentParser::parse()
                 // qDebug()<<" ------- adding entity "<<str;
                 m_leafTextNode->appendData(str, ec);
             }
-        }
             break;
-        case QXmlStreamReader::ProcessingInstruction: {
-            parseProcessingInstruction();
         }
+        case QXmlStreamReader::ProcessingInstruction:
+            parseProcessingInstruction();
             break;
         default: {
             if (m_stream.error() != QXmlStreamReader::PrematureEndOfDocumentError) {
                 XMLErrors::ErrorType type = (m_stream.error() == QXmlStreamReader::NotWellFormedError) ?
                                  XMLErrors::fatal : XMLErrors::warning;
-                handleError(type, qPrintable(m_stream.errorString()), lineNumber(),
-                            columnNumber());
+                handleError(type, qPrintable(m_stream.errorString()), textPosition());
             }
-        }
             break;
+        }
         }
     }
 }
@@ -492,25 +451,6 @@ void XMLDocumentParser::parseStartElement()
         return;
     }
 
-#if ENABLE(XHTMLMP)
-    if (!m_sawFirstElement && isXHTMLMPDocument()) {
-        // As per 7.1 section of OMA-WAP-XHTMLMP-V1_1-20061020-A.pdf,
-        // we should make sure that the root element MUST be 'html' and
-        // ensure the name of the default namespace on the root elment 'html'
-        // MUST be 'http://www.w3.org/1999/xhtml'
-        if (localName != HTMLNames::htmlTag.localName()) {
-            handleError(XMLErrors::fatal, "XHTMLMP document expects 'html' as root element.", lineNumber(), columnNumber());
-            return;
-        }
-
-        if (uri.isNull()) {
-            m_defaultNamespaceURI = HTMLNames::xhtmlNamespaceURI;
-            uri = m_defaultNamespaceURI;
-            m_stream.addExtraNamespaceDeclaration(QXmlStreamNamespaceDeclaration(prefix, HTMLNames::xhtmlNamespaceURI));
-        }
-    }
-#endif
-
     bool isFirstElement = !m_sawFirstElement;
     m_sawFirstElement = true;
 
@@ -529,7 +469,7 @@ void XMLDocumentParser::parseStartElement()
 
     ScriptElement* scriptElement = toScriptElement(newElement.get());
     if (scriptElement)
-        m_scriptStartPosition = textPositionOneBased();
+        m_scriptStartPosition = textPosition();
 
     m_currentNode->parserAddChild(newElement.get());
 
@@ -537,10 +477,8 @@ void XMLDocumentParser::parseStartElement()
     if (m_view && !newElement->attached())
         newElement->attach();
 
-#if ENABLE(OFFLINE_WEB_APPLICATIONS)
     if (newElement->hasTagName(HTMLNames::htmlTag))
         static_cast<HTMLHtmlElement*>(newElement.get())->insertedByParser();
-#endif
 
     if (isFirstElement && document()->frame())
         document()->frame()->loader()->dispatchDocumentElementAvailable();
@@ -585,13 +523,7 @@ void XMLDocumentParser::parseEndElement()
     ASSERT(!m_pendingScript);
     m_requestingScript = true;
 
-    bool successfullyPrepared = scriptElement->prepareScript(m_scriptStartPosition, ScriptElement::AllowLegacyTypeInTypeAttribute);
-    if (!successfullyPrepared) {
-#if ENABLE(XHTMLMP)
-        if (!scriptElement->isScriptTypeSupported(ScriptElement::AllowLegacyTypeInTypeAttribute))
-            document()->setShouldProcessNoscriptElement(true);
-#endif
-    } else {
+    if (scriptElement->prepareScript(m_scriptStartPosition, ScriptElement::AllowLegacyTypeInTypeAttribute)) {
         if (scriptElement->readyToBeParserExecuted())
             scriptElement->executeScript(ScriptSourceCode(scriptElement->scriptContent(), document()->url(), m_scriptStartPosition));
         else if (scriptElement->willBeParserExecuted()) {
@@ -670,9 +602,6 @@ void XMLDocumentParser::parseComment()
 
 void XMLDocumentParser::endDocument()
 {
-#if ENABLE(XHTMLMP)
-    m_hasDocTypeDeclaration = false;
-#endif
 }
 
 bool XMLDocumentParser::hasError() const
@@ -694,25 +623,9 @@ void XMLDocumentParser::parseDtd()
         || (publicId == QLatin1String("-//W3C//DTD XHTML Basic 1.0//EN"))
         || (publicId == QLatin1String("-//W3C//DTD XHTML 1.1 plus MathML 2.0//EN"))
         || (publicId == QLatin1String("-//W3C//DTD XHTML 1.1 plus MathML 2.0 plus SVG 1.1//EN"))
-#if !ENABLE(XHTMLMP)
         || (publicId == QLatin1String("-//WAPFORUM//DTD XHTML Mobile 1.0//EN"))
-#endif
        )
         setIsXHTMLDocument(true); // controls if we replace entities or not.
-#if ENABLE(XHTMLMP)
-    else if ((publicId == QLatin1String("-//WAPFORUM//DTD XHTML Mobile 1.1//EN"))
-             || (publicId == QLatin1String("-//WAPFORUM//DTD XHTML Mobile 1.0//EN"))) {
-        if (AtomicString(name) != HTMLNames::htmlTag.localName()) {
-            handleError(XMLErrors::fatal, "Invalid DOCTYPE declaration, expected 'html' as root element.", lineNumber(), columnNumber());
-            return;
-        }
-
-        if (document()->isXHTMLMPDocument()) // check if the MIME type is correct with this method
-            setIsXHTMLMPDocument(true);
-        else
-            setIsXHTMLDocument(true);
-    }
-#endif
     if (!m_parsingFragment)
         document()->parserAddChild(DocumentType::create(document(), name, publicId, systemId));
 

@@ -64,8 +64,10 @@ public:
     virtual void connect(const KURL&, const String& protocol);
     virtual String subprotocol();
     virtual bool send(const String& message);
+    virtual bool send(const ArrayBuffer&);
+    virtual bool send(const Blob&);
     virtual unsigned long bufferedAmount() const;
-    virtual void close();
+    virtual void close(int code, const String& reason);
     virtual void fail(const String& reason);
     virtual void disconnect(); // Will suppress didClose().
     virtual void suspend();
@@ -93,8 +95,10 @@ private:
         bool useHixie76Protocol();
         void connect(const KURL&, const String& protocol);
         void send(const String& message);
+        void send(const ArrayBuffer&);
+        void send(const Blob&);
         void bufferedAmount();
-        void close();
+        void close(int code, const String& reason);
         void fail(const String& reason);
         void disconnect();
         void suspend();
@@ -102,6 +106,7 @@ private:
 
         virtual void didConnect();
         virtual void didReceiveMessage(const String& message);
+        virtual void didReceiveBinaryData(PassOwnPtr<Vector<char> >);
         virtual void didStartClosingHandshake();
         virtual void didClose(unsigned long unhandledBufferedAmount, ClosingHandshakeCompletionStatus, unsigned short code, const String& reason);
 
@@ -124,8 +129,10 @@ private:
         ~Bridge();
         void connect(const KURL&, const String& protocol);
         bool send(const String& message);
+        bool send(const ArrayBuffer&);
+        bool send(const Blob&);
         unsigned long bufferedAmount();
-        void close();
+        void close(int code, const String& reason);
         void fail(const String& reason);
         void disconnect();
         void suspend();
@@ -159,8 +166,10 @@ private:
 
     static void mainThreadConnect(ScriptExecutionContext*, Peer*, const KURL&, const String& protocol);
     static void mainThreadSend(ScriptExecutionContext*, Peer*, const String& message);
+    static void mainThreadSendArrayBuffer(ScriptExecutionContext*, Peer*, PassOwnPtr<Vector<char> >);
+    static void mainThreadSendBlob(ScriptExecutionContext*, Peer*, const KURL&, const String& type, long long size);
     static void mainThreadBufferedAmount(ScriptExecutionContext*, Peer*);
-    static void mainThreadClose(ScriptExecutionContext*, Peer*);
+    static void mainThreadClose(ScriptExecutionContext*, Peer*, int code, const String& reason);
     static void mainThreadFail(ScriptExecutionContext*, Peer*, const String& reason);
     static void mainThreadDestroy(ScriptExecutionContext*, Peer*);
     static void mainThreadSuspend(ScriptExecutionContext*, Peer*);

@@ -31,7 +31,9 @@
 module events {
 
     interface [
-        NoStaticTables
+        NoStaticTables,
+        CanBeConstructed,
+        CustomConstructor
     ] CloseEvent : Event {
         readonly attribute boolean wasClean;
         readonly attribute unsigned short code;

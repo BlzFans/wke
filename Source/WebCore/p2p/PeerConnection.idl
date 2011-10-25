@@ -26,10 +26,13 @@ module p2p {
 
     interface [
         Conditional=MEDIA_STREAM,
+        ActiveDOMObject,
         CanBeConstructed,
-        CustomConstructFunction,
         ConstructorParameters=2,
-        V8CustomConstructor,
+        Constructor(in DOMString serverConfiguration, in [Callback=FunctionOnly] SignalingCallback signalingCallback),
+        CallWith=ScriptExecutionContext,
+        JSCustomConstructor,
+        V8ConstructorSetsActiveDOMWrapper,
         EventTarget
     ] PeerConnection {
         void processSignalingMessage(in DOMString message)

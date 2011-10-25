@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 Google Inc.  All rights reserved.
+ * Copyright (C) 2011 Google Inc.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -46,6 +46,8 @@
 
 namespace WebCore {
 
+class ArrayBuffer;
+class Blob;
 class ThreadableWebSocketChannel;
 
 class WebSocket : public RefCounted<WebSocket>, public EventTarget, public ActiveDOMObject, public WebSocketChannelClient {
@@ -67,14 +69,17 @@ public:
     void connect(const String& url, const Vector<String>& protocols, ExceptionCode&);
 
     bool send(const String& message, ExceptionCode&);
+    bool send(ArrayBuffer*, ExceptionCode&);
+    bool send(Blob*, ExceptionCode&);
 
-    void close();
+    void close(int code, const String& reason, ExceptionCode&);
 
     const KURL& url() const;
     State readyState() const;
     unsigned long bufferedAmount() const;
 
     String protocol() const;
+    String extensions() const;
 
     String binaryType() const;
     void setBinaryType(const String& binaryType, ExceptionCode&);
@@ -100,6 +105,7 @@ public:
     // WebSocketChannelClient
     virtual void didConnect();
     virtual void didReceiveMessage(const String& message);
+    virtual void didReceiveBinaryData(PassOwnPtr<Vector<char> >);
     virtual void didReceiveMessageError();
     virtual void didStartClosingHandshake();
     virtual void didClose(unsigned long unhandledBufferedAmount, ClosingHandshakeCompletionStatus, unsigned short code, const String& reason);
@@ -111,6 +117,8 @@ private:
     virtual void derefEventTarget() { deref(); }
     virtual EventTargetData* eventTargetData();
     virtual EventTargetData* ensureEventTargetData();
+
+    size_t getFramingOverhead(size_t payloadSize);
 
     enum BinaryType {
         BinaryTypeBlob,

@@ -33,6 +33,7 @@
 
 #if ENABLE(WEB_SOCKETS)
 
+#include "FileReaderLoaderClient.h"
 #include "SocketStreamHandleClient.h"
 #include "ThreadableWebSocketChannel.h"
 #include "Timer.h"
@@ -44,12 +45,19 @@
 
 namespace WebCore {
 
+class ArrayBuffer;
+class Blob;
+class FileReaderLoader;
 class ScriptExecutionContext;
 class SocketStreamHandle;
 class SocketStreamError;
 class WebSocketChannelClient;
 
-class WebSocketChannel : public RefCounted<WebSocketChannel>, public SocketStreamHandleClient, public ThreadableWebSocketChannel {
+class WebSocketChannel : public RefCounted<WebSocketChannel>, public SocketStreamHandleClient, public ThreadableWebSocketChannel
+#if ENABLE(BLOB)
+                       , public FileReaderLoaderClient
+#endif
+{
     WTF_MAKE_FAST_ALLOCATED;
 public:
     static PassRefPtr<WebSocketChannel> create(ScriptExecutionContext* context, WebSocketChannelClient* client) { return adoptRef(new WebSocketChannel(context, client)); }
@@ -59,8 +67,10 @@ public:
     virtual void connect(const KURL&, const String& protocol);
     virtual String subprotocol();
     virtual bool send(const String& message);
+    virtual bool send(const ArrayBuffer&);
+    virtual bool send(const Blob&);
     virtual unsigned long bufferedAmount() const;
-    virtual void close(); // Start closing handshake.
+    virtual void close(int code, const String& reason); // Start closing handshake.
     virtual void fail(const String& reason);
     virtual void disconnect();
 
@@ -76,6 +86,7 @@ public:
     virtual void didCancelAuthenticationChallenge(SocketStreamHandle*, const AuthenticationChallenge&);
 
     enum CloseEventCode {
+        CloseEventCodeNotSpecified = -1,
         CloseEventCodeNormalClosure = 1000,
         CloseEventCodeGoingAway = 1001,
         CloseEventCodeProtocolError = 1002,
@@ -83,8 +94,18 @@ public:
         CloseEventCodeFrameTooLarge = 1004,
         CloseEventCodeNoStatusRcvd = 1005,
         CloseEventCodeAbnormalClosure = 1006,
-        CloseEventCodeInvalidUTF8 = 1007
+        CloseEventCodeInvalidUTF8 = 1007,
+        CloseEventCodeMinimumUserDefined = 3000,
+        CloseEventCodeMaximumUserDefined = 4999
     };
+
+#if ENABLE(BLOB)
+    // FileReaderLoaderClient functions.
+    virtual void didStartLoading();
+    virtual void didReceiveData();
+    virtual void didFinishLoading();
+    virtual void didFail(int errorCode);
+#endif
 
     using RefCounted<WebSocketChannel>::ref;
     using RefCounted<WebSocketChannel>::deref;
@@ -100,7 +121,7 @@ private:
     void skipBuffer(size_t len);
     bool processBuffer();
     void resumeTimerFired(Timer<WebSocketChannel>*);
-    void startClosingHandshake();
+    void startClosingHandshake(int code, const String& reason);
     void closingTimerFired(Timer<WebSocketChannel>*);
 
     // Hybi-10 opcodes.
@@ -151,8 +172,8 @@ private:
     // When hixie-76 protocol is chosen, the queue is not used and messages are sent directly.
     enum QueuedFrameType {
         QueuedFrameTypeString,
-        QueuedFrameTypeVector
-        // FIXME: Add QueuedFrameTypeBlob.
+        QueuedFrameTypeVector,
+        QueuedFrameTypeBlob
     };
     struct QueuedFrame {
         OpCode opCode;
@@ -160,11 +181,11 @@ private:
         // Only one of the following items is used, according to the value of frameType.
         String stringData;
         Vector<char> vectorData;
-        // FIXME: Add blobData.
+        RefPtr<Blob> blobData;
     };
     void enqueueTextFrame(const String&);
     void enqueueRawFrame(OpCode, const char* data, size_t dataLength);
-    // FIXME: Add enqueueBlobFrame().
+    void enqueueBlobFrame(OpCode, const Blob&);
 
     void processOutgoingFrameQueue();
     void abortOutgoingFrameQueue();
@@ -185,6 +206,15 @@ private:
     // instead of call sendFrame() directly.
     bool sendFrame(OpCode, const char* data, size_t dataLength);
     bool sendFrameHixie76(const char* data, size_t dataLength);
+
+#if ENABLE(BLOB)
+    enum BlobLoaderStatus {
+        BlobLoaderNotStarted,
+        BlobLoaderStarted,
+        BlobLoaderFinished,
+        BlobLoaderFailed
+    };
+#endif
 
     ScriptExecutionContext* m_context;
     WebSocketChannelClient* m_client;
@@ -215,6 +245,12 @@ private:
 
     Deque<OwnPtr<QueuedFrame> > m_outgoingFrameQueue;
     OutgoingFrameQueueStatus m_outgoingFrameQueueStatus;
+
+#if ENABLE(BLOB)
+    // FIXME: Load two or more Blobs simultaneously for better performance.
+    OwnPtr<FileReaderLoader> m_blobLoader;
+    BlobLoaderStatus m_blobLoaderStatus;
+#endif
 };
 
 } // namespace WebCore

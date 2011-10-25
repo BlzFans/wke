@@ -87,23 +87,17 @@ class Text;
         ~XMLDocumentParser();
 
         // Exposed for callbacks:
-        void handleError(XMLErrors::ErrorType, const char* message, int lineNumber, int columnNumber);
-        void handleError(XMLErrors::ErrorType, const char* message, TextPosition1);
+        void handleError(XMLErrors::ErrorType, const char* message, TextPosition);
 
         void setIsXHTMLDocument(bool isXHTML) { m_isXHTMLDocument = isXHTML; }
         bool isXHTMLDocument() const { return m_isXHTMLDocument; }
-#if ENABLE(XHTMLMP)
-        void setIsXHTMLMPDocument(bool isXHTML) { m_isXHTMLMPDocument = isXHTML; }
-        bool isXHTMLMPDocument() const { return m_isXHTMLMPDocument; }
-#endif
 
         static bool parseDocumentFragment(const String&, DocumentFragment*, Element* parent = 0, FragmentScriptingPermission = FragmentScriptingAllowed);
 
         // FIXME: This function used to be used by WML. Can we remove it?
         virtual bool wellFormed() const { return !m_sawError; }
 
-        TextPosition0 textPosition() const;
-        TextPosition1 textPositionOneBased() const;
+        TextPosition textPosition() const;
 
         static bool supportsXMLVersion(const String&);
 
@@ -119,8 +113,8 @@ class Text;
         virtual bool isWaitingForScripts() const;
         virtual void stopParsing();
         virtual void detach();
-        virtual int lineNumber() const;
-        int columnNumber() const;
+        virtual OrdinalNumber lineNumber() const;
+        OrdinalNumber columnNumber() const;
 
         // from CachedResourceClient
         virtual void notifyFinished(CachedResource*);
@@ -198,11 +192,6 @@ public:
         bool m_sawXSLTransform;
         bool m_sawFirstElement;
         bool m_isXHTMLDocument;
-#if ENABLE(XHTMLMP)
-        bool m_isXHTMLMPDocument;
-        bool m_hasDocTypeDeclaration;
-#endif
-
         bool m_parserPaused;
         bool m_requestingScript;
         bool m_finishCalled;
@@ -211,7 +200,7 @@ public:
 
         CachedResourceHandle<CachedScript> m_pendingScript;
         RefPtr<Element> m_scriptElement;
-        TextPosition1 m_scriptStartPosition;
+        TextPosition m_scriptStartPosition;
 
         bool m_parsingFragment;
         AtomicString m_defaultNamespaceURI;

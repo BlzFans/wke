@@ -83,6 +83,7 @@ public:
     virtual void postConsoleMessageToWorkerObject(MessageSource, MessageType, MessageLevel, const String& message, int lineNumber, const String& sourceURL);
 #if ENABLE(INSPECTOR)
     virtual void postMessageToPageInspector(const String&);
+    virtual void updateInspectorStateCookie(const String&);
 #endif
     virtual void workerContextClosed();
     virtual void workerContextDestroyed();
@@ -184,6 +185,12 @@ void SharedWorkerProxy::postConsoleMessageToWorkerObject(MessageSource source, M
 #if ENABLE(INSPECTOR)
 void SharedWorkerProxy::postMessageToPageInspector(const String&)
 {
+    notImplemented();
+}
+
+void SharedWorkerProxy::updateInspectorStateCookie(const String&)
+{
+    notImplemented();
 }
 #endif
 
@@ -331,7 +338,7 @@ void DefaultSharedWorkerRepository::workerScriptLoaded(SharedWorkerProxy& proxy,
 
     // Another loader may have already started up a thread for this proxy - if so, just send a connect to the pre-existing thread.
     if (!proxy.thread()) {
-        RefPtr<SharedWorkerThread> thread = SharedWorkerThread::create(proxy.name(), proxy.url(), userAgent, workerScript, proxy, proxy);
+        RefPtr<SharedWorkerThread> thread = SharedWorkerThread::create(proxy.name(), proxy.url(), userAgent, workerScript, proxy, proxy, DontPauseWorkerContextOnStart);
         proxy.setThread(thread);
         thread->start();
     }

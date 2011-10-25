@@ -35,9 +35,8 @@ module websockets {
         Conditional=WEB_SOCKETS,
         ActiveDOMObject,
         CanBeConstructed,
-        CustomConstructFunction,
+        CustomConstructor,
         ConstructorParameters=1,
-        V8CustomConstructor,
         EventTarget,
         NoStaticTables
     ] WebSocket {
@@ -59,12 +58,23 @@ module websockets {
         attribute EventListener onclose;
 
         readonly attribute [ConvertNullStringTo=Undefined] DOMString protocol;
+        readonly attribute [ConvertNullStringTo=Undefined] DOMString extensions;
 
         attribute [ConvertNullStringTo=Undefined] DOMString binaryType
             setter raises(DOMException);
 
-        [RequiresAllArguments] boolean send(in DOMString data) raises(DOMException);
-        void close();
+        // FIXME: Use overloading provided by our IDL code generator.
+        // According to Web IDL specification, overloaded function with DOMString argument
+        // should accept anything that can be converted to a string (including numbers,
+        // booleans, null, undefined and objects except ArrayBuffer and Blob). Current code
+        // generator does not handle this rule correctly.
+        // [RequiresAllArguments] boolean send(in ArrayBuffer data) raises(DOMException);
+        // [RequiresAllArguments] boolean send(in Blob data) raises(DOMException);
+        // [RequiresAllArguments] boolean send(in DOMString data) raises(DOMException);
+        [Custom] boolean send(in DOMString data) raises(DOMException);
+
+        // FIXME: Implement and apply [Clamp] attribute instead of [Custom].
+        [Custom] void close(in [Optional] unsigned short code, in [Optional] DOMString reason) raises(DOMException);
 
         // EventTarget interface
         void addEventListener(in DOMString type,

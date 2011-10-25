@@ -44,8 +44,7 @@ ThreadableWebSocketChannelClientWrapper::ThreadableWebSocketChannelClientWrapper
     : m_client(client)
     , m_syncMethodDone(false)
     , m_useHixie76Protocol(true)
-    , m_subprotocol("")
-    , m_sent(false)
+    , m_sendRequestResult(false)
     , m_bufferedAmount(0)
     , m_suspended(false)
 {
@@ -83,22 +82,27 @@ void ThreadableWebSocketChannelClientWrapper::setUseHixie76Protocol(bool useHixi
 
 String ThreadableWebSocketChannelClientWrapper::subprotocol() const
 {
-    return m_subprotocol;
+    if (m_subprotocol.isEmpty())
+        return String("");
+    return String(m_subprotocol);
 }
 
 void ThreadableWebSocketChannelClientWrapper::setSubprotocol(const String& subprotocol)
 {
-    m_subprotocol = subprotocol;
+    unsigned length = subprotocol.length();
+    m_subprotocol.resize(length);
+    if (length)
+        memcpy(m_subprotocol.data(), subprotocol.characters(), sizeof(UChar) * length);
 }
 
-bool ThreadableWebSocketChannelClientWrapper::sent() const
+bool ThreadableWebSocketChannelClientWrapper::sendRequestResult() const
 {
-    return m_sent;
+    return m_sendRequestResult;
 }
 
-void ThreadableWebSocketChannelClientWrapper::setSent(bool sent)
+void ThreadableWebSocketChannelClientWrapper::setSendRequestResult(bool sendRequestResult)
 {
-    m_sent = sent;
+    m_sendRequestResult = sendRequestResult;
     m_syncMethodDone = true;
 }
 
@@ -128,6 +132,13 @@ void ThreadableWebSocketChannelClientWrapper::didConnect()
 void ThreadableWebSocketChannelClientWrapper::didReceiveMessage(const String& message)
 {
     m_pendingTasks.append(createCallbackTask(&ThreadableWebSocketChannelClientWrapper::didReceiveMessageCallback, AllowCrossThreadAccess(this), message));
+    if (!m_suspended)
+        processPendingTasks();
+}
+
+void ThreadableWebSocketChannelClientWrapper::didReceiveBinaryData(PassOwnPtr<Vector<char> > binaryData)
+{
+    m_pendingTasks.append(createCallbackTask(&ThreadableWebSocketChannelClientWrapper::didReceiveBinaryDataCallback, AllowCrossThreadAccess(this), binaryData));
     if (!m_suspended)
         processPendingTasks();
 }
@@ -178,6 +189,13 @@ void ThreadableWebSocketChannelClientWrapper::didReceiveMessageCallback(ScriptEx
     ASSERT_UNUSED(context, !context);
     if (wrapper->m_client)
         wrapper->m_client->didReceiveMessage(message);
+}
+
+void ThreadableWebSocketChannelClientWrapper::didReceiveBinaryDataCallback(ScriptExecutionContext* context, ThreadableWebSocketChannelClientWrapper* wrapper, PassOwnPtr<Vector<char> > binaryData)
+{
+    ASSERT_UNUSED(context, !context);
+    if (wrapper->m_client)
+        wrapper->m_client->didReceiveBinaryData(binaryData);
 }
 
 void ThreadableWebSocketChannelClientWrapper::didStartClosingHandshakeCallback(ScriptExecutionContext* context, ThreadableWebSocketChannelClientWrapper* wrapper)

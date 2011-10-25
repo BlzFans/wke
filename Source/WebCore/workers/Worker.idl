@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2008, 2010 Apple Inc. All Rights Reserved.
+ * Copyright (C) 2011 Google Inc. All Rights Reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -30,9 +31,12 @@ module threads {
         Conditional=WORKERS,
         ActiveDOMObject,
         CanBeConstructed,
-        CustomConstructFunction,
+        JSCustomConstructor,
         ConstructorParameters=1,
-        V8CustomConstructor,
+        Constructor(in DOMString scriptUrl),
+        CallWith=ScriptExecutionContext,
+        ConstructorRaisesException,
+        V8ConstructorSetsActiveDOMWrapper,
         GenerateNativeConverter,
         GenerateToJS
     ] Worker : AbstractWorker {
@@ -40,7 +44,9 @@ module threads {
         attribute EventListener onmessage;
 
 #if defined(LANGUAGE_JAVASCRIPT) && LANGUAGE_JAVASCRIPT
-        [Custom] void postMessage(in SerialisedScriptValue message, in [Optional] Array messagePorts)
+        [Custom] void postMessage(in SerializedScriptValue message, in [Optional] Array messagePorts)
+            raises(DOMException);
+        [Custom] void webkitPostMessage(in SerializedScriptValue message, in [Optional] Array messagePorts)
             raises(DOMException);
 #else
         // There's no good way to expose an array via the ObjC bindings, so for now just allow passing in a single port.

@@ -68,11 +68,6 @@
 #include <libxslt/xslt.h>
 #endif
 
-#if ENABLE(XHTMLMP)
-#include "HTMLScriptElement.h"
-#endif
-
-
 using namespace std;
 
 namespace WebCore {
@@ -172,7 +167,7 @@ public:
         m_callbacks.append(callback.release());
     }
 
-    void appendErrorCallback(XMLErrors::ErrorType type, const xmlChar* message, int lineNumber, int columnNumber)
+    void appendErrorCallback(XMLErrors::ErrorType type, const xmlChar* message, OrdinalNumber lineNumber, OrdinalNumber columnNumber)
     {
         OwnPtr<PendingErrorCallback> callback = adoptPtr(new PendingErrorCallback);
 
@@ -325,13 +320,13 @@ private:
 
         virtual void call(XMLDocumentParser* parser)
         {
-            parser->handleError(type, reinterpret_cast<char*>(message), lineNumber, columnNumber);
+            parser->handleError(type, reinterpret_cast<char*>(message), TextPosition(lineNumber, columnNumber));
         }
 
         XMLErrors::ErrorType type;
         xmlChar* message;
-        int lineNumber;
-        int columnNumber;
+        OrdinalNumber lineNumber;
+        OrdinalNumber columnNumber;
     };
 
     Deque<OwnPtr<PendingCallback> > m_callbacks;
@@ -555,16 +550,12 @@ XMLDocumentParser::XMLDocumentParser(Document* document, FrameView* frameView)
     , m_sawXSLTransform(false)
     , m_sawFirstElement(false)
     , m_isXHTMLDocument(false)
-#if ENABLE(XHTMLMP)
-    , m_isXHTMLMPDocument(false)
-    , m_hasDocTypeDeclaration(false)
-#endif
     , m_parserPaused(false)
     , m_requestingScript(false)
     , m_finishCalled(false)
     , m_xmlErrors(document)
     , m_pendingScript(0)
-    , m_scriptStartPosition(TextPosition1::belowRangePosition())
+    , m_scriptStartPosition(TextPosition::belowRangePosition())
     , m_parsingFragment(false)
     , m_scriptingPermission(FragmentScriptingAllowed)
 {
@@ -581,16 +572,12 @@ XMLDocumentParser::XMLDocumentParser(DocumentFragment* fragment, Element* parent
     , m_sawXSLTransform(false)
     , m_sawFirstElement(false)
     , m_isXHTMLDocument(false)
-#if ENABLE(XHTMLMP)
-    , m_isXHTMLMPDocument(false)
-    , m_hasDocTypeDeclaration(false)
-#endif
     , m_parserPaused(false)
     , m_requestingScript(false)
     , m_finishCalled(false)
     , m_xmlErrors(fragment->document())
     , m_pendingScript(0)
-    , m_scriptStartPosition(TextPosition1::belowRangePosition())
+    , m_scriptStartPosition(TextPosition::belowRangePosition())
     , m_parsingFragment(true)
     , m_scriptingPermission(scriptingPermission)
 {
@@ -610,7 +597,8 @@ XMLDocumentParser::XMLDocumentParser(DocumentFragment* fragment, Element* parent
     if (elemStack.isEmpty())
         return;
 
-    for (Element* element = elemStack.last(); !elemStack.isEmpty(); elemStack.removeLast()) {
+    for (; !elemStack.isEmpty(); elemStack.removeLast()) {
+        Element* element = elemStack.last();
         if (NamedNodeMap* attrs = element->attributes()) {
             for (unsigned i = 0; i < attrs->length(); i++) {
                 Attribute* attr = attrs->attributeItem(i);
@@ -673,7 +661,8 @@ void XMLDocumentParser::doWrite(const String& parseString)
     // FIXME: Why is this here?  And why is it after we process the passed source?
     if (document()->decoder() && document()->decoder()->sawError()) {
         // If the decoder saw an error, report it as fatal (stops parsing)
-        handleError(XMLErrors::fatal, "Encoding error", context->context()->input->line, context->context()->input->col);
+        TextPosition position(OrdinalNumber::fromOneBasedInt(context->context()->input->line), OrdinalNumber::fromOneBasedInt(context->context()->input->col));
+        handleError(XMLErrors::fatal, "Encoding error", position);
     }
 }
 
@@ -754,14 +743,6 @@ void XMLDocumentParser::startElementNs(const xmlChar* xmlLocalName, const xmlCha
         return;
     }
 
-#if ENABLE(XHTMLMP)
-    // check if the DOCTYPE Declaration of XHTMLMP document exists
-    if (!m_hasDocTypeDeclaration && document()->isXHTMLMPDocument()) {
-        handleError(fatal, "DOCTYPE declaration lost.", lineNumber(), columnNumber());
-        return;
-    }
-#endif
-
     exitText();
 
     AtomicString localName = toAtomicString(xmlLocalName);
@@ -774,24 +755,6 @@ void XMLDocumentParser::startElementNs(const xmlChar* xmlLocalName, const xmlCha
         else
             uri = m_defaultNamespaceURI;
     }
-
-#if ENABLE(XHTMLMP)
-    if (!m_sawFirstElement && isXHTMLMPDocument()) {
-        // As per the section 7.1 of OMA-WAP-XHTMLMP-V1_1-20061020-A.pdf,
-        // we should make sure that the root element MUST be 'html' and
-        // ensure the name of the default namespace on the root elment 'html'
-        // MUST be 'http://www.w3.org/1999/xhtml'
-        if (localName != HTMLNames::htmlTag.localName()) {
-            handleError(fatal, "XHTMLMP document expects 'html' as root element.", lineNumber(), columnNumber());
-            return;
-        }
-
-        if (uri.isNull()) {
-            m_defaultNamespaceURI = HTMLNames::xhtmlNamespaceURI;
-            uri = m_defaultNamespaceURI;
-        }
-    }
-#endif
 
     bool isFirstElement = !m_sawFirstElement;
     m_sawFirstElement = true;
@@ -820,7 +783,7 @@ void XMLDocumentParser::startElementNs(const xmlChar* xmlLocalName, const xmlCha
 
     ScriptElement* scriptElement = toScriptElement(newElement.get());
     if (scriptElement)
-        m_scriptStartPosition = textPositionOneBased();
+        m_scriptStartPosition = textPosition();
 
     m_currentNode->parserAddChild(newElement.get());
 
@@ -828,10 +791,8 @@ void XMLDocumentParser::startElementNs(const xmlChar* xmlLocalName, const xmlCha
     if (m_view && !newElement->attached())
         newElement->attach();
 
-#if ENABLE(OFFLINE_WEB_APPLICATIONS)
     if (newElement->hasTagName(HTMLNames::htmlTag))
         static_cast<HTMLHtmlElement*>(newElement.get())->insertedByParser();
-#endif
 
     if (!m_parsingFragment && isFirstElement && document()->frame())
         document()->frame()->loader()->dispatchDocumentElementAvailable();
@@ -887,13 +848,7 @@ void XMLDocumentParser::endElementNs()
     ASSERT(!m_pendingScript);
     m_requestingScript = true;
 
-    bool successfullyPrepared = scriptElement->prepareScript(m_scriptStartPosition, ScriptElement::AllowLegacyTypeInTypeAttribute);
-    if (!successfullyPrepared) {
-#if ENABLE(XHTMLMP)
-        if (!scriptElement->isScriptTypeSupported(ScriptElement::AllowLegacyTypeInTypeAttribute))
-            document()->setShouldProcessNoscriptElement(true);
-#endif
-    } else {
+    if (scriptElement->prepareScript(m_scriptStartPosition, ScriptElement::AllowLegacyTypeInTypeAttribute)) {
         // FIXME: Script execution should be shared between
         // the libxml2 and Qt XMLDocumentParser implementations.
 
@@ -938,21 +893,21 @@ void XMLDocumentParser::error(XMLErrors::ErrorType type, const char* message, va
     if (isStopped())
         return;
 
-#if COMPILER(MSVC) || COMPILER(RVCT) || COMPILER(MINGW)
-    char m[1024];
-    vsnprintf(m, sizeof(m) - 1, message, args);
-#else
+#if HAVE(VASPRINTF)
     char* m;
     if (vasprintf(&m, message, args) == -1)
         return;
+#else
+    char m[1024];
+    vsnprintf(m, sizeof(m) - 1, message, args);
 #endif
 
     if (m_parserPaused)
         m_pendingCallbacks->appendErrorCallback(type, reinterpret_cast<const xmlChar*>(m), lineNumber(), columnNumber());
     else
-        handleError(type, m, lineNumber(), columnNumber());
+        handleError(type, m, textPosition());
 
-#if !COMPILER(MSVC) && !COMPILER(RVCT) && !COMPILER(MINGW)
+#if HAVE(VASPRINTF)
     free(m);
 #endif
 }
@@ -1043,9 +998,6 @@ void XMLDocumentParser::startDocument(const xmlChar* version, const xmlChar* enc
 void XMLDocumentParser::endDocument()
 {
     exitText();
-#if ENABLE(XHTMLMP)
-    m_hasDocTypeDeclaration = false;
-#endif
 }
 
 void XMLDocumentParser::internalSubset(const xmlChar* name, const xmlChar* externalID, const xmlChar* systemID)
@@ -1058,28 +1010,8 @@ void XMLDocumentParser::internalSubset(const xmlChar* name, const xmlChar* exter
         return;
     }
 
-    if (document()) {
-#if ENABLE(XHTMLMP)
-        String extId = toString(externalID);
-        String dtdName = toString(name);
-        if (extId == "-//WAPFORUM//DTD XHTML Mobile 1.0//EN"
-            || extId == "-//WAPFORUM//DTD XHTML Mobile 1.1//EN") {
-            if (dtdName != HTMLNames::htmlTag.localName()) {
-                handleError(fatal, "Invalid DOCTYPE declaration, expected 'html' as root element.", lineNumber(), columnNumber());
-                return;
-            }
-
-            if (document()->isXHTMLMPDocument())
-                setIsXHTMLMPDocument(true);
-            else
-                setIsXHTMLDocument(true);
-
-            m_hasDocTypeDeclaration = true;
-        }
-#endif
-
+    if (document())
         document()->parserAddChild(DocumentType::create(document(), toString(name), toString(externalID), toString(systemID)));
-    }
 }
 
 static inline XMLDocumentParser* getParser(void* closure)
@@ -1220,11 +1152,7 @@ static xmlEntityPtr getEntityHandler(void* closure, const xmlChar* name)
     }
 
     ent = xmlGetDocEntity(ctxt->myDoc, name);
-    if (!ent && (getParser(closure)->isXHTMLDocument()
-#if ENABLE(XHTMLMP)
-                 || getParser(closure)->isXHTMLMPDocument()
-#endif
-       )) {
+    if (!ent && getParser(closure)->isXHTMLDocument()) {
         ent = getXHTMLEntity(name);
         if (ent)
             ent->etype = XML_INTERNAL_GENERAL_ENTITY;
@@ -1263,8 +1191,7 @@ static void externalSubsetHandler(void* closure, const xmlChar*, const xmlChar* 
         || (extId == "-//W3C//DTD XHTML Basic 1.0//EN")
         || (extId == "-//W3C//DTD XHTML 1.1 plus MathML 2.0//EN")
         || (extId == "-//W3C//DTD XHTML 1.1 plus MathML 2.0 plus SVG 1.1//EN")
-        || (extId == "-//WAPFORUM//DTD XHTML Mobile 1.0//EN")
-       )
+        || (extId == "-//WAPFORUM//DTD XHTML Mobile 1.0//EN"))
         getParser(closure)->setIsXHTMLDocument(true); // controls if we replace entities or not.
 }
 
@@ -1367,39 +1294,23 @@ void* xmlDocPtrForString(CachedResourceLoader* cachedResourceLoader, const Strin
 }
 #endif
 
-int XMLDocumentParser::lineNumber() const
+OrdinalNumber XMLDocumentParser::lineNumber() const
 {
-    // FIXME: The implementation probably returns 1-based int, but method should return 0-based.
-    return context() ? context()->input->line : 1;
+    return OrdinalNumber::fromOneBasedInt(context() ? context()->input->line : 1);
 }
 
-int XMLDocumentParser::columnNumber() const
+OrdinalNumber XMLDocumentParser::columnNumber() const
 {
-    // FIXME: The implementation probably returns 1-based int, but method should return 0-based.
-    return context() ? context()->input->col : 1;
+    return OrdinalNumber::fromOneBasedInt(context() ? context()->input->col : 1);
 }
 
-TextPosition0 XMLDocumentParser::textPosition() const
+TextPosition XMLDocumentParser::textPosition() const
 {
     xmlParserCtxtPtr context = this->context();
     if (!context)
-        return TextPosition0::minimumPosition();
-    // FIXME: The context probably contains 1-based numbers, but we treat them as 0-based,
-    //        to be consistent with fixme's in lineNumber() and columnNumber
-    //        methods.
-    return TextPosition0(WTF::ZeroBasedNumber::fromZeroBasedInt(context->input->line),
-        WTF::ZeroBasedNumber::fromZeroBasedInt(context->input->col));
-}
-
-// This method has a correct implementation, in contrast to textPosition() method.
-// It should replace textPosition().
-TextPosition1 XMLDocumentParser::textPositionOneBased() const
-{
-    xmlParserCtxtPtr context = this->context();
-    if (!context)
-        return TextPosition1::minimumPosition();
-    return TextPosition1(WTF::OneBasedNumber::fromOneBasedInt(context->input->line),
-        WTF::OneBasedNumber::fromOneBasedInt(context->input->col));
+        return TextPosition::minimumPosition();
+    return TextPosition(OrdinalNumber::fromOneBasedInt(context->input->line),
+                        OrdinalNumber::fromOneBasedInt(context->input->col));
 }
 
 void XMLDocumentParser::stopParsing()

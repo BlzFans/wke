@@ -77,8 +77,13 @@ namespace WebCore {
 
         virtual String userAgent(const KURL&) const;
 
+        virtual void disableEval();
+
         WorkerScriptController* script() { return m_script.get(); }
         void clearScript() { m_script.clear(); }
+#if ENABLE(INSPECTOR)
+        void clearInspector();
+#endif
 
         WorkerThread* thread() const { return m_thread; }
 
@@ -110,7 +115,7 @@ namespace WebCore {
         NotificationCenter* webkitNotifications() const;
 #endif
 
-#if ENABLE(DATABASE)
+#if ENABLE(SQL_DATABASE)
         // HTML 5 client-side database
         PassRefPtr<Database> openDatabase(const String& name, const String& version, const String& displayName, unsigned long estimatedSize, PassRefPtr<DatabaseCallback> creationCallback, ExceptionCode&);
         PassRefPtr<DatabaseSync> openDatabaseSync(const String& name, const String& version, const String& displayName, unsigned long estimatedSize, PassRefPtr<DatabaseCallback> creationCallback, ExceptionCode&);
@@ -141,7 +146,7 @@ namespace WebCore {
 #if ENABLE(INSPECTOR)
         WorkerInspectorController* workerInspectorController() { return m_workerInspectorController.get(); }
 #endif
-        // These methods are used for GC marking. See JSWorkerContext::visitChildren(SlotVisitor&) in
+        // These methods are used for GC marking. See JSWorkerContext::visitChildrenVirtual(SlotVisitor&) in
         // JSWorkerContextCustom.cpp.
         WorkerNavigator* optionalNavigator() const { return m_navigator.get(); }
         WorkerLocation* optionalLocation() const { return m_location.get(); }

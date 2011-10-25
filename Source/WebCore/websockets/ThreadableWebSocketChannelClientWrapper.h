@@ -38,6 +38,7 @@
 #include "WebSocketChannelClient.h"
 #include <wtf/Forward.h>
 #include <wtf/OwnPtr.h>
+#include <wtf/PassOwnPtr.h>
 #include <wtf/Threading.h>
 #include <wtf/Vector.h>
 
@@ -62,8 +63,8 @@ public:
     String subprotocol() const;
     void setSubprotocol(const String&);
 
-    bool sent() const;
-    void setSent(bool);
+    bool sendRequestResult() const;
+    void setSendRequestResult(bool);
 
     unsigned long bufferedAmount() const;
     void setBufferedAmount(unsigned long);
@@ -72,6 +73,7 @@ public:
 
     void didConnect();
     void didReceiveMessage(const String& message);
+    void didReceiveBinaryData(PassOwnPtr<Vector<char> >);
     void didStartClosingHandshake();
     void didClose(unsigned long unhandledBufferedAmount, WebSocketChannelClient::ClosingHandshakeCompletionStatus, unsigned short code, const String& reason);
 
@@ -84,14 +86,15 @@ protected:
     void processPendingTasks();
     static void didConnectCallback(ScriptExecutionContext*, ThreadableWebSocketChannelClientWrapper*);
     static void didReceiveMessageCallback(ScriptExecutionContext*, ThreadableWebSocketChannelClientWrapper*, const String& message);
+    static void didReceiveBinaryDataCallback(ScriptExecutionContext*, ThreadableWebSocketChannelClientWrapper*, PassOwnPtr<Vector<char> >);
     static void didStartClosingHandshakeCallback(ScriptExecutionContext*, ThreadableWebSocketChannelClientWrapper*);
     static void didCloseCallback(ScriptExecutionContext*, ThreadableWebSocketChannelClientWrapper*, unsigned long unhandledBufferedAmount, WebSocketChannelClient::ClosingHandshakeCompletionStatus, unsigned short code, const String& reason);
 
     WebSocketChannelClient* m_client;
     bool m_syncMethodDone;
     bool m_useHixie76Protocol;
-    String m_subprotocol;
-    bool m_sent;
+    Vector<UChar> m_subprotocol; // ThreadSafeRefCounted must not have a String member variable.
+    bool m_sendRequestResult;
     unsigned long m_bufferedAmount;
     bool m_suspended;
     Vector<OwnPtr<ScriptExecutionContext::Task> > m_pendingTasks;
