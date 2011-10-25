@@ -32,7 +32,6 @@
 #include "CachedImage.h"
 #include "CanvasPixelArray.h"
 #include "CheckedInt.h"
-#include "WebKitLoseContext.h"
 #include "Console.h"
 #include "DOMWindow.h"
 #include "Extensions3D.h"
@@ -57,12 +56,15 @@
 #include "WebGLBuffer.h"
 #include "WebGLContextAttributes.h"
 #include "WebGLContextEvent.h"
+#include "WebGLDebugRendererInfo.h"
+#include "WebGLDebugShaders.h"
 #include "WebGLFramebuffer.h"
 #include "WebGLProgram.h"
 #include "WebGLRenderbuffer.h"
 #include "WebGLShader.h"
 #include "WebGLTexture.h"
 #include "WebGLUniformLocation.h"
+#include "WebKitLoseContext.h"
 
 #include <wtf/ByteArray.h>
 #include <wtf/OwnArrayPtr.h>
@@ -471,6 +473,12 @@ void WebGLRenderingContext::setupFlags()
         m_isGLES2NPOTStrict = !m_context->getExtensions()->isEnabled("GL_ARB_texture_non_power_of_two");
         m_isDepthStencilSupported = m_context->getExtensions()->isEnabled("GL_EXT_packed_depth_stencil");
     }
+}
+
+bool WebGLRenderingContext::allowPrivilegedExtensions() const
+{
+    // FIXME: implement this function.
+    return false;
 }
 
 WebGLRenderingContext::~WebGLRenderingContext()
@@ -1900,7 +1908,7 @@ PassRefPtr<WebGLActiveInfo> WebGLRenderingContext::getActiveUniform(WebGLProgram
     return WebGLActiveInfo::create(info.name, info.type, info.size);
 }
 
-bool WebGLRenderingContext::getAttachedShaders(WebGLProgram* program, Vector<WebGLShader*>& shaderObjects, ExceptionCode& ec)
+bool WebGLRenderingContext::getAttachedShaders(WebGLProgram* program, Vector<RefPtr<WebGLShader> >& shaderObjects, ExceptionCode& ec)
 {
     UNUSED_PARAM(ec);
     shaderObjects.clear();
@@ -1998,6 +2006,20 @@ WebGLExtension* WebGLRenderingContext::getExtension(const String& name)
         if (!m_webkitLoseContext)
             m_webkitLoseContext = WebKitLoseContext::create(this);
         return m_webkitLoseContext.get();
+    }
+
+    if (allowPrivilegedExtensions()) {
+        if (equalIgnoringCase(name, "WEBGL_debug_renderer_info")) {
+            if (!m_webglDebugRendererInfo)
+                m_webglDebugRendererInfo = WebGLDebugRendererInfo::create(this);
+            return m_webglDebugRendererInfo.get();
+        }
+        if (equalIgnoringCase(name, "WEBGL_debug_shaders")
+            && m_context->getExtensions()->supports("GL_ANGLE_translated_shader_source")) {
+            if (!m_webglDebugShaders)
+                m_webglDebugShaders = WebGLDebugShaders::create(this);
+            return m_webglDebugShaders.get();
+        }
     }
 
     return 0;
@@ -2171,7 +2193,7 @@ WebGLGetInfo WebGLRenderingContext::getParameter(GC3Denum pname, ExceptionCode& 
     case GraphicsContext3D::RENDERBUFFER_BINDING:
         return WebGLGetInfo(PassRefPtr<WebGLRenderbuffer>(m_renderbufferBinding));
     case GraphicsContext3D::RENDERER:
-        return WebGLGetInfo(m_context->getString(GraphicsContext3D::RENDERER));
+        return WebGLGetInfo(String("WebKit WebGL"));
     case GraphicsContext3D::SAMPLE_BUFFERS:
         return getIntParameter(pname);
     case GraphicsContext3D::SAMPLE_COVERAGE_INVERT:
@@ -2235,7 +2257,7 @@ WebGLGetInfo WebGLRenderingContext::getParameter(GC3Denum pname, ExceptionCode& 
     case GraphicsContext3D::UNPACK_COLORSPACE_CONVERSION_WEBGL:
         return WebGLGetInfo(m_unpackColorspaceConversion);
     case GraphicsContext3D::VENDOR:
-        return WebGLGetInfo("Webkit (" + m_context->getString(GraphicsContext3D::VENDOR) + ")");
+        return WebGLGetInfo(String("WebKit"));
     case GraphicsContext3D::VERSION:
         return WebGLGetInfo("WebGL 1.0 (" + m_context->getString(GraphicsContext3D::VERSION) + ")");
     case GraphicsContext3D::VIEWPORT:
@@ -2243,6 +2265,16 @@ WebGLGetInfo WebGLRenderingContext::getParameter(GC3Denum pname, ExceptionCode& 
     case Extensions3D::FRAGMENT_SHADER_DERIVATIVE_HINT_OES: // OES_standard_derivatives
         if (m_oesStandardDerivatives)
             return getUnsignedIntParameter(Extensions3D::FRAGMENT_SHADER_DERIVATIVE_HINT_OES);
+        m_context->synthesizeGLError(GraphicsContext3D::INVALID_ENUM);
+        return WebGLGetInfo();
+    case WebGLDebugRendererInfo::UNMASKED_RENDERER_WEBGL:
+        if (m_webglDebugRendererInfo)
+            return WebGLGetInfo(m_context->getString(GraphicsContext3D::RENDERER));
+        m_context->synthesizeGLError(GraphicsContext3D::INVALID_ENUM);
+        return WebGLGetInfo();
+    case WebGLDebugRendererInfo::UNMASKED_VENDOR_WEBGL:
+        if (m_webglDebugRendererInfo)
+            return WebGLGetInfo(m_context->getString(GraphicsContext3D::VENDOR));
         m_context->synthesizeGLError(GraphicsContext3D::INVALID_ENUM);
         return WebGLGetInfo();
     case Extensions3D::VERTEX_ARRAY_BINDING_OES: // OES_vertex_array_object
@@ -2417,6 +2449,13 @@ Vector<String> WebGLRenderingContext::getSupportedExtensions()
     if (m_context->getExtensions()->supports("GL_OES_vertex_array_object"))
         result.append("OES_vertex_array_object");
     result.append("WEBKIT_lose_context");
+
+    if (allowPrivilegedExtensions()) {
+        if (m_context->getExtensions()->supports("GL_ANGLE_translated_shader_source"))
+            result.append("WEBGL_debug_shaders");
+        result.append("WEBGL_debug_renderer_info");
+    }
+
     return result;
 }
 
@@ -3172,7 +3211,7 @@ void WebGLRenderingContext::texImage2D(GC3Denum target, GC3Dint level, GC3Denum 
         return;
     }
 
-    texImage2DImpl(target, level, internalformat, format, type, image->cachedImage()->image(),
+    texImage2DImpl(target, level, internalformat, format, type, image->cachedImage()->imageForRenderer(image->renderer()),
                    m_unpackFlipY, m_unpackPremultiplyAlpha, ec);
 }
 
@@ -3373,7 +3412,7 @@ void WebGLRenderingContext::texSubImage2D(GC3Denum target, GC3Dint level, GC3Din
         ec = SECURITY_ERR;
         return;
     }
-    texSubImage2DImpl(target, level, xoffset, yoffset, format, type, image->cachedImage()->image(),
+    texSubImage2DImpl(target, level, xoffset, yoffset, format, type, image->cachedImage()->imageForRenderer(image->renderer()),
                       m_unpackFlipY, m_unpackPremultiplyAlpha, ec);
 }
 

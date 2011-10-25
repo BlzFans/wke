@@ -28,8 +28,8 @@
 
 #if ENABLE(VIDEO_TRACK)
 
-#include "PassRefPtr.h"
 #include "TextTrackCue.h"
+#include <wtf/PassRefPtr.h>
 #include <wtf/RefCounted.h>
 #include <wtf/Vector.h>
 
@@ -43,6 +43,7 @@ public:
     }
 
     unsigned long length() const;
+    TextTrackCue* item(unsigned index) const;
     TextTrackCue* getCueById(const String&) const;
     PassRefPtr<TextTrackCueList> activeCues();
 

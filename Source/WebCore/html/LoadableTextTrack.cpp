@@ -31,8 +31,9 @@
 
 namespace WebCore {
 
-LoadableTextTrack::LoadableTextTrack(const String& kind, const String& label, const String& language, bool isDefault)
-    : TextTrack(kind, label, language)
+LoadableTextTrack::LoadableTextTrack(TextTrackClient* trackClient, TextTrackLoadingClient* loadingClient, const String& kind, const String& label, const String& language, bool isDefault)
+    : TextTrack(trackClient, kind, label, language, TextTrack::LoadableTextTrack)
+    , m_loadingClient(loadingClient)
     , m_isDefault(isDefault)
 {
 }
@@ -41,43 +42,31 @@ LoadableTextTrack::~LoadableTextTrack()
 {
 }
 
-void LoadableTextTrack::load(const String& url, ScriptExecutionContext* context)
+void LoadableTextTrack::load(const KURL& url, ScriptExecutionContext* context)
 {
-    return m_parser.load(url, context, this);
+    if (!m_loader)
+        m_loader = TextTrackLoader::create(this, context);
+    m_loader->load(url);
 }
 
-bool LoadableTextTrack::supportsType(const String& url)
+void LoadableTextTrack::newCuesAvailable(TextTrackLoader* loader)
 {
-    return m_parser.supportsType(url);
+    ASSERT_UNUSED(loader, m_loader == loader);
+
+    // FIXME(62885): Implement.
 }
 
-void LoadableTextTrack::newCuesParsed()
+void LoadableTextTrack::cueLoadingStarted(TextTrackLoader* loader)
 {
-    // FIXME(62883): Fetch new cues from parser and temporarily store to give to CueLoaderClient when fetchNewCuesFromLoader is called.
+    ASSERT_UNUSED(loader, m_loader == loader);
+    
+    setReadyState(TextTrack::Loading);
 }
 
-void LoadableTextTrack::trackLoadStarted()
+void LoadableTextTrack::cueLoadingCompleted(TextTrackLoader* loader, bool)
 {
-    setReadyState(TextTrack::LOADING);
-}
+    ASSERT_UNUSED(loader, m_loader == loader);
 
-void LoadableTextTrack::trackLoadError()
-{
-    setReadyState(TextTrack::ERROR);
-}
-
-void LoadableTextTrack::trackLoadCompleted()
-{
-    setReadyState(TextTrack::LOADED);
-}
-
-void LoadableTextTrack::newCuesLoaded()
-{
-    // FIXME(62885): Tell the client to fetch the latest cues.
-}
-
-void LoadableTextTrack::fetchNewestCues(Vector<TextTrackCue*>&)
-{
     // FIXME(62885): Implement.
 }
 

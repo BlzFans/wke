@@ -29,11 +29,9 @@
 #include "HTMLInputElement.h"
 
 #include "AXObjectCache.h"
-#include "Attribute.h"
 #include "BeforeTextInsertedEvent.h"
-#include "Chrome.h"
-#include "ChromeClient.h"
 #include "CSSPropertyNames.h"
+#include "CSSValueKeywords.h"
 #include "Document.h"
 #include "EventNames.h"
 #include "ExceptionCode.h"
@@ -45,22 +43,27 @@
 #include "HTMLNames.h"
 #include "HTMLOptionElement.h"
 #include "HTMLParserIdioms.h"
-#include "Icon.h"
 #include "InputType.h"
 #include "KeyboardEvent.h"
 #include "LocalizedStrings.h"
 #include "MouseEvent.h"
 #include "NumberInputType.h"
-#include "Page.h"
-#include "PlatformMouseEvent.h"
 #include "RenderTextControlSingleLine.h"
 #include "RenderTheme.h"
-#include "RuntimeEnabledFeatures.h"
 #include "SearchInputType.h"
 #include "ScriptEventListener.h"
 #include "WheelEvent.h"
 #include <wtf/MathExtras.h>
 #include <wtf/StdLibExtras.h>
+
+#if ENABLE(INPUT_COLOR)
+#include "ColorChooser.h"
+#include "ColorInputType.h"
+#endif
+
+#if ENABLE(INPUT_SPEECH)
+#include "RuntimeEnabledFeatures.h"
+#endif
 
 using namespace std;
 
@@ -80,10 +83,6 @@ HTMLInputElement::HTMLInputElement(const QualifiedName& tagName, Document* docum
     : HTMLTextFormControlElement(tagName, document, form)
     , m_size(defaultSize)
     , m_maxLength(maximumLength)
-#if ENABLE(WCSS)
-    , m_inputFormatMask("*m")
-    , m_maxInputCharsAllowed(maximumLength)
-#endif
     , m_maxResults(-1)
     , m_isChecked(false)
     , m_reflectsCheckedAttribute(true)
@@ -210,17 +209,6 @@ void HTMLInputElement::updateCheckedRadioButtons()
             control->setNeedsValidityCheck();
         }
     }
-}
-
-bool HTMLInputElement::lastChangeWasUserEdit() const
-{
-    if (!isTextField())
-        return false;
-    
-    if (!renderer())
-        return false;
-
-    return toRenderTextControl(renderer())->lastChangeWasUserEdit();
 }
 
 bool HTMLInputElement::isValidValue(const String& value) const
@@ -396,7 +384,7 @@ bool HTMLInputElement::getAllowedValueStepWithDecimalPlaces(AnyStepHandling anyS
     return true;
 }
 
-void HTMLInputElement::applyStep(double count, AnyStepHandling anyStepHandling, ExceptionCode& ec)
+void HTMLInputElement::applyStep(double count, AnyStepHandling anyStepHandling, bool sendChangeEvent, ExceptionCode& ec)
 {
     double step;
     unsigned stepDecimalPlaces, currentDecimalPlaces;
@@ -436,7 +424,7 @@ void HTMLInputElement::applyStep(double count, AnyStepHandling anyStepHandling, 
     if (newValue > m_inputType->maximum())
         newValue = m_inputType->maximum();
 
-    setValueAsNumber(newValue, ec);
+    setValueAsNumber(newValue, ec, sendChangeEvent);
 
     if (AXObjectCache::accessibilityEnabled())
          document()->axObjectCache()->postNotification(renderer(), AXObjectCache::AXValueChanged, true);
@@ -463,12 +451,14 @@ double HTMLInputElement::alignValueForStep(double newValue, double step, unsigne
 
 void HTMLInputElement::stepUp(int n, ExceptionCode& ec)
 {
-    applyStep(n, RejectAny, ec);
+    bool sendChangeEvent = false;
+    applyStep(n, RejectAny, sendChangeEvent, ec);
 }
 
 void HTMLInputElement::stepDown(int n, ExceptionCode& ec)
 {
-    applyStep(-n, RejectAny, ec);
+    bool sendChangeEvent = false;
+    applyStep(-n, RejectAny, sendChangeEvent, ec);
 }
 
 bool HTMLInputElement::isKeyboardFocusable(KeyboardEvent* event) const
@@ -523,14 +513,9 @@ void HTMLInputElement::handleFocusEvent()
         document()->setUseSecureKeyboardEntryWhenActive(true);
 }
 
-void HTMLInputElement::willBlur()
-{
-    m_inputType->willBlur();
-    HTMLTextFormControlElement::willBlur();
-}
-
 void HTMLInputElement::handleBlurEvent()
 {
+    m_inputType->handleBlurEvent();
     if (!isTextField())
         return;
     Frame* frame = document()->frame();
@@ -595,6 +580,10 @@ void HTMLInputElement::updateType()
         m_valueIfDirty = sanitizeValue(fastGetAttribute(valueAttr));
     else
         updateValueIfNeeded();
+
+    setFormControlValueMatchesRenderer(false);
+    updateInnerTextValue();
+
     m_wasModifiedByUser = false;
 
     if (neededActivationCallback)
@@ -627,13 +616,25 @@ void HTMLInputElement::updateType()
     notifyFormStateChanged();
 }
 
+void HTMLInputElement::updateInnerTextValue()
+{
+    if (!isTextField())
+        return;
+
+    if (!suggestedValue().isNull())
+        setInnerTextValue(suggestedValue());
+    else if (!formControlValueMatchesRenderer()) {
+        // Update the renderer value if the formControlValueMatchesRenderer() flag is false.
+        // It protects an unacceptable renderer value from being overwritten with the DOM value.
+        setInnerTextValue(visibleValue());
+    }
+}
+
 void HTMLInputElement::subtreeHasChanged()
 {
     ASSERT(isTextField());
     ASSERT(renderer());
     RenderTextControlSingleLine* renderTextControl = toRenderTextControlSingleLine(renderer());
-
-    HTMLTextFormControlElement::subtreeHasChanged();
 
     bool wasChanged = wasChangedSinceLastFormControlChangeEvent();
     setChangedSinceLastFormControlChangeEvent(true);
@@ -642,7 +643,7 @@ void HTMLInputElement::subtreeHasChanged()
     // HTMLInputElement::handleBeforeTextInsertedEvent() has already called
     // sanitizeUserInputValue().
     // sanitizeValue() is needed because IME input doesn't dispatch BeforeTextInsertedEvent.
-    String value = toRenderTextControl(renderer())->text();
+    String value = innerTextValue();
     if (isAcceptableValue(value))
         setValueFromRenderer(sanitizeValue(convertFromVisibleValue(value)));
     // Recalc for :invalid and hasUnacceptableValue() change.
@@ -762,8 +763,10 @@ void HTMLInputElement::parseMappedAttribute(Attribute* attr)
     } else if (attr->name() == maxlengthAttr)
         parseMaxLengthAttribute(attr);
     else if (attr->name() == sizeAttr) {
-        m_size = attr->isNull() ? defaultSize : attr->value().toInt();
-        if (renderer())
+        int oldSize = m_size;
+        int value = attr->value().toInt();
+        m_size = value > 0 ? value : defaultSize;
+        if (m_size != oldSize && renderer())
             renderer()->setNeedsLayoutAndPrefWidthsRecalc();
     } else if (attr->name() == altAttr)
         m_inputType->altAttributeChanged();
@@ -786,6 +789,8 @@ void HTMLInputElement::parseMappedAttribute(Attribute* attr)
     } else if (attr->name() == heightAttr) {
         if (m_inputType->shouldRespectHeightAndWidthAttributes())
             addCSSLength(attr, CSSPropertyHeight, attr->value());
+    } else if (attr->name() == borderAttr && isImageButton()) {
+        applyBorderAttribute(attr);
     } else if (attr->name() == onsearchAttr) {
         // Search field and slider attributes all just cause updateFromElement to be called through style recalcing.
         setAttributeEventListener(eventNames().searchEvent, createAttributeEventListener(this, attr));
@@ -836,12 +841,14 @@ void HTMLInputElement::parseMappedAttribute(Attribute* attr)
             m_inputType->destroyShadowSubtree();
             m_inputType->createShadowSubtree();
         }
+        setFormControlValueMatchesRenderer(false);
         setNeedsStyleRecalc();
     } else if (attr->name() == onwebkitspeechchangeAttr)
         setAttributeEventListener(eventNames().webkitspeechchangeEvent, createAttributeEventListener(this, attr));
 #endif
     else
         HTMLTextFormControlElement::parseMappedAttribute(attr);
+    updateInnerTextValue();
 }
 
 void HTMLInputElement::finishParsingChildren()
@@ -1015,6 +1022,9 @@ void HTMLInputElement::copyNonAttributeProperties(const Element* source)
     m_isIndeterminate = sourceElement->m_isIndeterminate;
 
     HTMLTextFormControlElement::copyNonAttributeProperties(source);
+
+    setFormControlValueMatchesRenderer(false);
+    updateInnerTextValue();
 }
 
 String HTMLInputElement::value() const
@@ -1061,9 +1071,8 @@ void HTMLInputElement::setSuggestedValue(const String& value)
     setFormControlValueMatchesRenderer(false);
     m_suggestedValue = sanitizeValue(value);
     updatePlaceholderVisibility(false);
-    if (renderer())
-        renderer()->updateFromElement();
     setNeedsStyleRecalc();
+    updateInnerTextValue();
 }
 
 void HTMLInputElement::setValue(const String& value, bool sendChangeEvent)
@@ -1071,52 +1080,33 @@ void HTMLInputElement::setValue(const String& value, bool sendChangeEvent)
     if (!m_inputType->canSetValue(value))
         return;
 
+    RefPtr<HTMLInputElement> protector(this);
     String sanitizedValue = sanitizeValue(value);
     bool valueChanged = sanitizedValue != this->value();
 
+    setLastChangeWasNotUserEdit();
     setFormControlValueMatchesRenderer(false);
-    if (m_inputType->storesValueSeparateFromAttribute()) {
-        if (files())
-            files()->clear();
-        else {
-            m_valueIfDirty = sanitizedValue;
-            m_wasModifiedByUser = sendChangeEvent;
-            if (isTextField())
-                updatePlaceholderVisibility(false);
-        }
-        setNeedsStyleRecalc();
-    } else
-        setAttribute(valueAttr, sanitizedValue);
-
-    setNeedsValidityCheck();
-
-    if (isTextField()) {
-        unsigned max = visibleValue().length();
-        if (document()->focusedNode() == this)
-            setSelectionRange(max, max);
-        else
-            cacheSelection(max, max, SelectionHasNoDirection);
-        m_suggestedValue = String();
-    }
+    m_suggestedValue = String(); // Prevent TextFieldInputType::setValue from using the suggested value.
+    m_inputType->setValue(sanitizedValue, valueChanged, sendChangeEvent);
 
     if (!valueChanged)
         return;
-    
-    m_inputType->valueChanged();
 
-    if (sendChangeEvent) {
-        // If the user is still editing this field, dispatch an input event rather than a change event.
-        // The change event will be dispatched when editing finishes.
-        if (isTextField() && focused())
-            dispatchFormControlInputEvent();
-        else
-            dispatchFormControlChangeEvent();
-    }
+    if (sendChangeEvent)
+        m_inputType->dispatchChangeEventInResponseToSetValue();
 
-    if (isText() && (!focused() || !sendChangeEvent))
+    // FIXME: Why do we do this when !sendChangeEvent?
+    if (isTextField() && (!focused() || !sendChangeEvent))
         setTextAsOfLastFormControlChangeEvent(value);
 
     notifyFormStateChanged();
+}
+
+void HTMLInputElement::setValueInternal(const String& sanitizedValue, bool sendChangeEvent)
+{
+    m_valueIfDirty = sanitizedValue;
+    m_wasModifiedByUser = sendChangeEvent;
+    setNeedsValidityCheck();
 }
 
 double HTMLInputElement::valueAsDate() const
@@ -1134,13 +1124,13 @@ double HTMLInputElement::valueAsNumber() const
     return m_inputType->valueAsNumber();
 }
 
-void HTMLInputElement::setValueAsNumber(double newValue, ExceptionCode& ec)
+void HTMLInputElement::setValueAsNumber(double newValue, ExceptionCode& ec, bool sendChangeEvent)
 {
     if (!isfinite(newValue)) {
         ec = NOT_SUPPORTED_ERR;
         return;
     }
-    m_inputType->setValueAsNumber(newValue, ec);
+    m_inputType->setValueAsNumber(newValue, sendChangeEvent, ec);
 }
 
 String HTMLInputElement::placeholder() const
@@ -1317,6 +1307,45 @@ void HTMLInputElement::setDefaultName(const AtomicString& name)
     m_name = name;
 }
 
+static inline bool isRFC2616TokenCharacter(UChar ch)
+{
+    return isASCII(ch) && ch > ' ' && ch != '"' && ch != '(' && ch != ')' && ch != ',' && ch != '/' && (ch < ':' || ch > '@') && (ch < '[' || ch > ']') && ch != '{' && ch != '}' && ch != 0x7f;
+}
+
+static inline bool isValidMIMEType(const String& type)
+{
+    size_t slashPosition = type.find('/');
+    if (slashPosition == notFound || !slashPosition || slashPosition == type.length() - 1)
+        return false;
+    for (size_t i = 0; i < type.length(); ++i) {
+        if (!isRFC2616TokenCharacter(type[i]) && i != slashPosition)
+            return false;
+    }
+    return true;
+}
+
+Vector<String> HTMLInputElement::acceptMIMETypes()
+{
+    Vector<String> mimeTypes;
+
+    String acceptString = accept();
+    if (acceptString.isEmpty())
+        return mimeTypes;
+
+    Vector<String> splitTypes;
+    acceptString.split(',', false, splitTypes);
+    for (size_t i = 0; i < splitTypes.size(); ++i) {
+        String trimmedMimeType = stripLeadingAndTrailingHTMLSpaces(splitTypes[i]);
+        if (trimmedMimeType.isEmpty())
+            continue;
+        if (!isValidMIMEType(trimmedMimeType))
+            continue;
+        mimeTypes.append(trimmedMimeType.lower());
+    }
+
+    return mimeTypes;
+}
+
 String HTMLInputElement::accept() const
 {
     return fastGetAttribute(acceptAttr);
@@ -1396,6 +1425,8 @@ bool HTMLInputElement::isAcceptableValue(const String& proposedValue) const
 
 String HTMLInputElement::sanitizeValue(const String& proposedValue) const
 {
+    if (proposedValue.isNull())
+        return proposedValue;
     return m_inputType->sanitizeValue(proposedValue);
 }
 
@@ -1489,6 +1520,16 @@ bool HTMLInputElement::recalcWillValidate() const
     return m_inputType->supportsValidation() && HTMLTextFormControlElement::recalcWillValidate();
 }
 
+#if ENABLE(INPUT_COLOR)
+bool HTMLInputElement::connectToColorChooser()
+{
+    if (!m_inputType->isColorControl())
+        return false;
+    ColorChooser::chooser()->connectClient(static_cast<ColorInputType*>(m_inputType.get()));
+    return true;
+}
+#endif
+    
 #if ENABLE(DATALIST)
 
 HTMLElement* HTMLInputElement::list() const
@@ -1608,6 +1649,7 @@ void HTMLInputElement::stepUpFromRenderer(int n)
     const double nan = numeric_limits<double>::quiet_NaN();
     String currentStringValue = value();
     double current = m_inputType->parseToDouble(currentStringValue, nan);
+    const bool sendChangeEvent = true;
     if (!isfinite(current)) {
         ExceptionCode ec;
         current = m_inputType->defaultValueForStepUp();
@@ -1616,10 +1658,10 @@ void HTMLInputElement::stepUpFromRenderer(int n)
             current = m_inputType->minimum() - nextDiff;
         if (current > m_inputType->maximum() - nextDiff)
             current = m_inputType->maximum() - nextDiff;
-        setValueAsNumber(current, ec);
+        setValueAsNumber(current, ec, sendChangeEvent);
     }
     if ((sign > 0 && current < m_inputType->minimum()) || (sign < 0 && current > m_inputType->maximum()))
-        setValue(m_inputType->serialize(sign > 0 ? m_inputType->minimum() : m_inputType->maximum()));
+        setValue(m_inputType->serialize(sign > 0 ? m_inputType->minimum() : m_inputType->maximum()), sendChangeEvent);
     else {
         ExceptionCode ec;
         if (stepMismatch(value())) {
@@ -1639,163 +1681,16 @@ void HTMLInputElement::stepUpFromRenderer(int n)
             if (newValue > m_inputType->maximum())
                 newValue = m_inputType->maximum();
 
-            setValueAsNumber(newValue, ec);
+            setValueAsNumber(newValue, ec, n == 1 || n == -1);
             current = newValue;
             if (n > 1)
-                applyStep(n - 1, AnyIsDefaultStep, ec);
+                applyStep(n - 1, AnyIsDefaultStep, sendChangeEvent, ec);
             else if (n < -1)
-                applyStep(n + 1, AnyIsDefaultStep, ec);
+                applyStep(n + 1, AnyIsDefaultStep, sendChangeEvent, ec);
         } else
-            applyStep(n, AnyIsDefaultStep, ec);
-    }
-
-    if (currentStringValue != value()) {
-        if (m_inputType->isRangeControl())
-            dispatchFormControlChangeEvent();
-        else
-            dispatchFormControlInputEvent();
+            applyStep(n, AnyIsDefaultStep, sendChangeEvent, ec);
     }
 }
-
-#if ENABLE(WCSS)
-
-static inline const AtomicString& formatCodes()
-{
-    DEFINE_STATIC_LOCAL(AtomicString, codes, ("AaNnXxMm"));
-    return codes;
-}
-
-static unsigned cursorPositionToMaskIndex(const String& inputFormatMask, unsigned cursorPosition)
-{
-    UChar mask;
-    int index = -1;
-    do {
-        mask = inputFormatMask[++index];
-        if (mask == '\\')
-            ++index;
-        else if (mask == '*' || (isASCIIDigit(mask) && mask != '0')) {
-            index = inputFormatMask.length() - 1;
-            break;
-        }
-    } while (cursorPosition--);
-
-    return index;
-}
-
-bool HTMLInputElement::isConformToInputMask(const String& inputChars) const
-{
-    for (unsigned i = 0; i < inputChars.length(); ++i) {
-        if (!isConformToInputMask(inputChars[i], i))
-            return false;
-    }
-    return true;
-}
-
-bool HTMLInputElement::isConformToInputMask(UChar inChar, unsigned cursorPosition) const
-{
-    if (m_inputFormatMask.isEmpty() || m_inputFormatMask == "*M" || m_inputFormatMask == "*m")
-        return true;
-
-    if (cursorPosition >= m_maxInputCharsAllowed())
-        return false;
-
-    unsigned maskIndex = cursorPositionToMaskIndex(m_inputFormatMask, cursorPosition);
-    bool ok = true;
-    UChar mask = m_inputFormatMask[maskIndex];
-    // Match the inputed character with input mask
-    switch (mask) {
-    case 'A':
-        ok = !isASCIIDigit(inChar) && !isASCIILower(inChar) && isASCIIPrintable(inChar);
-        break;
-    case 'a':
-        ok = !isASCIIDigit(inChar) && !isASCIIUpper(inChar) && isASCIIPrintable(inChar);
-        break;
-    case 'N':
-        ok = isASCIIDigit(inChar);
-        break;
-    case 'n':
-        ok = !isASCIIAlpha(inChar) && isASCIIPrintable(inChar);
-        break;
-    case 'X':
-        ok = !isASCIILower(inChar) && isASCIIPrintable(inChar);
-        break;
-    case 'x':
-        ok = !isASCIIUpper(inChar) && isASCIIPrintable(inChar);
-        break;
-    case 'M':
-    case 'm':
-        ok = isASCIIPrintable(inChar);
-        break;
-    default:
-        ok = (mask == inChar);
-        break;
-    }
-
-    return ok;
-}
-
-String HTMLInputElement::validateInputMask(String& inputMask)
-{
-    inputMask.replace("\\\\", "\\");
-
-    bool isValid = true;
-    bool hasWildcard = false;
-    unsigned escapeCharCount = 0;
-    unsigned maskLength = inputMask.length();
-    UChar formatCode;
-    for (unsigned i = 0; i < maskLength; ++i) {
-        formatCode = inputMask[i];
-        if (formatCodes().find(formatCode) == -1) {
-            if (formatCode == '*' || (isASCIIDigit(formatCode) && formatCode != '0')) {
-                // Validate codes which ends with '*f' or 'nf'
-                formatCode = inputMask[++i];
-                if ((i + 1 != maskLength) || formatCodes().find(formatCode) == -1) {
-                    isValid = false;
-                    break;
-                }
-                hasWildcard = true;
-            } else if (formatCode == '\\') {
-                // skip over the next mask character
-                ++i;
-                ++escapeCharCount;
-            } else {
-                isValid = false;
-                break;
-            }
-        }
-    }
-
-    if (!isValid)
-        return String();
-    // calculate the number of characters allowed to be entered by input mask
-    unsigned allowedLength = maskLength;
-    if (escapeCharCount)
-        allowedLength -= escapeCharCount;
-
-    if (hasWildcard) {
-        formatCode = inputMask[maskLength - 2];
-        if (formatCode == '*')
-            allowedLength = m_maxInputCharsAllowed;
-        else {
-            unsigned leftLen = String(&formatCode).toInt();
-            allowedLength = leftLen + allowedLength - 2;
-        }
-    }
-
-    if (allowedLength < m_maxInputCharsAllowed)
-        m_maxInputCharsAllowed = allowedLength;
-
-    return inputMask;
-}
-
-void HTMLInputElement::setWapInputFormat(String& mask)
-{
-    String validateMask = validateInputMask(mask);
-    if (!validateMask.isEmpty())
-        m_inputFormatMask = validateMask;
-}
-
-#endif
 
 #if ENABLE(INPUT_SPEECH)
 
@@ -1909,16 +1804,6 @@ CheckedRadioButtons& HTMLInputElement::checkedRadioButtons() const
     return document()->checkedRadioButtons();
 }
 
-void HTMLInputElement::notifyFormStateChanged()
-{
-    Frame* frame = document()->frame();
-    if (!frame)
-        return;
-
-    if (Page* page = frame->page())
-        page->chrome()->client()->formStateDidChange(this);
-}
-
 void HTMLInputElement::parseMaxLengthAttribute(Attribute* attribute)
 {
     int maxLength;
@@ -1937,8 +1822,14 @@ void HTMLInputElement::parseMaxLengthAttribute(Attribute* attribute)
 void HTMLInputElement::updateValueIfNeeded()
 {
     String newValue = sanitizeValue(m_valueIfDirty);
+    ASSERT(!m_valueIfDirty.isNull() || newValue.isNull());
     if (newValue != m_valueIfDirty)
         setValue(newValue);
+}
+
+String HTMLInputElement::defaultToolTip() const
+{
+    return m_inputType->defaultToolTip();
 }
 
 } // namespace

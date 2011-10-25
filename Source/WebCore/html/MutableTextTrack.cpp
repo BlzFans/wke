@@ -34,17 +34,17 @@
 
 namespace WebCore {
 
-MutableTextTrack::MutableTextTrack(const String& kind, const String& label, const String& language)
-    : TextTrack(kind, label, language)
+MutableTextTrack::MutableTextTrack(TextTrackClient* trackClient, const String& kind, const String& label, const String& language)
+    : TextTrack(trackClient, kind, label, language, TextTrack::MutableTextTrack)
 {
 }
 
-void MutableTextTrack::addCue(PassRefPtr<TextTrackCue>)
+void MutableTextTrack::addCue(PassRefPtr<TextTrackCue>, ExceptionCode&)
 {
     // FIXME(62890): Implement.
 }
 
-void MutableTextTrack::removeCue(PassRefPtr<TextTrackCue>)
+void MutableTextTrack::removeCue(PassRefPtr<TextTrackCue>, ExceptionCode&)
 {
     // FIXME(62890): Implement.
 }

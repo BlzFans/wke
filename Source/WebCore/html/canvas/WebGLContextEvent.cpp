@@ -26,6 +26,8 @@
 #include "config.h"
 #include "WebGLContextEvent.h"
 
+#include "EventNames.h"
+
 namespace WebCore {
 
 WebGLContextEvent::WebGLContextEvent()
@@ -49,6 +51,11 @@ void WebGLContextEvent::initEvent(const AtomicString& type, bool canBubble, bool
 
     Event::initEvent(type, canBubble, cancelable);
     m_statusMessage = statusMessage;
+}
+
+const AtomicString& WebGLContextEvent::interfaceName() const
+{
+    return eventNames().interfaceForWebGLContextEvent;
 }
 
 } // namespace WebCore

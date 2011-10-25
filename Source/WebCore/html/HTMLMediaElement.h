@@ -37,6 +37,10 @@
 #include "MediaPlayerProxy.h"
 #endif
 
+#if ENABLE(VIDEO_TRACK)
+#include "TextTrack.h"
+#endif
+
 namespace WebCore {
 
 #if ENABLE(WEB_AUDIO)
@@ -49,15 +53,23 @@ class MediaControls;
 class MediaError;
 class KURL;
 class TimeRanges;
+class Uint8Array;
 #if ENABLE(PLUGIN_PROXY_FOR_VIDEO)
 class Widget;
+#endif
+#if ENABLE(VIDEO_TRACK)
+class MutableTextTrack;
 #endif
 
 // FIXME: The inheritance from MediaPlayerClient here should be private inheritance.
 // But it can't be until the Chromium WebMediaPlayerClientImpl class is fixed so it
 // no longer depends on typecasting a MediaPlayerClient to an HTMLMediaElement.
 
-class HTMLMediaElement : public HTMLElement, public MediaPlayerClient, private MediaCanStartListener, private ActiveDOMObject {
+class HTMLMediaElement : public HTMLElement, public MediaPlayerClient, private MediaCanStartListener, public ActiveDOMObject
+#if ENABLE(VIDEO_TRACK)
+    , private TextTrackClient
+#endif
+{
 public:
     MediaPlayer* player() const { return m_player.get(); }
     
@@ -72,6 +84,7 @@ public:
     virtual bool supportsFullscreen() const { return false; };
 
     virtual bool supportsSave() const;
+    virtual bool supportsScanning() const;
     
     PlatformMedia platformMedia() const;
 #if USE(ACCELERATED_COMPOSITING)
@@ -110,6 +123,7 @@ public:
 // playback state
     float currentTime() const;
     void setCurrentTime(float, ExceptionCode&);
+    double initialTime() const;
     float startTime() const;
     float duration() const;
     bool paused() const;
@@ -140,6 +154,17 @@ public:
     unsigned webkitVideoDecodedByteCount() const;
 #endif
 
+#if ENABLE(MEDIA_SOURCE)
+//  Media Source.
+    const KURL& webkitMediaSourceURL() const { return m_mediaSourceURL; }
+    void webkitSourceAppend(PassRefPtr<Uint8Array> data, ExceptionCode&);
+    enum EndOfStreamStatus { EOS_NO_ERROR, EOS_NETWORK_ERR, EOS_DECODE_ERR };
+    void webkitSourceEndOfStream(unsigned short, ExceptionCode&);
+    enum SourceState { SOURCE_CLOSED, SOURCE_OPEN, SOURCE_ENDED };
+    SourceState webkitSourceState() const;
+    void setSourceState(SourceState);
+#endif 
+
 // controls
     bool controls() const;
     void setControls(bool);
@@ -147,6 +172,7 @@ public:
     void setVolume(float, ExceptionCode&);
     bool muted() const;
     void setMuted(bool);
+
     void togglePlayState();
     void beginScrubbing();
     void endScrubbing();
@@ -154,6 +180,10 @@ public:
     bool canPlay() const;
 
     float percentLoaded() const;
+
+#if ENABLE(VIDEO_TRACK)
+    PassRefPtr<MutableTextTrack> addTrack(const String& kind, const String& label = "", const String& language = "");
+#endif
 
 #if ENABLE(PLUGIN_PROXY_FOR_VIDEO)
     void allocateMediaPlayerIfNecessary();
@@ -183,29 +213,14 @@ public:
 
     void privateBrowsingStateDidChange();
 
-    // Restrictions to change default behaviors.
-    enum BehaviorRestrictionFlags {
-        NoRestrictions = 0,
-        RequireUserGestureForLoadRestriction = 1 << 0,
-        RequireUserGestureForRateChangeRestriction = 1 << 1,
-        RequireUserGestureForFullScreenRestriction = 1 << 2,
-        RequirePageConsentToLoadMedia = 1 << 3,
-    };
-    typedef unsigned BehaviorRestrictions;
-    
-    bool requireUserGestureForLoad() const { return m_restrictions & RequireUserGestureForLoadRestriction; }
-    bool requireUserGestureForRateChange() const { return m_restrictions & RequireUserGestureForRateChangeRestriction; }
-    bool requireUserGestureForFullScreen() const { return m_restrictions & RequireUserGestureForFullScreenRestriction; }
-    bool requirePageConsentToLoadMedia() const { return m_restrictions & RequirePageConsentToLoadMedia; }
-
-    void setBehaviorRestrictions(BehaviorRestrictions restrictions) { m_restrictions = restrictions; }
-
     // Media cache management.
     static void getSitesInMediaCache(Vector<String>&);
     static void clearMediaCache();
     static void clearMediaCacheForSite(const String&);
 
     bool isPlaying() const { return m_playing; }
+
+    virtual bool hasPendingActivity() const;
 
 #if ENABLE(WEB_AUDIO)
     MediaElementAudioSourceNode* audioSourceNode() { return m_audioSourceNode; }
@@ -231,15 +246,34 @@ protected:
     
     virtual bool isMediaElement() const { return true; }
 
+    // Restrictions to change default behaviors.
+    enum BehaviorRestrictionFlags {
+        NoRestrictions = 0,
+        RequireUserGestureForLoadRestriction = 1 << 0,
+        RequireUserGestureForRateChangeRestriction = 1 << 1,
+        RequireUserGestureForFullscreenRestriction = 1 << 2,
+        RequirePageConsentToLoadMediaRestriction = 1 << 3,
+    };
+    typedef unsigned BehaviorRestrictions;
+    
+    bool userGestureRequiredForLoad() const { return m_restrictions & RequireUserGestureForLoadRestriction; }
+    bool userGestureRequiredForRateChange() const { return m_restrictions & RequireUserGestureForRateChangeRestriction; }
+    bool userGestureRequiredForFullscreen() const { return m_restrictions & RequireUserGestureForFullscreenRestriction; }
+    bool pageConsentRequiredForLoad() const { return m_restrictions & RequirePageConsentToLoadMediaRestriction; }
+    
+    void addBehaviorRestriction(BehaviorRestrictions restriction) { m_restrictions |= restriction; }
+    void removeBehaviorRestriction(BehaviorRestrictions restriction) { m_restrictions &= ~restriction; }
+    
 private:
     void createMediaPlayer();
 
+    virtual bool supportsFocus() const;
     virtual void attributeChanged(Attribute*, bool preserveDecls);
     virtual bool rendererIsNeeded(const NodeRenderingContext&);
     virtual RenderObject* createRenderer(RenderArena*, RenderStyle*);
     virtual void insertedIntoDocument();
     virtual void removedFromDocument();
-    virtual void recalcStyle(StyleChange);
+    virtual void didRecalcStyle(StyleChange);
     
     virtual void defaultEventHandler(Event*);
 
@@ -251,7 +285,6 @@ private:
     virtual void suspend(ReasonForSuspension);
     virtual void resume();
     virtual void stop();
-    virtual bool hasPendingActivity() const;
     
     virtual void mediaVolumeDidChange();
 
@@ -280,6 +313,11 @@ private:
     
     virtual void mediaPlayerFirstVideoFrameAvailable(MediaPlayer*);
     virtual void mediaPlayerCharacteristicChanged(MediaPlayer*);
+
+#if ENABLE(MEDIA_SOURCE)
+    virtual void mediaPlayerSourceOpened();
+    virtual String mediaPlayerSourceURL() const;
+#endif
 
     void loadTimerFired(Timer<HTMLMediaElement>*);
     void asyncEventTimerFired(Timer<HTMLMediaElement>*);
@@ -317,6 +355,15 @@ private:
 
 #if ENABLE(VIDEO_TRACK)
     void loadTextTracks();
+
+    // TextTrackClient
+    virtual void textTrackReadyStateChanged(TextTrack*);
+    virtual void textTrackModeChanged(TextTrack*);
+    virtual void textTrackCreated(TextTrack*);
+    virtual void textTrackAddCues(TextTrack*, const TextTrackCueList*);
+    virtual void textTrackRemoveCues(TextTrack*, const TextTrackCueList*);
+    virtual void textTrackAddCue(TextTrack*, PassRefPtr<TextTrackCue>);
+    virtual void textTrackRemoveCue(TextTrack*, PassRefPtr<TextTrackCue>);
 #endif
 
     // These "internal" functions do not check user gesture restrictions.
@@ -346,8 +393,6 @@ private:
     void setPausedInternal(bool);
 
     virtual void mediaCanStart();
-
-    void removeBehaviorRestriction(BehaviorRestrictions restriction) { m_restrictions &= ~restriction; }
 
     void setShouldDelayLoadEvent(bool);
 
@@ -410,6 +455,11 @@ private:
     // Counter incremented while processing a callback from the media player, so we can avoid
     // calling the media engine recursively.
     int m_processingMediaPlayerCallback;
+
+#if ENABLE(MEDIA_SOURCE)
+    KURL m_mediaSourceURL;
+    SourceState m_sourceState;
+#endif
 
     mutable float m_cachedTime;
     mutable double m_cachedTimeWallClockUpdateTime;

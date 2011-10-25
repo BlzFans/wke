@@ -29,25 +29,18 @@
 #include "Attribute.h"
 #include "BeforeTextInsertedEvent.h"
 #include "CSSValueKeywords.h"
-#include "Chrome.h"
-#include "ChromeClient.h"
 #include "Document.h"
 #include "Event.h"
 #include "EventNames.h"
 #include "ExceptionCode.h"
-#include "FocusController.h"
 #include "FormDataList.h"
 #include "Frame.h"
 #include "HTMLNames.h"
-#include "Page.h"
-#include "RenderStyle.h"
 #include "RenderTextControlMultiLine.h"
-#include "ScriptEventListener.h"
 #include "ShadowRoot.h"
 #include "Text.h"
 #include "TextControlInnerElements.h"
 #include "TextIterator.h"
-#include "VisibleSelection.h"
 #include <wtf/StdLibExtras.h>
 
 namespace WebCore {
@@ -56,14 +49,6 @@ using namespace HTMLNames;
 
 static const int defaultRows = 2;
 static const int defaultCols = 20;
-
-static inline void notifyFormStateChanged(const HTMLTextAreaElement* element)
-{
-    Frame* frame = element->document()->frame();
-    if (!frame)
-        return;
-    frame->page()->chrome()->client()->formStateDidChange(element);
-}
 
 HTMLTextAreaElement::HTMLTextAreaElement(const QualifiedName& tagName, Document* document, HTMLFormElement* form)
     : HTMLTextFormControlElement(tagName, document, form)
@@ -112,8 +97,10 @@ void HTMLTextAreaElement::restoreFormControlState(const String& state)
 
 void HTMLTextAreaElement::childrenChanged(bool changedByParser, Node* beforeChange, Node* afterChange, int childCountDelta)
 {
+    setLastChangeWasNotUserEdit();
     if (!m_isDirty)
         setNonDirtyValue(defaultValue());
+    setInnerTextValue(value());
     HTMLElement::childrenChanged(changedByParser, beforeChange, afterChange, childCountDelta);
 }
     
@@ -184,10 +171,7 @@ bool HTMLTextAreaElement::appendFormData(FormDataList& encoding, bool)
 
     document()->updateLayout();
 
-    // FIXME: It's not acceptable to ignore the HardWrap setting when there is no renderer.
-    // While we have no evidence this has ever been a practical problem, it would be best to fix it some day.
-    RenderTextControl* control = toRenderTextControl(renderer());
-    const String& text = (m_wrap == HardWrap && control) ? control->textWithHardLineBreaks() : value();
+    const String& text = (m_wrap == HardWrap) ? valueWithHardLineBreaks() : value();
     encoding.appendData(name(), text);
     return true;
 }
@@ -214,17 +198,10 @@ void HTMLTextAreaElement::updateFocusAppearance(bool restorePreviousSelection)
     ASSERT(!document()->childNeedsAndNotInStyleRecalc());
 
     if (!restorePreviousSelection || !hasCachedSelection()) {
-#if ENABLE(ON_FIRST_TEXTAREA_FOCUS_SELECT_ALL)
-        // Devices with trackballs or d-pads may focus on a textarea in route
-        // to another focusable node. By selecting all text, the next movement
-        // can more readily be interpreted as moving to the next node.
-        select();
-#else
         // If this is the first focus, set a caret at the beginning of the text.  
         // This matches some browsers' behavior; see bug 11746 Comment #15.
         // http://bugs.webkit.org/show_bug.cgi?id=11746#c15
         setSelectionRange(0, 0);
-#endif
     } else
         restoreCachedSelection();
 
@@ -244,8 +221,6 @@ void HTMLTextAreaElement::defaultEventHandler(Event* event)
 
 void HTMLTextAreaElement::subtreeHasChanged()
 {
-    HTMLTextFormControlElement::subtreeHasChanged();
-
     setChangedSinceLastFormControlChangeEvent(true);
     setFormControlValueMatchesRenderer(false);
     setNeedsValidityCheck();
@@ -268,7 +243,7 @@ void HTMLTextAreaElement::handleBeforeTextInsertedEvent(BeforeTextInsertedEvent*
         return;
     unsigned unsignedMaxLength = static_cast<unsigned>(signedMaxLength);
 
-    unsigned currentLength = numGraphemeClusters(toRenderTextControl(renderer())->text());
+    unsigned currentLength = numGraphemeClusters(innerTextValue());
     // selectionLength represents the selection length of this text field to be
     // removed by this insertion.
     // If the text field has no focus, we don't need to take account of the
@@ -290,7 +265,7 @@ HTMLElement* HTMLTextAreaElement::innerTextElement() const
 {
     Node* node = shadowRoot()->firstChild();
     ASSERT(!node || node->hasTagName(divTag));
-    return static_cast<HTMLElement*>(node);
+    return toHTMLElement(node);
 }
 
 void HTMLTextAreaElement::rendererWillBeDestroyed()
@@ -304,11 +279,11 @@ void HTMLTextAreaElement::updateValue() const
         return;
 
     ASSERT(renderer());
-    m_value = toRenderTextControl(renderer())->text();
+    m_value = innerTextValue();
     const_cast<HTMLTextAreaElement*>(this)->setFormControlValueMatchesRenderer(true);
-    notifyFormStateChanged(this);
+    const_cast<HTMLTextAreaElement*>(this)->notifyFormStateChanged();
     m_isDirty = true;
-    const_cast<HTMLTextAreaElement*>(this)->m_wasModifiedByUser = true;
+    m_wasModifiedByUser = true;
     const_cast<HTMLTextAreaElement*>(this)->updatePlaceholderVisibility(false);
 }
 
@@ -332,21 +307,23 @@ void HTMLTextAreaElement::setNonDirtyValue(const String& value)
     setNeedsValidityCheck();
 }
 
-void HTMLTextAreaElement::setValueCommon(const String& value)
+void HTMLTextAreaElement::setValueCommon(const String& newValue)
 {
     m_wasModifiedByUser = false;
     // Code elsewhere normalizes line endings added by the user via the keyboard or pasting.
     // We normalize line endings coming from JavaScript here.
-    String normalizedValue = value.isNull() ? "" : value;
+    String normalizedValue = newValue.isNull() ? "" : newValue;
     normalizedValue.replace("\r\n", "\n");
     normalizedValue.replace('\r', '\n');
 
     // Return early because we don't want to move the caret or trigger other side effects
     // when the value isn't changing. This matches Firefox behavior, at least.
-    if (normalizedValue == this->value())
+    if (normalizedValue == value())
         return;
 
     m_value = normalizedValue;
+    setInnerTextValue(m_value);
+    setLastChangeWasNotUserEdit();
     updatePlaceholderVisibility(false);
     setNeedsStyleRecalc();
     setFormControlValueMatchesRenderer(true);
@@ -357,7 +334,7 @@ void HTMLTextAreaElement::setValueCommon(const String& value)
         setSelectionRange(endOfString, endOfString);
     }
 
-    notifyFormStateChanged(this);
+    notifyFormStateChanged();
     setTextAsOfLastFormControlChangeEvent(normalizedValue);
 }
 
@@ -445,13 +422,6 @@ void HTMLTextAreaElement::setCols(int cols)
 void HTMLTextAreaElement::setRows(int rows)
 {
     setAttribute(rowsAttr, String::number(rows));
-}
-
-bool HTMLTextAreaElement::lastChangeWasUserEdit() const
-{
-    if (!renderer())
-        return false;
-    return toRenderTextControl(renderer())->lastChangeWasUserEdit();
 }
 
 bool HTMLTextAreaElement::shouldUseInputMethod()

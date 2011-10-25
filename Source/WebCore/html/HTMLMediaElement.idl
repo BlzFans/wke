@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007, 2010 Apple Inc. All rights reserved.
+ * Copyright (C) 2007, 2010, 2011 Apple Inc. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -60,6 +60,7 @@ module html {
     // playback state
     attribute float currentTime
         setter raises (DOMException);
+    readonly attribute double initialTime;
     readonly attribute float startTime;
     readonly attribute float duration;
     readonly attribute boolean paused;
@@ -78,7 +79,8 @@ module html {
     attribute float volume 
         setter raises (DOMException);
     attribute boolean muted;
-    
+    attribute [Reflect=muted] boolean defaultMuted;
+
     // WebKit extensions
     attribute boolean webkitPreservesPitch;
 
@@ -88,5 +90,29 @@ module html {
     // The number of bytes consumed by the media decoder.
     readonly attribute [Conditional=MEDIA_STATISTICS] unsigned long webkitAudioDecodedByteCount;
     readonly attribute [Conditional=MEDIA_STATISTICS] unsigned long webkitVideoDecodedByteCount;
+
+#if defined(ENABLE_MEDIA_SOURCE) && ENABLE_MEDIA_SOURCE
+    // URL passed to src attribute to enable the media source logic.
+    readonly attribute [EnabledAtRuntime=webkitMediaSource, URL] DOMString webkitMediaSourceURL;
+
+    // Appends media to to the source.
+    [EnabledAtRuntime=webkitMediaSource] void webkitSourceAppend(in Uint8Array data) raises (DOMException);
+
+    // Signals the end of stream.
+    const [EnabledAtRuntime=webkitMediaSource] unsigned short EOS_NO_ERROR = 0; // End of stream reached w/o error.
+    const [EnabledAtRuntime=webkitMediaSource] unsigned short EOS_NETWORK_ERR = 1; // A network error triggered end of stream.
+    const [EnabledAtRuntime=webkitMediaSource] unsigned short EOS_DECODE_ERR = 2; // A decode error triggered end of stream.
+    [EnabledAtRuntime=webkitMediaSource] void webkitSourceEndOfStream(in unsigned short status) raises (DOMException);
+
+    // Indicates the current state of the media source.
+    const [EnabledAtRuntime=webkitMediaSource] unsigned short SOURCE_CLOSED = 0;
+    const [EnabledAtRuntime=webkitMediaSource] unsigned short SOURCE_OPEN = 1;
+    const [EnabledAtRuntime=webkitMediaSource] unsigned short SOURCE_ENDED = 2;
+    readonly attribute [EnabledAtRuntime=webkitMediaSource] unsigned short webkitSourceState;
+#endif
+
+#if defined(ENABLE_VIDEO_TRACK) && ENABLE_VIDEO_TRACK
+    [EnabledAtRuntime=webkitVideoTrack] MutableTextTrack addTrack(in DOMString kind, in [Optional] DOMString label, in [Optional] DOMString language);
+#endif
 };
 }

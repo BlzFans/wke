@@ -83,7 +83,7 @@ double NumberInputType::valueAsNumber() const
     return parseToDouble(element()->value(), numeric_limits<double>::quiet_NaN());
 }
 
-void NumberInputType::setValueAsNumber(double newValue, ExceptionCode& ec) const
+void NumberInputType::setValueAsNumber(double newValue, bool sendChangeEvent, ExceptionCode& ec) const
 {
     if (newValue < -numeric_limits<float>::max()) {
         ec = INVALID_STATE_ERR;
@@ -93,7 +93,7 @@ void NumberInputType::setValueAsNumber(double newValue, ExceptionCode& ec) const
         ec = INVALID_STATE_ERR;
         return;
     }
-    element()->setValue(serialize(newValue));
+    element()->setValue(serialize(newValue), sendChangeEvent);
 }
 
 bool NumberInputType::typeMismatchFor(const String& value) const
@@ -273,15 +273,14 @@ double NumberInputType::acceptableError(double step) const
     return step / pow(2.0, FLT_MANT_DIG);
 }
 
-void NumberInputType::willBlur()
+void NumberInputType::handleBlurEvent()
 {
     // Reset the renderer value, which might be unmatched with the element value.
     element()->setFormControlValueMatchesRenderer(false);
 
     // We need to reset the renderer value explicitly because an unacceptable
     // renderer value should be purged before style calculation.
-    if (element()->renderer())
-        element()->renderer()->updateFromElement();
+    element()->updateInnerTextValue();
 }
 
 String NumberInputType::visibleValue() const
@@ -309,7 +308,7 @@ bool NumberInputType::isAcceptableValue(const String& proposedValue)
     return proposedValue.isEmpty() || isfinite(parseLocalizedNumber(proposedValue)) || parseToDoubleForNumberType(proposedValue, 0);
 }
 
-String NumberInputType::sanitizeValue(const String& proposedValue)
+String NumberInputType::sanitizeValue(const String& proposedValue) const
 {
     if (proposedValue.isEmpty())
         return proposedValue;
@@ -318,7 +317,7 @@ String NumberInputType::sanitizeValue(const String& proposedValue)
 
 bool NumberInputType::hasUnacceptableValue()
 {
-    return element()->renderer() && !isAcceptableValue(toRenderTextControl(element()->renderer())->text());
+    return element()->renderer() && !isAcceptableValue(element()->innerTextValue());
 }
 
 bool NumberInputType::shouldRespectSpeechAttribute()

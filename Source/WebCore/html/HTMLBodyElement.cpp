@@ -25,8 +25,7 @@
 #include "HTMLBodyElement.h"
 
 #include "Attribute.h"
-#include "CSSStyleSelector.h"
-#include "CSSStyleSheet.h"
+#include "CSSParser.h"
 #include "CSSValueKeywords.h"
 #include "EventNames.h"
 #include "Frame.h"
@@ -59,18 +58,6 @@ PassRefPtr<HTMLBodyElement> HTMLBodyElement::create(const QualifiedName& tagName
 
 HTMLBodyElement::~HTMLBodyElement()
 {
-    if (m_linkDecl) {
-        m_linkDecl->setNode(0);
-        m_linkDecl->setParent(0);
-    }
-}
-
-void HTMLBodyElement::createLinkDecl()
-{
-    m_linkDecl = CSSMutableStyleDeclaration::create();
-    m_linkDecl->setParent(document()->elementSheet());
-    m_linkDecl->setNode(this);
-    m_linkDecl->setStrictParsing(!document()->inQuirksMode());
 }
 
 bool HTMLBodyElement::mapToEntry(const QualifiedName& attrName, MappedAttributeEntry& result) const
@@ -124,18 +111,14 @@ void HTMLBodyElement::parseMappedAttribute(Attribute* attr)
             else
                 document()->resetActiveLinkColor();
         } else {
-            if (!m_linkDecl)
-                createLinkDecl();
-            m_linkDecl->setProperty(CSSPropertyColor, attr->value(), false, false);
-            RefPtr<CSSValue> val = m_linkDecl->getPropertyCSSValue(CSSPropertyColor);
-            if (val && val->isPrimitiveValue()) {
-                Color col = document()->styleSelector()->getColorFromPrimitiveValue(static_cast<CSSPrimitiveValue*>(val.get()));
+            RGBA32 color;
+            if (CSSParser::parseColor(color, attr->value(), !document()->inQuirksMode())) {
                 if (attr->name() == linkAttr)
-                    document()->setLinkColor(col);
+                    document()->setLinkColor(color);
                 else if (attr->name() == vlinkAttr)
-                    document()->setVisitedLinkColor(col);
+                    document()->setVisitedLinkColor(color);
                 else
-                    document()->setActiveLinkColor(col);
+                    document()->setActiveLinkColor(color);
             }
         }
         
@@ -267,7 +250,7 @@ void HTMLBodyElement::setVLink(const String& value)
 static int adjustForZoom(int value, Document* document)
 {
     Frame* frame = document->frame();
-    float zoomFactor = frame->pageZoomFactor() * frame->pageScaleFactor();
+    float zoomFactor = frame->pageZoomFactor() * frame->frameScaleFactor();
     if (zoomFactor == 1)
         return value;
     // Needed because of truncation (rather than rounding) when scaling up.
@@ -295,7 +278,7 @@ void HTMLBodyElement::setScrollLeft(int scrollLeft)
     FrameView* view = frame->view();
     if (!view)
         return;
-    view->setScrollPosition(IntPoint(static_cast<int>(scrollLeft * frame->pageZoomFactor() * frame->pageScaleFactor()), view->scrollY()));
+    view->setScrollPosition(IntPoint(static_cast<int>(scrollLeft * frame->pageZoomFactor() * frame->frameScaleFactor()), view->scrollY()));
 }
 
 int HTMLBodyElement::scrollTop()
@@ -317,7 +300,7 @@ void HTMLBodyElement::setScrollTop(int scrollTop)
     FrameView* view = frame->view();
     if (!view)
         return;
-    view->setScrollPosition(IntPoint(view->scrollX(), static_cast<int>(scrollTop * frame->pageZoomFactor() * frame->pageScaleFactor())));
+    view->setScrollPosition(IntPoint(view->scrollX(), static_cast<int>(scrollTop * frame->pageZoomFactor() * frame->frameScaleFactor())));
 }
 
 int HTMLBodyElement::scrollHeight()
@@ -343,18 +326,6 @@ void HTMLBodyElement::addSubresourceAttributeURLs(ListHashSet<KURL>& urls) const
     HTMLElement::addSubresourceAttributeURLs(urls);
 
     addSubresourceURL(urls, document()->completeURL(getAttribute(backgroundAttr)));
-}
-
-void HTMLBodyElement::didMoveToNewOwnerDocument()
-{
-    // When moving body elements between documents, we should have to reset the parent sheet for any
-    // link style declarations.  If we don't we might crash later.
-    // In practice I can't reproduce this theoretical problem.
-    // webarchive/adopt-attribute-styled-body-webarchive.html tries to make sure this crash won't surface.
-    if (m_linkDecl)
-        m_linkDecl->setParent(document()->elementSheet());
-    
-    HTMLElement::didMoveToNewOwnerDocument();
 }
 
 } // namespace WebCore

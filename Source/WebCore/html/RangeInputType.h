@@ -46,7 +46,7 @@ private:
     virtual bool isRangeControl() const;
     virtual const AtomicString& formControlType() const;
     virtual double valueAsNumber() const;
-    virtual void setValueAsNumber(double, ExceptionCode&) const;
+    virtual void setValueAsNumber(double, bool sendChangeEvent, ExceptionCode&) const;
     virtual bool supportsRequired() const;
     virtual bool rangeUnderflow(const String&) const;
     virtual bool rangeOverflow(const String&) const;
@@ -66,9 +66,9 @@ private:
     virtual String serialize(double) const;
     virtual void accessKeyAction(bool sendToAnyElement);
     virtual void minOrMaxAttributeChanged();
-    virtual void valueChanged();
+    virtual void setValue(const String&, bool valueChanged, bool sendChangeEvent);
     virtual String fallbackValue();
-    virtual String sanitizeValue(const String& proposedValue);
+    virtual String sanitizeValue(const String& proposedValue) const;
     virtual bool shouldRespectListAttribute();
 };
 

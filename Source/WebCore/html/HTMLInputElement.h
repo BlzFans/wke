@@ -145,6 +145,8 @@ public:
 
     String sanitizeValue(const String&) const;
 
+    void updateInnerTextValue();
+
     // The value which is drawn by a renderer.
     String visibleValue() const;
     String convertFromVisibleValue(const String&) const;
@@ -158,7 +160,7 @@ public:
     void setValueAsDate(double, ExceptionCode&);
 
     double valueAsNumber() const;
-    void setValueAsNumber(double, ExceptionCode&);
+    void setValueAsNumber(double, ExceptionCode&, bool sendChangeEvent = false);
 
     virtual String placeholder() const;
     virtual void setPlaceholder(const String&);
@@ -188,6 +190,7 @@ public:
 
     void setDefaultName(const AtomicString&);
 
+    Vector<String> acceptMIMETypes();
     String accept() const;
     String alt() const;
 
@@ -216,20 +219,20 @@ public:
     HTMLOptionElement* selectedOption() const;
 #endif
 
-#if ENABLE(WCSS)
-    void setWapInputFormat(String& mask);
-#endif
-
     // These functions are public so they can be used in InputType classes.
     // Otherwise, they would be private.
     CheckedRadioButtons& checkedRadioButtons() const;
     void updateCheckedRadioButtons();
-#if ENABLE(WCSS)
-    bool isConformToInputMask(const String&) const;
+    void setValueInternal(const String&, bool sendChangeEvent);
+
+    void cacheSelectionInResponseToSetValue(int caretOffset) { cacheSelection(caretOffset, caretOffset, SelectionHasNoDirection); }
+
+#if ENABLE(INPUT_COLOR)
+    // For test purposes.
+    bool connectToColorChooser();
 #endif
 
-    bool lastChangeWasUserEdit() const;
-    void notifyFormStateChanged();
+    String defaultToolTip() const;
 
     static const int maximumLength;
 
@@ -307,7 +310,6 @@ private:
     virtual bool isEmptyValue() const { return value().isEmpty(); }
     virtual bool isEmptySuggestedValue() const { return suggestedValue().isEmpty(); }
     virtual void handleFocusEvent();
-    virtual void willBlur();
     virtual void handleBlurEvent();
 
     virtual bool isOptionalFormControl() const { return !isRequiredFormControl(); }
@@ -321,7 +323,7 @@ private:
     bool getAllowedValueStepWithDecimalPlaces(AnyStepHandling, double*, unsigned*) const;
 
     // Helper for stepUp()/stepDown().  Adds step value * count to the current value.
-    void applyStep(double count, AnyStepHandling, ExceptionCode&);
+    void applyStep(double count, AnyStepHandling, bool sendChangeEvent, ExceptionCode&);
     double alignValueForStep(double value, double step, unsigned currentDecimalPlaces, unsigned stepDecimalPlaces);
 
 #if ENABLE(DATALIST)
@@ -329,20 +331,12 @@ private:
 #endif
     void parseMaxLengthAttribute(Attribute*);
     void updateValueIfNeeded();
-#if ENABLE(WCSS)
-    bool isConformToInputMask(UChar, unsigned) const;
-    String validateInputMask(String&);
-#endif
 
     AtomicString m_name;
     String m_valueIfDirty;
     String m_suggestedValue;
     int m_size;
     int m_maxLength;
-#if ENABLE(WCSS)
-    String m_inputFormatMask;
-    unsigned m_maxInputCharsAllowed;
-#endif
     short m_maxResults;
     bool m_isChecked : 1;
     bool m_reflectsCheckedAttribute : 1;

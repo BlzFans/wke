@@ -83,15 +83,23 @@ static PassOwnPtr<InputTypeFactoryMap> createInputTypeFactoryMap()
 #if ENABLE(INPUT_COLOR)
     map->add(InputTypeNames::color(), ColorInputType::create);
 #endif
+#if ENABLE(INPUT_TYPE_DATE)
     map->add(InputTypeNames::date(), DateInputType::create);
+#endif
+#if ENABLE(INPUT_TYPE_DATETIME)
     map->add(InputTypeNames::datetime(), DateTimeInputType::create);
+#endif
+#if ENABLE(INPUT_TYPE_DATETIMELOCAL)
     map->add(InputTypeNames::datetimelocal(), DateTimeLocalInputType::create);
+#endif
     map->add(InputTypeNames::email(), EmailInputType::create);
     map->add(InputTypeNames::file(), FileInputType::create);
     map->add(InputTypeNames::hidden(), HiddenInputType::create);
     map->add(InputTypeNames::image(), ImageInputType::create);
     map->add(InputTypeNames::isindex(), IsIndexInputType::create);
+#if ENABLE(INPUT_TYPE_MONTH)
     map->add(InputTypeNames::month(), MonthInputType::create);
+#endif
     map->add(InputTypeNames::number(), NumberInputType::create);
     map->add(InputTypeNames::password(), PasswordInputType::create);
     map->add(InputTypeNames::radio(), RadioInputType::create);
@@ -100,9 +108,13 @@ static PassOwnPtr<InputTypeFactoryMap> createInputTypeFactoryMap()
     map->add(InputTypeNames::search(), SearchInputType::create);
     map->add(InputTypeNames::submit(), SubmitInputType::create);
     map->add(InputTypeNames::telephone(), TelephoneInputType::create);
+#if ENABLE(INPUT_TYPE_TIME)
     map->add(InputTypeNames::time(), TimeInputType::create);
+#endif
     map->add(InputTypeNames::url(), URLInputType::create);
+#if ENABLE(INPUT_TYPE_WEEK)
     map->add(InputTypeNames::week(), WeekInputType::create);
+#endif
     // No need to register "text" because it is the default type.
     return map.release();
 }
@@ -182,7 +194,7 @@ double InputType::valueAsNumber() const
     return numeric_limits<double>::quiet_NaN();
 }
 
-void InputType::setValueAsNumber(double, ExceptionCode& ec) const
+void InputType::setValueAsNumber(double, bool, ExceptionCode& ec) const
 {
     ec = INVALID_STATE_ERR;
 }
@@ -424,7 +436,7 @@ bool InputType::shouldUseInputMethod() const
     return false;
 }
 
-void InputType::willBlur()
+void InputType::handleBlurEvent()
 {
 }
 
@@ -446,10 +458,6 @@ void InputType::altAttributeChanged()
 }
 
 void InputType::srcAttributeChanged()
-{
-}
-
-void InputType::valueChanged()
 {
 }
 
@@ -525,6 +533,17 @@ bool InputType::storesValueSeparateFromAttribute()
     return true;
 }
 
+void InputType::setValue(const String& sanitizedValue, bool, bool sendChangeEvent)
+{
+    element()->setValueInternal(sanitizedValue, sendChangeEvent);
+    element()->setNeedsStyleRecalc();
+}
+
+void InputType::dispatchChangeEventInResponseToSetValue()
+{
+    element()->dispatchFormControlChangeEvent();
+}
+
 bool InputType::canSetValue(const String&)
 {
     return true;
@@ -554,7 +573,7 @@ bool InputType::isAcceptableValue(const String&)
     return true;
 }
 
-String InputType::sanitizeValue(const String& proposedValue)
+String InputType::sanitizeValue(const String& proposedValue) const
 {
     return proposedValue;
 }
@@ -701,6 +720,11 @@ void InputType::disabledAttributeChanged()
 
 void InputType::readonlyAttributeChanged()
 {
+}
+
+String InputType::defaultToolTip() const
+{
+    return String();
 }
 
 namespace InputTypeNames {

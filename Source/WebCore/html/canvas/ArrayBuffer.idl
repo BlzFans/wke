@@ -28,11 +28,11 @@ module html {
     interface [
         GenerateIsReachable=Impl,
         CanBeConstructed,
-        CustomConstructFunction,
-        NoStaticTables,
-        V8CustomConstructor,
+        CustomConstructor,
+        NoStaticTables
     ] ArrayBuffer {
         readonly attribute int byteLength;
+        ArrayBuffer slice(in long begin, in [Optional] long end);
     };
 
 }

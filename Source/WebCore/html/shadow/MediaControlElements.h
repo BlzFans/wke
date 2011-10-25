@@ -101,6 +101,8 @@ public:
 
     void setCanBeDragged(bool);
     void resetPosition();
+    void makeOpaque();
+    void makeTransparent();
 
 private:
     MediaControlPanelElement(HTMLMediaElement*);
@@ -116,6 +118,7 @@ private:
 
     bool m_canBeDragged;
     bool m_isBeingDragged;
+    bool m_opaque;
     LayoutPoint m_dragStartPosition;
     LayoutPoint m_dragStartEventLocation;
 };
@@ -259,12 +262,17 @@ protected:
 
 private:
     virtual bool isForwardButton() const = 0;
+    virtual void setActive(bool /*flag*/ = true, bool /*pause*/ = false);
 
-    virtual void detach();
+    void startTimer();
+    void stopTimer();
+    float nextRate() const;
     void seekTimerFired(Timer<MediaControlSeekButtonElement>*);
 
-    bool m_seeking;
-    bool m_capturing;
+    enum ActionType { Nothing, Play, Pause };
+    ActionType m_actionOnStop;
+    enum SeekType { Skip, Scan };
+    SeekType m_seekType;
     Timer<MediaControlSeekButtonElement> m_seekTimer;
 };
 

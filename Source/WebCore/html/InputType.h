@@ -126,7 +126,7 @@ public:
     virtual double valueAsDate() const;
     virtual void setValueAsDate(double, ExceptionCode&) const;
     virtual double valueAsNumber() const;
-    virtual void setValueAsNumber(double, ExceptionCode&) const;
+    virtual void setValueAsNumber(double, bool sendChangeEvent, ExceptionCode&) const;
 
     // Validation functions
 
@@ -161,7 +161,8 @@ public:
     virtual String convertFromVisibleValue(const String&) const;
     virtual bool isAcceptableValue(const String&);
     // Returing the null string means "use the default value."
-    virtual String sanitizeValue(const String&);
+    // This function must be called only by HTMLInputElement::sanitizeValue().
+    virtual String sanitizeValue(const String&) const;
     virtual bool hasUnacceptableValue();
 
     // Event handlers
@@ -182,7 +183,7 @@ public:
     virtual PassRefPtr<HTMLFormElement> formForSubmission() const;
     virtual bool isKeyboardFocusable() const;
     virtual bool shouldUseInputMethod() const;
-    virtual void willBlur();
+    virtual void handleBlurEvent();
     virtual void accessKeyAction(bool sendToAnyElement);
     virtual bool canBeSuccessfulSubmitButton();
 
@@ -213,7 +214,6 @@ public:
     virtual void stepAttributeChanged();
     virtual void altAttributeChanged();
     virtual void srcAttributeChanged();
-    virtual void valueChanged();
     virtual void willMoveToNewOwnerDocument();
     virtual bool shouldRespectAlignAttribute();
     virtual FileList* files();
@@ -224,6 +224,8 @@ public:
     virtual bool shouldSendChangeEventAfterCheckedChanged();
     virtual bool canSetValue(const String&);
     virtual bool storesValueSeparateFromAttribute();
+    virtual void setValue(const String&, bool valueChanged, bool sendChangeEvent);
+    virtual void dispatchChangeEventInResponseToSetValue();
     virtual bool shouldResetOnDocumentActivation();
     virtual bool shouldRespectListAttribute();
     virtual bool shouldRespectSpeechAttribute();
@@ -236,6 +238,7 @@ public:
     virtual void multipleAttributeChanged();
     virtual void disabledAttributeChanged();
     virtual void readonlyAttributeChanged();
+    virtual String defaultToolTip() const;
 
     // Parses the specified string for the type, and return
     // the double value for the parsing result if the parsing

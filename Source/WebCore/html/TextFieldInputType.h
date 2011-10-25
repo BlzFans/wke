@@ -71,7 +71,9 @@ private:
     virtual bool shouldSubmitImplicitly(Event*);
     virtual RenderObject* createRenderer(RenderArena*, RenderStyle*) const;
     virtual bool shouldUseInputMethod() const;
-    virtual String sanitizeValue(const String&);
+    virtual void setValue(const String&, bool valueChanged, bool sendChangeEvent);
+    virtual void dispatchChangeEventInResponseToSetValue();
+    virtual String sanitizeValue(const String&) const;
     virtual bool shouldRespectListAttribute();
     virtual HTMLElement* placeholderElement() const;
     virtual void updatePlaceholderText();

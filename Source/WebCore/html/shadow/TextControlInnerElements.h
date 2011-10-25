@@ -42,7 +42,7 @@ public:
 
 protected:
     TextControlInnerElement(Document*);
-    virtual PassRefPtr<RenderStyle> styleForRenderer(const NodeRenderingContext&);
+    virtual PassRefPtr<RenderStyle> customStyleForRenderer();
 
 private:
     virtual bool isMouseFocusable() const { return false; }
@@ -57,7 +57,7 @@ public:
 private:
     TextControlInnerTextElement(Document*);
     virtual RenderObject* createRenderer(RenderArena*, RenderStyle*);
-    virtual PassRefPtr<RenderStyle> styleForRenderer(const NodeRenderingContext&);
+    virtual PassRefPtr<RenderStyle> customStyleForRenderer();
     virtual bool isMouseFocusable() const { return false; }
 };
 
@@ -100,6 +100,8 @@ public:
     UpDownState upDownState() const { return m_upDownState; }
     virtual void releaseCapture();
 
+    void step(int amount);
+    
 private:
     SpinButtonElement(Document*);
 
@@ -140,6 +142,8 @@ public:
     virtual void defaultEventHandler(Event*);
     virtual bool isInputFieldSpeechButtonElement() const { return true; }
     SpeechInputState state() const { return m_state; }
+    void startSpeechInput();
+    void stopSpeechInput();
 
     // SpeechInputListener methods.
     void didCompleteRecording(int);

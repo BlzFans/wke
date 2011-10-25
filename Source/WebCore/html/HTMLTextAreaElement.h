@@ -58,8 +58,6 @@ public:
     void setCols(int);
     void setRows(int);
 
-    bool lastChangeWasUserEdit() const;
-
 private:
     HTMLTextAreaElement(const QualifiedName&, Document*, HTMLFormElement*);
 
@@ -113,7 +111,7 @@ private:
     RefPtr<HTMLElement> m_placeholder;
     mutable String m_value;
     mutable bool m_isDirty;
-    bool m_wasModifiedByUser;
+    mutable bool m_wasModifiedByUser;
 };
 
 } //namespace

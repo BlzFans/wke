@@ -25,7 +25,7 @@
 #define HTMLLinkElement_h
 
 #include "CSSStyleSheet.h"
-#include "CachedResourceClient.h"
+#include "CachedStyleSheetClient.h"
 #include "CachedResourceHandle.h"
 #include "DOMSettableTokenList.h"
 #include "HTMLElement.h"
@@ -37,11 +37,9 @@
 
 namespace WebCore {
 
-class CachedCSSStyleSheet;
-class CachedResource;
 class KURL;
 
-class HTMLLinkElement : public HTMLElement, public CachedResourceClient, public LinkLoaderClient {
+class HTMLLinkElement : public HTMLElement, public CachedStyleSheetClient, public LinkLoaderClient {
 public:
     static PassRefPtr<HTMLLinkElement> create(const QualifiedName&, Document*, bool createdByParser);
     virtual ~HTMLLinkElement();
@@ -57,9 +55,9 @@ public:
 
     // FIXME: This should be renamed isStyleSheetLoading as this is only used for stylesheets.
     bool isLoading() const;
-    bool isEnabledViaScript() const { return m_isEnabledViaScript; }
-    bool disabled() const;
-    void setDisabled(bool);
+
+    bool isDisabled() const { return m_disabledState == Disabled; }
+    bool isEnabledViaScript() const { return m_disabledState == EnabledViaScript; }
     void setSizes(const String&);
     DOMSettableTokenList* sizes() const;
 
@@ -81,8 +79,10 @@ private:
     virtual void linkLoaded();
     virtual void linkLoadingErrored();
 
-    bool isAlternate() const { return m_relAttribute.m_isAlternate; }
+    bool isAlternate() const { return m_disabledState == Unset && m_relAttribute.m_isAlternate; }
     
+    void setDisabledState(bool);
+
     virtual bool isURLAttribute(Attribute*) const;
 
 private:
@@ -100,13 +100,19 @@ private:
     LinkLoader m_linkLoader;
     CachedResourceHandle<CachedCSSStyleSheet> m_cachedSheet;
     RefPtr<CSSStyleSheet> m_sheet;
+    enum DisabledState {
+        Unset,
+        EnabledViaScript,
+        Disabled
+    };
+
     KURL m_url;
     String m_type;
     String m_media;
     RefPtr<DOMSettableTokenList> m_sizes;
+    DisabledState m_disabledState;
     LinkRelAttribute m_relAttribute;
     bool m_loading;
-    bool m_isEnabledViaScript;
     bool m_createdByParser;
     bool m_isInShadowTree;
     

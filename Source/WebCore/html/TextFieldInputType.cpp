@@ -73,6 +73,32 @@ bool TextFieldInputType::canSetSuggestedValue()
     return true;
 }
 
+void TextFieldInputType::setValue(const String& sanitizedValue, bool valueChanged, bool sendChangeEvent)
+{
+    InputType::setValue(sanitizedValue, valueChanged, sendChangeEvent);
+    element()->updatePlaceholderVisibility(false);
+
+    if (valueChanged)
+        element()->updateInnerTextValue();
+
+    unsigned max = visibleValue().length();
+    if (element()->focused())
+        element()->setSelectionRange(max, max);
+    else
+        element()->cacheSelectionInResponseToSetValue(max);
+}
+
+void TextFieldInputType::dispatchChangeEventInResponseToSetValue()
+{
+    // If the user is still editing this field, dispatch an input event rather than a change event.
+    // The change event will be dispatched when editing finishes.
+    if (element()->focused()) {
+        element()->dispatchFormControlInputEvent();
+        return;
+    }
+    InputType::dispatchChangeEventInResponseToSetValue();
+}
+
 void TextFieldInputType::handleKeydownEvent(KeyboardEvent* event)
 {
     if (!element()->focused())
@@ -273,15 +299,8 @@ static String limitLength(const String& string, int maxLength)
     return string.left(newLength);
 }
 
-String TextFieldInputType::sanitizeValue(const String& proposedValue)
+String TextFieldInputType::sanitizeValue(const String& proposedValue) const
 {
-#if ENABLE(WCSS)
-    if (!element()->isConformToInputMask(proposedValue)) {
-        if (isConformToInputMask(element()->value()))
-            return element->value();
-        return String();
-    }
-#endif
     return limitLength(proposedValue.removeCharacters(isASCIILineBreak), HTMLInputElement::maximumLength);
 }
 
@@ -292,7 +311,7 @@ void TextFieldInputType::handleBeforeTextInsertedEvent(BeforeTextInsertedEvent* 
     // We use RenderTextControlSingleLine::text() instead of InputElement::value()
     // because they can be mismatched by sanitizeValue() in
     // HTMLInputElement::subtreeHasChanged() in some cases.
-    unsigned oldLength = numGraphemeClusters(toRenderTextControlSingleLine(element()->renderer())->text());
+    unsigned oldLength = numGraphemeClusters(element()->innerTextValue());
 
     // selectionLength represents the selection length of this text field to be
     // removed by this insertion.
@@ -308,19 +327,6 @@ void TextFieldInputType::handleBeforeTextInsertedEvent(BeforeTextInsertedEvent* 
     unsigned appendableLength = maxLength > baseLength ? maxLength - baseLength : 0;
 
     // Truncate the inserted text to avoid violating the maxLength and other constraints.
-#if ENABLE(WCSS)
-    RefPtr<Range> range = element()->document()->frame()->selection()->selection().toNormalizedRange();
-    String candidateString = toRenderTextControlSingleLine(element()->renderer())->text();
-    if (selectionLength)
-        candidateString.replace(range->startOffset(), range->endOffset(), event->text());
-    else
-        candidateString.insert(event->text(), range->startOffset());
-    if (!element()->isConformToInputMask(candidateString)) {
-        event->setText("");
-        return;
-    }
-#endif
-
     String eventText = event->text();
     eventText.replace("\r\n", " ");
     eventText.replace('\r', ' ');

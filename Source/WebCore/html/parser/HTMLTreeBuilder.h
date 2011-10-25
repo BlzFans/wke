@@ -33,12 +33,13 @@
 #include "HTMLElementStack.h"
 #include "HTMLFormattingElementList.h"
 #include "HTMLTokenizer.h"
-#include <wtf/text/TextPosition.h>
 #include <wtf/Noncopyable.h>
 #include <wtf/OwnPtr.h>
 #include <wtf/PassOwnPtr.h>
 #include <wtf/PassRefPtr.h>
 #include <wtf/RefPtr.h>
+#include <wtf/text/StringBuilder.h>
+#include <wtf/text/TextPosition.h>
 #include <wtf/unicode/Unicode.h>
 
 namespace WebCore {
@@ -77,7 +78,7 @@ public:
     void constructTreeFromAtomicToken(AtomicHTMLToken&);
 
     // Must be called when parser is paused before calling the parser again.
-    PassRefPtr<Element> takeScriptToProcess(TextPosition1& scriptStartPosition);
+    PassRefPtr<Element> takeScriptToProcess(TextPosition& scriptStartPosition);
 
     // Done, close any open tags, etc.
     void finished();
@@ -241,19 +242,19 @@ private:
     InsertionMode m_originalInsertionMode;
 
     // http://www.whatwg.org/specs/web-apps/current-work/multipage/tokenization.html#pending-table-character-tokens
-    Vector<UChar> m_pendingTableCharacters;
+    StringBuilder m_pendingTableCharacters;
 
     // We access parser because HTML5 spec requires that we be able to change the state of the tokenizer
     // from within parser actions. We also need it to track the current position.
     HTMLDocumentParser* m_parser;
 
     RefPtr<Element> m_scriptToProcess; // <script> tag which needs processing before resuming the parser.
-    TextPosition1 m_scriptToProcessStartPosition; // Starting line number of the script tag needing processing.
+    TextPosition m_scriptToProcessStartPosition; // Starting line number of the script tag needing processing.
 
     // FIXME: We probably want to remove this member.  Originally, it was
     // created to service the legacy tree builder, but it seems to be used for
     // some other things now.
-    TextPosition0 m_lastScriptElementStartPosition;
+    TextPosition m_lastScriptElementStartPosition;
 
     bool m_usePreHTML5ParserQuirks;
 

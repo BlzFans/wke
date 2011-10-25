@@ -43,6 +43,8 @@
 #include "ScrollbarTheme.h"
 #include "SpeechInput.h"
 #include "SpeechInputEvent.h"
+#include "TextEvent.h"
+#include "TextEventInputType.h"
 
 namespace WebCore {
 
@@ -51,6 +53,7 @@ using namespace HTMLNames;
 TextControlInnerElement::TextControlInnerElement(Document* document)
     : HTMLDivElement(divTag, document)
 {
+    setHasCustomStyleForRenderer();
 }
 
 PassRefPtr<TextControlInnerElement> TextControlInnerElement::create(Document* document)
@@ -58,7 +61,7 @@ PassRefPtr<TextControlInnerElement> TextControlInnerElement::create(Document* do
     return adoptRef(new TextControlInnerElement(document));
 }
 
-PassRefPtr<RenderStyle> TextControlInnerElement::styleForRenderer(const NodeRenderingContext&)
+PassRefPtr<RenderStyle> TextControlInnerElement::customStyleForRenderer()
 {
     RenderTextControlSingleLine* parentRenderer = toRenderTextControlSingleLine(shadowAncestorNode()->renderer());
     return parentRenderer->createInnerBlockStyle(parentRenderer->style());
@@ -69,6 +72,7 @@ PassRefPtr<RenderStyle> TextControlInnerElement::styleForRenderer(const NodeRend
 inline TextControlInnerTextElement::TextControlInnerTextElement(Document* document)
     : HTMLDivElement(divTag, document)
 {
+    setHasCustomStyleForRenderer();
 }
 
 PassRefPtr<TextControlInnerTextElement> TextControlInnerTextElement::create(Document* document)
@@ -104,7 +108,7 @@ RenderObject* TextControlInnerTextElement::createRenderer(RenderArena* arena, Re
     return new (arena) RenderTextControlInnerBlock(this, multiLine);
 }
 
-PassRefPtr<RenderStyle> TextControlInnerTextElement::styleForRenderer(const NodeRenderingContext&)
+PassRefPtr<RenderStyle> TextControlInnerTextElement::customStyleForRenderer()
 {
     RenderTextControl* parentRenderer = toRenderTextControl(shadowAncestorNode()->renderer());
     return parentRenderer->createInnerTextStyle(parentRenderer->style());
@@ -331,7 +335,7 @@ void SpinButtonElement::releaseCapture()
 void SpinButtonElement::startRepeatingTimer()
 {
     m_pressStartingState = m_upDownState;
-    ScrollbarTheme* theme = ScrollbarTheme::nativeTheme();
+    ScrollbarTheme* theme = ScrollbarTheme::theme();
     m_repeatingTimer.start(theme->initialAutoscrollTimerDelay(), theme->autoscrollTimerDelay());
 }
 
@@ -340,7 +344,7 @@ void SpinButtonElement::stopRepeatingTimer()
     m_repeatingTimer.stop();
 }
 
-void SpinButtonElement::repeatingTimerFired(Timer<SpinButtonElement>*)
+void SpinButtonElement::step(int amount)
 {
     HTMLInputElement* input = static_cast<HTMLInputElement*>(shadowAncestorNode());
     if (input->disabled() || input->isReadOnlyFormControl())
@@ -352,7 +356,12 @@ void SpinButtonElement::repeatingTimerFired(Timer<SpinButtonElement>*)
     if (m_upDownState != m_pressStartingState)
         return;
 #endif
-    input->stepUpFromRenderer(m_upDownState == Up ? 1 : -1);
+    input->stepUpFromRenderer(amount);
+}
+    
+void SpinButtonElement::repeatingTimerFired(Timer<SpinButtonElement>*)
+{
+    step(m_upDownState == Up ? 1 : -1);
 }
 
 void SpinButtonElement::setHovered(bool flag)
@@ -434,16 +443,11 @@ void InputFieldSpeechButtonElement::defaultEventHandler(Event* event)
 
     if (event->type() == eventNames().clickEvent && m_listenerId) {
         switch (m_state) {
-        case Idle: {
-              AtomicString language = input->computeInheritedLanguage();
-              String grammar = input->getAttribute(webkitgrammarAttr);
-              IntRect rect = renderer()->absoluteBoundingBoxRect();
-              if (speechInput()->startRecognition(m_listenerId, rect, language, grammar, document()->securityOrigin()))
-                  setState(Recording);
-            }
+        case Idle:
+            startSpeechInput();
             break;
         case Recording:
-            speechInput()->stopRecording(m_listenerId);
+            stopSpeechInput();
             break;
         case Recognizing:
             // Nothing to do here, we will continue to wait for results.
@@ -491,7 +495,11 @@ void InputFieldSpeechButtonElement::setRecognitionResult(int, const SpeechInputR
         return;
 
     RefPtr<InputFieldSpeechButtonElement> holdRefButton(this);
-    input->setValue(results.isEmpty() ? "" : results[0]->utterance());
+    if (document() && document()->domWindow())
+        input->dispatchEvent(TextEvent::create(document()->domWindow(), results.isEmpty() ? "" : results[0]->utterance(), TextEventInputOther));
+
+    // This event is sent after the text event so the website can perform actions using the input field content immediately.
+    // It provides alternative recognition hypotheses and notifies that the results come from speech input.
     input->dispatchEvent(SpeechInputEvent::create(eventNames().webkitspeechchangeEvent, results));
 
     // Check before accessing the renderer as the above event could have potentially turned off
@@ -522,6 +530,26 @@ void InputFieldSpeechButtonElement::detach()
     }
 
     HTMLDivElement::detach();
+}
+
+void InputFieldSpeechButtonElement::startSpeechInput()
+{
+    if (m_state != Idle)
+        return;
+
+    RefPtr<HTMLInputElement> input = static_cast<HTMLInputElement*>(shadowAncestorNode());
+    AtomicString language = input->computeInheritedLanguage();
+    String grammar = input->getAttribute(webkitgrammarAttr);
+    // FIXME: this should probably respect transforms
+    IntRect rect = renderer()->absoluteBoundingBoxRectIgnoringTransforms();
+    if (speechInput()->startRecognition(m_listenerId, rect, language, grammar, document()->securityOrigin()))
+        setState(Recording);
+}
+
+void InputFieldSpeechButtonElement::stopSpeechInput()
+{
+    if (m_state == Recording)
+        speechInput()->stopRecording(m_listenerId);
 }
 
 const AtomicString& InputFieldSpeechButtonElement::shadowPseudoId() const

@@ -59,11 +59,13 @@ private:
     virtual bool canSetValue(const String&);
     virtual bool getTypeSpecificValue(String&); // Checked first, before internal storage or the value attribute.
     virtual bool storesValueSeparateFromAttribute();
+    virtual void setValue(const String&, bool valueChanged, bool sendChangeEvent);
     virtual void receiveDroppedFiles(const Vector<String>&);
     virtual Icon* icon() const;
     virtual bool isFileUpload() const;
     virtual void createShadowSubtree();
     virtual void multipleAttributeChanged();
+    virtual String defaultToolTip() const OVERRIDE;
 
     // FileChooserClient implementation.
     virtual void filesChosen(const Vector<String>&);

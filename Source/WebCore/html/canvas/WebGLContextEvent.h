@@ -46,6 +46,8 @@ public:
 
     const String& statusMessage() const { return m_statusMessage; }
 
+    virtual const AtomicString& interfaceName() const;
+
 private:
     WebGLContextEvent();
     WebGLContextEvent(const AtomicString& type, bool canBubble, bool cancelable, const String& statusMessage);

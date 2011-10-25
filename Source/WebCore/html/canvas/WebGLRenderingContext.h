@@ -40,18 +40,6 @@
 
 namespace WebCore {
 
-class WebGLActiveInfo;
-class WebGLBuffer;
-class WebGLContextAttributes;
-class WebGLExtension;
-class WebGLFramebuffer;
-class WebGLObject;
-class WebGLProgram;
-class WebGLRenderbuffer;
-class WebGLShader;
-class WebGLTexture;
-class WebGLUniformLocation;
-class WebKitLoseContext;
 class HTMLImageElement;
 class HTMLVideoElement;
 class ImageBuffer;
@@ -60,7 +48,21 @@ class IntSize;
 class OESStandardDerivatives;
 class OESTextureFloat;
 class OESVertexArrayObject;
+class WebGLActiveInfo;
+class WebGLBuffer;
+class WebGLContextAttributes;
+class WebGLDebugRendererInfo;
+class WebGLDebugShaders;
+class WebGLExtension;
+class WebGLFramebuffer;
+class WebGLObject;
+class WebGLProgram;
+class WebGLRenderbuffer;
+class WebGLShader;
+class WebGLTexture;
+class WebGLUniformLocation;
 class WebGLVertexArrayObjectOES;
+class WebKitLoseContext;
 
 class WebGLRenderingContext : public CanvasRenderingContext {
 public:
@@ -143,7 +145,7 @@ public:
 
     PassRefPtr<WebGLActiveInfo> getActiveAttrib(WebGLProgram*, GC3Duint index, ExceptionCode&);
     PassRefPtr<WebGLActiveInfo> getActiveUniform(WebGLProgram*, GC3Duint index, ExceptionCode&);
-    bool getAttachedShaders(WebGLProgram*, Vector<WebGLShader*>&, ExceptionCode&);
+    bool getAttachedShaders(WebGLProgram*, Vector<RefPtr<WebGLShader> >&, ExceptionCode&);
     GC3Dint getAttribLocation(WebGLProgram*, const String& name);
     WebGLGetInfo getBufferParameter(GC3Denum target, GC3Denum pname, ExceptionCode&);
     PassRefPtr<WebGLContextAttributes> getContextAttributes();
@@ -306,6 +308,7 @@ public:
   private:
     friend class WebGLObject;
     friend class OESVertexArrayObject;
+    friend class WebGLDebugShaders;
 
     WebGLRenderingContext(HTMLCanvasElement*, PassRefPtr<GraphicsContext3D>, GraphicsContext3D::Attributes);
     void initializeNewContext();
@@ -474,6 +477,8 @@ public:
     OwnPtr<OESStandardDerivatives> m_oesStandardDerivatives;
     OwnPtr<OESVertexArrayObject> m_oesVertexArrayObject;
     OwnPtr<WebKitLoseContext> m_webkitLoseContext;
+    OwnPtr<WebGLDebugRendererInfo> m_webglDebugRendererInfo;
+    OwnPtr<WebGLDebugShaders> m_webglDebugShaders;
 
     // Helpers for getParameter and others
     WebGLGetInfo getBooleanParameter(GC3Denum);
@@ -621,6 +626,10 @@ public:
     void loseContext();
     // Helper for restoration after context lost.
     void maybeRestoreContext(LostContextMode);
+
+    // Determine if we are running privileged code in the browser, for example,
+    // a Safari or Chrome extension.
+    bool allowPrivilegedExtensions() const;
 
     friend class WebGLStateRestorer;
 };

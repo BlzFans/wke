@@ -81,6 +81,18 @@ void HTMLPlugInElement::detach()
     HTMLFrameOwnerElement::detach();
 }
 
+void HTMLPlugInElement::removedFromDocument()
+{
+#if ENABLE(NETSCAPE_PLUGIN_API)
+    if (m_NPObject) {
+        _NPN_ReleaseObject(m_NPObject);
+        m_NPObject = 0;
+    }
+#endif
+
+    HTMLFrameOwnerElement::removedFromDocument();
+}
+
 PassScriptInstance HTMLPlugInElement::getInstance()
 {
     Frame* frame = document()->frame();
@@ -169,6 +181,9 @@ void HTMLPlugInElement::defaultEventHandler(Event* event)
     if (!widget)
         return;
     widget->handleEvent(event);
+    if (event->defaultHandled())
+        return;
+    HTMLFrameOwnerElement::defaultEventHandler(event);
 }
 
 #if ENABLE(NETSCAPE_PLUGIN_API)

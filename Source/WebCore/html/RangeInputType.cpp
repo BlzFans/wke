@@ -78,9 +78,9 @@ double RangeInputType::valueAsNumber() const
     return parseToDouble(element()->value(), numeric_limits<double>::quiet_NaN());
 }
 
-void RangeInputType::setValueAsNumber(double newValue, ExceptionCode&) const
+void RangeInputType::setValueAsNumber(double newValue, bool sendChangeEvent, ExceptionCode&) const
 {
-    element()->setValue(serialize(newValue));
+    element()->setValue(serialize(newValue), sendChangeEvent);
 }
 
 bool RangeInputType::supportsRequired() const
@@ -220,7 +220,8 @@ void RangeInputType::handleKeydownEvent(KeyboardEvent* event)
 
     if (newValue != current) {
         ExceptionCode ec;
-        setValueAsNumber(newValue, ec);
+        bool sendChangeEvent = true;
+        setValueAsNumber(newValue, sendChangeEvent, ec);
 
         if (AXObjectCache::accessibilityEnabled())
             element()->document()->axObjectCache()->postNotification(element()->renderer(), AXObjectCache::AXValueChanged, true);
@@ -284,8 +285,13 @@ void RangeInputType::minOrMaxAttributeChanged()
     element()->setNeedsStyleRecalc();
 }
 
-void RangeInputType::valueChanged()
+void RangeInputType::setValue(const String& value, bool valueChanged, bool sendChangeEvent)
 {
+    InputType::setValue(value, valueChanged, sendChangeEvent);
+
+    if (!valueChanged)
+        return;
+
     sliderThumbElementOf(element())->setPositionFromValue();
 }
 
@@ -294,14 +300,8 @@ String RangeInputType::fallbackValue()
     return serializeForNumberType(StepRange(element()).defaultValue());
 }
 
-String RangeInputType::sanitizeValue(const String& proposedValue)
+String RangeInputType::sanitizeValue(const String& proposedValue) const
 {
-    // If the proposedValue is null than this is a reset scenario and we
-    // want the range input's value attribute to take priority over the
-    // calculated default (middle) value.
-    if (proposedValue.isNull())
-        return proposedValue;
-
     return serializeForNumberType(StepRange(element()).clampValue(proposedValue));
 }
 

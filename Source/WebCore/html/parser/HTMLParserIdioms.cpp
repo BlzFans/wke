@@ -63,8 +63,7 @@ String serializeForNumberType(double number)
     // According to HTML5, "the best representation of the number n as a floating
     // point number" is a string produced by applying ToString() to n.
     NumberToStringBuffer buffer;
-    unsigned length = numberToString(number, buffer);
-    return String(buffer, length);
+    return String(numberToString(number, buffer));
 }
 
 bool parseToDoubleForNumberType(const String& string, double* result)
@@ -208,7 +207,7 @@ bool parseHTMLInteger(const String& input, int& value)
         return false;
 
     // Step 8
-    Vector<UChar, 16> digits;
+    StringBuilder digits;
     while (position < end) {
         if (!isASCIIDigit(*position))
             break;
@@ -216,8 +215,9 @@ bool parseHTMLInteger(const String& input, int& value)
     }
 
     // Step 9
-    value = sign * charactersToIntStrict(digits.data(), digits.size());
-    return true;
+    bool ok;
+    value = sign * charactersToIntStrict(digits.characters(), digits.length(), &ok);
+    return ok;
 }
 
 // http://www.whatwg.org/specs/web-apps/current-work/#rules-for-parsing-non-negative-integers
@@ -254,7 +254,7 @@ bool parseHTMLNonNegativeInteger(const String& input, unsigned int& value)
         return false;
 
     // Step 8
-    Vector<UChar, 16> digits;
+    StringBuilder digits;
     while (position < end) {
         if (!isASCIIDigit(*position))
             break;
@@ -262,8 +262,9 @@ bool parseHTMLNonNegativeInteger(const String& input, unsigned int& value)
     }
 
     // Step 9
-    value = charactersToUIntStrict(digits.data(), digits.size());
-    return true;
+    bool ok;
+    value = charactersToUIntStrict(digits.characters(), digits.length(), &ok);
+    return ok;
 }
 
 }

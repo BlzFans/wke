@@ -121,6 +121,10 @@ id
 incremental
 indeterminate
 ismap
+itemid
+itemprop
+itemscope
+itemtype
 keytype
 kind
 label
@@ -146,6 +150,7 @@ media
 method
 min
 multiple
+muted
 name
 nohref
 noresize
@@ -158,7 +163,6 @@ onbeforecopy
 onbeforecut
 onbeforeload
 onbeforepaste
-onbeforeprocess
 onbeforeunload
 onblur
 oncanplay

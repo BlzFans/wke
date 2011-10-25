@@ -43,6 +43,7 @@ void HTMLSourceTracker::start(const HTMLInputStream& input, HTMLToken& token)
 void HTMLSourceTracker::end(const HTMLInputStream& input, HTMLToken& token)
 {
     m_cachedSourceForToken = String();
+
     // FIXME: This work should really be done by the HTMLTokenizer.
     token.end(input.current().numberOfCharactersConsumed());
 }

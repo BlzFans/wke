@@ -25,20 +25,26 @@
 #include "config.h"
 #include "HTMLTextFormControlElement.h"
 
+#include "AXObjectCache.h"
 #include "Attribute.h"
+#include "Chrome.h"
+#include "ChromeClient.h"
 #include "Document.h"
 #include "Event.h"
 #include "EventNames.h"
 #include "Frame.h"
+#include "HTMLBRElement.h"
 #include "HTMLFormElement.h"
 #include "HTMLInputElement.h"
 #include "HTMLNames.h"
+#include "Page.h"
 #include "RenderBox.h"
 #include "RenderTextControl.h"
 #include "RenderTheme.h"
 #include "ScriptEventListener.h"
+#include "Text.h"
 #include "TextIterator.h"
-#include <wtf/Vector.h>
+#include <wtf/text/StringBuilder.h>
 
 namespace WebCore {
 
@@ -47,6 +53,7 @@ using namespace std;
 
 HTMLTextFormControlElement::HTMLTextFormControlElement(const QualifiedName& tagName, Document* doc, HTMLFormElement* form)
     : HTMLFormControlElementWithState(tagName, doc, form)
+    , m_lastChangeWasUserEdit(false)
     , m_cachedSelectionStart(-1)
     , m_cachedSelectionEnd(-1)
     , m_cachedSelectionDirection(SelectionHasNoDirection)
@@ -83,6 +90,7 @@ void HTMLTextFormControlElement::dispatchBlurEvent(PassRefPtr<Node> newFocusedNo
 void HTMLTextFormControlElement::defaultEventHandler(Event* event)
 {
     if (event->type() == eventNames().webkitEditableContentChangedEvent && renderer() && renderer()->isTextControl()) {
+        m_lastChangeWasUserEdit = true;
         subtreeHasChanged();
         return;
     }
@@ -97,11 +105,6 @@ void HTMLTextFormControlElement::forwardEvent(Event* event)
     innerTextElement()->defaultEventHandler(event);
 }
 
-void HTMLTextFormControlElement::subtreeHasChanged()
-{
-    toRenderTextControl(renderer())->respondToChangeByUser();
-}
-
 String HTMLTextFormControlElement::strippedPlaceholder() const
 {
     // According to the HTML5 specification, we need to remove CR and LF from
@@ -110,7 +113,7 @@ String HTMLTextFormControlElement::strippedPlaceholder() const
     if (!attributeValue.contains(newlineCharacter) && !attributeValue.contains(carriageReturn))
         return attributeValue;
 
-    Vector<UChar> stripped;
+    StringBuilder stripped;
     unsigned length = attributeValue.length();
     stripped.reserveCapacity(length);
     for (unsigned i = 0; i < length; ++i) {
@@ -119,7 +122,7 @@ String HTMLTextFormControlElement::strippedPlaceholder() const
             continue;
         stripped.append(character);
     }
-    return String::adopt(stripped);
+    return stripped.toString();
 }
 
 static bool isNotLineBreak(UChar ch) { return ch != newlineCharacter && ch != carriageReturn; }
@@ -184,12 +187,9 @@ void HTMLTextFormControlElement::select()
 
 String HTMLTextFormControlElement::selectedText() const
 {
-    // FIXME: We should be able to extract selected contents even if there were no renderer.
-    if (!renderer() || renderer()->isTextControl())
+    if (!isTextFormControl())
         return String();
-
-    RenderTextControl* textControl = toRenderTextControl(renderer());
-    return textControl->text().substring(selectionStart(), selectionEnd() - selectionStart());
+    return value().substring(selectionStart(), selectionEnd() - selectionStart());
 }
 
 void HTMLTextFormControlElement::dispatchFormControlChangeEvent()
@@ -431,6 +431,132 @@ void HTMLTextFormControlElement::parseMappedAttribute(Attribute* attr)
         setAttributeEventListener(eventNames().changeEvent, createAttributeEventListener(this, attr));
     else
         HTMLFormControlElementWithState::parseMappedAttribute(attr);
+}
+
+void HTMLTextFormControlElement::notifyFormStateChanged()
+{
+    Frame* frame = document()->frame();
+    if (!frame)
+        return;
+
+    if (Page* page = frame->page())
+        page->chrome()->client()->formStateDidChange(this);
+}
+
+bool HTMLTextFormControlElement::lastChangeWasUserEdit() const
+{
+    if (!isTextFormControl())
+        return false;
+    return m_lastChangeWasUserEdit;
+}
+
+void HTMLTextFormControlElement::setInnerTextValue(const String& value)
+{
+    if (!isTextFormControl())
+        return;
+
+    bool textIsChanged = value != innerTextValue();
+    if (textIsChanged || !innerTextElement()->hasChildNodes()) {
+        if (textIsChanged && document() && renderer() && AXObjectCache::accessibilityEnabled())
+            document()->axObjectCache()->postNotification(renderer(), AXObjectCache::AXValueChanged, false);
+
+        ExceptionCode ec = 0;
+        innerTextElement()->setInnerText(value, ec);
+        ASSERT(!ec);
+
+        if (value.endsWith("\n") || value.endsWith("\r")) {
+            innerTextElement()->appendChild(HTMLBRElement::create(document()), ec);
+            ASSERT(!ec);
+        }
+    }
+
+    setFormControlValueMatchesRenderer(true);
+}
+
+static String finishText(StringBuilder& result)
+{
+    // Remove one trailing newline; there's always one that's collapsed out by rendering.
+    size_t size = result.length();
+    if (size && result[size - 1] == '\n')
+        result.resize(--size);
+    return result.toString();
+}
+
+String HTMLTextFormControlElement::innerTextValue() const
+{
+    HTMLElement* innerText = innerTextElement();
+    if (!innerText || !isTextFormControl())
+        return emptyString();
+
+    StringBuilder result;
+    for (Node* node = innerText; node; node = node->traverseNextNode(innerText)) {
+        if (node->hasTagName(brTag))
+            result.append(newlineCharacter);
+        else if (node->isTextNode())
+            result.append(static_cast<Text*>(node)->data());
+    }
+    return finishText(result);
+}
+
+static void getNextSoftBreak(RootInlineBox*& line, Node*& breakNode, unsigned& breakOffset)
+{
+    RootInlineBox* next;
+    for (; line; line = next) {
+        next = line->nextRootBox();
+        if (next && !line->endsWithBreak()) {
+            ASSERT(line->lineBreakObj());
+            breakNode = line->lineBreakObj()->node();
+            breakOffset = line->lineBreakPos();
+            line = next;
+            return;
+        }
+    }
+    breakNode = 0;
+    breakOffset = 0;
+}
+
+String HTMLTextFormControlElement::valueWithHardLineBreaks() const
+{
+    // FIXME: It's not acceptable to ignore the HardWrap setting when there is no renderer.
+    // While we have no evidence this has ever been a practical problem, it would be best to fix it some day.
+    HTMLElement* innerText = innerTextElement();
+    if (!innerText || !isTextFormControl())
+        return value();
+
+    RenderBlock* renderer = toRenderBlock(innerText->renderer());
+    if (!renderer)
+        return value();
+
+    Node* breakNode;
+    unsigned breakOffset;
+    RootInlineBox* line = renderer->firstRootBox();
+    if (!line)
+        return value();
+
+    getNextSoftBreak(line, breakNode, breakOffset);
+
+    StringBuilder result;
+    for (Node* node = innerText->firstChild(); node; node = node->traverseNextNode(innerText)) {
+        if (node->hasTagName(brTag))
+            result.append(newlineCharacter);
+        else if (node->isTextNode()) {
+            String data = static_cast<Text*>(node)->data();
+            unsigned length = data.length();
+            unsigned position = 0;
+            while (breakNode == node && breakOffset <= length) {
+                if (breakOffset > position) {
+                    result.append(data.characters() + position, breakOffset - position);
+                    position = breakOffset;
+                    result.append(newlineCharacter);
+                }
+                getNextSoftBreak(line, breakNode, breakOffset);
+            }
+            result.append(data.characters() + position, length - position);
+        }
+        while (breakNode == node)
+            getNextSoftBreak(line, breakNode, breakOffset);
+    }
+    return finishText(result);
 }
 
 HTMLTextFormControlElement* enclosingTextFormControl(const Position& position)

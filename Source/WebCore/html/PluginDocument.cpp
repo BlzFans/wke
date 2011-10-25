@@ -70,9 +70,7 @@ void PluginDocumentParser::createDocumentStructure()
     ExceptionCode ec;
     RefPtr<Element> rootElement = document()->createElement(htmlTag, false);
     document()->appendChild(rootElement, ec);
-#if ENABLE(OFFLINE_WEB_APPLICATIONS)
     static_cast<HTMLHtmlElement*>(rootElement.get())->insertedByParser();
-#endif
 
     if (document()->frame() && document()->frame()->loader())
         document()->frame()->loader()->dispatchDocumentElementAvailable();
@@ -80,7 +78,7 @@ void PluginDocumentParser::createDocumentStructure()
     RefPtr<Element> body = document()->createElement(bodyTag, false);
     body->setAttribute(marginwidthAttr, "0");
     body->setAttribute(marginheightAttr, "0");
-    body->setAttribute(bgcolorAttr, "rgb(38,38,38)");
+    body->setAttribute(styleAttr, "background-color: rgb(38,38,38)");
 
     rootElement->appendChild(body, ec);
         

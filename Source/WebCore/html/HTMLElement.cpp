@@ -137,7 +137,7 @@ static inline int unicodeBidiAttributeForDirAuto(HTMLElement* element)
     return CSSValueEmbed;
 }
 
-unsigned HTMLElement::parseBorderWidthAttribute(Attribute* attr)
+static unsigned parseBorderWidthAttribute(Attribute* attr)
 {
     ASSERT(attr && attr->name() == borderAttr);
 
@@ -146,6 +146,15 @@ unsigned HTMLElement::parseBorderWidthAttribute(Attribute* attr)
         parseHTMLNonNegativeInteger(attr->value(), borderWidth);
 
     return borderWidth;
+}
+
+void HTMLElement::applyBorderAttribute(Attribute* attr)
+{
+    addCSSLength(attr, CSSPropertyBorderWidth, String::number(parseBorderWidthAttribute(attr)));
+    addCSSProperty(attr, CSSPropertyBorderTopStyle, CSSValueSolid);
+    addCSSProperty(attr, CSSPropertyBorderRightStyle, CSSValueSolid);
+    addCSSProperty(attr, CSSPropertyBorderBottomStyle, CSSValueSolid);
+    addCSSProperty(attr, CSSPropertyBorderLeftStyle, CSSValueSolid);
 }
 
 void HTMLElement::parseMappedAttribute(Attribute* attr)
@@ -186,6 +195,10 @@ void HTMLElement::parseMappedAttribute(Attribute* attr)
             addCSSProperty(attr, CSSPropertyWebkitUserSelect, CSSValueNone);
         } else if (equalIgnoringCase(value, "false"))
             addCSSProperty(attr, CSSPropertyWebkitUserDrag, CSSValueNone);
+#if ENABLE(MICRODATA)
+    } else if (attr->name() == itemtypeAttr) {
+        itemTypeAttributeChanged();
+#endif
     }
 // standard events
     else if (attr->name() == onclickAttr) {
@@ -291,20 +304,6 @@ String HTMLElement::outerHTML() const
     return createMarkup(this);
 }
 
-// FIXME: This logic should move into Range::createContextualFragment
-PassRefPtr<DocumentFragment> HTMLElement::deprecatedCreateContextualFragment(const String& markup, FragmentScriptingPermission scriptingPermission)
-{
-    // The following is in accordance with the definition as used by IE.
-    if (ieForbidsInsertHTML())
-        return 0;
-
-    if (hasLocalName(colTag) || hasLocalName(colgroupTag) || hasLocalName(framesetTag)
-        || hasLocalName(headTag) || hasLocalName(styleTag) || hasLocalName(titleTag))
-        return 0;
-
-    return Element::deprecatedCreateContextualFragment(markup, scriptingPermission);
-}
-
 static inline bool hasOneChild(ContainerNode* node)
 {
     Node* firstChild = node->firstChild();
@@ -405,7 +404,7 @@ void HTMLElement::setOuterHTML(const String& html, ExceptionCode& ec)
         ec = NO_MODIFICATION_ALLOWED_ERR;
         return;
     }
-    RefPtr<HTMLElement> parent = static_cast<HTMLElement*>(p);
+    RefPtr<HTMLElement> parent = toHTMLElement(p);
     RefPtr<Node> prev = previousSibling();
     RefPtr<Node> next = nextSibling();
 
@@ -795,13 +794,8 @@ bool HTMLElement::rendererIsNeeded(const NodeRenderingContext& context)
 {
     if (hasLocalName(noscriptTag)) {
         Frame* frame = document()->frame();
-#if ENABLE(XHTMLMP)
-        if (!document()->shouldProcessNoscriptElement())
-            return false;
-#else
         if (frame && frame->script()->canExecuteScripts(NotAboutToExecuteScript))
             return false;
-#endif        
     } else if (hasLocalName(noembedTag)) {
         Frame* frame = document()->frame();
         if (frame && frame->loader()->subframeLoader()->allowPlugins(NotAboutToInstantiatePlugin))

@@ -28,43 +28,46 @@
 
 #if ENABLE(VIDEO_TRACK)
 
-#include "CueLoader.h"
-#include "CueParser.h"
 #include "TextTrack.h"
-#include "TextTrackCueList.h"
+#include "TextTrackLoader.h"
 #include <wtf/PassRefPtr.h>
 #include <wtf/Vector.h>
 
 namespace WebCore {
 
+class HTMLTrackElement;
+class LoadableTextTrack;
 class ScriptExecutionContext;
-class TextTrack;
-class TextTrackCue;
 
-class LoadableTextTrack : public TextTrack, public CueParserClient, public CueLoader {
+class TextTrackLoadingClient {
 public:
-    static PassRefPtr<LoadableTextTrack> create(const String& kind, const String& label, const String& language, bool isDefault)
+    virtual ~TextTrackLoadingClient() { }
+    
+    virtual void textTrackLoadingCompleted(LoadableTextTrack*, bool /* loadingFailed */) = 0;
+};
+
+class LoadableTextTrack : public TextTrack, private TextTrackLoaderClient {
+public:
+    static PassRefPtr<LoadableTextTrack> create(TextTrackClient* trackClient, TextTrackLoadingClient* loadingClient, const String& kind, const String& label, const String& language, bool isDefault)
     {
-        return adoptRef(new LoadableTextTrack(kind, label, language, isDefault));
+        return adoptRef(new LoadableTextTrack(trackClient, loadingClient, kind, label, language, isDefault));
     }
     virtual ~LoadableTextTrack();
 
-    void load(const String&, ScriptExecutionContext*);
+    void load(const KURL&, ScriptExecutionContext*);
     bool supportsType(const String&);
 
-    virtual void newCuesParsed();
-    virtual void trackLoadStarted();
-    virtual void trackLoadError();
-    virtual void trackLoadCompleted();
-
-    virtual void newCuesLoaded();
-    virtual void fetchNewestCues(Vector<TextTrackCue*>&);
-
 private:
-    LoadableTextTrack(const String& kind, const String& label, const String& language, bool isDefault);
+    // TextTrackLoaderClient
+    virtual bool shouldLoadCues(TextTrackLoader*) { return true; }
+    virtual void newCuesAvailable(TextTrackLoader*);
+    virtual void cueLoadingStarted(TextTrackLoader*);
+    virtual void cueLoadingCompleted(TextTrackLoader*, bool loadingFailed);
 
-    CueParser m_parser;
+    LoadableTextTrack(TextTrackClient*, TextTrackLoadingClient*, const String& kind, const String& label, const String& language, bool isDefault);
 
+    OwnPtr<TextTrackLoader> m_loader;
+    TextTrackLoadingClient* m_loadingClient;
     bool m_isDefault;
 };
 } // namespace WebCore

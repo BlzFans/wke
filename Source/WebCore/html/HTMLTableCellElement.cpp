@@ -44,14 +44,24 @@ using namespace HTMLNames;
 
 inline HTMLTableCellElement::HTMLTableCellElement(const QualifiedName& tagName, Document* document)
     : HTMLTablePartElement(tagName, document)
-    , m_rowSpan(1)
-    , m_colSpan(1)
 {
 }
 
 PassRefPtr<HTMLTableCellElement> HTMLTableCellElement::create(const QualifiedName& tagName, Document* document)
 {
     return adoptRef(new HTMLTableCellElement(tagName, document));
+}
+
+int HTMLTableCellElement::colSpan() const
+{
+    const AtomicString& colSpanValue = fastGetAttribute(colspanAttr);
+    return max(1, colSpanValue.toInt());
+}
+
+int HTMLTableCellElement::rowSpan() const
+{
+    const AtomicString& rowSpanValue = fastGetAttribute(rowspanAttr);
+    return max(1, min(rowSpanValue.toInt(), maxRowspan));
 }
 
 int HTMLTableCellElement::cellIndex() const
@@ -84,13 +94,11 @@ bool HTMLTableCellElement::mapToEntry(const QualifiedName& attrName, MappedAttri
 void HTMLTableCellElement::parseMappedAttribute(Attribute* attr)
 {
     if (attr->name() == rowspanAttr) {
-        m_rowSpan = max(1, min(attr->value().toInt(), maxRowspan));
         if (renderer() && renderer()->isTableCell())
-            toRenderTableCell(renderer())->updateFromElement();
+            toRenderTableCell(renderer())->colSpanOrRowSpanChanged();
     } else if (attr->name() == colspanAttr) {
-        m_colSpan = max(1, attr->value().toInt());
         if (renderer() && renderer()->isTableCell())
-            toRenderTableCell(renderer())->updateFromElement();
+            toRenderTableCell(renderer())->colSpanOrRowSpanChanged();
     } else if (attr->name() == nowrapAttr) {
         if (!attr->isNull())
             addCSSProperty(attr, CSSPropertyWhiteSpace, CSSValueWebkitNowrap);
@@ -178,5 +186,21 @@ HTMLTableCellElement* HTMLTableCellElement::cellAbove() const
 
     return static_cast<HTMLTableCellElement*>(cellAboveRenderer->node());
 }
+
+#ifndef NDEBUG
+
+HTMLTableCellElement* toHTMLTableCellElement(Node* node)
+{
+    ASSERT(!node || node->hasTagName(HTMLNames::tdTag) || node->hasTagName(HTMLNames::thTag));
+    return static_cast<HTMLTableCellElement*>(node);
+}
+
+const HTMLTableCellElement* toHTMLTableCellElement(const Node* node)
+{
+    ASSERT(!node || node->hasTagName(HTMLNames::tdTag) || node->hasTagName(HTMLNames::thTag));
+    return static_cast<const HTMLTableCellElement*>(node);
+}
+
+#endif
 
 } // namespace WebCore

@@ -105,6 +105,7 @@ HTMLDocumentParser::~HTMLDocumentParser()
     ASSERT(!m_parserScheduler);
     ASSERT(!m_pumpSessionNestingLevel);
     ASSERT(!m_preloadScanner);
+    ASSERT(!m_insertionPreloadScanner);
 }
 
 void HTMLDocumentParser::detach()
@@ -116,6 +117,7 @@ void HTMLDocumentParser::detach()
     // FIXME: It seems wrong that we would have a preload scanner here.
     // Yet during fast/dom/HTMLScriptElement/script-load-events.html we do.
     m_preloadScanner.clear();
+    m_insertionPreloadScanner.clear();
     m_parserScheduler.clear(); // Deleting the scheduler will clear any timers.
 }
 
@@ -197,7 +199,7 @@ bool HTMLDocumentParser::runScriptsForPausedTreeBuilder()
 {
     ASSERT(m_treeBuilder->isPaused());
 
-    TextPosition1 scriptStartPosition = TextPosition1::belowRangePosition();
+    TextPosition scriptStartPosition = TextPosition::belowRangePosition();
     RefPtr<Element> scriptElement = m_treeBuilder->takeScriptToProcess(scriptStartPosition);
     // We will not have a scriptRunner when parsing a DocumentFragment.
     if (!m_scriptRunner)
@@ -256,7 +258,7 @@ void HTMLDocumentParser::pumpTokenizer(SynchronousMode mode)
     // FIXME: m_input.current().length() is only accurate if we
     // end up parsing the whole buffer in this pump.  We should pass how
     // much we parsed as part of didWriteHTML instead of willWriteHTML.
-    InspectorInstrumentationCookie cookie = InspectorInstrumentation::willWriteHTML(document(), m_input.current().length(), m_tokenizer->lineNumber());
+    InspectorInstrumentationCookie cookie = InspectorInstrumentation::willWriteHTML(document(), m_input.current().length(), m_tokenizer->lineNumber().zeroBasedInt());
 
     while (canTakeNextToken(mode, session) && !session.needsYield) {
         if (!isParsingFragment())
@@ -296,7 +298,7 @@ void HTMLDocumentParser::pumpTokenizer(SynchronousMode mode)
         m_preloadScanner->scan();
     }
 
-    InspectorInstrumentation::didWriteHTML(cookie, m_tokenizer->lineNumber());
+    InspectorInstrumentation::didWriteHTML(cookie, m_tokenizer->lineNumber().zeroBasedInt());
 }
 
 bool HTMLDocumentParser::hasInsertionPoint()
@@ -326,9 +328,10 @@ void HTMLDocumentParser::insert(const SegmentedString& source)
     if (isWaitingForScripts()) {
         // Check the document.write() output with a separate preload scanner as
         // the main scanner can't deal with insertions.
-        HTMLPreloadScanner preloadScanner(document());
-        preloadScanner.appendToEnd(source);
-        preloadScanner.scan();
+        if (!m_insertionPreloadScanner)
+            m_insertionPreloadScanner = adoptPtr(new HTMLPreloadScanner(document()));
+        m_insertionPreloadScanner->appendToEnd(source);
+        m_insertionPreloadScanner->scan();
     }
 
     endIfDelayed();
@@ -431,14 +434,7 @@ bool HTMLDocumentParser::finishWasCalled()
     return m_input.haveSeenEndOfFile();
 }
 
-// This function is virtual and just for the DocumentParser interface.
 bool HTMLDocumentParser::isExecutingScript() const
-{
-    return inScriptExecution();
-}
-
-// This function is non-virtual and used throughout the implementation.
-bool HTMLDocumentParser::inScriptExecution() const
 {
     if (!m_scriptRunner)
         return false;
@@ -450,19 +446,19 @@ String HTMLDocumentParser::sourceForToken(const HTMLToken& token)
     return m_sourceTracker.sourceForToken(token);
 }
 
-int HTMLDocumentParser::lineNumber() const
+OrdinalNumber HTMLDocumentParser::lineNumber() const
 {
     return m_tokenizer->lineNumber();
 }
 
-TextPosition0 HTMLDocumentParser::textPosition() const
+TextPosition HTMLDocumentParser::textPosition() const
 {
     const SegmentedString& currentString = m_input.current();
-    WTF::ZeroBasedNumber line = currentString.currentLine();
-    WTF::ZeroBasedNumber column = currentString.currentColumn();
-    ASSERT(m_tokenizer->lineNumber() == line.zeroBasedInt());
+    OrdinalNumber line = currentString.currentLine();
+    OrdinalNumber column = currentString.currentColumn();
+    ASSERT(m_tokenizer->lineNumber() == line);
 
-    return TextPosition0(line, column);
+    return TextPosition(line, column);
 }
 
 bool HTMLDocumentParser::isWaitingForScripts() const
@@ -472,9 +468,10 @@ bool HTMLDocumentParser::isWaitingForScripts() const
 
 void HTMLDocumentParser::resumeParsingAfterScriptExecution()
 {
-    ASSERT(!inScriptExecution());
+    ASSERT(!isExecutingScript());
     ASSERT(!m_treeBuilder->isPaused());
 
+    m_insertionPreloadScanner.clear();
     pumpTokenizerIfPossible(AllowYield);
     endIfDelayed();
 }
@@ -507,7 +504,7 @@ void HTMLDocumentParser::notifyFinished(CachedResource* cachedResource)
     RefPtr<HTMLDocumentParser> protect(this);
 
     ASSERT(m_scriptRunner);
-    ASSERT(!inScriptExecution());
+    ASSERT(!isExecutingScript());
     if (isStopping()) {
         attemptToRunDeferredScriptsAndEnd();
         return;
