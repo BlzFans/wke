@@ -40,8 +40,9 @@ public:
     static void clipToImageBuffer(GraphicsContext*, const AffineTransform& absoluteTransform, const FloatRect& clampedAbsoluteTargetRect, OwnPtr<ImageBuffer>&);
 
     static void calculateTransformationToOutermostSVGCoordinateSystem(const RenderObject*, AffineTransform& absoluteTransform);
-    static FloatRect clampedAbsoluteTargetRectForRenderer(const RenderObject*, const FloatRect& absoluteTargetRect);
+    static FloatRect clampedAbsoluteTargetRect(const FloatRect& absoluteTargetRect);
     static IntSize roundedImageBufferSize(const FloatSize&);
+    static void clear2DRotation(AffineTransform&);
 
 private:
     SVGImageBufferTools() { }

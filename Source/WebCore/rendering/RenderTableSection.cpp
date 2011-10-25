@@ -77,6 +77,17 @@ RenderTableSection::~RenderTableSection()
     clearGrid();
 }
 
+void RenderTableSection::styleDidChange(StyleDifference diff, const RenderStyle* oldStyle)
+{
+    RenderBox::styleDidChange(diff, oldStyle);
+    propagateStyleToAnonymousChildren();
+
+    // If border was changed, notify table.
+    RenderTable* table = this->table();
+    if (table && !table->selfNeedsLayout() && !table->normalChildNeedsLayout() && oldStyle && oldStyle->border() != style()->border())
+        table->invalidateCollapsedBorders();
+}
+
 void RenderTableSection::willBeDestroyed()
 {
     RenderTable* recalcTable = table();
@@ -92,18 +103,27 @@ void RenderTableSection::willBeDestroyed()
 void RenderTableSection::addChild(RenderObject* child, RenderObject* beforeChild)
 {
     // Make sure we don't append things after :after-generated content if we have it.
-    if (!beforeChild && isAfterContent(lastChild()))
-        beforeChild = lastChild();
+    if (!beforeChild)
+        beforeChild = findAfterContentRenderer();
 
     if (!child->isTableRow()) {
         RenderObject* last = beforeChild;
         if (!last)
             last = lastChild();
-        if (last && last->isAnonymous() && !isAfterContent(last) && !isBeforeContent(last)) {
+        if (last && last->isAnonymous() && !last->isBeforeOrAfterContent()) {
             if (beforeChild == last)
                 beforeChild = last->firstChild();
             last->addChild(child, beforeChild);
             return;
+        }
+
+        if (beforeChild && !beforeChild->isAnonymous() && beforeChild->parent() == this) {
+            RenderObject* row = beforeChild->previousSibling();
+            if (row && row->isTableRow()) {
+                ASSERT(row->isAnonymous());
+                row->addChild(child);
+                return;
+            }
         }
 
         // If beforeChild is inside an anonymous cell/row, insert into the cell or into
@@ -111,7 +131,7 @@ void RenderTableSection::addChild(RenderObject* child, RenderObject* beforeChild
         RenderObject* lastBox = last;
         while (lastBox && lastBox->parent()->isAnonymous() && !lastBox->isTableRow())
             lastBox = lastBox->parent();
-        if (lastBox && lastBox->isAnonymous() && !isAfterContent(lastBox) && !isBeforeContent(lastBox)) {
+        if (lastBox && lastBox->isAnonymous() && !lastBox->isBeforeOrAfterContent()) {
             lastBox->addChild(child, beforeChild);
             return;
         }
@@ -338,7 +358,7 @@ LayoutUnit RenderTableSection::calcRowLogicalHeight()
 
             int indx = max(r - cell->rowSpan() + 1, 0);
 
-            if (cell->hasOverrideSize()) {
+            if (cell->hasOverrideHeight()) {
                 if (!statePusher.didPush()) {
                     // Technically, we should also push state for the row, but since
                     // rows don't push a coordinate transform, that's not necessary.
@@ -566,7 +586,7 @@ LayoutUnit RenderTableSection::layoutRows(LayoutUnit toAdd)
                 // Alignment within a cell is based off the calculated
                 // height, which becomes irrelevant once the cell has
                 // been resized based off its percentage.
-                cell->setOverrideSizeFromRowHeight(rHeight);
+                cell->setOverrideHeightFromRowHeight(rHeight);
                 cell->layoutIfNeeded();
 
                 // If the baseline moved, we may have to update the data for our row. Find out the new baseline.
@@ -949,7 +969,7 @@ static inline bool compareCellPositionsWithOverflowingCells(RenderTableCell* ele
 
 void RenderTableSection::paintCell(RenderTableCell* cell, PaintInfo& paintInfo, const LayoutPoint& paintOffset)
 {
-    LayoutPoint cellPoint = flipForWritingMode(cell, paintOffset, ParentToChildFlippingAdjustment);
+    LayoutPoint cellPoint = flipForWritingModeForChild(cell, paintOffset);
     PaintPhase paintPhase = paintInfo.phase;
     RenderTableRow* row = toRenderTableRow(cell->parent());
 
@@ -1167,6 +1187,8 @@ void RenderTableSection::appendColumn(int pos)
 
 void RenderTableSection::splitColumn(int pos, int first)
 {
+    ASSERT(!m_needsCellRecalc);
+
     if (m_cCol > pos)
         m_cCol++;
     for (int row = 0; row < m_gridRows; ++row) {
@@ -1198,7 +1220,7 @@ bool RenderTableSection::nodeAtPoint(const HitTestRequest& request, HitTestResul
     // Just forward to our children always.
     LayoutPoint adjustedLocation = accumulatedOffset + location();
 
-    if (hasOverflowClip() && !overflowClipRect(adjustedLocation).intersects(result.rectForPoint(pointInContainer)))
+    if (hasOverflowClip() && !overflowClipRect(adjustedLocation, result.region()).intersects(result.rectForPoint(pointInContainer)))
         return false;
 
     if (hasOverflowingCell()) {
@@ -1208,7 +1230,7 @@ bool RenderTableSection::nodeAtPoint(const HitTestRequest& request, HitTestResul
             // table-specific hit-test method (which we should do for performance reasons anyway),
             // then we can remove this check.
             if (child->isBox() && !toRenderBox(child)->hasSelfPaintingLayer()) {
-                LayoutPoint childPoint = flipForWritingMode(toRenderBox(child), adjustedLocation, ParentToChildFlippingAdjustment);
+                LayoutPoint childPoint = flipForWritingModeForChild(toRenderBox(child), adjustedLocation);
                 if (child->nodeAtPoint(request, result, pointInContainer, childPoint, action)) {
                     updateHitTestResult(result, toLayoutPoint(pointInContainer - childPoint));
                     return true;
@@ -1252,7 +1274,7 @@ bool RenderTableSection::nodeAtPoint(const HitTestRequest& request, HitTestResul
 
     for (int i = current.cells.size() - 1; i >= 0; --i) {
         RenderTableCell* cell = current.cells[i];
-        LayoutPoint cellPoint = flipForWritingMode(cell, adjustedLocation, ParentToChildFlippingAdjustment);
+        LayoutPoint cellPoint = flipForWritingModeForChild(cell, adjustedLocation);
         if (static_cast<RenderObject*>(cell)->nodeAtPoint(request, result, pointInContainer, cellPoint, action)) {
             updateHitTestResult(result, toLayoutPoint(pointInContainer - cellPoint));
             return true;

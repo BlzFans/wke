@@ -48,6 +48,9 @@ public:
         return !(*this == o);
     }
 
+    short horizontal_border_spacing;
+    short vertical_border_spacing;
+
     // could be packed in a short but doesn't
     // make a difference currently because of padding
     Length line_height;
@@ -56,9 +59,8 @@ public:
 
     Font font;
     Color color;
+    Color visitedLinkColor;
 
-    short horizontal_border_spacing;
-    short vertical_border_spacing;
 private:
     StyleInheritedData();
     StyleInheritedData(const StyleInheritedData&);

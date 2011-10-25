@@ -26,6 +26,7 @@
 #include "InlineBox.h"
 #include "RenderText.h" // so textRenderer() can be inline
 #include "TextRun.h"
+#include <wtf/text/StringBuilder.h>
 
 namespace WebCore {
 
@@ -34,7 +35,11 @@ class DocumentMarker;
 
 const unsigned short cNoTruncation = USHRT_MAX;
 const unsigned short cFullTruncation = USHRT_MAX - 1;
-typedef Vector<UChar, 256> BufferForAppendingHyphen;
+
+class BufferForAppendingHyphen : public StringBuilder {
+public:
+    BufferForAppendingHyphen() { reserveCapacity(256); }
+};
 
 // Helper functions shared by InlineTextBox / SVGRootInlineBox
 void updateGraphicsContext(GraphicsContext*, const Color& fillColor, const Color& strokeColor, float strokeThickness, ColorSpace);
@@ -141,8 +146,6 @@ public:
     virtual int caretMaxOffset() const;
 
 private:
-    virtual unsigned caretMaxRenderedOffset() const;
-
     float textPos() const; // returns the x position relative to the left start of the text line.
 
 public:

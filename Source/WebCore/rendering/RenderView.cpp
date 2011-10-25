@@ -29,6 +29,7 @@
 #include "GraphicsContext.h"
 #include "HTMLFrameOwnerElement.h"
 #include "HitTestResult.h"
+#include "Page.h"
 #include "RenderFlowThread.h"
 #include "RenderLayer.h"
 #include "RenderSelectionInfo.h"
@@ -126,6 +127,7 @@ void RenderView::layout()
     state.m_clipped = false;
     state.m_pageLogicalHeight = m_pageLogicalHeight;
     state.m_pageLogicalHeightChanged = m_pageLogicalHeightChanged;
+    state.m_isPaginated = state.m_pageLogicalHeight;
     m_pageLogicalHeightChanged = false;
     m_layoutState = &state;
 
@@ -162,7 +164,7 @@ void RenderView::mapLocalToContainer(RenderBoxModelObject* repaintContainer, boo
 void RenderView::mapAbsoluteToLocalPoint(bool fixed, bool useTransforms, TransformState& transformState) const
 {
     if (fixed && m_frameView)
-        transformState.move(-m_frameView->scrollOffsetForFixedPosition());
+        transformState.move(m_frameView->scrollOffsetForFixedPosition());
 
     if (useTransforms && shouldUseTransformFromContainer(0)) {
         TransformationMatrix t;
@@ -226,10 +228,9 @@ void RenderView::paintBoxDecorations(PaintInfo& paintInfo, const LayoutPoint&)
         RenderBox* rootBox = rootRenderer->isBox() ? toRenderBox(rootRenderer) : 0;
         rootFillsViewport = rootBox && !rootBox->x() && !rootBox->y() && rootBox->width() >= width() && rootBox->height() >= height();
     }
-
-    float pageScaleFactor = 1;
-    if (Frame* frame = m_frameView->frame())
-        pageScaleFactor = frame->pageScaleFactor();
+    
+    Page* page = document()->page();
+    float pageScaleFactor = page ? page->pageScaleFactor() : 1;
 
     // If painting will entirely fill the view, no need to fill the background.
     if (rootFillsViewport && rendererObscuresBackground(firstChild()) && pageScaleFactor >= 1)
@@ -262,11 +263,6 @@ bool RenderView::shouldRepaint(const IntRect& r) const
         return false;
     
     return true;
-}
-
-RenderBlock* RenderView::containingBlock() const
-{
-    return const_cast<RenderView*>(this);
 }
 
 void RenderView::repaintViewRectangle(const IntRect& ur, bool immediate)
@@ -333,12 +329,12 @@ void RenderView::computeRectForRepaint(RenderBoxModelObject* repaintContainer, I
         rect = m_layer->transform()->mapRect(rect);
 }
 
-void RenderView::absoluteRects(Vector<LayoutRect>& rects, const LayoutPoint& accumulatedOffset)
+void RenderView::absoluteRects(Vector<LayoutRect>& rects, const LayoutPoint& accumulatedOffset) const
 {
     rects.append(LayoutRect(accumulatedOffset, m_layer->size()));
 }
 
-void RenderView::absoluteQuads(Vector<FloatQuad>& quads, bool* wasFixed)
+void RenderView::absoluteQuads(Vector<FloatQuad>& quads, bool* wasFixed) const
 {
     if (wasFixed)
         *wasFixed = false;
@@ -715,6 +711,11 @@ void RenderView::pushLayoutState(RenderObject* root)
     ASSERT(m_layoutState == 0);
 
     m_layoutState = new (renderArena()) LayoutState(root);
+}
+
+void RenderView::pushLayoutState(RenderFlowThread* flowThread, bool regionsChanged)
+{
+    m_layoutState = new (renderArena()) LayoutState(m_layoutState, flowThread, regionsChanged);
 }
 
 bool RenderView::shouldDisableLayoutStateForSubtree(RenderObject* renderer) const

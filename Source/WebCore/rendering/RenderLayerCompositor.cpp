@@ -95,6 +95,7 @@ RenderLayerCompositor::RenderLayerCompositor(RenderView* renderView)
     , m_updateCompositingLayersTimer(this, &RenderLayerCompositor::updateCompositingLayersTimerFired)
     , m_hasAcceleratedCompositing(true)
     , m_compositingTriggers(static_cast<ChromeClient::CompositingTriggerFlags>(ChromeClient::AllTriggers))
+    , m_compositedLayerCount(0)
     , m_showDebugBorders(false)
     , m_showRepaintCounter(false)
     , m_compositingConsultsOverlap(true)
@@ -241,9 +242,18 @@ void RenderLayerCompositor::updateCompositingLayersTimerFired(Timer<RenderLayerC
     updateCompositingLayers();
 }
 
+bool RenderLayerCompositor::hasAnyAdditionalCompositedLayers(const RenderLayer* rootLayer) const
+{
+    return m_compositedLayerCount > rootLayer->isComposited();
+}
+
 void RenderLayerCompositor::updateCompositingLayers(CompositingUpdateType updateType, RenderLayer* updateRoot)
 {
     m_updateCompositingLayersTimer.stop();
+    
+    // Compositing layers will be updated in Document::implicitClose() if suppressed here.
+    if (!m_renderView->document()->visualUpdatesAllowed())
+        return;
 
     if (m_forceCompositingMode && !m_compositing)
         enableCompositingMode(true);
@@ -256,7 +266,7 @@ void RenderLayerCompositor::updateCompositingLayers(CompositingUpdateType update
 
     switch (updateType) {
     case CompositingUpdateAfterLayoutOrStyleChange:
-    case CompositingUpdateOnPaitingOrHitTest:
+    case CompositingUpdateOnHitTest:
         checkForHierarchyUpdate = true;
         break;
     case CompositingUpdateOnScroll:
@@ -305,7 +315,9 @@ void RenderLayerCompositor::updateCompositingLayers(CompositingUpdateType update
 
         // Host the document layer in the RenderView's root layer.
         if (updateRoot == rootRenderLayer()) {
-            if (childList.isEmpty())
+            // Even when childList is empty, don't drop out of compositing mode if there are
+            // composited layers that we didn't hit in our traversal (e.g. because of visibility:hidden).
+            if (childList.isEmpty() && !hasAnyAdditionalCompositedLayers(updateRoot))
                 destroyRootLayer();
             else
                 m_rootContentLayer->setChildren(childList);
@@ -573,7 +585,7 @@ void RenderLayerCompositor::addToOverlapMap(OverlapMap& overlapMap, RenderLayer*
         boundsComputed = true;
     }
 
-    LayoutRect clipRect = layer->backgroundClipRect(rootRenderLayer(), true);
+    LayoutRect clipRect = layer->backgroundClipRect(rootRenderLayer(), 0, true).rect(); // FIXME: Incorrect for CSS regions.
     clipRect.intersect(layerBounds);
     overlapMap.add(layer, clipRect);
 }
@@ -770,8 +782,9 @@ void RenderLayerCompositor::computeCompositingRequirements(RenderLayer* layer, O
     }
 
     // If we're back at the root, and no other layers need to be composited, and the root layer itself doesn't need
-    // to be composited, then we can drop out of compositing mode altogether.
-    if (layer->isRootLayer() && !childState.m_subtreeIsCompositing && !requiresCompositingLayer(layer) && !m_forceCompositingMode) {
+    // to be composited, then we can drop out of compositing mode altogether. However, don't drop out of compositing mode
+    // if there are composited layers that we didn't hit in our traversal (e.g. because of visibility:hidden).
+    if (layer->isRootLayer() && !childState.m_subtreeIsCompositing && !requiresCompositingLayer(layer) && !m_forceCompositingMode && !hasAnyAdditionalCompositedLayers(layer)) {
         enableCompositingMode(false);
         willBeComposited = false;
     }
@@ -956,6 +969,11 @@ void RenderLayerCompositor::frameViewDidChangeSize()
         LayoutPoint scrollPosition = frameView->scrollPosition();
         m_scrollLayer->setPosition(FloatPoint(-scrollPosition.x(), -scrollPosition.y()));
         updateOverflowControlsLayers();
+
+#if PLATFORM(CHROMIUM) && ENABLE(RUBBER_BANDING)
+        if (m_layerForOverhangAreas)
+            m_layerForOverhangAreas->setSize(frameView->frameRect().size());
+#endif
     }
 }
 
@@ -1251,7 +1269,7 @@ bool RenderLayerCompositor::shouldPropagateCompositingToEnclosingFrame() const
     // document, or the parent is already compositing, or the main frame is scaled.
     Frame* frame = m_renderView->frameView()->frame();
     Page* page = frame ? frame->page() : 0;
-    if (page->mainFrame()->pageScaleFactor() != 1)
+    if (page && page->pageScaleFactor() != 1)
         return true;
     
     RenderPart* frameRenderer = toRenderPart(renderer);
@@ -1340,8 +1358,7 @@ bool RenderLayerCompositor::clippedByAncestor(RenderLayer* layer) const
     if (!computeClipRoot || computeClipRoot == layer)
         return false;
 
-    LayoutRect backgroundRect = layer->backgroundClipRect(computeClipRoot, true);
-    return backgroundRect != PaintInfo::infiniteRect();
+    return layer->backgroundClipRect(computeClipRoot, 0, true).rect() != PaintInfo::infiniteRect(); // FIXME: Incorrect for CSS regions.
 }
 
 // Return true if the given layer is a stacking context and has compositing child
@@ -1544,6 +1561,11 @@ void RenderLayerCompositor::paintContents(const GraphicsLayer* graphicsLayer, Gr
         transformedClip.moveBy(scrollCorner.location());
         m_renderView->frameView()->paintScrollCorner(&context, transformedClip);
         context.restore();
+#if PLATFORM(CHROMIUM) && ENABLE(RUBBER_BANDING)
+    } else if (graphicsLayer == layerForOverhangAreas()) {
+        ScrollView* view = m_renderView->frameView();
+        view->calculateAndPaintOverhangAreas(&context, clip);
+#endif
     }
 }
 
@@ -1566,7 +1588,7 @@ float RenderLayerCompositor::pageScaleFactor() const
     Page* page = frame->page();
     if (!page)
         return 1;
-    return page->mainFrame()->pageScaleFactor();
+    return page->pageScaleFactor();
 }
 
 void RenderLayerCompositor::didCommitChangesForLayer(const GraphicsLayer*) const
@@ -1609,9 +1631,36 @@ bool RenderLayerCompositor::requiresScrollCornerLayer() const
     return shouldCompositeOverflowControls(view) && view->isScrollCornerVisible();
 }
 
+#if PLATFORM(CHROMIUM) && ENABLE(RUBBER_BANDING)
+bool RenderLayerCompositor::requiresOverhangAreasLayer() const
+{
+    // Only if this is a top level frame (not iframe).
+    return !m_renderView->document()->ownerElement();
+}
+#endif
+
 void RenderLayerCompositor::updateOverflowControlsLayers()
 {
     bool layersChanged = false;
+  
+#if PLATFORM(CHROMIUM) && ENABLE(RUBBER_BANDING)
+    if (requiresOverhangAreasLayer()) {
+        if (!m_layerForOverhangAreas) {
+            m_layerForOverhangAreas = GraphicsLayer::create(this);
+#ifndef NDEBUG
+            m_layerForOverhangAreas->setName("overhang areas");
+#endif
+            m_layerForOverhangAreas->setDrawsContent(false);
+            m_layerForOverhangAreas->setSize(m_renderView->frameView()->frameRect().size());
+            m_overflowControlsHostLayer->addChild(m_layerForOverhangAreas.get());
+            layersChanged = true;
+        }
+    } else if (m_layerForOverhangAreas) {
+        m_layerForOverhangAreas->removeFromParent();
+        m_layerForOverhangAreas = nullptr;
+        layersChanged = true;
+    }
+#endif
 
     if (requiresHorizontalScrollbarLayer()) {
         m_layerForHorizontalScrollbar = GraphicsLayer::create(this);
@@ -1727,6 +1776,13 @@ void RenderLayerCompositor::destroyRootLayer()
 
     detachRootLayer();
 
+#if PLATFORM(CHROMIUM) && ENABLE(RUBBER_BANDING)
+    if (m_layerForOverhangAreas) {
+        m_layerForOverhangAreas->removeFromParent();
+        m_layerForOverhangAreas = nullptr;
+    }
+#endif
+
     if (m_layerForHorizontalScrollbar) {
         m_layerForHorizontalScrollbar->removeFromParent();
         m_layerForHorizontalScrollbar = nullptr;
@@ -1743,7 +1799,7 @@ void RenderLayerCompositor::destroyRootLayer()
 
     if (m_layerForScrollCorner) {
         m_layerForScrollCorner = nullptr;
-        m_renderView->frameView()->invalidateScrollCorner();
+        m_renderView->frameView()->invalidateScrollCorner(m_renderView->frameView()->scrollCornerRect());
     }
 
     if (m_overflowControlsHostLayer) {

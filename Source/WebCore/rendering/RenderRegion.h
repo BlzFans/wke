@@ -34,6 +34,8 @@
 
 namespace WebCore {
 
+class RenderBox;
+class RenderBoxRegionInfo;
 class RenderFlowThread;
 
 class RenderRegion : public RenderReplaced {
@@ -46,8 +48,9 @@ public:
     virtual void paintReplaced(PaintInfo&, const LayoutPoint&);
     virtual bool nodeAtPoint(const HitTestRequest&, HitTestResult&, const LayoutPoint& pointInContainer, const LayoutPoint& accumulatedOffset, HitTestAction);
 
-    void setRegionRect(const IntRect& rect) { m_regionRect = rect; }
-    IntRect regionRect() const { return m_regionRect; }
+    void setRegionRect(const LayoutRect& rect) { m_regionRect = rect; }
+    LayoutRect regionRect() const { return m_regionRect; }
+    LayoutRect regionOverflowRect() const;
 
     void attachRegion();
     void detachRegion();
@@ -60,6 +63,19 @@ public:
 
     virtual void layout();
 
+    RenderBoxRegionInfo* renderBoxRegionInfo(const RenderBox*) const;
+    RenderBoxRegionInfo* setRenderBoxRegionInfo(const RenderBox*, LayoutUnit logicalLeftInset, LayoutUnit logicalRightInset,
+        bool containingBlockChainIsInset);
+    RenderBoxRegionInfo* takeRenderBoxRegionInfo(const RenderBox*);
+    void removeRenderBoxRegionInfo(const RenderBox*);
+    
+    void deleteAllRenderBoxRegionInfo();
+
+    LayoutUnit offsetFromLogicalTopOfFirstPage() const;
+
+    bool isFirstRegion() const;
+    bool isLastRegion() const;
+
 private:
     virtual const char* renderName() const { return "RenderRegion"; }
 
@@ -69,7 +85,13 @@ private:
     // we need to create a dependency tree, so that layout of the
     // regions is always done before the regions themselves.
     RenderFlowThread* m_parentFlowThread;
-    IntRect m_regionRect;
+    LayoutRect m_regionRect;
+
+    // This map holds unique information about a block that is split across regions.
+    // A RenderBoxRegionInfo* tells us about any layout information for a RenderBox that
+    // is unique to the region. For now it just holds logical width information for RenderBlocks, but eventually
+    // it will also hold a custom style for any box (for region styling).
+    HashMap<const RenderBox*, RenderBoxRegionInfo*> m_renderBoxRegionInfo;
 
     bool m_isValid;
 };

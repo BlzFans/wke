@@ -34,6 +34,7 @@
 #include "HitTestResult.h"
 #include "IntRect.h"
 #include "PaintInfo.h"
+#include "RenderBoxRegionInfo.h"
 #include "RenderFlowThread.h"
 #include "RenderView.h"
 
@@ -49,6 +50,50 @@ RenderRegion::RenderRegion(Node* node, RenderFlowThread* flowThread)
 
 RenderRegion::~RenderRegion()
 {
+    deleteAllRenderBoxRegionInfo();
+}
+
+LayoutRect RenderRegion::regionOverflowRect() const
+{
+    // FIXME: Would like to just use hasOverflowClip() but we aren't a block yet. When RenderRegion is eliminated and
+    // folded into RenderBlock, switch to hasOverflowClip().
+    bool clipX = style()->overflowX() != OVISIBLE;
+    bool clipY = style()->overflowY() != OVISIBLE;
+    if ((clipX && clipY) || !isValid() || !m_flowThread)
+        return regionRect();
+
+    LayoutRect flowThreadOverflow = m_flowThread->visualOverflowRect();
+
+    // Only clip along the flow thread axis.
+    LayoutUnit outlineSize = maximalOutlineSize(PaintPhaseOutline);
+    LayoutRect clipRect;
+    if (m_flowThread->isHorizontalWritingMode()) {
+        LayoutUnit minY = isFirstRegion() ? (flowThreadOverflow.y() - outlineSize) : regionRect().y();
+        LayoutUnit maxY = isLastRegion() ? max(regionRect().maxY(), flowThreadOverflow.maxY()) + outlineSize : regionRect().maxY();
+        LayoutUnit minX = clipX ? regionRect().x() : (flowThreadOverflow.x() - outlineSize);
+        LayoutUnit maxX = clipX ? regionRect().maxX() : (flowThreadOverflow.maxX() + outlineSize);
+        clipRect = LayoutRect(minX, minY, maxX - minX, maxY - minY);
+    } else {
+        LayoutUnit minX = isFirstRegion() ? (flowThreadOverflow.x() - outlineSize) : regionRect().x();
+        LayoutUnit maxX = isLastRegion() ? max(regionRect().maxX(), flowThreadOverflow.maxX()) + outlineSize : regionRect().maxX();
+        LayoutUnit minY = clipY ? regionRect().y() : (flowThreadOverflow.y() - outlineSize);
+        LayoutUnit maxY = clipY ? regionRect().maxY() : (flowThreadOverflow.maxY() + outlineSize);
+        clipRect = LayoutRect(minX, minY, maxX - minX, maxY - minY);
+    }
+
+    return clipRect;
+}
+
+bool RenderRegion::isFirstRegion() const
+{
+    ASSERT(isValid() && m_flowThread);
+    return m_flowThread->firstRegion() == this;
+}
+
+bool RenderRegion::isLastRegion() const
+{
+    ASSERT(isValid() && m_flowThread);
+    return m_flowThread->lastRegion() == this;
 }
 
 void RenderRegion::paintReplaced(PaintInfo& paintInfo, const LayoutPoint& paintOffset)
@@ -56,7 +101,7 @@ void RenderRegion::paintReplaced(PaintInfo& paintInfo, const LayoutPoint& paintO
     // Delegate painting of content in region to RenderFlowThread.
     if (!m_flowThread || !isValid())
         return;
-    m_flowThread->paintIntoRegion(paintInfo, regionRect(), LayoutPoint(paintOffset.x() + borderLeft() + paddingLeft(), paintOffset.y() + borderTop() + paddingTop()));
+    m_flowThread->paintIntoRegion(paintInfo, this, LayoutPoint(paintOffset.x() + borderLeft() + paddingLeft(), paintOffset.y() + borderTop() + paddingTop()));
 }
 
 // Hit Testing
@@ -72,7 +117,7 @@ bool RenderRegion::nodeAtPoint(const HitTestRequest& request, HitTestResult& res
     LayoutRect boundsRect(adjustedLocation, size());
     if (visibleToHitTesting() && action == HitTestForeground && boundsRect.intersects(result.rectForPoint(pointInContainer))) {
         // Check the contents of the RenderFlowThread.
-        if (m_flowThread && m_flowThread->hitTestRegion(regionRect(), request, result, pointInContainer, LayoutPoint(adjustedLocation.x() + borderLeft() + paddingLeft(), adjustedLocation.y() + borderTop() + paddingTop())))
+        if (m_flowThread && m_flowThread->hitTestRegion(this, request, result, pointInContainer, LayoutPoint(adjustedLocation.x() + borderLeft() + paddingLeft(), adjustedLocation.y() + borderTop() + paddingTop())))
             return true;
         updateHitTestResult(result, pointInContainer - toLayoutSize(adjustedLocation));
         if (!result.addNodeToRectBasedTestResult(node(), pointInContainer, boundsRect))
@@ -85,8 +130,21 @@ bool RenderRegion::nodeAtPoint(const HitTestRequest& request, HitTestResult& res
 void RenderRegion::layout()
 {
     RenderReplaced::layout();
-    if (m_flowThread && isValid())
-        m_flowThread->invalidateRegions();
+    if (m_flowThread && isValid()) {
+        if (regionRect().width() != contentWidth() || regionRect().height() != contentHeight())
+            m_flowThread->invalidateRegions();
+    }
+    
+    // FIXME: We need to find a way to set up overflow properly. Our flow thread hasn't gotten a layout
+    // yet, so we can't look to it for correct information. It's possible we could wait until after the RenderFlowThread
+    // gets a layout, and then try to propagate overflow information back to the region, and then mark for a second layout.
+    // That second layout would then be able to use the information from the RenderFlowThread to set up overflow.
+    //
+    // The big problem though is that overflow needs to be region-specific. We can't simply use the RenderFlowThread's global
+    // overflow values, since then we'd always think any narrow region had huge overflow (all the way to the width of the
+    // RenderFlowThread itself).
+    //
+    // We'll need to expand RenderBoxRegionInfo to also hold left and right overflow values.
 }
 
 void RenderRegion::attachRegion()
@@ -119,6 +177,56 @@ void RenderRegion::detachRegion()
 {
     if (m_flowThread)
         m_flowThread->removeRegionFromThread(this);
+}
+
+RenderBoxRegionInfo* RenderRegion::renderBoxRegionInfo(const RenderBox* box) const
+{
+    if (!m_isValid || !m_flowThread)
+        return 0;
+    return m_renderBoxRegionInfo.get(box);
+}
+
+RenderBoxRegionInfo* RenderRegion::setRenderBoxRegionInfo(const RenderBox* box, LayoutUnit logicalLeftInset, LayoutUnit logicalRightInset,
+    bool containingBlockChainIsInset)
+{
+    ASSERT(m_isValid && m_flowThread);
+    if (!m_isValid || !m_flowThread)
+        return 0;
+
+    RenderBoxRegionInfo* existingBoxInfo = m_renderBoxRegionInfo.get(box);
+    if (existingBoxInfo) {
+        *existingBoxInfo = RenderBoxRegionInfo(logicalLeftInset, logicalRightInset, containingBlockChainIsInset);
+        return existingBoxInfo;
+    }
+    
+    RenderBoxRegionInfo* newBoxInfo = new RenderBoxRegionInfo(logicalLeftInset, logicalRightInset, containingBlockChainIsInset);
+    m_renderBoxRegionInfo.set(box, newBoxInfo);
+    return newBoxInfo;
+}
+
+RenderBoxRegionInfo* RenderRegion::takeRenderBoxRegionInfo(const RenderBox* box)
+{
+    return m_renderBoxRegionInfo.take(box);
+}
+
+void RenderRegion::removeRenderBoxRegionInfo(const RenderBox* box)
+{
+    m_renderBoxRegionInfo.remove(box);
+}
+
+void RenderRegion::deleteAllRenderBoxRegionInfo()
+{
+    deleteAllValues(m_renderBoxRegionInfo);
+    m_renderBoxRegionInfo.clear();
+}
+
+LayoutUnit RenderRegion::offsetFromLogicalTopOfFirstPage() const
+{
+    if (!m_isValid || !m_flowThread)
+        return 0;
+    if (m_flowThread->isHorizontalWritingMode())
+        return regionRect().y();
+    return regionRect().x();
 }
 
 } // namespace WebCore

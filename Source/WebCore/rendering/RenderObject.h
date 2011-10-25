@@ -26,7 +26,7 @@
 #ifndef RenderObject_h
 #define RenderObject_h
 
-#include "CachedResourceClient.h"
+#include "CachedImage.h"
 #include "Document.h"
 #include "Element.h"
 #include "FloatQuad.h"
@@ -46,6 +46,7 @@ namespace WebCore {
 
 class AffineTransform;
 class AnimationController;
+class Cursor;
 class HitTestResult;
 class InlineBox;
 class InlineFlowBox;
@@ -65,6 +66,12 @@ class RenderSVGResourceContainer;
 #endif
 
 struct PaintInfo;
+
+enum CursorDirective {
+    SetCursorBasedOnStyle,
+    SetCursor,
+    DoNotSetCursor
+};
 
 enum HitTestFilter {
     HitTestAll,
@@ -113,7 +120,8 @@ const int showTreeCharacterOffset = 39;
 #endif
 
 // Base class for all rendering tree objects.
-class RenderObject : public CachedResourceClient {
+class RenderObject : public CachedImageClient {
+    friend class LayoutRepainter;
     friend class RenderBlock;
     friend class RenderBox;
     friend class RenderLayer;
@@ -153,19 +161,24 @@ public:
             return children->beforePseudoElementRenderer(this);
         return 0;
     }
+
+    // This function only returns the renderer of the "after" pseudoElement if it is a child of
+    // this renderer. If "continuations" exist, the function returns 0 even if the element that
+    // generated this renderer has an "after" pseudo-element.
     RenderObject* afterPseudoElementRenderer() const
     {
         if (const RenderObjectChildList* children = virtualChildren())
             return children->afterPseudoElementRenderer(this);
         return 0;
     }
+
     virtual RenderObjectChildList* virtualChildren() { return 0; }
     virtual const RenderObjectChildList* virtualChildren() const { return 0; }
 
     RenderObject* nextInPreOrder() const;
-    RenderObject* nextInPreOrder(RenderObject* stayWithin) const;
+    RenderObject* nextInPreOrder(const RenderObject* stayWithin) const;
     RenderObject* nextInPreOrderAfterChildren() const;
-    RenderObject* nextInPreOrderAfterChildren(RenderObject* stayWithin) const;
+    RenderObject* nextInPreOrderAfterChildren(const RenderObject* stayWithin) const;
     RenderObject* previousInPreOrder() const;
     RenderObject* childAt(unsigned) const;
 
@@ -221,7 +234,14 @@ protected:
     // Helper functions. Dangerous to use!
     void setPreviousSibling(RenderObject* previous) { m_previous = previous; }
     void setNextSibling(RenderObject* next) { m_next = next; }
-    void setParent(RenderObject* parent) { m_parent = parent; }
+    void setParent(RenderObject* parent)
+    {
+        m_parent = parent;
+        if (parent && parent->inRenderFlowThread())
+            setInRenderFlowThread(true);
+        else if (!parent && inRenderFlowThread())
+            setInRenderFlowThread(false);
+    }
     //////////////////////////////////////////
 private:
     void addAbsoluteRectForLayer(IntRect& result);
@@ -331,13 +351,40 @@ public:
 
     inline bool isBeforeContent() const;
     inline bool isAfterContent() const;
+    inline bool isBeforeOrAfterContent() const;
     static inline bool isBeforeContent(const RenderObject* obj) { return obj && obj->isBeforeContent(); }
     static inline bool isAfterContent(const RenderObject* obj) { return obj && obj->isAfterContent(); }
+    static inline bool isBeforeOrAfterContent(const RenderObject* obj) { return obj && obj->isBeforeOrAfterContent(); }
+
+    inline RenderObject* findBeforeContentRenderer() const
+    {
+        RenderObject* renderer = beforePseudoElementRenderer();
+        return isBeforeContent(renderer) ? renderer : 0;
+    }
+
+    inline RenderObject* findAfterContentRenderer() const
+    {
+        RenderObject* renderer = afterPseudoElementRenderer();
+        return isAfterContent(renderer) ? renderer : 0;
+    }
+
+    inline RenderObject* anonymousContainer(RenderObject* child)
+    {
+         RenderObject* container = child;
+         while (container->parent() != this)
+             container = container->parent();
+
+         ASSERT(container->isAnonymous());
+         return container;
+    }
 
     bool childrenInline() const { return m_childrenInline; }
     void setChildrenInline(bool b = true) { m_childrenInline = b; }
     bool hasColumns() const { return m_hasColumns; }
     void setHasColumns(bool b = true) { m_hasColumns = b; }
+
+    bool inRenderFlowThread() const { return m_inRenderFlowThread; }
+    void setInRenderFlowThread(bool b = true) { m_inRenderFlowThread = b; }
 
     virtual bool requiresForcedStyleRecalcPropagation() const { return false; }
 
@@ -575,7 +622,7 @@ public:
     void setStyleInternal(PassRefPtr<RenderStyle>);
 
     // returns the containing block level element for this element.
-    virtual RenderBlock* containingBlock() const;
+    RenderBlock* containingBlock() const;
 
     // Convert the given local point to absolute coordinates
     // FIXME: Temporary. If useTransforms is true, take transforms into account. Eventually localToAbsolute() will always be transform-aware.
@@ -596,12 +643,14 @@ public:
     // Return the offset from an object up the container() chain. Asserts that none of the intermediate objects have transforms.
     LayoutSize offsetFromAncestorContainer(RenderObject*) const;
     
-    virtual void absoluteRects(Vector<LayoutRect>&, const LayoutPoint&) { }
+    virtual void absoluteRects(Vector<LayoutRect>&, const LayoutPoint&) const { }
+
     // FIXME: useTransforms should go away eventually
-    IntRect absoluteBoundingBoxRect(bool useTransforms = false);
+    IntRect absoluteBoundingBoxRect(bool useTransform = true) const;
+    IntRect absoluteBoundingBoxRectIgnoringTransforms() const { return absoluteBoundingBoxRect(false); }
 
     // Build an array of quads in absolute coords for line boxes
-    virtual void absoluteQuads(Vector<FloatQuad>&, bool* /*wasFixed*/ = 0) { }
+    virtual void absoluteQuads(Vector<FloatQuad>&, bool* /*wasFixed*/ = 0) const { }
 
     void absoluteFocusRingQuads(Vector<FloatQuad>&);
 
@@ -623,8 +672,9 @@ public:
     // This is typically only relevant when repainting.
     virtual RenderStyle* outlineStyleForRepaint() const { return style(); }
     
-    void getTextDecorationColors(int decorations, Color& underline, Color& overline,
-                                 Color& linethrough, bool quirksMode = false);
+    virtual CursorDirective getCursor(const LayoutPoint&, Cursor&) const;
+
+    void getTextDecorationColors(int decorations, Color& underline, Color& overline, Color& linethrough, bool quirksMode = false);
 
     // Return the RenderBox in the container chain which is responsible for painting this object, or 0
     // if painting is root-relative. This is the container that should be passed to the 'forRepaint'
@@ -766,7 +816,6 @@ public:
 
     virtual int caretMinOffset() const;
     virtual int caretMaxOffset() const;
-    virtual unsigned caretMaxRenderedOffset() const;
 
     virtual int previousOffset(int current) const;
     virtual int previousOffsetForBackwardDeletion(int current) const;
@@ -777,9 +826,6 @@ public:
     virtual bool willRenderImage(CachedImage*);
 
     void selectionStartEnd(int& spos, int& epos) const;
-
-    bool hasOverrideSize() const { return m_hasOverrideSize; }
-    void setHasOverrideSize(bool b) { m_hasOverrideSize = b; }
     
     void remove() { if (parent()) parent()->removeChild(this); }
 
@@ -807,6 +853,7 @@ protected:
     virtual void styleWillChange(StyleDifference, const RenderStyle* newStyle);
     // Overrides should call the superclass at the start
     virtual void styleDidChange(StyleDifference, const RenderStyle* oldStyle);
+    void propagateStyleToAnonymousChildren(bool blockChildrenOnly = false);
 
     void drawLineForBoxSide(GraphicsContext*, int x1, int y1, int x2, int y2, BoxSide,
                             Color, EBorderStyle, int adjbw1, int adjbw2, bool antialias = false);
@@ -824,36 +871,6 @@ protected:
 
     virtual IntRect outlineBoundsForRepaint(RenderBoxModelObject* /*repaintContainer*/, IntPoint* /*cachedOffsetToRepaintContainer*/ = 0) const { return IntRect(); }
 
-    class LayoutRepainter {
-    public:
-        LayoutRepainter(RenderObject& object, bool checkForRepaint, const IntRect* oldBounds = 0)
-            : m_object(object)
-            , m_repaintContainer(0)
-            , m_checkForRepaint(checkForRepaint)
-        {
-            if (m_checkForRepaint) {
-                m_repaintContainer = m_object.containerForRepaint();
-                m_oldBounds = oldBounds ? *oldBounds : m_object.clippedOverflowRectForRepaint(m_repaintContainer);
-                m_oldOutlineBox = m_object.outlineBoundsForRepaint(m_repaintContainer);
-            }
-        }
-        
-        // Return true if it repainted.
-        bool repaintAfterLayout()
-        {
-            return m_checkForRepaint ? m_object.repaintAfterLayoutIfNeeded(m_repaintContainer, m_oldBounds, m_oldOutlineBox) : false;
-        }
-        
-        bool checkForRepaint() const { return m_checkForRepaint; }
-        
-    private:
-        RenderObject& m_object;
-        RenderBoxModelObject* m_repaintContainer;
-        IntRect m_oldBounds;
-        IntRect m_oldOutlineBox;
-        bool m_checkForRepaint;
-    };
-    
 private:
     RenderStyle* firstLineStyleSlowCase() const;
     StyleDifference adjustStyleDifference(StyleDifference, unsigned contextSensitiveProperties) const;
@@ -899,8 +916,6 @@ private:
     bool m_hasOverflowClip           : 1; // Set in the case of overflow:auto/scroll/hidden
     bool m_hasTransform              : 1;
     bool m_hasReflection             : 1;
-
-    bool m_hasOverrideSize           : 1;
     
 public:
     bool m_hasCounterNodeMap         : 1;
@@ -915,6 +930,7 @@ private:
     bool m_hasMarkupTruncation : 1;
     unsigned m_selectionState : 3; // SelectionState
     bool m_hasColumns : 1;
+    bool m_inRenderFlowThread : 1;
 
 private:
     // Store state between styleWillChange and styleDidChange
@@ -944,6 +960,11 @@ inline bool RenderObject::isAfterContent() const
     if (isText() && !isBR())
         return false;
     return true;
+}
+
+inline bool RenderObject::isBeforeOrAfterContent() const
+{
+    return isBeforeContent() || isAfterContent();
 }
 
 inline void RenderObject::setNeedsLayout(bool b, bool markParents)
@@ -1005,70 +1026,6 @@ inline void RenderObject::setNeedsSimplifiedNormalFlowLayout()
         if (hasLayer())
             setLayerNeedsFullRepaint();
     }
-}
-
-inline bool objectIsRelayoutBoundary(const RenderObject *obj) 
-{
-    // FIXME: In future it may be possible to broaden this condition in order to improve performance.
-    // Table cells are excluded because even when their CSS height is fixed, their height()
-    // may depend on their contents.
-    return obj->isTextControl()
-        || (obj->hasOverflowClip() && !obj->style()->width().isIntrinsicOrAuto() && !obj->style()->height().isIntrinsicOrAuto() && !obj->style()->height().isPercent() && !obj->isTableCell())
-#if ENABLE(SVG)
-           || obj->isSVGRoot()
-#endif
-           ;
-}
-
-inline void RenderObject::markContainingBlocksForLayout(bool scheduleRelayout, RenderObject* newRoot)
-{
-    ASSERT(!scheduleRelayout || !newRoot);
-
-    RenderObject* o = container();
-    RenderObject* last = this;
-
-    bool simplifiedNormalFlowLayout = needsSimplifiedNormalFlowLayout() && !selfNeedsLayout() && !normalChildNeedsLayout();
-
-    while (o) {
-        // Don't mark the outermost object of an unrooted subtree. That object will be 
-        // marked when the subtree is added to the document.
-        RenderObject* container = o->container();
-        if (!container && !o->isRenderView())
-            return;
-        if (!last->isText() && (last->style()->position() == FixedPosition || last->style()->position() == AbsolutePosition)) {
-            bool willSkipRelativelyPositionedInlines = !o->isRenderBlock();
-            while (o && !o->isRenderBlock()) // Skip relatively positioned inlines and get to the enclosing RenderBlock.
-                o = o->container();
-            if (!o || o->m_posChildNeedsLayout)
-                return;
-            if (willSkipRelativelyPositionedInlines)
-                container = o->container();
-            o->m_posChildNeedsLayout = true;
-            simplifiedNormalFlowLayout = true;
-            ASSERT(!o->isSetNeedsLayoutForbidden());
-        } else if (simplifiedNormalFlowLayout) {
-            if (o->m_needsSimplifiedNormalFlowLayout)
-                return;
-            o->m_needsSimplifiedNormalFlowLayout = true;
-            ASSERT(!o->isSetNeedsLayoutForbidden());
-        } else {
-            if (o->m_normalChildNeedsLayout)
-                return;
-            o->m_normalChildNeedsLayout = true;
-            ASSERT(!o->isSetNeedsLayoutForbidden());
-        }
-
-        if (o == newRoot)
-            return;
-
-        last = o;
-        if (scheduleRelayout && objectIsRelayoutBoundary(last))
-            break;
-        o = container;
-    }
-
-    if (scheduleRelayout)
-        last->scheduleRelayout();
 }
 
 inline bool RenderObject::preservesNewline() const

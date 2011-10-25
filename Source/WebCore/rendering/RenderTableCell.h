@@ -37,11 +37,11 @@ public:
     int cellIndex() const { return 0; }
     void setCellIndex(int) { }
 
-    int colSpan() const { return m_columnSpan; }
-    void setColSpan(int c) { m_columnSpan = c; }
+    int colSpan() const;
+    int rowSpan() const;
 
-    int rowSpan() const { return m_rowSpan; }
-    void setRowSpan(int r) { m_rowSpan = r; }
+    // Called from HTMLTableCellElement.
+    void colSpanOrRowSpanChanged();
 
     int col() const { return m_column; }
     void setCol(int col) { m_column = col; }
@@ -86,11 +86,8 @@ public:
     CollapsedBorderValue collapsedTopBorder() const;
     CollapsedBorderValue collapsedBottomBorder() const;
 
-    typedef Vector<CollapsedBorderValue, 100> CollapsedBorderStyles;
-    void collectBorderStyles(CollapsedBorderStyles&) const;
-    static void sortBorderStyles(CollapsedBorderStyles&);
-
-    virtual void updateFromElement();
+    void collectBorderValues(RenderTable::CollapsedBorderValues&) const;
+    static void sortBorderValues(RenderTable::CollapsedBorderValues&);
 
     virtual void layout();
 
@@ -119,9 +116,7 @@ public:
     virtual LayoutUnit paddingBefore(bool includeIntrinsicPadding = true) const;
     virtual LayoutUnit paddingAfter(bool includeIntrinsicPadding = true) const;
 
-    void setOverrideSizeFromRowHeight(int);
-
-    bool hasVisualOverflow() const { return m_overflow && !borderBoxRect().contains(m_overflow->visualOverflowRect()); }
+    void setOverrideHeightFromRowHeight(int);
 
     virtual void scrollbarsChanged(bool horizontalScrollbarChanged, bool verticalScrollbarChanged);
 
@@ -136,8 +131,6 @@ private:
     virtual const char* renderName() const { return isAnonymous() ? "RenderTableCell (anonymous)" : "RenderTableCell"; }
 
     virtual bool isTableCell() const { return true; }
-
-    virtual RenderBlock* containingBlock() const;
 
     virtual void willBeDestroyed();
 
@@ -154,11 +147,12 @@ private:
 
     int m_row;
     int m_column;
-    int m_rowSpan;
-    int m_columnSpan : 31;
-    bool m_cellWidthChanged : 1;
     int m_intrinsicPaddingBefore;
     int m_intrinsicPaddingAfter;
+
+    // FIXME: It would be nice to pack these 2 bits into some of the previous fields.
+    bool m_cellWidthChanged : 1;
+    bool m_hasAssociatedTableCellElement : 1;
 };
 
 inline RenderTableCell* toRenderTableCell(RenderObject* object)

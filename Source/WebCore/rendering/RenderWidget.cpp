@@ -47,7 +47,7 @@ static HashMap<const Widget*, RenderWidget*>& widgetRendererMap()
     return *staticWidgetRendererMap;
 }
 
-static size_t widgetHierarchyUpdateSuspendCount;
+static unsigned widgetHierarchyUpdateSuspendCount;
 
 typedef HashMap<RefPtr<Widget>, FrameView*> WidgetToParentMap;
 
@@ -140,7 +140,7 @@ RenderWidget::~RenderWidget()
     clearWidget();
 }
 
-bool RenderWidget::setWidgetGeometry(const IntRect& frame, const IntSize& boundsSize)
+bool RenderWidget::setWidgetGeometry(const IntRect& frame)
 {
     if (!node())
         return false;
@@ -157,8 +157,6 @@ bool RenderWidget::setWidgetGeometry(const IntRect& frame, const IntSize& bounds
     RenderWidgetProtector protector(this);
     RefPtr<Node> protectedNode(node());
     m_widget->setFrameRect(frame);
-    if (m_widget) // setFrameRect can run arbitrary script, which might clear m_widget.
-        m_widget->setBoundsSize(boundsSize);
     
 #if USE(ACCELERATED_COMPOSITING)
     if (hasLayer() && layer()->isComposited())
@@ -190,9 +188,9 @@ void RenderWidget::setWidget(PassRefPtr<Widget> widget)
                 IntRect absoluteContentBox = IntRect(localToAbsoluteQuad(FloatQuad(contentBox)).boundingBox());
                 if (m_widget->isFrameView()) {
                     contentBox.setLocation(absoluteContentBox.location());
-                    setWidgetGeometry(contentBox, contentBox.size());
+                    setWidgetGeometry(contentBox);
                 } else
-                    setWidgetGeometry(absoluteContentBox, contentBox.size());
+                    setWidgetGeometry(absoluteContentBox);
             }
             if (style()->visibility() != VISIBLE)
                 m_widget->hide();
@@ -328,9 +326,9 @@ void RenderWidget::updateWidgetPosition()
     bool boundsChanged;
     if (m_widget->isFrameView()) {
         contentBox.setLocation(absoluteContentBox.location());
-        boundsChanged = setWidgetGeometry(contentBox, contentBox.size());
+        boundsChanged = setWidgetGeometry(contentBox);
     } else
-        boundsChanged = setWidgetGeometry(absoluteContentBox, contentBox.size());
+        boundsChanged = setWidgetGeometry(absoluteContentBox);
     
     // if the frame bounds got changed, or if view needs layout (possibly indicating
     // content size is wrong) we have to do a layout to set the right widget size
@@ -385,6 +383,15 @@ bool RenderWidget::nodeAtPoint(const HitTestRequest& request, HitTestResult& res
     if ((inside || result.isRectBasedTest()) && !hadResult && result.innerNode() == node())
         result.setIsOverWidget(contentBoxRect().contains(result.localPoint()));
     return inside;
+}
+
+CursorDirective RenderWidget::getCursor(const LayoutPoint& point, Cursor& cursor) const
+{
+    if (widget() && widget()->isPluginViewBase()) {
+        // A plug-in is responsible for setting the cursor when the pointer is over it.
+        return DoNotSetCursor;
+    }
+    return RenderReplaced::getCursor(point, cursor);
 }
 
 } // namespace WebCore

@@ -466,7 +466,7 @@ void RenderInline::paint(PaintInfo& paintInfo, const LayoutPoint& paintOffset)
     m_lineBoxes.paint(this, paintInfo, paintOffset);
 }
 
-void RenderInline::absoluteRects(Vector<LayoutRect>& rects, const LayoutPoint& accumulatedOffset)
+void RenderInline::absoluteRects(Vector<LayoutRect>& rects, const LayoutPoint& accumulatedOffset) const
 {
     if (!alwaysCreateLineBoxes())
         culledInlineAbsoluteRects(this, rects, toLayoutSize(accumulatedOffset));
@@ -485,7 +485,7 @@ void RenderInline::absoluteRects(Vector<LayoutRect>& rects, const LayoutPoint& a
     }
 }
 
-void RenderInline::culledInlineAbsoluteRects(const RenderInline* container, Vector<LayoutRect>& rects, const LayoutSize& offset)
+void RenderInline::culledInlineAbsoluteRects(const RenderInline* container, Vector<LayoutRect>& rects, const LayoutSize& offset) const
 {
     if (!culledInlineFirstLineBox()) {
         rects.append(IntRect(offset.width(), offset.height(), 0, 0));
@@ -553,7 +553,7 @@ void RenderInline::culledInlineAbsoluteRects(const RenderInline* container, Vect
     }
 }
 
-void RenderInline::absoluteQuads(Vector<FloatQuad>& quads, bool* wasFixed)
+void RenderInline::absoluteQuads(Vector<FloatQuad>& quads, bool* wasFixed) const
 {
     if (!alwaysCreateLineBoxes())
         culledInlineAbsoluteQuads(this, quads);
@@ -569,7 +569,7 @@ void RenderInline::absoluteQuads(Vector<FloatQuad>& quads, bool* wasFixed)
         continuation()->absoluteQuads(quads, wasFixed);
 }
 
-void RenderInline::culledInlineAbsoluteQuads(const RenderInline* container, Vector<FloatQuad>& quads)
+void RenderInline::culledInlineAbsoluteQuads(const RenderInline* container, Vector<FloatQuad>& quads) const
 {
     if (!culledInlineFirstLineBox()) {
         quads.append(localToAbsoluteQuad(FloatRect()));
@@ -1180,7 +1180,7 @@ void RenderInline::mapAbsoluteToLocalPoint(bool fixed, bool useTransforms, Trans
         getTransformFromContainer(o, containerOffset, t);
         transformState.applyTransform(t, preserve3D ? TransformState::AccumulateTransform : TransformState::FlattenTransform);
     } else
-        transformState.move(-containerOffset.width(), -containerOffset.height(), preserve3D ? TransformState::AccumulateTransform : TransformState::FlattenTransform);
+        transformState.move(containerOffset.width(), containerOffset.height(), preserve3D ? TransformState::AccumulateTransform : TransformState::FlattenTransform);
 }
 
 void RenderInline::updateDragState(bool dragOn)
@@ -1421,8 +1421,7 @@ void RenderInline::paintOutlineForLine(GraphicsContext* graphicsContext, const L
     LayoutUnit outlineWidth = styleToUse->outlineWidth();
     EBorderStyle outlineStyle = styleToUse->outlineStyle();
 
-    const AffineTransform& currentCTM = graphicsContext->getCTM();
-    bool antialias = !currentCTM.isIdentityOrTranslationOrFlipped();
+    bool antialias = shouldAntialiasLines(graphicsContext);
 
     LayoutUnit offset = style()->outlineOffset();
 
@@ -1475,7 +1474,18 @@ void RenderInline::paintOutlineForLine(GraphicsContext* graphicsContext, const L
             BSTop, outlineColor, outlineStyle,
             (!lastline.isEmpty() && left - outlineWidth < paintOffset.x() + lastline.maxX()) ? -outlineWidth : outlineWidth,
             outlineWidth, antialias);
-    
+
+    if (thisline.x() == thisline.maxX())
+          drawLineForBoxSide(graphicsContext,
+            left - outlineWidth,
+            top - outlineWidth,
+            right + outlineWidth,
+            top,
+            BSTop, outlineColor, outlineStyle,
+            outlineWidth,
+            outlineWidth,
+            antialias);
+
     // lower edge
     if (thisline.x() < nextline.x())
         drawLineForBoxSide(graphicsContext,
@@ -1497,6 +1507,17 @@ void RenderInline::paintOutlineForLine(GraphicsContext* graphicsContext, const L
             BSBottom, outlineColor, outlineStyle,
             (!nextline.isEmpty() && left - outlineWidth < paintOffset.x() + nextline.maxX()) ? -outlineWidth : outlineWidth,
             outlineWidth, antialias);
+
+    if (thisline.x() == thisline.maxX())
+          drawLineForBoxSide(graphicsContext,
+            left - outlineWidth,
+            bottom,
+            right + outlineWidth,
+            bottom + outlineWidth,
+            BSBottom, outlineColor, outlineStyle,
+            outlineWidth,
+            outlineWidth,
+            antialias);
 }
 
 #if ENABLE(DASHBOARD_SUPPORT)

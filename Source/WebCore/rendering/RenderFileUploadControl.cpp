@@ -63,8 +63,15 @@ void RenderFileUploadControl::updateFromElement()
     HTMLInputElement* input = static_cast<HTMLInputElement*>(node());
     ASSERT(input->isFileUpload());
 
-    if (HTMLInputElement* button = uploadButton())
-        button->setDisabled(!theme()->isEnabled(this));
+    if (HTMLInputElement* button = uploadButton()) {
+        bool newDisabled = !theme()->isEnabled(this);
+        // We should avoid to call HTMLFormControlElement::setDisabled() as
+        // possible because setAttribute() in setDisabled() can cause style
+        // recalculation, and HTMLFormControlElement::recalcStyle() calls
+        // updateFromElement() eventually.
+        if (button->disabled() != newDisabled)
+            button->setDisabled(newDisabled);
+    }
 
     // This only supports clearing out the files, but that's OK because for
     // security reasons that's the only change the DOM is allowed to make.
@@ -125,7 +132,8 @@ void RenderFileUploadControl::paintObject(PaintInfo& paintInfo, const LayoutPoin
             textX = contentLeft + contentWidth() - buttonAndIconWidth - font.width(textRun);
         // We want to match the button's baseline
         RenderButton* buttonRenderer = toRenderButton(button->renderer());
-        LayoutUnit textY = buttonRenderer->absoluteBoundingBoxRect().y()
+        // FIXME: Make this work with transforms.
+        LayoutUnit textY = buttonRenderer->absoluteBoundingBoxRectIgnoringTransforms().y()
             + buttonRenderer->baselinePosition(AlphabeticBaseline, true, HorizontalLine, PositionOnContainingLine);
 
         paintInfo.context->setFillColor(style()->visitedDependentColor(CSSPropertyColor), style()->colorSpace());
@@ -181,7 +189,7 @@ void RenderFileUploadControl::computePreferredLogicalWidths()
     else
         m_minPreferredLogicalWidth = m_maxPreferredLogicalWidth;
 
-    if (style->maxWidth().isFixed() && style->maxWidth().value() != undefinedLength) {
+    if (style->maxWidth().isFixed()) {
         m_maxPreferredLogicalWidth = min(m_maxPreferredLogicalWidth, computeContentBoxLogicalWidth(style->maxWidth().value()));
         m_minPreferredLogicalWidth = min(m_minPreferredLogicalWidth, computeContentBoxLogicalWidth(style->maxWidth().value()));
     }

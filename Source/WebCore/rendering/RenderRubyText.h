@@ -46,7 +46,11 @@ public:
 
     virtual bool isChildAllowed(RenderObject*, RenderStyle*) const;
 
+    virtual void updateBeforeAfterContent(PseudoId);
+
 private:
+    virtual bool avoidsFloats() const;
+
     virtual ETextAlign textAlignmentForLine(bool endsWithSoftBreak) const;
     virtual void adjustInlineDirectionLineBounds(int expansionOpportunityCount, float& logicalLeft, float& logicalWidth) const;
 };

@@ -29,6 +29,7 @@
 #include "Frame.h"
 #include "GraphicsContext.h"
 #include "HitTestResult.h"
+#include "LayoutRepainter.h"
 #include "RenderPart.h"
 #include "RenderSVGContainer.h"
 #include "RenderSVGResource.h"
@@ -101,7 +102,7 @@ void RenderSVGRoot::computePreferredLogicalWidths()
     LayoutUnit borderAndPadding = borderAndPaddingWidth();
     LayoutUnit width = computeReplacedLogicalWidth(false) + borderAndPadding;
 
-    if (style()->maxWidth().isFixed() && style()->maxWidth().value() != undefinedLength)
+    if (style()->maxWidth().isFixed())
         width = min(width, style()->maxWidth().value() + (style()->boxSizing() == CONTENT_BOX ? borderAndPadding : 0));
 
     if (style()->width().isPercent() || (style()->width().isAuto() && style()->height().isPercent())) {
@@ -275,7 +276,7 @@ void RenderSVGRoot::paint(PaintInfo& paintInfo, const LayoutPoint& paintOffset)
     childPaintInfo.context->save();
 
     // Apply initial viewport clip - not affected by overflow handling
-    childPaintInfo.context->clip(overflowClipRect(borderBoxOriginInContainer));
+    childPaintInfo.context->clip(overflowClipRect(borderBoxOriginInContainer, paintInfo.renderRegion));
 
     // Convert from container offsets (html renderers) to a relative transform (svg renderers).
     // Transform from our paint container's coordinate system to our local coords.

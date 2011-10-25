@@ -35,6 +35,8 @@ public:
     virtual LayoutUnit computeReplacedLogicalWidth(bool includeMaxWidth = true) const;
     virtual LayoutUnit computeReplacedLogicalHeight() const;
 
+    bool logicalHeightIsAuto() const;
+
 protected:
     virtual void willBeDestroyed();
 
@@ -62,7 +64,6 @@ private:
     virtual RenderBox* embeddedContentBox() const { return 0; }
     int computeIntrinsicLogicalWidth(RenderBox* contentRenderer, bool includeMaxWidth) const;
     int computeIntrinsicLogicalHeight(RenderBox* contentRenderer) const;
-    bool logicalHeightIsAuto() const;
 
     virtual const char* renderName() const { return "RenderReplaced"; }
 
@@ -77,7 +78,6 @@ private:
 
     virtual IntRect clippedOverflowRectForRepaint(RenderBoxModelObject* repaintContainer) const;
 
-    virtual unsigned caretMaxRenderedOffset() const;
     virtual VisiblePosition positionForPoint(const LayoutPoint&);
     
     virtual bool canBeSelectionLeaf() const { return true; }

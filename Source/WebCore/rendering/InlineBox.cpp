@@ -34,7 +34,24 @@
 using namespace std;
 
 namespace WebCore {
-    
+
+#if !COMPILER(MSVC)
+// FIXME: Figure out why this doesn't work on MSVC.
+class SameSizeAsInlineBox {
+    virtual ~SameSizeAsInlineBox() { }
+    void* a[4];
+    FloatPoint b;
+    float c;
+    uint32_t d : 31;
+    bool e : 1;
+#ifndef NDEBUG
+    bool f;
+#endif
+};
+
+COMPILE_ASSERT(sizeof(InlineBox) == sizeof(SameSizeAsInlineBox), InlineBox_size_guard);
+#endif
+
 #ifndef NDEBUG
 static bool inInlineBoxDetach;
 #endif
@@ -126,10 +143,8 @@ void InlineBox::showBox(int printedCharacters) const
 
 LayoutUnit InlineBox::logicalHeight() const
 {
-#if ENABLE(SVG)
     if (hasVirtualLogicalHeight())
         return virtualLogicalHeight();
-#endif
     
     if (renderer()->isText())
         return m_isText ? renderer()->style(m_firstLine)->fontMetrics().height() : 0;
@@ -153,11 +168,6 @@ int InlineBox::caretMinOffset() const
 int InlineBox::caretMaxOffset() const 
 { 
     return m_renderer->caretMaxOffset(); 
-}
-
-unsigned InlineBox::caretMaxRenderedOffset() const 
-{ 
-    return 1; 
 }
 
 void InlineBox::dirtyLineBoxes()
@@ -203,7 +213,7 @@ void InlineBox::paint(PaintInfo& paintInfo, const LayoutPoint& paintOffset, Layo
 
     LayoutPoint childPoint = paintOffset;
     if (parent()->renderer()->style()->isFlippedBlocksWritingMode()) // Faster than calling containingBlock().
-        childPoint = renderer()->containingBlock()->flipForWritingMode(toRenderBox(renderer()), childPoint, RenderBox::ParentToChildFlippingAdjustment);
+        childPoint = renderer()->containingBlock()->flipForWritingModeForChild(toRenderBox(renderer()), childPoint);
     
     // Paint all phases of replaced elements atomically, as though the replaced element established its
     // own stacking context.  (See Appendix E.2, section 6.4 on inline block/table elements in the CSS2.1
@@ -261,21 +271,6 @@ bool InlineBox::nextOnLineExists() const
             m_nextOnLineExists = parent()->nextOnLineExists();
     }
     return m_nextOnLineExists;
-}
-
-bool InlineBox::prevOnLineExists() const
-{
-    if (!m_determinedIfPrevOnLineExists) {
-        m_determinedIfPrevOnLineExists = true;
-        
-        if (!parent())
-            m_prevOnLineExists = false;
-        else if (prevOnLine())
-            m_prevOnLineExists = true;
-        else
-            m_prevOnLineExists = parent()->prevOnLineExists();
-    }
-    return m_prevOnLineExists;
 }
 
 InlineBox* InlineBox::nextLeafChild() const

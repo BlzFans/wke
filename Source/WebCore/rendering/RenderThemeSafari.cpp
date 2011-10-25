@@ -75,8 +75,8 @@ PassRefPtr<RenderTheme> RenderThemeSafari::create()
 
 PassRefPtr<RenderTheme> RenderTheme::themeForPage(Page* page)
 {
-    static RenderTheme* safariTheme = RenderThemeSafari::create().releaseRef();
-    static RenderTheme* windowsTheme = RenderThemeWin::create().releaseRef();
+    static RenderTheme* safariTheme = RenderThemeSafari::create().leakRef();
+    static RenderTheme* windowsTheme = RenderThemeWin::create().leakRef();
 
     // FIXME: This is called before Settings has been initialized by WebKit, so will return a
     // potentially wrong answer the very first time it's called (see
@@ -1080,7 +1080,7 @@ bool RenderThemeSafari::paintSearchFieldCancelButton(RenderObject* o, const Pain
     RenderObject* renderer = input->renderer();
     ASSERT(renderer);
 
-    IntRect searchRect = renderer->absoluteBoundingBoxRect();
+    IntRect searchRect = renderer->absoluteBoundingBoxRectIgnoringTransforms();
 
     paintThemePart(SafariTheme::SearchFieldCancelButtonPart, paintInfo.context->platformContext(), searchRect, controlSizeFromRect(searchRect, searchFieldSizes()), determineState(o));
     return false;
@@ -1134,7 +1134,7 @@ bool RenderThemeSafari::paintSearchFieldResultsDecoration(RenderObject* o, const
     RenderObject* renderer = input->renderer();
     ASSERT(renderer);
 
-    IntRect searchRect = renderer->absoluteBoundingBoxRect();
+    IntRect searchRect = renderer->absoluteBoundingBoxRectIgnoringTransforms();
 
     paintThemePart(SafariTheme::SearchFieldResultsDecorationPart, paintInfo.context->platformContext(), searchRect, controlSizeFromRect(searchRect, searchFieldSizes()), determineState(o));
     return false;
@@ -1157,7 +1157,7 @@ bool RenderThemeSafari::paintSearchFieldResultsButton(RenderObject* o, const Pai
     RenderObject* renderer = input->renderer();
     ASSERT(renderer);
 
-    IntRect searchRect = renderer->absoluteBoundingBoxRect();
+    IntRect searchRect = renderer->absoluteBoundingBoxRectIgnoringTransforms();
 
     paintThemePart(SafariTheme::SearchFieldResultsButtonPart, paintInfo.context->platformContext(), searchRect, controlSizeFromRect(searchRect, searchFieldSizes()), determineState(o));
     return false;

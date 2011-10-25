@@ -21,7 +21,7 @@
 #import "config.h"
 #import "RenderThemeChromiumMac.h"
 #import "PaintInfo.h"
-#import "PlatformBridge.h"
+#import "PlatformSupport.h"
 #import "RenderMediaControlsChromium.h"
 #import "UserAgentStyleSheets.h"
 #import <Carbon/Carbon.h>
@@ -60,7 +60,7 @@ NSView* FlippedView()
 
 PassRefPtr<RenderTheme> RenderTheme::themeForPage(Page*)
 {
-    static RenderTheme* rt = RenderThemeChromiumMac::create().releaseRef();
+    static RenderTheme* rt = RenderThemeChromiumMac::create().leakRef();
     return rt;
 }
 
@@ -71,7 +71,7 @@ PassRefPtr<RenderTheme> RenderThemeChromiumMac::create()
 
 bool RenderThemeChromiumMac::usesTestModeFocusRingColor() const
 {
-    return PlatformBridge::layoutTestMode();
+    return PlatformSupport::layoutTestMode();
 }
 
 NSView* RenderThemeChromiumMac::documentViewFor(RenderObject*) const

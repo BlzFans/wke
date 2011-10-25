@@ -32,6 +32,7 @@
 #include "HTMLMediaElement.h"
 #include "HTMLNames.h"
 #include "HTMLParserIdioms.h"
+#include "HTMLPlugInImageElement.h"
 #include "RenderBlock.h"
 #include "RenderImage.h"
 #include "RenderInline.h"
@@ -53,6 +54,7 @@ HitTestResult::HitTestResult()
     , m_rightPadding(0)
     , m_bottomPadding(0)
     , m_leftPadding(0)
+    , m_region(0)
 {
 }
 
@@ -64,6 +66,7 @@ HitTestResult::HitTestResult(const LayoutPoint& point)
     , m_rightPadding(0)
     , m_bottomPadding(0)
     , m_leftPadding(0)
+    , m_region(0)
 {
 }
 
@@ -74,6 +77,7 @@ HitTestResult::HitTestResult(const LayoutPoint& centerPoint, unsigned topPadding
     , m_rightPadding(rightPadding)
     , m_bottomPadding(bottomPadding)
     , m_leftPadding(leftPadding)
+    , m_region(0)
 {
     // If all padding values passed in are zero then it is not a rect based hit test.
     m_isRectBased = topPadding || rightPadding || bottomPadding || leftPadding;
@@ -91,6 +95,7 @@ HitTestResult::HitTestResult(const HitTestResult& other)
     , m_innerURLElement(other.URLElement())
     , m_scrollbar(other.scrollbar())
     , m_isOverWidget(other.isOverWidget())
+    , m_region(other.region())
 {
     // Only copy the padding and NodeSet in case of rect hit test.
     // Copying the later is rather expensive.
@@ -129,6 +134,9 @@ HitTestResult& HitTestResult::operator=(const HitTestResult& other)
         m_topPadding = m_rightPadding = m_bottomPadding = m_leftPadding = 0;
 
     m_rectBasedTestResult = adoptPtr(other.m_rectBasedTestResult ? new NodeSet(*other.m_rectBasedTestResult) : 0);
+    
+    m_region = other.m_region;
+
     return *this;
 }
 
@@ -297,7 +305,7 @@ Image* HitTestResult::image() const
     if (renderer && renderer->isImage()) {
         RenderImage* image = static_cast<WebCore::RenderImage*>(renderer);
         if (image->cachedImage() && !image->cachedImage()->errorOccurred())
-            return image->cachedImage()->image();
+            return image->cachedImage()->imageForRenderer(image);
     }
 
     return 0;
@@ -333,6 +341,24 @@ KURL HitTestResult::absoluteImageURL() const
         return KURL();
 
     return m_innerNonSharedNode->document()->completeURL(stripLeadingAndTrailingHTMLSpaces(urlString));
+}
+
+KURL HitTestResult::absolutePDFURL() const
+{
+    if (!(m_innerNonSharedNode && m_innerNonSharedNode->document()))
+        return KURL();
+
+    if (!m_innerNonSharedNode->hasTagName(embedTag) && !m_innerNonSharedNode->hasTagName(objectTag))
+        return KURL();
+
+    HTMLPlugInImageElement* element = static_cast<HTMLPlugInImageElement*>(m_innerNonSharedNode.get());
+    KURL url = m_innerNonSharedNode->document()->completeURL(stripLeadingAndTrailingHTMLSpaces(element->url()));
+    if (!url.isValid())
+        return KURL();
+
+    if (element->serviceType() == "application/pdf" || (element->serviceType().isEmpty() && url.path().lower().endsWith(".pdf")))
+        return url;
+    return KURL();
 }
 
 KURL HitTestResult::absoluteMediaURL() const

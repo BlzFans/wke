@@ -43,7 +43,7 @@ class RenderVideo;
 
 enum CompositingUpdateType {
     CompositingUpdateAfterLayoutOrStyleChange,
-    CompositingUpdateOnPaitingOrHitTest,
+    CompositingUpdateOnHitTest,
     CompositingUpdateOnScroll
 };
 
@@ -151,6 +151,13 @@ public:
 
     void clearBackingForAllLayers();
     
+    void layerBecameComposited(const RenderLayer*) { ++m_compositedLayerCount; }
+    void layerBecameNonComposited(const RenderLayer*)
+    {
+        ASSERT(m_compositedLayerCount > 0);
+        --m_compositedLayerCount;
+    }
+    
     void didStartAcceleratedAnimation(CSSPropertyID);
     
 #if ENABLE(VIDEO)
@@ -196,6 +203,9 @@ public:
     GraphicsLayer* layerForHorizontalScrollbar() const { return m_layerForHorizontalScrollbar.get(); }
     GraphicsLayer* layerForVerticalScrollbar() const { return m_layerForVerticalScrollbar.get(); }
     GraphicsLayer* layerForScrollCorner() const { return m_layerForScrollCorner.get(); }
+#if PLATFORM(CHROMIUM) && ENABLE(RUBBER_BANDING)
+    GraphicsLayer* layerForOverhangAreas() const { return m_layerForOverhangAreas.get(); }
+#endif
 
 private:
     // GraphicsLayerClient Implementation
@@ -245,6 +255,8 @@ private:
 
     bool layerHas3DContent(const RenderLayer*) const;
     bool hasNonIdentity3DTransform(RenderObject*) const;
+    
+    bool hasAnyAdditionalCompositedLayers(const RenderLayer* rootLayer) const;
 
     void ensureRootLayer();
     void destroyRootLayer();
@@ -275,6 +287,9 @@ private:
     bool requiresHorizontalScrollbarLayer() const;
     bool requiresVerticalScrollbarLayer() const;
     bool requiresScrollCornerLayer() const;
+#if PLATFORM(CHROMIUM) && ENABLE(RUBBER_BANDING)
+    bool requiresOverhangAreasLayer() const;
+#endif
 
 private:
     RenderView* m_renderView;
@@ -284,6 +299,7 @@ private:
     bool m_hasAcceleratedCompositing;
     ChromeClient::CompositingTriggerFlags m_compositingTriggers;
 
+    int m_compositedLayerCount;
     bool m_showDebugBorders;
     bool m_showRepaintCounter;
     bool m_compositingConsultsOverlap;
@@ -311,6 +327,9 @@ private:
     OwnPtr<GraphicsLayer> m_layerForHorizontalScrollbar;
     OwnPtr<GraphicsLayer> m_layerForVerticalScrollbar;
     OwnPtr<GraphicsLayer> m_layerForScrollCorner;
+#if PLATFORM(CHROMIUM) && ENABLE(RUBBER_BANDING)
+    OwnPtr<GraphicsLayer> m_layerForOverhangAreas;
+#endif
 #if PROFILE_LAYER_REBUILD
     int m_rootLayerUpdateCount;
 #endif

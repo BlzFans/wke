@@ -21,10 +21,12 @@
 #include "SVGResourcesCache.h"
 
 #if ENABLE(SVG)
+#include "HTMLNames.h"
 #include "RenderSVGResourceContainer.h"
 #include "SVGDocumentExtensions.h"
 #include "SVGResources.h"
 #include "SVGResourcesCycleSolver.h"
+#include "SVGStyledElement.h"
 
 namespace WebCore {
 
@@ -126,14 +128,14 @@ void SVGResourcesCache::clientStyleChanged(RenderObject* renderer, StyleDifferen
     if (diff == StyleDifferenceEqual)
         return;
 
-    // In this case the proper SVGFE*Element will imply whether the modifided CSS properties implies a relayout or repaint.
+    // In this case the proper SVGFE*Element will decide whether the modified CSS properties require a relayout or repaint.
     if (renderer->isSVGResourceFilterPrimitive() && diff == StyleDifferenceRepaint)
         return;
 
     clientUpdatedFromElement(renderer, newStyle);
     RenderSVGResource::markForLayoutAndParentResourceInvalidation(renderer, false);
 }
- 
+
 void SVGResourcesCache::clientUpdatedFromElement(RenderObject* renderer, const RenderStyle* newStyle)
 {
     ASSERT(renderer);
@@ -142,6 +144,12 @@ void SVGResourcesCache::clientUpdatedFromElement(RenderObject* renderer, const R
     SVGResourcesCache* cache = resourcesCacheFromRenderObject(renderer);
     cache->removeResourcesFromRenderObject(renderer);
     cache->addResourcesFromRenderObject(renderer, newStyle);
+
+#if ENABLE(FILTERS)
+    SVGResources* resources = SVGResourcesCache::cachedResourcesForRenderObject(renderer);
+    if (resources && resources->filter())
+        resources->removeClientFromCache(renderer);
+#endif
 }
 
 void SVGResourcesCache::clientDestroyed(RenderObject* renderer)
@@ -160,8 +168,16 @@ void SVGResourcesCache::resourceDestroyed(RenderSVGResourceContainer* resource)
     cache->removeResourcesFromRenderObject(resource);
 
     HashMap<RenderObject*, SVGResources*>::iterator end = cache->m_cache.end();
-    for (HashMap<RenderObject*, SVGResources*>::iterator it = cache->m_cache.begin(); it != end; ++it)
+    for (HashMap<RenderObject*, SVGResources*>::iterator it = cache->m_cache.begin(); it != end; ++it) {
         it->second->resourceDestroyed(resource);
+
+        // Mark users of destroyed resources as pending resolution based on the id of the old resource.
+        Element* resourceElement = toElement(resource->node());
+        SVGStyledElement* clientElement = toSVGStyledElement(it->first->node());
+        SVGDocumentExtensions* extensions = clientElement->document()->accessSVGExtensions();
+
+        extensions->addPendingResource(resourceElement->fastGetAttribute(HTMLNames::idAttr), clientElement);
+    }
 }
 
 }

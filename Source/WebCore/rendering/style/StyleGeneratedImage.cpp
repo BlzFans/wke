@@ -25,6 +25,7 @@
 #include "StyleGeneratedImage.h"
 
 #include "CSSImageGeneratorValue.h"
+#include "CSSStyleSelector.h"
 #include "RenderObject.h"
 
 namespace WebCore {
@@ -57,9 +58,12 @@ IntSize StyleGeneratedImage::imageSize(const RenderObject* renderer, float multi
     return m_containerSize;
 }
 
-void StyleGeneratedImage::setImageContainerSize(const IntSize& size)
+void StyleGeneratedImage::computeIntrinsicDimensions(const RenderObject* renderer, Length& intrinsicWidth, Length& intrinsicHeight, FloatSize& intrinsicRatio)
 {
-    m_containerSize = size;
+    IntSize size = imageSize(renderer, 1);
+    intrinsicWidth = Length(size.width(), Fixed);
+    intrinsicHeight = Length(size.height(), Fixed);
+    intrinsicRatio = size;
 }
 
 void StyleGeneratedImage::addClient(RenderObject* renderer)
@@ -74,6 +78,7 @@ void StyleGeneratedImage::removeClient(RenderObject* renderer)
 
 PassRefPtr<Image> StyleGeneratedImage::image(RenderObject* renderer, const IntSize& size) const
 {
+    renderer->document()->styleSelector()->setStyle(renderer->style());
     return m_generator->image(renderer, size);
 }
 

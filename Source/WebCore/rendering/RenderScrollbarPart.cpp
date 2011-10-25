@@ -82,7 +82,7 @@ void RenderScrollbarPart::layoutVerticalPart()
 static int calcScrollbarThicknessUsing(const Length& l, int containingLength)
 {
     if (l.isIntrinsicOrAuto())
-        return ScrollbarTheme::nativeTheme()->scrollbarThickness();
+        return ScrollbarTheme::theme()->scrollbarThickness();
     return l.calcMinValue(containingLength);
 }
 
@@ -150,7 +150,7 @@ void RenderScrollbarPart::imageChanged(WrappedImagePtr image, const IntRect* rec
     else {
         if (FrameView* frameView = view()->frameView()) {
             if (frameView->isFrameViewScrollCorner(this)) {
-                frameView->invalidateScrollCorner();
+                frameView->invalidateScrollCorner(frameView->scrollCornerRect());
                 return;
             }
         }
@@ -170,7 +170,7 @@ void RenderScrollbarPart::paintIntoRect(GraphicsContext* graphicsContext, const 
         return;
 
     // Now do the paint.
-    PaintInfo paintInfo(graphicsContext, rect, PaintPhaseBlockBackground, false, 0, 0);
+    PaintInfo paintInfo(graphicsContext, rect, PaintPhaseBlockBackground, false, 0, 0, 0);
     paint(paintInfo, paintOffset);
     paintInfo.phase = PaintPhaseChildBlockBackgrounds;
     paint(paintInfo, paintOffset);

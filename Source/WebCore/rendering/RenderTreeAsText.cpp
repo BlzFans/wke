@@ -197,7 +197,7 @@ static bool isEmptyOrUnstyledAppleStyleSpan(const Node* node)
 
 String quoteAndEscapeNonPrintables(const String& s)
 {
-    Vector<UChar> result;
+    StringBuilder result;
     result.append('"');
     for (unsigned i = 0; i != s.length(); ++i) {
         UChar c = s[i];
@@ -222,7 +222,7 @@ String quoteAndEscapeNonPrintables(const String& s)
         }
     }
     result.append('"');
-    return String::adopt(result);
+    return result.toString();
 }
 
 void RenderTreeAsText::writeRenderObject(TextStream& ts, const RenderObject& o, RenderAsTextBehavior behavior)
@@ -246,7 +246,8 @@ void RenderTreeAsText::writeRenderObject(TextStream& ts, const RenderObject& o, 
         }
     }
     
-    bool adjustForTableCells = o.containingBlock()->isTableCell();
+    RenderBlock* cb = o.containingBlock();
+    bool adjustForTableCells = cb ? cb->isTableCell() : false;
 
     IntRect r;
     if (o.isText()) {
@@ -281,27 +282,30 @@ void RenderTreeAsText::writeRenderObject(TextStream& ts, const RenderObject& o, 
         if (o.isFileUploadControl())
             ts << " " << quoteAndEscapeNonPrintables(toRenderFileUploadControl(&o)->fileTextValue());
 
-        if (o.parent() && (o.parent()->style()->color() != o.style()->color()))
-            ts << " [color=" << o.style()->color().nameForRenderTreeAsText() << "]";
+        if (o.parent()) {
+            Color color = o.style()->visitedDependentColor(CSSPropertyColor);
+            if (o.parent()->style()->visitedDependentColor(CSSPropertyColor) != color)
+                ts << " [color=" << color.nameForRenderTreeAsText() << "]";
 
-        if (o.parent() && (o.parent()->style()->backgroundColor() != o.style()->backgroundColor()) &&
-            o.style()->backgroundColor().isValid() && o.style()->backgroundColor().rgb())
             // Do not dump invalid or transparent backgrounds, since that is the default.
-            ts << " [bgcolor=" << o.style()->backgroundColor().nameForRenderTreeAsText() << "]";
-        
-        if (o.parent() && (o.parent()->style()->textFillColor() != o.style()->textFillColor()) &&
-            o.style()->textFillColor().isValid() && o.style()->textFillColor() != o.style()->color() &&
-            o.style()->textFillColor().rgb())
-            ts << " [textFillColor=" << o.style()->textFillColor().nameForRenderTreeAsText() << "]";
+            Color backgroundColor = o.style()->visitedDependentColor(CSSPropertyBackgroundColor);
+            if (o.parent()->style()->visitedDependentColor(CSSPropertyBackgroundColor) != backgroundColor
+                && backgroundColor.isValid() && backgroundColor.rgb())
+                ts << " [bgcolor=" << backgroundColor.nameForRenderTreeAsText() << "]";
+            
+            Color textFillColor = o.style()->visitedDependentColor(CSSPropertyWebkitTextFillColor);
+            if (o.parent()->style()->visitedDependentColor(CSSPropertyWebkitTextFillColor) != textFillColor
+                && textFillColor.isValid() && textFillColor != color && textFillColor.rgb())
+                ts << " [textFillColor=" << textFillColor.nameForRenderTreeAsText() << "]";
 
-        if (o.parent() && (o.parent()->style()->textStrokeColor() != o.style()->textStrokeColor()) &&
-            o.style()->textStrokeColor().isValid() && o.style()->textStrokeColor() != o.style()->color() &&
-            o.style()->textStrokeColor().rgb())
-            ts << " [textStrokeColor=" << o.style()->textStrokeColor().nameForRenderTreeAsText() << "]";
+            Color textStrokeColor = o.style()->visitedDependentColor(CSSPropertyWebkitTextStrokeColor);
+            if (o.parent()->style()->visitedDependentColor(CSSPropertyWebkitTextStrokeColor) != textStrokeColor
+                && textStrokeColor.isValid() && textStrokeColor != color && textStrokeColor.rgb())
+                ts << " [textStrokeColor=" << textStrokeColor.nameForRenderTreeAsText() << "]";
 
-        if (o.parent() && (o.parent()->style()->textStrokeWidth() != o.style()->textStrokeWidth()) &&
-            o.style()->textStrokeWidth() > 0)
-            ts << " [textStrokeWidth=" << o.style()->textStrokeWidth() << "]";
+            if (o.parent()->style()->textStrokeWidth() != o.style()->textStrokeWidth() && o.style()->textStrokeWidth() > 0)
+                ts << " [textStrokeWidth=" << o.style()->textStrokeWidth() << "]";
+        }
 
         if (!o.isBoxModelObject())
             return;
@@ -686,7 +690,7 @@ static void writeRenderFlowThreads(TextStream& ts, RenderView* renderView, const
                 }
                 if (!renderRegion->isValid())
                     ts << " invalid";
-                ts << " with index " << renderRegion->style()->regionIndex() << "\n";
+                ts << "\n";
             }
         }
     }
@@ -704,18 +708,19 @@ static void writeLayers(TextStream& ts, const RenderLayer* rootLayer, RenderLaye
     }
     
     // Calculate the clip rects we should use.
-    IntRect layerBounds, damageRect, clipRectToApply, outlineRect;
-    l->calculateRects(rootLayer, paintDirtyRect, layerBounds, damageRect, clipRectToApply, outlineRect, true);
+    IntRect layerBounds;
+    ClipRect damageRect, clipRectToApply, outlineRect;
+    l->calculateRects(rootLayer, 0, paintDirtyRect, layerBounds, damageRect, clipRectToApply, outlineRect, true);
 
     // Ensure our lists are up-to-date.
     l->updateZOrderLists();
     l->updateNormalFlowList();
 
-    bool shouldPaint = (behavior & RenderAsTextShowAllLayers) ? true : l->intersectsDamageRect(layerBounds, damageRect, rootLayer);
+    bool shouldPaint = (behavior & RenderAsTextShowAllLayers) ? true : l->intersectsDamageRect(layerBounds, damageRect.rect(), rootLayer);
     Vector<RenderLayer*>* negList = l->negZOrderList();
     bool paintsBackgroundSeparately = negList && negList->size() > 0;
     if (shouldPaint && paintsBackgroundSeparately)
-        write(ts, *l, layerBounds, damageRect, clipRectToApply, outlineRect, LayerPaintPhaseBackground, indent, behavior);
+        write(ts, *l, layerBounds, damageRect.rect(), clipRectToApply.rect(), outlineRect.rect(), LayerPaintPhaseBackground, indent, behavior);
 
     if (negList) {
         int currIndent = indent;
@@ -729,7 +734,7 @@ static void writeLayers(TextStream& ts, const RenderLayer* rootLayer, RenderLaye
     }
 
     if (shouldPaint)
-        write(ts, *l, layerBounds, damageRect, clipRectToApply, outlineRect, paintsBackgroundSeparately ? LayerPaintPhaseForeground : LayerPaintPhaseAll, indent, behavior);
+        write(ts, *l, layerBounds, damageRect.rect(), clipRectToApply.rect(), outlineRect.rect(), paintsBackgroundSeparately ? LayerPaintPhaseForeground : LayerPaintPhaseAll, indent, behavior);
 
     if (Vector<RenderLayer*>* normalFlowList = l->normalFlowList()) {
         int currIndent = indent;

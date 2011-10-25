@@ -111,13 +111,6 @@ inline HTMLElement* RenderTextControlSingleLine::cancelButtonElement() const
     return inputElement()->cancelButtonElement();
 }
 
-#if ENABLE(INPUT_SPEECH)
-inline HTMLElement* RenderTextControlSingleLine::speechButtonElement() const
-{
-    return inputElement()->speechButtonElement();
-}
-#endif
-
 RenderStyle* RenderTextControlSingleLine::textBaseStyle() const
 {
     HTMLElement* innerBlock = innerBlockElement();
@@ -181,7 +174,7 @@ void RenderTextControlSingleLine::showPopup()
         m_searchPopup->saveRecentSearches(name, m_recentSearches);
     }
 
-    m_searchPopup->popupMenu()->show(absoluteBoundingBoxRect(true), document()->view(), -1);
+    m_searchPopup->popupMenu()->show(absoluteBoundingBoxRect(), document()->view(), -1);
 }
 
 void RenderTextControlSingleLine::hidePopup()
@@ -364,6 +357,13 @@ void RenderTextControlSingleLine::capsLockStateMayHaveChanged()
     }
 }
 
+#if ENABLE(INPUT_SPEECH)
+HTMLElement* RenderTextControlSingleLine::speechButtonElement() const
+{
+    return inputElement()->speechButtonElement();
+}
+#endif
+
 bool RenderTextControlSingleLine::hasControlClip() const
 {
     // Apply control clip for text fields with decorations.
@@ -475,18 +475,6 @@ void RenderTextControlSingleLine::updateFromElement()
 
     if (cancelButtonElement())
         updateCancelButtonVisibility();
-
-    if (!inputElement()->suggestedValue().isNull())
-        setInnerTextValue(inputElement()->suggestedValue());
-    else {
-        if (node()->hasTagName(inputTag)) {
-            // For HTMLInputElement, update the renderer value if the formControlValueMatchesRenderer()
-            // flag is false. It protects an unacceptable renderer value from
-            // being overwritten with the DOM value.
-            if (!inputElement()->formControlValueMatchesRenderer())
-                setInnerTextValue(inputElement()->visibleValue());
-        }
-    }
 
     if (m_searchPopupIsVisible)
         m_searchPopup->popupMenu()->updateFromElement();

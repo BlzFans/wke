@@ -17,6 +17,7 @@
  * Boston, MA 02110-1301, USA.
  *
 */
+
 #ifndef HitTestResult_h
 #define HitTestResult_h
 
@@ -38,6 +39,7 @@ class HTMLMediaElement;
 class Image;
 class KURL;
 class Node;
+class RenderRegion;
 class Scrollbar;
 
 class HitTestResult {
@@ -60,6 +62,9 @@ public:
     Scrollbar* scrollbar() const { return m_scrollbar.get(); }
     bool isOverWidget() const { return m_isOverWidget; }
 
+    RenderRegion* region() const { return m_region; }
+    void setRegion(RenderRegion* region) { m_region = region; }
+
     void setToNonShadowAncestor();
 
     void setInnerNode(Node*);
@@ -81,6 +86,7 @@ public:
     Image* image() const;
     IntRect imageRect() const;
     KURL absoluteImageURL() const;
+    KURL absolutePDFURL() const;
     KURL absoluteMediaURL() const;
     KURL absoluteLinkURL() const;
     String textContent() const;
@@ -139,6 +145,9 @@ private:
     int m_rightPadding;
     int m_bottomPadding;
     int m_leftPadding;
+    
+    RenderRegion* m_region; // The region we're inside.
+
     mutable OwnPtr<NodeSet> m_rectBasedTestResult;
 };
 

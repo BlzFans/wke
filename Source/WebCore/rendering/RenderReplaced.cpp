@@ -24,6 +24,7 @@
 #include "RenderReplaced.h"
 
 #include "GraphicsContext.h"
+#include "LayoutRepainter.h"
 #include "RenderBlock.h"
 #include "RenderLayer.h"
 #include "RenderTheme.h"
@@ -87,7 +88,7 @@ void RenderReplaced::layout()
     computeLogicalHeight();
 
     m_overflow.clear();
-    addShadowOverflow();
+    addBoxShadowAndBorderOverflow();
     updateLayerTransform();
     
     repainter.repaintAfterLayout();
@@ -396,7 +397,7 @@ void RenderReplaced::computePreferredLogicalWidths()
     LayoutUnit borderAndPadding = borderAndPaddingWidth();
     m_maxPreferredLogicalWidth = computeReplacedLogicalWidth(false) + borderAndPadding;
 
-    if (style()->maxWidth().isFixed() && style()->maxWidth().value() != undefinedLength)
+    if (style()->maxWidth().isFixed())
         m_maxPreferredLogicalWidth = min(m_maxPreferredLogicalWidth, style()->maxWidth().value() + (style()->boxSizing() == CONTENT_BOX ? borderAndPadding : 0));
 
     if (style()->width().isPercent() || style()->height().isPercent()
@@ -407,11 +408,6 @@ void RenderReplaced::computePreferredLogicalWidths()
         m_minPreferredLogicalWidth = m_maxPreferredLogicalWidth;
 
     setPreferredLogicalWidthsDirty(false);
-}
-
-unsigned RenderReplaced::caretMaxRenderedOffset() const
-{
-    return 1; 
 }
 
 VisiblePosition RenderReplaced::positionForPoint(const LayoutPoint& point)

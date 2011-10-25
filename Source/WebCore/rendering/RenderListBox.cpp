@@ -43,19 +43,20 @@
 #include "FrameView.h"
 #include "GraphicsContext.h"
 #include "HTMLNames.h"
+#include "HTMLOptionElement.h"
+#include "HTMLOptGroupElement.h"
+#include "HTMLSelectElement.h"
 #include "HitTestResult.h"
 #include "NodeRenderStyle.h"
-#include "OptionGroupElement.h"
-#include "OptionElement.h"
 #include "Page.h"
 #include "PaintInfo.h"
 #include "RenderLayer.h"
 #include "RenderScrollbar.h"
+#include "RenderText.h"
 #include "RenderTheme.h"
 #include "RenderView.h"
 #include "Scrollbar.h"
 #include "ScrollbarTheme.h"
-#include "SelectElement.h"
 #include "SpatialNavigation.h"
 #include <math.h>
 
@@ -84,6 +85,9 @@ RenderListBox::RenderListBox(Element* element)
     , m_optionsWidth(0)
     , m_indexOffset(0)
 {
+    ASSERT(element);
+    ASSERT(element->isHTMLElement());
+    ASSERT(element->hasTagName(HTMLNames::selectTag));
     if (Page* page = frame()->page()) {
         m_page = page;
         m_page->addScrollableArea(this);
@@ -102,18 +106,18 @@ void RenderListBox::updateFromElement()
     FontCachePurgePreventer fontCachePurgePreventer;
 
     if (m_optionsChanged) {
-        const Vector<Element*>& listItems = toSelectElement(static_cast<Element*>(node()))->listItems();
+        const Vector<HTMLElement*>& listItems = toHTMLSelectElement(node())->listItems();
         int size = numItems();
         
         float width = 0;
         for (int i = 0; i < size; ++i) {
-            Element* element = listItems[i];
+            HTMLElement* element = listItems[i];
             String text;
             Font itemFont = style()->font();
-            if (OptionElement* optionElement = toOptionElement(element))
-                text = optionElement->textIndentedToRespectGroupLabel();
-            else if (OptionGroupElement* optionGroupElement = toOptionGroupElement(element)) {
-                text = optionGroupElement->groupLabelText();
+            if (element->hasTagName(optionTag))
+                text = toHTMLOptionElement(element)->textIndentedToRespectGroupLabel();
+            else if (element->hasTagName(optgroupTag)) {
+                text = static_cast<const HTMLOptGroupElement*>(element)->groupLabelText();
                 FontDescription d = itemFont.fontDescription();
                 d.setWeight(d.bolderWeight());
                 itemFont = Font(d, itemFont.letterSpacing(), itemFont.wordSpacing());
@@ -121,6 +125,7 @@ void RenderListBox::updateFromElement()
             }
 
             if (!text.isEmpty()) {
+                applyTextTransform(style(), text, ' ');
                 // FIXME: Why is this always LTR? Can't text direction affect the width?
                 TextRun textRun = constructTextRun(this, itemFont, text, style(), TextRun::AllowTrailingExpansion);
                 textRun.disableRoundingHacks();
@@ -162,7 +167,7 @@ void RenderListBox::layout()
 
 void RenderListBox::scrollToRevealSelection()
 {    
-    SelectElement* select = toSelectElement(static_cast<Element*>(node()));
+    HTMLSelectElement* select = toHTMLSelectElement(node());
 
     m_scrollToRevealSelectionAfterLayout = false;
 
@@ -194,7 +199,7 @@ void RenderListBox::computePreferredLogicalWidths()
     else
         m_minPreferredLogicalWidth = m_maxPreferredLogicalWidth;
 
-    if (style()->maxWidth().isFixed() && style()->maxWidth().value() != undefinedLength) {
+    if (style()->maxWidth().isFixed()) {
         m_maxPreferredLogicalWidth = min(m_maxPreferredLogicalWidth, computeContentBoxLogicalWidth(style()->maxWidth().value()));
         m_minPreferredLogicalWidth = min(m_minPreferredLogicalWidth, computeContentBoxLogicalWidth(style()->maxWidth().value()));
     }
@@ -208,7 +213,7 @@ void RenderListBox::computePreferredLogicalWidths()
 
 int RenderListBox::size() const
 {
-    int specifiedSize = toSelectElement(static_cast<Element*>(node()))->size();
+    int specifiedSize = toHTMLSelectElement(node())->size();
     if (specifiedSize > 1)
         return max(minSize, specifiedSize);
     return min(max(minSize, numItems()), maxDefaultSize);
@@ -222,7 +227,7 @@ int RenderListBox::numVisibleItems() const
 
 int RenderListBox::numItems() const
 {
-    return toSelectElement(static_cast<Element*>(node()))->listItems().size();
+    return toHTMLSelectElement(node())->listItems().size();
 }
 
 LayoutUnit RenderListBox::listHeight() const
@@ -309,7 +314,7 @@ void RenderListBox::addFocusRingRects(Vector<LayoutRect>& rects, const LayoutPoi
     if (!isSpatialNavigationEnabled(frame()))
         return RenderBlock::addFocusRingRects(rects, additionalOffset);
 
-    SelectElement* select = toSelectElement(static_cast<Element*>(node()));
+    HTMLSelectElement* select = toHTMLSelectElement(node());
 
     // Focus the last selected item.
     int selectedItem = select->activeSelectionEndListIndex();
@@ -320,10 +325,10 @@ void RenderListBox::addFocusRingRects(Vector<LayoutRect>& rects, const LayoutPoi
 
     // No selected items, find the first non-disabled item.
     int size = numItems();
-    const Vector<Element*>& listItems = select->listItems();
+    const Vector<HTMLElement*>& listItems = select->listItems();
     for (int i = 0; i < size; ++i) {
-        OptionElement* optionElement = toOptionElement(listItems[i]);
-        if (optionElement && !optionElement->disabled()) {
+        HTMLElement* element = listItems[i];
+        if (element->hasTagName(optionTag) && !toHTMLOptionElement(element)->disabled()) {
             rects.append(itemBoundingBoxRect(additionalOffset, i));
             return;
         }
@@ -365,10 +370,8 @@ void RenderListBox::paintItemForeground(PaintInfo& paintInfo, const LayoutPoint&
 {
     FontCachePurgePreventer fontCachePurgePreventer;
 
-    SelectElement* select = toSelectElement(static_cast<Element*>(node()));
-    const Vector<Element*>& listItems = select->listItems();
-    Element* element = listItems[listIndex];
-    OptionElement* optionElement = toOptionElement(element);
+    const Vector<HTMLElement*>& listItems = toHTMLSelectElement(node())->listItems();
+    HTMLElement* element = listItems[listIndex];
 
     RenderStyle* itemStyle = element->renderStyle();
     if (!itemStyle)
@@ -378,13 +381,15 @@ void RenderListBox::paintItemForeground(PaintInfo& paintInfo, const LayoutPoint&
         return;
 
     String itemText;
-    if (optionElement)
-        itemText = optionElement->textIndentedToRespectGroupLabel();
-    else if (OptionGroupElement* optionGroupElement = toOptionGroupElement(element))
-        itemText = optionGroupElement->groupLabelText();
-    
+    bool isOptionElement = element->hasTagName(optionTag);
+    if (isOptionElement)
+        itemText = toHTMLOptionElement(element)->textIndentedToRespectGroupLabel();
+    else if (element->hasTagName(optgroupTag))
+        itemText = static_cast<const HTMLOptGroupElement*>(element)->groupLabelText();
+    applyTextTransform(style(), itemText, ' ');
+
     Color textColor = element->renderStyle() ? element->renderStyle()->visitedDependentColor(CSSPropertyColor) : style()->visitedDependentColor(CSSPropertyColor);
-    if (optionElement && optionElement->selected()) {
+    if (isOptionElement && toHTMLOptionElement(element)->selected()) {
         if (frame()->selection()->isFocusedAndActive() && document()->focusedNode() == node())
             textColor = theme()->activeListBoxSelectionForegroundColor();
         // Honor the foreground color for disabled items
@@ -402,7 +407,7 @@ void RenderListBox::paintItemForeground(PaintInfo& paintInfo, const LayoutPoint&
     LayoutRect r = itemBoundingBoxRect(paintOffset, listIndex);
     r.move(itemOffsetForAlignment(textRun, itemStyle, itemFont, r));
 
-    if (isOptionGroupElement(element)) {
+    if (element->hasTagName(optgroupTag)) {
         FontDescription d = itemFont.fontDescription();
         d.setWeight(d.bolderWeight());
         itemFont = Font(d, itemFont.letterSpacing(), itemFont.wordSpacing());
@@ -416,13 +421,11 @@ void RenderListBox::paintItemForeground(PaintInfo& paintInfo, const LayoutPoint&
 
 void RenderListBox::paintItemBackground(PaintInfo& paintInfo, const LayoutPoint& paintOffset, int listIndex)
 {
-    SelectElement* select = toSelectElement(static_cast<Element*>(node()));
-    const Vector<Element*>& listItems = select->listItems();
-    Element* element = listItems[listIndex];
-    OptionElement* optionElement = toOptionElement(element);
+    const Vector<HTMLElement*>& listItems = toHTMLSelectElement(node())->listItems();
+    HTMLElement* element = listItems[listIndex];
 
     Color backColor;
-    if (optionElement && optionElement->selected()) {
+    if (element->hasTagName(optionTag) && toHTMLOptionElement(element)->selected()) {
         if (frame()->selection()->isFocusedAndActive() && document()->focusedNode() == node())
             backColor = theme()->activeListBoxSelectionBackgroundColor();
         else
@@ -513,7 +516,7 @@ void RenderListBox::panScroll(const IntPoint& panStartMousePosition)
         return;
 
     m_inAutoscroll = true;
-    SelectElement* select = toSelectElement(static_cast<Element*>(node()));
+    HTMLSelectElement* select = toHTMLSelectElement(node());
     select->updateListBoxSelection(!select->multiple());
     m_inAutoscroll = false;
 }
@@ -542,7 +545,7 @@ void RenderListBox::autoscroll()
 
     int endIndex = scrollToward(pos);
     if (endIndex >= 0) {
-        SelectElement* select = toSelectElement(static_cast<Element*>(node()));
+        HTMLSelectElement* select = toHTMLSelectElement(node());
         m_inAutoscroll = true;
 
         if (!select->multiple())
@@ -556,7 +559,7 @@ void RenderListBox::autoscroll()
 
 void RenderListBox::stopAutoscroll()
 {
-    toSelectElement(static_cast<Element*>(node()))->listBoxOnChange();
+    toHTMLSelectElement(node())->listBoxOnChange();
 }
 
 bool RenderListBox::scrollToRevealElementAtListIndex(int index)
@@ -592,9 +595,8 @@ bool RenderListBox::logicalScroll(ScrollLogicalDirection direction, ScrollGranul
 
 void RenderListBox::valueChanged(unsigned listIndex)
 {
-    Element* element = static_cast<Element*>(node());
-    SelectElement* select = toSelectElement(element);
-    select->setSelectedIndex(select->listToOptionIndex(listIndex));
+    HTMLSelectElement* element = toHTMLSelectElement(node());
+    element->setSelectedIndex(element->listToOptionIndex(listIndex));
     element->dispatchFormControlChangeEvent();
 }
 
@@ -674,7 +676,7 @@ bool RenderListBox::nodeAtPoint(const HitTestRequest& request, HitTestResult& re
 {
     if (!RenderBlock::nodeAtPoint(request, result, pointInContainer, accumulatedOffset, hitTestAction))
         return false;
-    const Vector<Element*>& listItems = toSelectElement(static_cast<Element*>(node()))->listItems();
+    const Vector<HTMLElement*>& listItems = toHTMLSelectElement(node())->listItems();
     int size = numItems();
     LayoutPoint adjustedLocation = accumulatedOffset + location();
 

@@ -50,8 +50,14 @@ public:
     LayoutUnit lineTop() const { return m_lineTop; }
     LayoutUnit lineBottom() const { return m_lineBottom; }
 
-    int paginationStrut() const { return m_paginationStrut; }
-    void setPaginationStrut(int s) { m_paginationStrut = s; }
+    LayoutUnit lineTopWithLeading() const { return m_lineTopWithLeading; }
+    LayoutUnit lineBottomWithLeading() const { return m_lineBottomWithLeading; }
+    
+    LayoutUnit paginationStrut() const { return m_paginationStrut; }
+    void setPaginationStrut(LayoutUnit s) { m_paginationStrut = s; }
+
+    LayoutUnit paginatedLineWidth() const { return m_paginatedLineWidth; }
+    void setPaginatedLineWidth(LayoutUnit width) { m_paginatedLineWidth = width; }
 
     LayoutUnit selectionTop() const;
     LayoutUnit selectionBottom() const;
@@ -60,10 +66,12 @@ public:
     int blockDirectionPointInLine() const { return max(lineTop(), selectionTop()); }
 
     LayoutUnit alignBoxesInBlockDirection(LayoutUnit heightOfBlock, GlyphOverflowAndFallbackFontsMap&, VerticalPositionCache&);
-    void setLineTopBottomPositions(LayoutUnit top, LayoutUnit bottom)
+    void setLineTopBottomPositions(LayoutUnit top, LayoutUnit bottom, LayoutUnit topWithLeading, LayoutUnit bottomWithLeading)
     { 
         m_lineTop = top; 
-        m_lineBottom = bottom; 
+        m_lineBottom = bottom;
+        m_lineTopWithLeading = topWithLeading;
+        m_lineBottomWithLeading = bottomWithLeading;
     }
 
     virtual RenderLineBoxList* rendererLineBoxes() const;
@@ -74,9 +82,6 @@ public:
 
     unsigned lineBreakPos() const { return m_lineBreakPos; }
     void setLineBreakPos(unsigned p) { m_lineBreakPos = p; }
-
-    int blockLogicalHeight() const { return m_blockLogicalHeight; }
-    void setBlockLogicalHeight(int h) { m_blockLogicalHeight = h; }
 
     bool endsWithBreak() const { return m_endsWithBreak; }
     void setEndsWithBreak(bool b) { m_endsWithBreak = b; }
@@ -93,6 +98,8 @@ public:
     void paintEllipsisBox(PaintInfo&, const LayoutPoint&, LayoutUnit lineTop, LayoutUnit lineBottom) const;
 
     virtual void clearTruncation();
+
+    bool isHyphenated() const;
 
     virtual int baselinePosition(FontBaseline baselineType) const { return boxModelObject()->baselinePosition(baselineType, m_firstLine, isHorizontal() ? HorizontalLine : VerticalLine, PositionOfInteriorLineBoxes); }
     virtual int lineHeight() const { return boxModelObject()->lineHeight(m_firstLine, isHorizontal() ? HorizontalLine : VerticalLine, PositionOfInteriorLineBoxes); }
@@ -177,34 +184,26 @@ private:
 
     int beforeAnnotationsAdjustment() const;
 
+    // This folds into the padding at the end of InlineFlowBox on 64-bit.
+    unsigned m_lineBreakPos;
+
     // Where this line ended.  The exact object and the position within that object are stored so that
     // we can create an InlineIterator beginning just after the end of this line.
     RenderObject* m_lineBreakObj;
-    unsigned m_lineBreakPos;
     RefPtr<BidiContext> m_lineBreakContext;
 
     LayoutUnit m_lineTop;
     LayoutUnit m_lineBottom;
 
-    int m_paginationStrut;
+    LayoutUnit m_lineTopWithLeading;
+    LayoutUnit m_lineBottomWithLeading;
+
+    LayoutUnit m_paginationStrut;
+    LayoutUnit m_paginatedLineWidth;
 
     // Floats hanging off the line are pushed into this vector during layout. It is only
     // good for as long as the line has not been marked dirty.
     OwnPtr<Vector<RenderBox*> > m_floats;
-
-    // The logical height of the block at the end of this line.  This is where the next line starts.
-    int m_blockLogicalHeight;
-
-    // Whether or not this line uses alphabetic or ideographic baselines by default.
-    unsigned m_baselineType : 1; // FontBaseline
-    
-    // If the line contains any ruby runs, then this will be true.
-    bool m_hasAnnotationsBefore : 1;
-    bool m_hasAnnotationsAfter : 1;
-
-    WTF::Unicode::Direction m_lineBreakBidiStatusEor : 5;
-    WTF::Unicode::Direction m_lineBreakBidiStatusLastStrong : 5;
-    WTF::Unicode::Direction m_lineBreakBidiStatusLast : 5;
 };
 
 } // namespace WebCore

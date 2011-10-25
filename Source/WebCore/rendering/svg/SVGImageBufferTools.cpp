@@ -28,6 +28,8 @@
 #include "RenderSVGContainer.h"
 #include "RenderSVGRoot.h"
 
+static float kMaxImageBufferSize = 4096;
+
 namespace WebCore {
 
 static AffineTransform& currentContentTransformation()
@@ -79,7 +81,7 @@ void SVGImageBufferTools::renderSubtreeToImageBuffer(ImageBuffer* image, RenderO
     ASSERT(image);
     ASSERT(image->context());
 
-    PaintInfo info(image->context(), PaintInfo::infiniteRect(), PaintPhaseForeground, 0, 0, 0);
+    PaintInfo info(image->context(), PaintInfo::infiniteRect(), PaintPhaseForeground, 0, 0, 0, 0);
 
     AffineTransform& contentTransformation = currentContentTransformation();
     AffineTransform savedContentTransformation = contentTransformation;
@@ -113,14 +115,25 @@ IntSize SVGImageBufferTools::roundedImageBufferSize(const FloatSize& size)
     return IntSize(static_cast<int>(lroundf(size.width())), static_cast<int>(lroundf(size.height())));
 }
 
-FloatRect SVGImageBufferTools::clampedAbsoluteTargetRectForRenderer(const RenderObject* renderer, const FloatRect& absoluteTargetRect)
+FloatRect SVGImageBufferTools::clampedAbsoluteTargetRect(const FloatRect& absoluteTargetRect)
 {
-    ASSERT(renderer);
-
-    const RenderSVGRoot* svgRoot = SVGRenderSupport::findTreeRootObject(renderer);
     FloatRect clampedAbsoluteTargetRect = absoluteTargetRect;
-    clampedAbsoluteTargetRect.intersect(svgRoot->frameRect());
+
+    if (clampedAbsoluteTargetRect.width() > kMaxImageBufferSize)
+        clampedAbsoluteTargetRect.setWidth(kMaxImageBufferSize);
+
+    if (clampedAbsoluteTargetRect.height() > kMaxImageBufferSize)
+        clampedAbsoluteTargetRect.setHeight(kMaxImageBufferSize);
+
     return clampedAbsoluteTargetRect;
+}
+
+void SVGImageBufferTools::clear2DRotation(AffineTransform& transform)
+{
+    AffineTransform::DecomposedType decomposition;
+    transform.decompose(decomposition);
+    decomposition.angle = 0;
+    transform.recompose(decomposition);
 }
 
 }

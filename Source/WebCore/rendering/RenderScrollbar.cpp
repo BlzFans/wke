@@ -64,7 +64,15 @@ RenderScrollbar::RenderScrollbar(ScrollableArea* scrollableArea, ScrollbarOrient
 
 RenderScrollbar::~RenderScrollbar()
 {
-    ASSERT(m_parts.isEmpty());
+    if (!m_parts.isEmpty()) {
+        // When a scrollbar is detached from its parent (causing all parts removal) and 
+        // ready to be destroyed, its destruction can be delayed because of RefPtr
+        // maintained in other classes such as EventHandler (m_lastScrollbarUnderMouse).
+        // Meanwhile, we can have a call to updateScrollbarPart which recreates the 
+        // scrollbar part. So, we need to destroy these parts since we don't want them
+        // to call on a destroyed scrollbar. See webkit bug 68009.
+        updateScrollbarParts(true);
+    }
 }
 
 RenderBox* RenderScrollbar::owningRenderer() const
@@ -149,7 +157,7 @@ ScrollbarPart RenderScrollbar::partForStyleResolve()
 
 PassRefPtr<RenderStyle> RenderScrollbar::getScrollbarPseudoStyle(ScrollbarPart partType, PseudoId pseudoId)
 {
-    if (!m_owner)
+    if (!owningRenderer())
         return 0;
 
     s_styleResolvePart = partType;
@@ -195,7 +203,8 @@ void RenderScrollbar::updateScrollbarParts(bool destroy)
     
     if (newThickness != oldThickness) {
         setFrameRect(IntRect(x(), y(), isHorizontal ? width() : newThickness, isHorizontal ? newThickness : height()));
-        owningRenderer()->setChildNeedsLayout(true);
+        if (RenderBox* box = owningRenderer())
+            box->setChildNeedsLayout(true);
     }
 }
 

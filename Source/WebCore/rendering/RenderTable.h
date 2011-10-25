@@ -26,16 +26,18 @@
 #define RenderTable_h
 
 #include "CSSPropertyNames.h"
+#include "CollapsedBorderValue.h"
 #include "RenderBlock.h"
 #include <wtf/Vector.h>
 
 namespace WebCore {
 
-class CollapsedBorderValue;
 class RenderTableCol;
 class RenderTableCell;
 class RenderTableSection;
 class TableLayout;
+
+enum SkipEmptySectionsValue { DoNotSkipEmptySections, SkipEmptySections };
 
 class RenderTable : public RenderBlock {
 public:
@@ -82,7 +84,7 @@ public:
         return style()->isLeftToRightDirection() ? borderEnd() : borderStart();
     }
 
-    const Color bgColor() const { return style()->visitedDependentColor(CSSPropertyBackgroundColor); }
+    Color bgColor() const { return style()->visitedDependentColor(CSSPropertyBackgroundColor); }
 
     LayoutUnit outerBorderBefore() const;
     LayoutUnit outerBorderAfter() const;
@@ -124,18 +126,12 @@ public:
     virtual void addChild(RenderObject* child, RenderObject* beforeChild = 0);
 
     struct ColumnStruct {
-        enum {
-            WidthUndefined = 0xffff
-        };
-
         ColumnStruct()
             : span(1)
-            , width(WidthUndefined)
         {
         }
 
         unsigned span;
-        unsigned width; // the calculated position of the column
     };
 
     Vector<ColumnStruct>& columns() { return m_columns; }
@@ -144,18 +140,24 @@ public:
     RenderTableSection* footer() const { return m_foot; }
     RenderTableSection* firstBody() const { return m_firstBody; }
 
+    // This function returns 0 if the table has no section.
+    RenderTableSection* topSection() const;
+
+    // This function returns 0 if the table has no non-empty sections.
+    RenderTableSection* topNonEmptySection() const;
+
     void splitColumn(int pos, int firstSpan);
     void appendColumn(int span);
     int numEffCols() const { return m_columns.size(); }
     int spanOfEffCol(int effCol) const { return m_columns[effCol].span; }
     
-    int colToEffCol(int col) const
+    int colToEffCol(unsigned col) const
     {
-        int i = 0;
-        int effCol = numEffCols();
-        for (int c = 0; c < col && i < effCol; ++i)
-            c += m_columns[i].span;
-        return i;
+        unsigned effCol = 0;
+        unsigned numCols = numEffCols();
+        for (unsigned c = 0; effCol < numCols && c + m_columns[effCol].span - 1 < col; ++effCol)
+            c += m_columns[effCol].span;
+        return effCol;
     }
     
     int effColToCol(int effCol) const
@@ -184,15 +186,21 @@ public:
         setNeedsLayout(true);
     }
 
-    RenderTableSection* sectionAbove(const RenderTableSection*, bool skipEmptySections = false) const;
-    RenderTableSection* sectionBelow(const RenderTableSection*, bool skipEmptySections = false) const;
+    RenderTableSection* sectionAbove(const RenderTableSection*, SkipEmptySectionsValue = DoNotSkipEmptySections) const;
+    RenderTableSection* sectionBelow(const RenderTableSection*, SkipEmptySectionsValue = DoNotSkipEmptySections) const;
 
     RenderTableCell* cellAbove(const RenderTableCell*) const;
     RenderTableCell* cellBelow(const RenderTableCell*) const;
     RenderTableCell* cellBefore(const RenderTableCell*) const;
     RenderTableCell* cellAfter(const RenderTableCell*) const;
  
-    const CollapsedBorderValue* currentBorderStyle() const { return m_currentBorder; }
+    typedef Vector<CollapsedBorderValue> CollapsedBorderValues;
+    void invalidateCollapsedBorders()
+    {
+        m_collapsedBordersValid = false;
+        m_collapsedBorders.clear();
+    }
+    const CollapsedBorderValue* currentBorderValue() const { return m_currentBorder; }
     
     bool hasSections() const { return m_head || m_foot || m_firstBody; }
 
@@ -231,12 +239,13 @@ private:
 
     virtual void computeLogicalWidth();
 
-    virtual LayoutRect overflowClipRect(const LayoutPoint& location, OverlayScrollbarSizeRelevancy = IgnoreOverlayScrollbarSize);
+    virtual LayoutRect overflowClipRect(const LayoutPoint& location, RenderRegion*, OverlayScrollbarSizeRelevancy = IgnoreOverlayScrollbarSize);
 
     virtual void addOverflowFromChildren();
 
     void subtractCaptionRect(LayoutRect&) const;
 
+    void recalcCollapsedBorders();
     void recalcCaption(RenderBlock*) const;
     void recalcSections() const;
     void adjustLogicalHeightForCaption();
@@ -251,7 +260,9 @@ private:
 
     OwnPtr<TableLayout> m_tableLayout;
 
+    CollapsedBorderValues m_collapsedBorders;
     const CollapsedBorderValue* m_currentBorder;
+    bool m_collapsedBordersValid : 1;
     
     mutable bool m_hasColElements : 1;
     mutable bool m_needsSectionRecalc : 1;
@@ -261,6 +272,15 @@ private:
     LayoutUnit m_borderStart;
     LayoutUnit m_borderEnd;
 };
+
+inline RenderTableSection* RenderTable::topSection() const
+{
+    if (m_head)
+        return m_head;
+    if (m_firstBody)
+        return m_firstBody;
+    return m_foot;
+}
 
 inline RenderTable* toRenderTable(RenderObject* object)
 {
