@@ -34,6 +34,7 @@
 #include "JSFunction.h"
 #include "Interpreter.h"
 #include "ScopeChain.h"
+#include "StrongInlines.h"
 #include "UString.h"
 
 using namespace std;
@@ -191,7 +192,7 @@ void BytecodeGenerator::preserveLastVar()
         m_lastVar = &m_calleeRegisters.last();
 }
 
-BytecodeGenerator::BytecodeGenerator(ProgramNode* programNode, ScopeChainNode* scopeChain, SymbolTable* symbolTable, ProgramCodeBlock* codeBlock)
+BytecodeGenerator::BytecodeGenerator(ProgramNode* programNode, ScopeChainNode* scopeChain, SymbolTable* symbolTable, ProgramCodeBlock* codeBlock, CompilationKind compilationKind)
     : m_shouldEmitDebugHooks(scopeChain->globalObject->debugger())
     , m_shouldEmitProfileHooks(scopeChain->globalObject->supportsProfiling())
     , m_shouldEmitRichSourceInfo(scopeChain->globalObject->supportsRichSourceInfo())
@@ -228,6 +229,9 @@ BytecodeGenerator::BytecodeGenerator(ProgramNode* programNode, ScopeChainNode* s
     
     m_codeBlock->m_numParameters = 1; // Allocate space for "this"
     codeBlock->m_numCapturedVars = codeBlock->m_numVars;
+    
+    if (compilationKind == OptimizingCompilation)
+        return;
 
     JSGlobalObject* globalObject = scopeChain->globalObject.get();
     ExecState* exec = globalObject->globalExec();
@@ -258,7 +262,7 @@ BytecodeGenerator::BytecodeGenerator(ProgramNode* programNode, ScopeChainNode* s
     }
 }
 
-BytecodeGenerator::BytecodeGenerator(FunctionBodyNode* functionBody, ScopeChainNode* scopeChain, SymbolTable* symbolTable, CodeBlock* codeBlock)
+BytecodeGenerator::BytecodeGenerator(FunctionBodyNode* functionBody, ScopeChainNode* scopeChain, SymbolTable* symbolTable, CodeBlock* codeBlock, CompilationKind)
     : m_shouldEmitDebugHooks(scopeChain->globalObject->debugger())
     , m_shouldEmitProfileHooks(scopeChain->globalObject->supportsProfiling())
     , m_shouldEmitRichSourceInfo(scopeChain->globalObject->supportsRichSourceInfo())
@@ -419,7 +423,7 @@ BytecodeGenerator::BytecodeGenerator(FunctionBodyNode* functionBody, ScopeChainN
     }
 }
 
-BytecodeGenerator::BytecodeGenerator(EvalNode* evalNode, ScopeChainNode* scopeChain, SymbolTable* symbolTable, EvalCodeBlock* codeBlock)
+BytecodeGenerator::BytecodeGenerator(EvalNode* evalNode, ScopeChainNode* scopeChain, SymbolTable* symbolTable, EvalCodeBlock* codeBlock, CompilationKind)
     : m_shouldEmitDebugHooks(scopeChain->globalObject->debugger())
     , m_shouldEmitProfileHooks(scopeChain->globalObject->supportsProfiling())
     , m_shouldEmitRichSourceInfo(scopeChain->globalObject->supportsRichSourceInfo())
@@ -653,6 +657,13 @@ void BytecodeGenerator::emitOpcode(OpcodeID opcodeID)
 #endif
     instructions().append(globalData()->interpreter->getOpcode(opcodeID));
     m_lastOpcodeID = opcodeID;
+}
+
+void BytecodeGenerator::emitLoopHint()
+{
+#if ENABLE(DFG_JIT)
+    emitOpcode(op_loop_hint);
+#endif
 }
 
 void BytecodeGenerator::retrieveLastBinaryOp(int& dstIndex, int& src1Index, int& src2Index)
@@ -2273,7 +2284,7 @@ static int32_t keyForCharacterSwitch(ExpressionNode* node, int32_t min, int32_t 
     StringImpl* clause = static_cast<StringNode*>(node)->value().impl();
     ASSERT(clause->length() == 1);
     
-    int32_t key = clause->characters()[0];
+    int32_t key = (*clause)[0];
     ASSERT(key >= min);
     ASSERT(key <= max);
     return key - min;

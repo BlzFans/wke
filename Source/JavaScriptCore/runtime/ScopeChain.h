@@ -45,6 +45,8 @@ namespace JSC {
         {
         }
 
+        virtual ~ScopeChainNode();
+
     protected:
         void finishCreation(JSGlobalData* globalData, JSGlobalObject* globalObject)
         {
@@ -86,8 +88,8 @@ namespace JSC {
         void print();
 #endif
         
-        static Structure* createStructure(JSGlobalData& globalData, JSValue proto) { return Structure::create(globalData, proto, TypeInfo(CompoundType, StructureFlags), AnonymousSlotCount, &s_info); }
-        virtual void visitChildren(SlotVisitor&);
+        static Structure* createStructure(JSGlobalData& globalData, JSGlobalObject* globalObject, JSValue proto) { return Structure::create(globalData, globalObject, proto, TypeInfo(CompoundType, StructureFlags), &s_info); }
+        static void visitChildren(JSCell*, SlotVisitor&);
         static JS_EXPORTDATA const ClassInfo s_info;
 
     private:

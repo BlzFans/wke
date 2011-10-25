@@ -24,11 +24,30 @@
 #define ClassInfo_h
 
 #include "CallFrame.h"
+#include "ConstructData.h"
 
 namespace JSC {
 
     class HashEntry;
     struct HashTable;
+
+    struct MethodTable {
+        typedef void (*VisitChildrenFunctionPtr)(JSCell*, SlotVisitor&);
+        VisitChildrenFunctionPtr visitChildren;
+
+        typedef CallType (*GetCallDataFunctionPtr)(JSCell*, CallData&);
+        GetCallDataFunctionPtr getCallData;
+
+        typedef ConstructType (*GetConstructDataFunctionPtr)(JSCell*, ConstructData&);
+        GetConstructDataFunctionPtr getConstructData;
+    };
+
+#define CREATE_METHOD_TABLE(ClassName) { \
+        &ClassName::visitChildren, \
+        &ClassName::getCallData, \
+        &ClassName::getConstructData, \
+    }, \
+    sizeof(ClassName)
 
     struct ClassInfo {
         /**
@@ -51,10 +70,32 @@ namespace JSC {
                 return classPropHashTableGetterFunction(exec);
             return staticPropHashTable;
         }
+        
+        bool isSubClassOf(const ClassInfo* other) const
+        {
+            for (const ClassInfo* ci = this; ci; ci = ci->parentClass) {
+                if (ci == other)
+                    return true;
+            }
+            return false;
+        }
+
+        bool hasStaticProperties() const
+        {
+            for (const ClassInfo* ci = this; ci; ci = ci->parentClass) {
+                if (ci->staticPropHashTable || ci->classPropHashTableGetterFunction)
+                    return true;
+            }
+            return false;
+        }
 
         const HashTable* staticPropHashTable;
         typedef const HashTable* (*ClassPropHashTableGetterFunction)(ExecState*);
         const ClassPropHashTableGetterFunction classPropHashTableGetterFunction;
+
+        MethodTable methodTable;
+
+        size_t cellSize;
     };
 
 } // namespace JSC

@@ -50,7 +50,8 @@ namespace JSC {
 
         virtual void putWithAttributes(ExecState*, const Identifier&, JSValue, unsigned attributes) = 0;
 
-        virtual bool deleteProperty(ExecState*, const Identifier&);
+        virtual bool deletePropertyVirtual(ExecState*, const Identifier&);
+        static bool deleteProperty(JSCell*, ExecState*, const Identifier&);
         virtual void getOwnPropertyNames(ExecState*, PropertyNameArray&, EnumerationMode mode = ExcludeDontEnumProperties);
         
         virtual bool isVariableObject() const;
@@ -61,9 +62,9 @@ namespace JSC {
         WriteBarrier<Unknown>* const * addressOfRegisters() const { return &m_registers; }
         static size_t offsetOfRegisters() { return OBJECT_OFFSETOF(JSVariableObject, m_registers); }
 
-        static Structure* createStructure(JSGlobalData& globalData, JSValue prototype)
+        static Structure* createStructure(JSGlobalData& globalData, JSGlobalObject* globalObject, JSValue prototype)
         {
-            return Structure::create(globalData, prototype, TypeInfo(ObjectType, StructureFlags), AnonymousSlotCount, &s_info);
+            return Structure::create(globalData, globalObject, prototype, TypeInfo(ObjectType, StructureFlags), &s_info);
         }
         
     protected:
@@ -74,6 +75,11 @@ namespace JSC {
             , m_symbolTable(symbolTable)
             , m_registers(reinterpret_cast<WriteBarrier<Unknown>*>(registers))
         {
+        }
+
+        void finishCreation(JSGlobalData& globalData)
+        {
+            Base::finishCreation(globalData);
             ASSERT(m_symbolTable);
             COMPILE_ASSERT(sizeof(WriteBarrier<Unknown>) == sizeof(Register), Register_should_be_same_size_as_WriteBarrier);
         }

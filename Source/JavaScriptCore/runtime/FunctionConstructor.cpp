@@ -37,9 +37,16 @@ namespace JSC {
 
 ASSERT_CLASS_FITS_IN_CELL(FunctionConstructor);
 
-FunctionConstructor::FunctionConstructor(ExecState* exec, JSGlobalObject* globalObject, Structure* structure, FunctionPrototype* functionPrototype)
-    : InternalFunction(&exec->globalData(), globalObject, structure, Identifier(exec, functionPrototype->classInfo()->className))
+const ClassInfo FunctionConstructor::s_info = { "Function", &Base::s_info, 0, 0, CREATE_METHOD_TABLE(FunctionConstructor) };
+
+FunctionConstructor::FunctionConstructor(JSGlobalObject* globalObject, Structure* structure)
+    : InternalFunction(globalObject, structure)
 {
+}
+
+void FunctionConstructor::finishCreation(ExecState* exec, FunctionPrototype* functionPrototype)
+{
+    Base::finishCreation(exec->globalData(), Identifier(exec, functionPrototype->classInfo()->className));
     putDirectWithoutTransition(exec->globalData(), exec->propertyNames().prototype, functionPrototype, DontEnum | DontDelete | ReadOnly);
 
     // Number of arguments for constructor
@@ -52,7 +59,12 @@ static EncodedJSValue JSC_HOST_CALL constructWithFunctionConstructor(ExecState* 
     return JSValue::encode(constructFunction(exec, asInternalFunction(exec->callee())->globalObject(), args));
 }
 
-ConstructType FunctionConstructor::getConstructData(ConstructData& constructData)
+ConstructType FunctionConstructor::getConstructDataVirtual(ConstructData& constructData)
+{
+    return getConstructData(this, constructData);
+}
+
+ConstructType FunctionConstructor::getConstructData(JSCell*, ConstructData& constructData)
 {
     constructData.native.function = constructWithFunctionConstructor;
     return ConstructTypeHost;
@@ -65,7 +77,7 @@ static EncodedJSValue JSC_HOST_CALL callFunctionConstructor(ExecState* exec)
 }
 
 // ECMA 15.3.1 The Function Constructor Called as a Function
-CallType FunctionConstructor::getCallData(CallData& callData)
+CallType FunctionConstructor::getCallData(JSCell*, CallData& callData)
 {
     callData.native.function = callFunctionConstructor;
     return CallTypeHost;

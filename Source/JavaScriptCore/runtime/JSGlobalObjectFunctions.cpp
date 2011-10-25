@@ -367,7 +367,7 @@ double jsToNumber(const UString& s)
     unsigned size = s.length();
 
     if (size == 1) {
-        UChar c = s.characters()[0];
+        UChar c = s[0];
         if (isASCIIDigit(c))
             return c - '0';
         if (isStrWhiteSpace(c))
@@ -410,7 +410,7 @@ static double parseFloat(const UString& s)
     unsigned size = s.length();
 
     if (size == 1) {
-        UChar c = s.characters()[0];
+        UChar c = s[0];
         if (isASCIIDigit(c))
             return c - '0';
         return std::numeric_limits<double>::quiet_NaN();
@@ -473,9 +473,11 @@ EncodedJSValue JSC_HOST_CALL globalFuncParseInt(ExecState* exec)
     // values in the range -1 < n <= -10^-6 need to truncate to -0, not 0.
     static const double tenToTheMinus6 = 0.000001;
     static const double intMaxPlusOne = 2147483648.0;
-    double n;
-    if (value.getNumber(n) && ((n < intMaxPlusOne && n >= tenToTheMinus6) || !n) && radixValue.isUndefinedOrNull())
-        return JSValue::encode(jsNumber(static_cast<int32_t>(n)));
+    if (value.isNumber()) {
+        double n = value.asNumber();
+        if (((n < intMaxPlusOne && n >= tenToTheMinus6) || !n) && radixValue.isUndefinedOrNull())
+            return JSValue::encode(jsNumber(static_cast<int32_t>(n)));
+    }
 
     // If ToString throws, we shouldn't call ToInt32.
     UString s = value.toString(exec);
@@ -590,6 +592,11 @@ EncodedJSValue JSC_HOST_CALL globalFuncUnescape(ExecState* exec)
     }
 
     return JSValue::encode(jsString(exec, builder.toUString()));
+}
+
+EncodedJSValue JSC_HOST_CALL globalFuncThrowTypeError(ExecState* exec)
+{
+    return throwVMTypeError(exec);
 }
 
 } // namespace JSC

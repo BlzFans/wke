@@ -46,18 +46,6 @@ QT_END_NAMESPACE
 class wxString;
 #endif
 
-#if PLATFORM(HAIKU)
-class BString;
-#endif
-
-#if PLATFORM(BREWMP)
-// AECHAR is defined in AEEStdDef.h, but don't include it here to avoid conflicts.
-#ifndef _AECHAR_DEFINED
-typedef uint16             AECHAR;
-#define _AECHAR_DEFINED
-#endif
-#endif
-
 namespace WTF {
 
 class CString;
@@ -313,15 +301,6 @@ public:
 #if PLATFORM(WX)
     WTF_EXPORT_PRIVATE String(const wxString&);
     WTF_EXPORT_PRIVATE operator wxString() const;
-#endif
-
-#if PLATFORM(HAIKU)
-    String(const BString&);
-    operator BString() const;
-#endif
-
-#if PLATFORM(BREWMP)
-    String(const AECHAR*);
 #endif
 
     // String::fromUTF8 will return a null string if

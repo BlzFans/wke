@@ -1216,8 +1216,9 @@ RegisterID* AssignDotNode::emitBytecode(BytecodeGenerator& generator, RegisterID
     RefPtr<RegisterID> value = generator.destinationForAssignResult(dst);
     RegisterID* result = generator.emitNode(value.get(), m_right);
     generator.emitExpressionInfo(divot(), startOffset(), endOffset());
-    generator.emitPutById(base.get(), m_ident, result);
-    return generator.moveToDestinationIfNeeded(dst, result);
+    RegisterID* forwardResult = (dst == generator.ignoredResult()) ? result : generator.moveToDestinationIfNeeded(generator.tempDestination(result), result);
+    generator.emitPutById(base.get(), m_ident, forwardResult);
+    return generator.moveToDestinationIfNeeded(dst, forwardResult);
 }
 
 // ------------------------------ ReadModifyDotNode -----------------------------------
@@ -1251,8 +1252,9 @@ RegisterID* AssignBracketNode::emitBytecode(BytecodeGenerator& generator, Regist
     RegisterID* result = generator.emitNode(value.get(), m_right);
 
     generator.emitExpressionInfo(divot(), startOffset(), endOffset());
-    generator.emitPutByVal(base.get(), property.get(), result);
-    return generator.moveToDestinationIfNeeded(dst, result);
+    RegisterID* forwardResult = (dst == generator.ignoredResult()) ? result : generator.moveToDestinationIfNeeded(generator.tempDestination(result), result);
+    generator.emitPutByVal(base.get(), property.get(), forwardResult);
+    return generator.moveToDestinationIfNeeded(dst, forwardResult);
 }
 
 // ------------------------------ ReadModifyBracketNode -----------------------------------
@@ -1469,7 +1471,7 @@ RegisterID* DoWhileNode::emitBytecode(BytecodeGenerator& generator, RegisterID* 
 
     RefPtr<Label> topOfLoop = generator.newLabel();
     generator.emitLabel(topOfLoop.get());
-
+    generator.emitLoopHint();
     generator.emitDebugHook(WillExecuteStatement, firstLine(), lastLine());
    
     RefPtr<RegisterID> result = generator.emitNode(dst, m_statement);
@@ -1497,6 +1499,7 @@ RegisterID* WhileNode::emitBytecode(BytecodeGenerator& generator, RegisterID* ds
 
     RefPtr<Label> topOfLoop = generator.newLabel();
     generator.emitLabel(topOfLoop.get());
+    generator.emitLoopHint();
     
     generator.emitNode(dst, m_statement);
 
@@ -1532,6 +1535,7 @@ RegisterID* ForNode::emitBytecode(BytecodeGenerator& generator, RegisterID* dst)
 
     RefPtr<Label> topOfLoop = generator.newLabel();
     generator.emitLabel(topOfLoop.get());
+    generator.emitLoopHint();
 
     RefPtr<RegisterID> result = generator.emitNode(dst, m_statement);
 
@@ -1579,6 +1583,7 @@ RegisterID* ForInNode::emitBytecode(BytecodeGenerator& generator, RegisterID* ds
 
     RefPtr<Label> loopStart = generator.newLabel();
     generator.emitLabel(loopStart.get());
+    generator.emitLoopHint();
 
     RegisterID* propertyName;
     bool optimizedForinAccess = false;
@@ -1740,7 +1745,7 @@ static void processClauseList(ClauseListNode* list, Vector<ExpressionNode*, 8>& 
             }
             const UString& value = static_cast<StringNode*>(clauseExpression)->value().ustring();
             if (singleCharacterSwitch &= value.length() == 1) {
-                int32_t intVal = value.impl()->characters()[0];
+                int32_t intVal = value[0];
                 if (intVal < min_num)
                     min_num = intVal;
                 if (intVal > max_num)

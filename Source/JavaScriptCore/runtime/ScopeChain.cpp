@@ -29,6 +29,10 @@
 
 namespace JSC {
 
+ScopeChainNode::~ScopeChainNode()
+{
+}
+
 #ifndef NDEBUG
 
 void ScopeChainNode::print()
@@ -51,7 +55,7 @@ void ScopeChainNode::print()
 
 #endif
 
-const ClassInfo ScopeChainNode::s_info = { "ScopeChainNode", 0, 0, 0 };
+const ClassInfo ScopeChainNode::s_info = { "ScopeChainNode", 0, 0, 0, CREATE_METHOD_TABLE(ScopeChainNode) };
 
 int ScopeChainNode::localDepth()
 {
@@ -67,16 +71,17 @@ int ScopeChainNode::localDepth()
     return scopeDepth;
 }
 
-void ScopeChainNode::visitChildren(SlotVisitor& visitor)
+void ScopeChainNode::visitChildren(JSCell* cell, SlotVisitor& visitor)
 {
-    ASSERT_GC_OBJECT_INHERITS(this, &s_info);
+    ScopeChainNode* thisObject = static_cast<ScopeChainNode*>(cell);
+    ASSERT_GC_OBJECT_INHERITS(thisObject, &s_info);
     COMPILE_ASSERT(StructureFlags & OverridesVisitChildren, OverridesVisitChildrenWithoutSettingFlag);
-    ASSERT(structure()->typeInfo().overridesVisitChildren());
-    if (next)
-        visitor.append(&next);
-    visitor.append(&object);
-    visitor.append(&globalObject);
-    visitor.append(&globalThis);
+    ASSERT(thisObject->structure()->typeInfo().overridesVisitChildren());
+    if (thisObject->next)
+        visitor.append(&thisObject->next);
+    visitor.append(&thisObject->object);
+    visitor.append(&thisObject->globalObject);
+    visitor.append(&thisObject->globalThis);
 }
 
 } // namespace JSC

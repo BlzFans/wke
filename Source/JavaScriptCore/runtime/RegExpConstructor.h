@@ -61,16 +61,21 @@ namespace JSC {
 
         static RegExpConstructor* create(ExecState* exec, JSGlobalObject* globalObject, Structure* structure, RegExpPrototype* regExpPrototype)
         {
-            return new (allocateCell<RegExpConstructor>(*exec->heap())) RegExpConstructor(exec, globalObject, structure, regExpPrototype);
+            RegExpConstructor* constructor = new (allocateCell<RegExpConstructor>(*exec->heap())) RegExpConstructor(globalObject, structure);
+            constructor->finishCreation(exec, regExpPrototype);
+            return constructor;
         }
 
-        static Structure* createStructure(JSGlobalData& globalData, JSValue prototype)
+        static Structure* createStructure(JSGlobalData& globalData, JSGlobalObject* globalObject, JSValue prototype)
         {
-            return Structure::create(globalData, prototype, TypeInfo(ObjectType, StructureFlags), AnonymousSlotCount, &s_info);
+            return Structure::create(globalData, globalObject, prototype, TypeInfo(ObjectType, StructureFlags), &s_info);
         }
 
-        virtual void put(ExecState*, const Identifier& propertyName, JSValue, PutPropertySlot&);
-        virtual bool getOwnPropertySlot(ExecState*, const Identifier& propertyName, PropertySlot&);
+        virtual void putVirtual(ExecState*, const Identifier& propertyName, JSValue, PutPropertySlot&);
+        static void put(JSCell*, ExecState*, const Identifier& propertyName, JSValue, PutPropertySlot&);
+
+        virtual bool getOwnPropertySlotVirtual(ExecState*, const Identifier& propertyName, PropertySlot&);
+        static bool getOwnPropertySlot(JSCell*, ExecState*, const Identifier& propertyName, PropertySlot&);
         virtual bool getOwnPropertyDescriptor(ExecState*, const Identifier&, PropertyDescriptor&);
 
         static const ClassInfo s_info;
@@ -90,12 +95,14 @@ namespace JSC {
         JSValue getRightContext(ExecState*) const;
 
     protected:
+        void finishCreation(ExecState*, RegExpPrototype*);
         static const unsigned StructureFlags = OverridesGetOwnPropertySlot | ImplementsHasInstance | InternalFunction::StructureFlags;
 
     private:
-        RegExpConstructor(ExecState*, JSGlobalObject*, Structure*, RegExpPrototype*);
-        virtual ConstructType getConstructData(ConstructData&);
-        virtual CallType getCallData(CallData&);
+        RegExpConstructor(JSGlobalObject*, Structure*);
+        virtual ConstructType getConstructDataVirtual(ConstructData&);
+        static ConstructType getConstructData(JSCell*, ConstructData&);
+        static CallType getCallData(JSCell*, CallData&);
 
         OwnPtr<RegExpConstructorPrivate> d;
     };

@@ -65,6 +65,8 @@ class StructureTransitionTable {
 
         static const bool needsDestruction = FirstTraits::needsDestruction || SecondTraits::needsDestruction;
 
+        static const int minimumTableSize = FirstTraits::minimumTableSize;
+
         static void constructDeletedValue(TraitType& slot) { FirstTraits::constructDeletedValue(slot.first); }
         static bool isDeletedValue(const TraitType& value) { return FirstTraits::isDeletedValue(value.first); }
     };
@@ -154,7 +156,7 @@ private:
         ASSERT(isUsingSingleSlot());
         HandleSlot slot = this->slot();
         if (!slot) {
-            slot = globalData.allocateGlobalHandle();
+            slot = globalData.heap.handleHeap()->allocate();
             HandleHeap::heapFor(slot)->makeWeak(slot, 0, 0);
             m_data = reinterpret_cast<intptr_t>(slot) | UsingSingleSlotFlag;
         }

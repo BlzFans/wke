@@ -28,12 +28,19 @@
 
 namespace JSC {
 
+const ClassInfo StrictEvalActivation::s_info = { "Object", &Base::s_info, 0, 0, CREATE_METHOD_TABLE(StrictEvalActivation) };
+
 StrictEvalActivation::StrictEvalActivation(ExecState* exec)
     : JSNonFinalObject(exec->globalData(), exec->globalData().strictEvalActivationStructure.get())
 {
 }
 
-bool StrictEvalActivation::deleteProperty(ExecState*, const Identifier&)
+bool StrictEvalActivation::deletePropertyVirtual(ExecState* exec, const Identifier& identifier)
+{
+    return deleteProperty(this, exec, identifier);
+}
+
+bool StrictEvalActivation::deleteProperty(JSCell*, ExecState*, const Identifier&)
 {
     return false;
 }
@@ -41,11 +48,6 @@ bool StrictEvalActivation::deleteProperty(ExecState*, const Identifier&)
 JSObject* StrictEvalActivation::toThisObject(ExecState* exec) const
 {
     return exec->globalThisValue();
-}
-
-JSValue StrictEvalActivation::toStrictThisObject(ExecState*) const
-{
-    return jsNull();
 }
 
 }

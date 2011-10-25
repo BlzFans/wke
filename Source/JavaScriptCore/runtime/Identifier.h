@@ -135,15 +135,14 @@ namespace JSC {
         return !Identifier::equal(a, b);
     }
 
+    inline bool Identifier::equal(const StringImpl* r, const char* s)
+    {
+        return WTF::equal(r, s);
+    }
+    
     inline bool Identifier::equal(const StringImpl* r, const UChar* s, unsigned length)
     {
-        if (r->length() != length)
-            return false;
-        const UChar* d = r->characters();
-        for (unsigned i = 0; i != length; ++i)
-            if (d[i] != s[i])
-                return false;
-        return true;
+        return WTF::equal(r, s, length);
     }
     
     IdentifierTable* createIdentifierTable();
@@ -153,6 +152,17 @@ namespace JSC {
         static unsigned hash(const RefPtr<StringImpl>& key) { return key->existingHash(); }
         static unsigned hash(StringImpl* key) { return key->existingHash(); }
     };
+
+    struct IdentifierMapIndexHashTraits {
+        typedef int TraitType;
+        typedef IdentifierMapIndexHashTraits StorageTraits;
+        static int emptyValue() { return std::numeric_limits<int>::max(); }
+        static const bool emptyValueIsZero = false;
+        static const bool needsDestruction = false;
+        static const bool needsRef = false;
+    };
+
+    typedef HashMap<RefPtr<StringImpl>, int, IdentifierRepHash, HashTraits<RefPtr<StringImpl> >, IdentifierMapIndexHashTraits> IdentifierMap;
 
 } // namespace JSC
 

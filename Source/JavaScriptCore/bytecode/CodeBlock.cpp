@@ -31,6 +31,8 @@
 #include "CodeBlock.h"
 
 #include "BytecodeGenerator.h"
+#include "DFGCapabilities.h"
+#include "DFGNode.h"
 #include "Debugger.h"
 #include "Interpreter.h"
 #include "JIT.h"
@@ -1075,6 +1077,10 @@ void CodeBlock::dump(ExecState* exec, const Vector<Instruction>::const_iterator&
             printf("[%4d] loop_if_greatereq\t %s, %s, %d(->%d)\n", location, registerName(exec, r0).data(), registerName(exec, r1).data(), offset, location + offset);
             break;
         }
+        case op_loop_hint: {
+            printf("[%4d] loop_hint\n", location);
+            break;
+        }
         case op_switch_imm: {
             int tableIndex = (++it)->u.operand;
             int defaultTarget = (++it)->u.operand;
@@ -1401,7 +1407,7 @@ void CodeBlock::dumpStatistics()
 #endif
 }
 
-CodeBlock::CodeBlock(ScriptExecutable* ownerExecutable, CodeType codeType, JSGlobalObject *globalObject, PassRefPtr<SourceProvider> sourceProvider, unsigned sourceOffset, SymbolTable* symTab, bool isConstructor)
+CodeBlock::CodeBlock(ScriptExecutable* ownerExecutable, CodeType codeType, JSGlobalObject *globalObject, PassRefPtr<SourceProvider> sourceProvider, unsigned sourceOffset, SymbolTable* symTab, bool isConstructor, PassOwnPtr<CodeBlock> alternative)
     : m_globalObject(globalObject->globalData(), ownerExecutable, globalObject)
     , m_heap(&m_globalObject->globalData().heap)
     , m_numCalleeRegisters(0)
@@ -1422,8 +1428,15 @@ CodeBlock::CodeBlock(ScriptExecutable* ownerExecutable, CodeType codeType, JSGlo
     , m_source(sourceProvider)
     , m_sourceOffset(sourceOffset)
     , m_symbolTable(symTab)
+    , m_alternative(alternative)
+    , m_speculativeSuccessCounter(0)
+    , m_speculativeFailCounter(0)
+    , m_optimizationDelayCounter(0)
+    , m_reoptimizationRetryCounter(0)
 {
     ASSERT(m_source);
+    
+    optimizeAfterWarmUp();
 
 #if DUMP_CODE_BLOCK_STATISTICS
     liveCodeBlockSet.add(this);
@@ -1433,23 +1446,23 @@ CodeBlock::CodeBlock(ScriptExecutable* ownerExecutable, CodeType codeType, JSGlo
 CodeBlock::~CodeBlock()
 {
 #if ENABLE(VERBOSE_VALUE_PROFILE)
-    printf("ValueProfile for %p:\n", this);
-    for (unsigned i = 0; i < numberOfValueProfiles(); ++i) {
-        ValueProfile* profile = valueProfile(i);
-        if (profile->bytecodeOffset < 0) {
-            ASSERT(profile->bytecodeOffset == -1);
-            printf("   arg = %u: ", i + 1);
-        } else
-            printf("   bc = %d: ", profile->bytecodeOffset);
-        printf("samples = %u, int32 = %u, double = %u, cell = %u\n",
-               profile->numberOfSamples(),
-               profile->probabilityOfInt32(),
-               profile->probabilityOfDouble(),
-               profile->probabilityOfCell());
-    }
+    dumpValueProfiles();
 #endif
-
+    
 #if ENABLE(JIT)
+    // We may be destroyed before any CodeBlocks that refer to us are destroyed.
+    // Consider that two CodeBlocks become unreachable at the same time. There
+    // is no guarantee about the order in which the CodeBlocks are destroyed.
+    // So, if we don't remove incoming calls, and get destroyed before the
+    // CodeBlock(s) that have calls into us, then the CallLinkInfo vector's
+    // destructor will try to remove nodes from our (no longer valid) linked list.
+    while (m_incomingCalls.begin() != m_incomingCalls.end())
+        m_incomingCalls.begin()->remove();
+    
+    // Note that our outgoing calls will be removed from other CodeBlocks'
+    // m_incomingCalls linked lists through the execution of the ~CallLinkInfo
+    // destructors.
+
     for (size_t size = m_structureStubInfos.size(), i = 0; i < size; ++i)
         m_structureStubInfos[i].deref();
 #endif // ENABLE(JIT)
@@ -1515,6 +1528,8 @@ void EvalCodeCache::visitAggregate(SlotVisitor& visitor)
 
 void CodeBlock::visitAggregate(SlotVisitor& visitor)
 {
+    if (!!m_alternative)
+        m_alternative->visitAggregate(visitor);
     visitor.append(&m_globalObject);
     visitor.append(&m_ownerExecutable);
     if (m_rareData) {
@@ -1530,9 +1545,12 @@ void CodeBlock::visitAggregate(SlotVisitor& visitor)
     for (size_t i = 0; i < m_functionDecls.size(); ++i)
         visitor.append(&m_functionDecls[i]);
 #if ENABLE(JIT)
-    for (unsigned i = 0; i < numberOfCallLinkInfos(); ++i)
+    for (unsigned i = 0; i < numberOfCallLinkInfos(); ++i) {
         if (callLinkInfo(i).isLinked())
             visitor.append(&callLinkInfo(i).callee);
+        if (!!callLinkInfo(i).lastSeenCallee)
+            visitor.append(&callLinkInfo(i).lastSeenCallee);
+    }
 #endif
 #if ENABLE(INTERPRETER)
     for (size_t size = m_propertyAccessInstructions.size(), i = 0; i < size; ++i)
@@ -1561,6 +1579,11 @@ void CodeBlock::visitAggregate(SlotVisitor& visitor)
             visitor.append(&m_methodCallLinkInfos[i].cachedPrototype);
         }
     }
+#endif
+
+#if ENABLE(VALUE_PROFILER)
+    for (unsigned profileIndex = 0; profileIndex < numberOfValueProfiles(); ++profileIndex)
+        valueProfile(profileIndex)->computeUpdatedPrediction();
 #endif
 }
 
@@ -1727,8 +1750,30 @@ void CodeBlock::createActivation(CallFrame* callFrame)
 }
     
 #if ENABLE(JIT)
+void CallLinkInfo::unlink(JSGlobalData& globalData, RepatchBuffer& repatchBuffer)
+{
+    ASSERT(isLinked());
+    
+    if (isDFG) {
+#if ENABLE(DFG_JIT)
+        repatchBuffer.relink(CodeLocationCall(callReturnLocation), isCall ? operationLinkCall : operationLinkConstruct);
+#else
+        ASSERT_NOT_REACHED();
+#endif
+    } else
+        repatchBuffer.relink(CodeLocationNearCall(callReturnLocation), isCall? globalData.jitStubs->ctiVirtualCallLink() : globalData.jitStubs->ctiVirtualConstructLink());
+    hasSeenShouldRepatch = false;
+    callee.clear();
+
+    // It will be on a list if the callee has a code block.
+    if (isOnList())
+        remove();
+}
+
 void CodeBlock::unlinkCalls()
 {
+    if (!!m_alternative)
+        m_alternative->unlinkCalls();
     if (!(m_callLinkInfos.size() || m_methodCallLinkInfos.size()))
         return;
     if (!m_globalData->canUseJIT())
@@ -1737,24 +1782,215 @@ void CodeBlock::unlinkCalls()
     for (size_t i = 0; i < m_callLinkInfos.size(); i++) {
         if (!m_callLinkInfos[i].isLinked())
             continue;
-        if (getJITCode().jitType() == JITCode::DFGJIT) {
-#if ENABLE(DFG_JIT)
-            repatchBuffer.relink(CodeLocationCall(m_callLinkInfos[i].callReturnLocation), m_callLinkInfos[i].isCall ? operationLinkCall : operationLinkConstruct);
-#else
-            ASSERT_NOT_REACHED();
-#endif
-        } else
-            repatchBuffer.relink(CodeLocationNearCall(m_callLinkInfos[i].callReturnLocation), m_callLinkInfos[i].isCall ? m_globalData->jitStubs->ctiVirtualCallLink() : m_globalData->jitStubs->ctiVirtualConstructLink());
-        m_callLinkInfos[i].unlink();
+        m_callLinkInfos[i].unlink(*m_globalData, repatchBuffer);
     }
+}
+
+void CodeBlock::unlinkIncomingCalls()
+{
+    RepatchBuffer repatchBuffer(this);
+    while (m_incomingCalls.begin() != m_incomingCalls.end())
+        m_incomingCalls.begin()->unlink(*m_globalData, repatchBuffer);
 }
 #endif
 
 void CodeBlock::clearEvalCache()
 {
+    if (!!m_alternative)
+        m_alternative->clearEvalCache();
     if (!m_rareData)
         return;
     m_rareData->m_evalCodeCache.clear();
 }
+
+template<typename T>
+inline void replaceExistingEntries(Vector<T>& target, Vector<T>& source)
+{
+    ASSERT(target.size() <= source.size());
+    for (size_t i = 0; i < target.size(); ++i)
+        target[i] = source[i];
+}
+
+void CodeBlock::copyDataFrom(CodeBlock* alternative)
+{
+    if (!alternative)
+        return;
+    
+    replaceExistingEntries(m_constantRegisters, alternative->m_constantRegisters);
+    replaceExistingEntries(m_functionDecls, alternative->m_functionDecls);
+    replaceExistingEntries(m_functionExprs, alternative->m_functionExprs);
+}
+
+void CodeBlock::copyDataFromAlternative()
+{
+    copyDataFrom(m_alternative.get());
+}
+
+#if ENABLE(JIT)
+CodeBlock* ProgramCodeBlock::replacement()
+{
+    return &static_cast<ProgramExecutable*>(ownerExecutable())->generatedBytecode();
+}
+
+CodeBlock* EvalCodeBlock::replacement()
+{
+    return &static_cast<EvalExecutable*>(ownerExecutable())->generatedBytecode();
+}
+
+CodeBlock* FunctionCodeBlock::replacement()
+{
+    return &static_cast<FunctionExecutable*>(ownerExecutable())->generatedBytecodeFor(m_isConstructor ? CodeForConstruct : CodeForCall);
+}
+
+JSObject* ProgramCodeBlock::compileOptimized(ExecState* exec, ScopeChainNode* scopeChainNode)
+{
+    if (replacement()->getJITType() == JITCode::nextTierJIT(getJITType()))
+        return 0;
+    JSObject* error = static_cast<ProgramExecutable*>(ownerExecutable())->compileOptimized(exec, scopeChainNode);
+    return error;
+}
+
+JSObject* EvalCodeBlock::compileOptimized(ExecState* exec, ScopeChainNode* scopeChainNode)
+{
+    if (replacement()->getJITType() == JITCode::nextTierJIT(getJITType()))
+        return 0;
+    JSObject* error = static_cast<EvalExecutable*>(ownerExecutable())->compileOptimized(exec, scopeChainNode);
+    return error;
+}
+
+JSObject* FunctionCodeBlock::compileOptimized(ExecState* exec, ScopeChainNode* scopeChainNode)
+{
+    if (replacement()->getJITType() == JITCode::nextTierJIT(getJITType()))
+        return 0;
+    JSObject* error = static_cast<FunctionExecutable*>(ownerExecutable())->compileOptimizedFor(exec, scopeChainNode, m_isConstructor ? CodeForConstruct : CodeForCall);
+    return error;
+}
+
+bool ProgramCodeBlock::canCompileWithDFG()
+{
+    return DFG::canCompileProgram(this);
+}
+
+bool EvalCodeBlock::canCompileWithDFG()
+{
+    return DFG::canCompileEval(this);
+}
+
+bool FunctionCodeBlock::canCompileWithDFG()
+{
+    if (m_isConstructor)
+        return DFG::canCompileFunctionForConstruct(this);
+    return DFG::canCompileFunctionForCall(this);
+}
+
+void ProgramCodeBlock::jettison(JSGlobalData& globalData)
+{
+    ASSERT(getJITType() != JITCode::BaselineJIT);
+    ASSERT(this == replacement());
+    static_cast<ProgramExecutable*>(ownerExecutable())->jettisonOptimizedCode(globalData);
+}
+
+void EvalCodeBlock::jettison(JSGlobalData& globalData)
+{
+    ASSERT(getJITType() != JITCode::BaselineJIT);
+    ASSERT(this == replacement());
+    static_cast<EvalExecutable*>(ownerExecutable())->jettisonOptimizedCode(globalData);
+}
+
+void FunctionCodeBlock::jettison(JSGlobalData& globalData)
+{
+    ASSERT(getJITType() != JITCode::BaselineJIT);
+    ASSERT(this == replacement());
+    static_cast<FunctionExecutable*>(ownerExecutable())->jettisonOptimizedCodeFor(globalData, m_isConstructor ? CodeForConstruct : CodeForCall);
+}
+#endif
+
+#if ENABLE(VALUE_PROFILER)
+bool CodeBlock::shouldOptimizeNow()
+{
+#if ENABLE(JIT_VERBOSE_OSR)
+    printf("Considering optimizing %p...\n", this);
+#endif
+
+#if ENABLE(VERBOSE_VALUE_PROFILE)
+    dumpValueProfiles();
+#endif
+
+    if (m_optimizationDelayCounter >= Heuristics::maximumOptimizationDelay)
+        return true;
+    
+    unsigned numberOfNonArgumentValueProfiles = 0;
+    unsigned numberOfLiveNonArgumentValueProfiles = 0;
+    unsigned numberOfSamplesInProfiles = 0; // If this divided by ValueProfile::numberOfBuckets equals numberOfValueProfiles() then value profiles are full.
+    for (unsigned i = 0; i < numberOfValueProfiles(); ++i) {
+        ValueProfile* profile = valueProfile(i);
+        unsigned numSamples = profile->totalNumberOfSamples();
+        if (numSamples > ValueProfile::numberOfBuckets)
+            numSamples = ValueProfile::numberOfBuckets; // We don't want profiles that are extremely hot to be given more weight.
+        numberOfSamplesInProfiles += numSamples;
+        if (profile->m_bytecodeOffset < 0) {
+            profile->computeUpdatedPrediction();
+            continue;
+        }
+        numberOfNonArgumentValueProfiles++;
+        if (profile->numberOfSamples() || profile->m_prediction != PredictNone)
+            numberOfLiveNonArgumentValueProfiles++;
+        profile->computeUpdatedPrediction();
+    }
+
+#if ENABLE(JIT_VERBOSE_OSR)
+    printf("Profile hotness: %lf, %lf\n", (double)numberOfLiveNonArgumentValueProfiles / numberOfNonArgumentValueProfiles, (double)numberOfSamplesInProfiles / ValueProfile::numberOfBuckets / numberOfValueProfiles());
+#endif
+
+    if ((!numberOfNonArgumentValueProfiles || (double)numberOfLiveNonArgumentValueProfiles / numberOfNonArgumentValueProfiles >= Heuristics::desiredProfileLivenessRate)
+        && (!numberOfValueProfiles() || (double)numberOfSamplesInProfiles / ValueProfile::numberOfBuckets / numberOfValueProfiles() >= Heuristics::desiredProfileFullnessRate))
+        return true;
+    
+    m_optimizationDelayCounter++;
+    optimizeAfterWarmUp();
+    return false;
+}
+#endif
+
+#if ENABLE(VALUE_PROFILER)
+void CodeBlock::resetRareCaseProfiles()
+{
+    for (unsigned i = 0; i < numberOfRareCaseProfiles(); ++i)
+        rareCaseProfile(i)->m_counter = 0;
+    for (unsigned i = 0; i < numberOfSpecialFastCaseProfiles(); ++i)
+        specialFastCaseProfile(i)->m_counter = 0;
+}
+#endif
+
+#if ENABLE(VERBOSE_VALUE_PROFILE)
+void CodeBlock::dumpValueProfiles()
+{
+    fprintf(stderr, "ValueProfile for %p:\n", this);
+    for (unsigned i = 0; i < numberOfValueProfiles(); ++i) {
+        ValueProfile* profile = valueProfile(i);
+        if (profile->m_bytecodeOffset < 0) {
+            ASSERT(profile->m_bytecodeOffset == -1);
+            fprintf(stderr, "   arg = %u: ", i);
+        } else
+            fprintf(stderr, "   bc = %d: ", profile->m_bytecodeOffset);
+        if (!profile->numberOfSamples() && profile->m_prediction == PredictNone) {
+            fprintf(stderr, "<empty>\n");
+            continue;
+        }
+        profile->dump(stderr);
+        fprintf(stderr, "\n");
+    }
+    fprintf(stderr, "RareCaseProfile for %p:\n", this);
+    for (unsigned i = 0; i < numberOfRareCaseProfiles(); ++i) {
+        RareCaseProfile* profile = rareCaseProfile(i);
+        fprintf(stderr, "   bc = %d: %u\n", profile->m_bytecodeOffset, profile->m_counter);
+    }
+    fprintf(stderr, "SpecialFastCaseProfile for %p:\n", this);
+    for (unsigned i = 0; i < numberOfSpecialFastCaseProfiles(); ++i) {
+        RareCaseProfile* profile = specialFastCaseProfile(i);
+        fprintf(stderr, "   bc = %d: %u\n", profile->m_bytecodeOffset, profile->m_counter);
+    }
+}
+#endif
 
 } // namespace JSC

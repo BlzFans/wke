@@ -284,6 +284,11 @@ public:
         }
     }
 
+    void or32(RegisterID op1, RegisterID op2, RegisterID dest)
+    {
+        m_assembler.orr(dest, op1, op2);
+    }
+
     void rshift32(RegisterID shift_amount, RegisterID dest)
     {
         // Clamp the shift to the range 0..31
@@ -483,6 +488,11 @@ public:
         load8(setupArmAddress(address), dest);
     }
 
+    void load8(BaseIndex address, RegisterID dest)
+    {
+        load8(setupArmAddress(address), dest);
+    }
+    
     DataLabel32 load32WithAddressOffsetPatch(Address address, RegisterID dest)
     {
         DataLabel32 label = moveWithPatch(TrustedImm32(address.offset), dataTempRegister);
@@ -955,22 +965,6 @@ public:
         return branch32(cond, addressTempRegister, right);
     }
 
-    Jump branch16(RelationalCondition cond, BaseIndex left, RegisterID right)
-    {
-        load16(left, dataTempRegister);
-        m_assembler.lsl(addressTempRegister, right, 16);
-        m_assembler.lsl(dataTempRegister, dataTempRegister, 16);
-        return branch32(cond, dataTempRegister, addressTempRegister);
-    }
-
-    Jump branch16(RelationalCondition cond, BaseIndex left, TrustedImm32 right)
-    {
-        // use addressTempRegister incase the branch32 we call uses dataTempRegister. :-/
-        load16(left, addressTempRegister);
-        m_assembler.lsl(addressTempRegister, addressTempRegister, 16);
-        return branch32(cond, addressTempRegister, TrustedImm32(right.m_value << 16));
-    }
-
     Jump branch8(RelationalCondition cond, RegisterID left, TrustedImm32 right)
     {
         compare32(left, right);
@@ -979,11 +973,20 @@ public:
 
     Jump branch8(RelationalCondition cond, Address left, TrustedImm32 right)
     {
+        ASSERT(!(0xffffff00 & right.m_value));
         // use addressTempRegister incase the branch8 we call uses dataTempRegister. :-/
         load8(left, addressTempRegister);
         return branch8(cond, addressTempRegister, right);
     }
 
+    Jump branch8(RelationalCondition cond, BaseIndex left, TrustedImm32 right)
+    {
+        ASSERT(!(0xffffff00 & right.m_value));
+        // use addressTempRegister incase the branch32 we call uses dataTempRegister. :-/
+        load8(left, addressTempRegister);
+        return branch32(cond, addressTempRegister, right);
+    }
+    
     Jump branchTest32(ResultCondition cond, RegisterID reg, RegisterID mask)
     {
         m_assembler.tst(reg, mask);
@@ -1008,12 +1011,6 @@ public:
         // use addressTempRegister incase the branchTest32 we call uses dataTempRegister. :-/
         load32(address, addressTempRegister);
         return branchTest32(cond, addressTempRegister, mask);
-    }
-
-    Jump branchTest8(ResultCondition cond, RegisterID reg, TrustedImm32 mask = TrustedImm32(-1))
-    {
-        test32(reg, mask);
-        return Jump(makeBranch(cond));
     }
 
     Jump branchTest8(ResultCondition cond, Address address, TrustedImm32 mask = TrustedImm32(-1))

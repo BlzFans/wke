@@ -33,8 +33,8 @@
 #include "Platform.h"
 
 #if !PLATFORM(CHROMIUM) && OS(WINDOWS) && !COMPILER(GCC)
-#define WTF_EXPORT //__declspec(dllexport)
-#define WTF_IMPORT //__declspec(dllimport)
+#define WTF_EXPORT __declspec(dllexport)
+#define WTF_IMPORT __declspec(dllimport)
 #elif defined(__GNUC__) && !defined(__CC_ARM) && !defined(__ARMCC__)
 #define WTF_EXPORT __attribute__((visibility("default")))
 #define WTF_IMPORT WTF_EXPORT

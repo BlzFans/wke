@@ -31,17 +31,16 @@
 namespace JSC {
 
 class SlotVisitor : public MarkStack {
+    friend class HeapRootVisitor;
 public:
-    SlotVisitor(void* jsArrayVPtr);
+    SlotVisitor(void* jsArrayVPtr, void* jsFinalObjectVPtr, void* jsStringVPtr);
 
     void drain();
-
-private:
-    void visitChildren(JSCell*);
+    void harvestWeakReferences();
 };
 
-inline SlotVisitor::SlotVisitor(void* jsArrayVPtr)
-    : MarkStack(jsArrayVPtr)
+inline SlotVisitor::SlotVisitor(void* jsArrayVPtr, void* jsFinalObjectVPtr, void* jsStringVPtr)
+    : MarkStack(jsArrayVPtr, jsFinalObjectVPtr, jsStringVPtr)
 {
 }
 

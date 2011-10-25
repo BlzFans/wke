@@ -56,7 +56,6 @@
 #define ENABLE(WTF_FEATURE) (defined ENABLE_##WTF_FEATURE  && ENABLE_##WTF_FEATURE)
 
 
-
 /* ==== CPU() - the target CPU architecture ==== */
 
 /* This also defines CPU(BIG_ENDIAN) or CPU(MIDDLE_ENDIAN) or neither, as appropriate. */
@@ -323,11 +322,15 @@
 #define BUILDING_ON_LEOPARD 1
 #elif !defined(MAC_OS_X_VERSION_10_7) || MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_7
 #define BUILDING_ON_SNOW_LEOPARD 1
+#elif !defined(MAC_OS_X_VERSION_10_8) || MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_8
+#define BUILDING_ON_LION 1
 #endif
 #if !defined(MAC_OS_X_VERSION_10_6) || MAC_OS_X_VERSION_MIN_REQUIRED < MAC_OS_X_VERSION_10_6
 #define TARGETING_LEOPARD 1
 #elif !defined(MAC_OS_X_VERSION_10_7) || MAC_OS_X_VERSION_MIN_REQUIRED < MAC_OS_X_VERSION_10_7
 #define TARGETING_SNOW_LEOPARD 1
+#elif !defined(MAC_OS_X_VERSION_10_8) || MAC_OS_X_VERSION_MIN_REQUIRED < MAC_OS_X_VERSION_10_8
+#define TARGETING_LION 1
 #endif
 #include <TargetConditionals.h>
 
@@ -346,11 +349,6 @@
 /* OS(FREEBSD) - FreeBSD */
 #if defined(__FreeBSD__) || defined(__DragonFly__)
 #define WTF_OS_FREEBSD 1
-#endif
-
-/* OS(HAIKU) - Haiku */
-#ifdef __HAIKU__
-#define WTF_OS_HAIKU 1
 #endif
 
 /* OS(LINUX) - Linux */
@@ -388,23 +386,16 @@
 #define WTF_OS_WINDOWS 1
 #endif
 
-/* OS(SYMBIAN) - Symbian */
-#if defined (__SYMBIAN32__)
-#define WTF_OS_SYMBIAN 1
-#endif
-
 /* OS(UNIX) - Any Unix-like system */
 #if   OS(AIX)              \
     || OS(ANDROID)          \
     || OS(DARWIN)           \
     || OS(FREEBSD)          \
-    || OS(HAIKU)            \
     || OS(LINUX)            \
     || OS(NETBSD)           \
     || OS(OPENBSD)          \
     || OS(QNX)              \
     || OS(SOLARIS)          \
-    || OS(SYMBIAN)          \
     || defined(unix)        \
     || defined(__unix)      \
     || defined(__unix__)
@@ -418,7 +409,6 @@
 /* PLATFORM(QT) */
 /* PLATFORM(WX) */
 /* PLATFORM(GTK) */
-/* PLATFORM(HAIKU) */
 /* PLATFORM(MAC) */
 /* PLATFORM(WIN) */
 #if defined(BUILDING_CHROMIUM__)
@@ -429,17 +419,6 @@
 #define WTF_PLATFORM_WX 1
 #elif defined(BUILDING_GTK__)
 #define WTF_PLATFORM_GTK 1
-#elif defined(BUILDING_HAIKU__)
-#define WTF_PLATFORM_HAIKU 1
-#elif defined(BUILDING_BREWMP__)
-#define WTF_PLATFORM_BREWMP 1
-#if defined(AEE_SIMULATOR)
-#define WTF_PLATFORM_BREWMP_SIMULATOR 1
-#else
-#define WTF_PLATFORM_BREWMP_SIMULATOR 0
-#endif
-#undef WTF_OS_WINDOWS
-#undef WTF_PLATFORM_WIN
 #elif OS(DARWIN)
 #define WTF_PLATFORM_MAC 1
 #elif OS(WINDOWS)
@@ -491,10 +470,6 @@
 #endif
 #endif
 
-#if PLATFORM(BREWMP)
-#define WTF_USE_SKIA 1
-#endif
-
 #if PLATFORM(GTK)
 #define WTF_USE_CAIRO 1
 #endif
@@ -505,16 +480,8 @@
 #define WTF_USE_MERSENNE_TWISTER_19937 1
 #endif
 
-#if PLATFORM(QT) && OS(UNIX) && !OS(SYMBIAN) && !OS(DARWIN)
+#if PLATFORM(QT) && OS(UNIX) && !OS(DARWIN)
 #define WTF_USE_PTHREAD_BASED_QT 1
-#endif
-
-#if (PLATFORM(GTK) || PLATFORM(IOS) || PLATFORM(MAC) || PLATFORM(WIN) || (PLATFORM(QT) && (OS(DARWIN) || USE(PTHREAD_BASED_QT)) && !ENABLE(SINGLE_THREADED))) && !OS(QNX) && !defined(ENABLE_JSC_MULTIPLE_THREADS)
-#define ENABLE_JSC_MULTIPLE_THREADS 1
-#endif
-
-#if ENABLE(JSC_MULTIPLE_THREADS) || PLATFORM(CHROMIUM)
-#define ENABLE_WTF_MULTIPLE_THREADS 1
 #endif
 
 /* On Windows, use QueryPerformanceCounter by default */
@@ -540,8 +507,6 @@
 #endif
 #elif OS(WINCE)
 #define WTF_USE_WINCE_UNICODE 1
-#elif PLATFORM(BREWMP)
-#define WTF_USE_BREWMP_UNICODE 1
 #elif PLATFORM(GTK)
 /* The GTK+ Unicode backend is configurable */
 #else
@@ -571,6 +536,7 @@
 #define ENABLE_FULLSCREEN_API 1
 #define ENABLE_SMOOTH_SCROLLING 1
 #define ENABLE_WEB_ARCHIVE 1
+#define ENABLE_WEB_AUDIO 1
 #endif /* PLATFORM(MAC) && !PLATFORM(IOS) */
 
 #if PLATFORM(CHROMIUM) && OS(DARWIN)
@@ -579,10 +545,6 @@
 #define HAVE_PTHREAD_RWLOCK 1
 
 #define WTF_USE_WK_SCROLLBAR_PAINTER 1
-#endif
-
-#if PLATFORM(BREWMP)
-#define ENABLE_SINGLE_THREADED 1
 #endif
 
 #if PLATFORM(QT) && OS(DARWIN)
@@ -654,31 +616,20 @@
 #endif
 #endif
 
-#if PLATFORM(HAIKU)
-#define HAVE_POSIX_MEMALIGN 1
-#define WTF_USE_CURL 1
-#define WTF_USE_PTHREADS 1
-#define HAVE_PTHREAD_RWLOCK 1
-#define USE_SYSTEM_MALLOC 1
-#define ENABLE_NETSCAPE_PLUGIN_API 0
-#endif
-
-#if PLATFORM(BREWMP)
-#define USE_SYSTEM_MALLOC 1
-#endif
-
-#if PLATFORM(BREWMP_SIMULATOR)
-#define ENABLE_JIT 0
-#endif
-
 #if !defined(HAVE_ACCESSIBILITY)
 #if PLATFORM(IOS) || PLATFORM(MAC) || PLATFORM(WIN) || PLATFORM(GTK) || PLATFORM(CHROMIUM)
 #define HAVE_ACCESSIBILITY 1
 #endif
 #endif /* !defined(HAVE_ACCESSIBILITY) */
 
-#if OS(UNIX) && !OS(SYMBIAN)
+#if OS(UNIX)
 #define HAVE_SIGNAL_H 1
+#endif
+
+#if !defined(HAVE_VASPRINTF)
+#if !COMPILER(MSVC) && !COMPILER(RVCT) && !COMPILER(MINGW) && !(COMPILER(GCC) && OS(QNX))
+#define HAVE_VASPRINTF 1
+#endif
 #endif
 
 #if !defined(HAVE_STRNSTR)
@@ -688,8 +639,8 @@
 #endif
 
 #if !OS(WINDOWS) && !OS(SOLARIS) && !OS(QNX) \
-    && !OS(SYMBIAN) && !OS(HAIKU) && !OS(RVCT) \
-    && !OS(ANDROID) && !PLATFORM(BREWMP)
+    && !OS(RVCT) \
+    && !OS(ANDROID)
 #define HAVE_TM_GMTOFF 1
 #define HAVE_TM_ZONE 1
 #define HAVE_TIMEGM 1
@@ -736,23 +687,6 @@
 #endif
 #define HAVE_VIRTUALALLOC 1
 
-#elif OS(SYMBIAN)
-
-#define HAVE_ERRNO_H 1
-#define HAVE_MMAP 0
-#define HAVE_SBRK 1
-
-#define HAVE_SYS_TIME_H 1
-#define HAVE_STRINGS_H 1
-
-#if !COMPILER(RVCT)
-#define HAVE_SYS_PARAM_H 1
-#endif
-
-#elif PLATFORM(BREWMP)
-
-#define HAVE_ERRNO_H 1
-
 #elif OS(QNX)
 
 #define HAVE_ERRNO_H 1
@@ -761,12 +695,13 @@
 #define HAVE_STRINGS_H 1
 #define HAVE_SYS_PARAM_H 1
 #define HAVE_SYS_TIME_H 1
+#define WTF_USE_PTHREADS 1
 
 #elif OS(ANDROID)
 
 #define HAVE_ERRNO_H 1
 #define HAVE_LANGINFO_H 0
-#define HAVE_MMAP 1
+#define HAVE_NMAP 1
 #define HAVE_SBRK 1
 #define HAVE_STRINGS_H 1
 #define HAVE_SYS_PARAM_H 1
@@ -777,10 +712,7 @@
 /* FIXME: is this actually used or do other platforms generate their own config.h? */
 
 #define HAVE_ERRNO_H 1
-/* As long as Haiku doesn't have a complete support of locale this will be disabled. */
-#if !OS(HAIKU)
 #define HAVE_LANGINFO_H 1
-#endif
 #define HAVE_MMAP 1
 #define HAVE_SBRK 1
 #define HAVE_STRINGS_H 1
@@ -794,7 +726,7 @@
 #if PLATFORM(QT)
 /* We must not customize the global operator new and delete for the Qt port. */
 #define ENABLE_GLOBAL_FASTMALLOC_NEW 0
-#if !OS(UNIX) || OS(SYMBIAN)
+#if !OS(UNIX)
 #define USE_SYSTEM_MALLOC 1
 #endif
 #endif
@@ -809,8 +741,8 @@
 #define ENABLE_ICONDATABASE 1
 #endif
 
-#if !defined(ENABLE_DATABASE)
-#define ENABLE_DATABASE 1
+#if !defined(ENABLE_SQL_DATABASE)
+#define ENABLE_SQL_DATABASE 1
 #endif
 
 #if !defined(ENABLE_JAVASCRIPT_DEBUGGER)
@@ -905,12 +837,12 @@
 #define ENABLE_TEXT_CARET 1
 #endif
 
-#if !defined(ENABLE_ON_FIRST_TEXTAREA_FOCUS_SELECT_ALL)
-#define ENABLE_ON_FIRST_TEXTAREA_FOCUS_SELECT_ALL 0
-#endif
-
 #if !defined(ENABLE_FULLSCREEN_API)
 #define ENABLE_FULLSCREEN_API 0
+#endif
+
+#if !defined(ENABLE_MOUSE_LOCK_API)
+#define ENABLE_MOUSE_LOCK_API 0
 #endif
 
 #if !defined(WTF_USE_JSVALUE64) && !defined(WTF_USE_JSVALUE32_64)
@@ -954,9 +886,9 @@
 #define ENABLE_DFG_JIT 1
 #endif
 
-/* Currently only implemented for JSVALUE64, only tested on PLATFORM(MAC) */
-#if !defined(ENABLE_VALUE_PROFILER) && ENABLE(JIT) && USE(JSVALUE64) && PLATFORM(MAC)
-#define ENABLE_VALUE_PROFILER 0
+/* Currently only implemented for JSVALUE64, only tested on PLATFORM(MAC). */
+#if !defined(ENABLE_VALUE_PROFILER) && ENABLE(DFG_JIT)
+#define ENABLE_VALUE_PROFILER 1
 #endif
 
 #if !defined(ENABLE_VERBOSE_VALUE_PROFILE) && ENABLE(VALUE_PROFILER)
@@ -1041,13 +973,6 @@
 #endif
 #endif
 
-#if ENABLE(SINGLE_THREADED)
-#undef ENABLE_LAZY_BLOCK_FREEING
-#define ENABLE_LAZY_BLOCK_FREEING 0
-#else
-#define ENABLE_LAZY_BLOCK_FREEING 1
-#endif
-
 #ifndef ENABLE_LARGE_HEAP
 #if CPU(X86) || CPU(X86_64)
 #define ENABLE_LARGE_HEAP 1
@@ -1128,7 +1053,7 @@
 #define ENABLE_THREADING_OPENMP 1
 #endif
 
-#if !defined(ENABLE_PARALLEL_JOBS) && !ENABLE(SINGLE_THREADED) && (ENABLE(THREADING_GENERIC) || ENABLE(THREADING_LIBDISPATCH) || ENABLE(THREADING_OPENMP))
+#if !defined(ENABLE_PARALLEL_JOBS) && (ENABLE(THREADING_GENERIC) || ENABLE(THREADING_LIBDISPATCH) || ENABLE(THREADING_OPENMP))
 #define ENABLE_PARALLEL_JOBS 1
 #endif
 
@@ -1142,7 +1067,7 @@
    breakages one port at a time. */
 #define WTF_USE_EXPORT_MACROS 0
 
-#if (PLATFORM(QT) && !OS(SYMBIAN)) || PLATFORM(GTK) || PLATFORM(EFL)
+#if PLATFORM(QT) || PLATFORM(GTK) || PLATFORM(EFL)
 #define WTF_USE_UNIX_DOMAIN_SOCKETS 1
 #endif
 
@@ -1150,6 +1075,22 @@
 #ifndef ENABLE_GC_VALIDATION
 #define ENABLE_GC_VALIDATION 1
 #endif
+#endif
+
+#if PLATFORM(MAC) && !defined(BUILDING_ON_LEOPARD) && !defined(BUILDING_ON_SNOW_LEOPARD)
+#define WTF_USE_AVFOUNDATION 1
+#endif
+
+#if PLATFORM(MAC) || PLATFORM(GTK) || (PLATFORM(WIN) && !OS(WINCE) && !PLATFORM(WIN_CAIRO))
+#define WTF_USE_REQUEST_ANIMATION_FRAME_TIMER 1
+#endif
+
+#if PLATFORM(MAC)
+#define WTF_USE_REQUEST_ANIMATION_FRAME_DISPLAY_MONITOR 1
+#endif
+
+#if PLATFORM(MAC) && !defined(BUILDING_ON_LEOPARD) && !defined(BUILDING_ON_SNOW_LEOPARD)
+#define HAVE_INVERTED_WHEEL_EVENTS 1
 #endif
 
 #endif /* WTF_Platform_h */

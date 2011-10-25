@@ -43,6 +43,7 @@ public:
 
     using MacroAssemblerX86Common::add32;
     using MacroAssemblerX86Common::and32;
+    using MacroAssemblerX86Common::branchAdd32;
     using MacroAssemblerX86Common::or32;
     using MacroAssemblerX86Common::sub32;
     using MacroAssemblerX86Common::load32;
@@ -76,7 +77,7 @@ public:
         sub32(imm, Address(scratchRegister));
     }
 
-    void load32(void* address, RegisterID dest)
+    void load32(const void* address, RegisterID dest)
     {
         if (dest == X86Registers::eax)
             m_assembler.movl_mEAX(address);
@@ -297,6 +298,12 @@ public:
         storePtr(scratchRegister, address);
     }
 
+    void storePtr(TrustedImmPtr imm, BaseIndex address)
+    {
+        move(imm, scratchRegister);
+        m_assembler.movq_rm(scratchRegister, address.offset, address.base, address.index, address.scale);
+    }
+    
     DataLabel32 storePtrWithAddressOffsetPatch(RegisterID src, Address address)
     {
         m_assembler.movq_rm_disp32(src, address.offset, address.base);
@@ -321,6 +328,13 @@ public:
             m_assembler.cmpq_ir(right.m_value, left);
         m_assembler.setCC_r(x86Condition(cond), dest);
         m_assembler.movzbl_rr(dest, dest);
+    }
+    
+    Jump branchAdd32(ResultCondition cond, TrustedImm32 src, AbsoluteAddress dest)
+    {
+        move(TrustedImmPtr(dest.m_ptr), scratchRegister);
+        add32(src, Address(scratchRegister));
+        return Jump(m_assembler.jCC(x86Condition(cond)));
     }
 
     Jump branchPtr(RelationalCondition cond, RegisterID left, RegisterID right)

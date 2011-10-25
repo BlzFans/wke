@@ -32,7 +32,7 @@
 
 namespace JSC {
     
-ClassInfo StructureChain::s_info = { "StructureChain", 0, 0, 0 };
+ClassInfo StructureChain::s_info = { "StructureChain", 0, 0, 0, CREATE_METHOD_TABLE(StructureChain) };
 
 StructureChain::StructureChain(JSGlobalData& globalData, Structure* structure)
     : JSCell(globalData, structure)
@@ -43,13 +43,14 @@ StructureChain::~StructureChain()
 {
 }
 
-void StructureChain::visitChildren(SlotVisitor& visitor)
+void StructureChain::visitChildren(JSCell* cell, SlotVisitor& visitor)
 {
-    ASSERT_GC_OBJECT_INHERITS(this, &s_info);
-    ASSERT(structure()->typeInfo().overridesVisitChildren());
+    StructureChain* thisObject = static_cast<StructureChain*>(cell);
+    ASSERT_GC_OBJECT_INHERITS(thisObject, &s_info);
+    ASSERT(thisObject->structure()->typeInfo().overridesVisitChildren());
     size_t i = 0;
-    while (m_vector[i])
-        visitor.append(&m_vector[i++]);
+    while (thisObject->m_vector[i])
+        visitor.append(&thisObject->m_vector[i++]);
 }
 
 } // namespace JSC

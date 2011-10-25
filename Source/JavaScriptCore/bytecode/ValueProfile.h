@@ -29,6 +29,9 @@
 #ifndef ValueProfile_h
 #define ValueProfile_h
 
+#include "JSArray.h"
+#include "PredictedType.h"
+#include "Structure.h"
 #include "WriteBarrier.h"
 
 namespace JSC {
@@ -42,20 +45,47 @@ struct ValueProfile {
     static const unsigned majority = certainty / 2;
     
     ValueProfile(int bytecodeOffset)
-        : bytecodeOffset(bytecodeOffset)
+        : m_bytecodeOffset(bytecodeOffset)
+        , m_prediction(PredictNone)
+        , m_numberOfSamplesInPrediction(0)
     {
         for (unsigned i = 0; i < numberOfBuckets; ++i)
-            buckets[i].setWithoutWriteBarrier(JSValue());
+            m_buckets[i] = JSValue::encode(JSValue());
+    }
+    
+    const ClassInfo* classInfo(unsigned bucket) const
+    {
+        JSValue value = JSValue::decode(m_buckets[bucket]);
+        if (!!value) {
+            if (!value.isCell())
+                return 0;
+            return value.asCell()->structure()->classInfo();
+        }
+        return 0;
     }
     
     unsigned numberOfSamples() const
     {
         unsigned result = 0;
         for (unsigned i = 0; i < numberOfBuckets; ++i) {
-            if (!!buckets[i])
+            if (!!JSValue::decode(m_buckets[i]))
                 result++;
         }
         return result;
+    }
+    
+    unsigned totalNumberOfSamples() const
+    {
+        return numberOfSamples() + m_numberOfSamplesInPrediction;
+    }
+    
+    bool isLive() const
+    {
+        for (unsigned i = 0; i < numberOfBuckets; ++i) {
+            if (!!JSValue::decode(m_buckets[i]))
+                return true;
+        }
+        return false;
     }
     
     static unsigned computeProbability(unsigned counts, unsigned numberOfSamples)
@@ -64,12 +94,12 @@ struct ValueProfile {
             return 0;
         return counts * certainty / numberOfSamples;
     }
-        
+    
     unsigned numberOfInt32s() const
     {
         unsigned result = 0;
         for (unsigned i = 0; i < numberOfBuckets; ++i) {
-            if (!!buckets[i] && buckets[i].get().isInt32())
+            if (JSValue::decode(m_buckets[i]).isInt32())
                 result++;
         }
         return result;
@@ -79,7 +109,7 @@ struct ValueProfile {
     {
         unsigned result = 0;
         for (unsigned i = 0; i < numberOfBuckets; ++i) {
-            if (!!buckets[i] && buckets[i].get().isDouble())
+            if (JSValue::decode(m_buckets[i]).isDouble())
                 result++;
         }
         return result;
@@ -89,7 +119,58 @@ struct ValueProfile {
     {
         unsigned result = 0;
         for (unsigned i = 0; i < numberOfBuckets; ++i) {
-            if (!!buckets[i] && buckets[i].get().isCell())
+            if (!!classInfo(i))
+                result++;
+        }
+        return result;
+    }
+    
+    unsigned numberOfObjects() const
+    {
+        unsigned result = 0;
+        for (unsigned i = 0; i < numberOfBuckets; ++i) {
+            const ClassInfo* ci = classInfo(i);
+            if (!!ci && ci->isSubClassOf(&JSObject::s_info))
+                result++;
+        }
+        return result;
+    }
+    
+    unsigned numberOfFinalObjects() const
+    {
+        unsigned result = 0;
+        for (unsigned i = 0; i < numberOfBuckets; ++i) {
+            if (classInfo(i) == &JSFinalObject::s_info)
+                result++;
+        }
+        return result;
+    }
+    
+    unsigned numberOfStrings() const
+    {
+        unsigned result = 0;
+        for (unsigned i = 0; i < numberOfBuckets; ++i) {
+            if (classInfo(i) == &JSString::s_info)
+                result++;
+        }
+        return result;
+    }
+    
+    unsigned numberOfArrays() const
+    {
+        unsigned result = 0;
+        for (unsigned i = 0; i < numberOfBuckets; ++i) {
+            if (classInfo(i) == &JSArray::s_info)
+                result++;
+        }
+        return result;
+    }
+    
+    unsigned numberOfBooleans() const
+    {
+        unsigned result = 0;
+        for (unsigned i = 0; i < numberOfBuckets; ++i) {
+            if (JSValue::decode(m_buckets[i]).isBoolean())
                 result++;
         }
         return result;
@@ -115,13 +196,118 @@ struct ValueProfile {
         return computeProbability(numberOfCells(), numberOfSamples());
     }
     
-    int bytecodeOffset; // -1 for prologue
-    WriteBarrierBase<Unknown> buckets[numberOfBuckets];
+    unsigned probabilityOfObject() const
+    {
+        return computeProbability(numberOfObjects(), numberOfSamples());
+    }
+    
+    unsigned probabilityOfFinalObject() const
+    {
+        return computeProbability(numberOfFinalObjects(), numberOfSamples());
+    }
+    
+    unsigned probabilityOfArray() const
+    {
+        return computeProbability(numberOfArrays(), numberOfSamples());
+    }
+    
+    unsigned probabilityOfString() const
+    {
+        return computeProbability(numberOfStrings(), numberOfSamples());
+    }
+    
+    unsigned probabilityOfBoolean() const
+    {
+        return computeProbability(numberOfBooleans(), numberOfSamples());
+    }
+
+#ifndef NDEBUG
+    void dump(FILE* out)
+    {
+        fprintf(out,
+                "samples = %u, int32 = %u (%u), double = %u (%u), cell = %u (%u), object = %u (%u), final object = %u (%u), array = %u (%u), string = %u (%u), boolean = %u (%u), prediction = %s, samples in prediction = %u",
+                numberOfSamples(),
+                probabilityOfInt32(), numberOfInt32s(),
+                probabilityOfDouble(), numberOfDoubles(),
+                probabilityOfCell(), numberOfCells(),
+                probabilityOfObject(), numberOfObjects(),
+                probabilityOfFinalObject(), numberOfFinalObjects(),
+                probabilityOfArray(), numberOfArrays(),
+                probabilityOfString(), numberOfStrings(),
+                probabilityOfBoolean(), numberOfBooleans(),
+                predictionToString(m_prediction), m_numberOfSamplesInPrediction);
+        bool first = true;
+        for (unsigned i = 0; i < numberOfBuckets; ++i) {
+            JSValue value = JSValue::decode(m_buckets[i]);
+            if (!!value) {
+                if (first) {
+                    fprintf(out, ": ");
+                    first = false;
+                } else
+                    fprintf(out, ", ");
+                fprintf(out, "%s", value.description());
+            }
+        }
+    }
+#endif
+    
+    struct Statistics {
+        unsigned samples;
+        unsigned int32s;
+        unsigned doubles;
+        unsigned cells;
+        unsigned objects;
+        unsigned finalObjects;
+        unsigned arrays;
+        unsigned strings;
+        unsigned booleans;
+        
+        Statistics()
+        {
+            bzero(this, sizeof(Statistics));
+        }
+    };
+    
+    // Method for incrementing all relevant statistics for a ClassInfo, except for
+    // incrementing the number of samples, which the caller is responsible for
+    // doing.
+    static void computeStatistics(const ClassInfo*, Statistics&);
+
+    // Optimized method for getting all counts at once.
+    void computeStatistics(Statistics&) const;
+    
+    // Updates the prediction and returns the new one.
+    PredictedType computeUpdatedPrediction();
+    
+    int m_bytecodeOffset; // -1 for prologue
+    
+    PredictedType m_prediction;
+    unsigned m_numberOfSamplesInPrediction;
+    
+    EncodedJSValue m_buckets[numberOfBuckets];
 };
 
 inline int getValueProfileBytecodeOffset(ValueProfile* valueProfile)
 {
-    return valueProfile->bytecodeOffset;
+    return valueProfile->m_bytecodeOffset;
+}
+
+// This is a mini value profile to catch pathologies. It is a counter that gets
+// incremented when we take the slow path on any instruction.
+struct RareCaseProfile {
+    RareCaseProfile(int bytecodeOffset)
+        : m_bytecodeOffset(bytecodeOffset)
+        , m_counter(0)
+    {
+    }
+    
+    int m_bytecodeOffset;
+    uint32_t m_counter;
+};
+
+inline int getRareCaseProfileBytecodeOffset(RareCaseProfile* rareCaseProfile)
+{
+    return rareCaseProfile->m_bytecodeOffset;
 }
 #endif
 

@@ -67,16 +67,6 @@ void deleteIdentifierTable(IdentifierTable* table)
     delete table;
 }
 
-bool Identifier::equal(const StringImpl* r, const char* s)
-{
-    int length = r->length();
-    const UChar* d = r->characters();
-    for (int i = 0; i != length; ++i)
-        if (d[i] != (unsigned char)s[i])
-            return false;
-    return s[length] == 0;
-}
-
 struct IdentifierCStringTranslator {
     static unsigned hash(const char* c)
     {
@@ -232,7 +222,7 @@ PassRefPtr<StringImpl> Identifier::addSlowCase(JSGlobalData* globalData, StringI
     ASSERT(r->length());
 
     if (r->length() == 1) {
-        UChar c = r->characters()[0];
+        UChar c = (*r)[0];
         if (c <= maxSingleCharacterString)
             r = globalData->smallStrings.singleCharacterStringRep(c);
             if (r->isIdentifier())

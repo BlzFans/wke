@@ -67,7 +67,7 @@ namespace JSC {
 
 ASSERT_CLASS_FITS_IN_CELL(RegExpConstructor);
 
-const ClassInfo RegExpConstructor::s_info = { "Function", &InternalFunction::s_info, 0, ExecState::regExpConstructorTable };
+const ClassInfo RegExpConstructor::s_info = { "Function", &InternalFunction::s_info, 0, ExecState::regExpConstructorTable, CREATE_METHOD_TABLE(RegExpConstructor) };
 
 /* Source for RegExpConstructor.lut.h
 @begin regExpConstructorTable
@@ -95,10 +95,15 @@ const ClassInfo RegExpConstructor::s_info = { "Function", &InternalFunction::s_i
 @end
 */
 
-RegExpConstructor::RegExpConstructor(ExecState* exec, JSGlobalObject* globalObject, Structure* structure, RegExpPrototype* regExpPrototype)
-    : InternalFunction(&exec->globalData(), globalObject, structure, Identifier(exec, "RegExp"))
+RegExpConstructor::RegExpConstructor(JSGlobalObject* globalObject, Structure* structure)
+    : InternalFunction(globalObject, structure)
     , d(adoptPtr(new RegExpConstructorPrivate))
 {
+}
+
+void RegExpConstructor::finishCreation(ExecState* exec, RegExpPrototype* regExpPrototype)
+{
+    Base::finishCreation(exec->globalData(), Identifier(exec, "RegExp"));
     ASSERT(inherits(&s_info));
 
     // ECMA 15.10.5.1 RegExp.prototype
@@ -108,9 +113,14 @@ RegExpConstructor::RegExpConstructor(ExecState* exec, JSGlobalObject* globalObje
     putDirectWithoutTransition(exec->globalData(), exec->propertyNames().length, jsNumber(2), ReadOnly | DontDelete | DontEnum);
 }
 
-RegExpMatchesArray::RegExpMatchesArray(ExecState* exec, RegExpConstructorPrivate* data)
-    : JSArray(exec->globalData(), exec->lexicalGlobalObject()->regExpMatchesArrayStructure(), data->lastNumSubPatterns + 1, CreateInitialized)
+RegExpMatchesArray::RegExpMatchesArray(ExecState* exec)
+    : JSArray(exec->globalData(), exec->lexicalGlobalObject()->regExpMatchesArrayStructure())
 {
+}
+
+void RegExpMatchesArray::finishCreation(JSGlobalData& globalData, RegExpConstructorPrivate* data)
+{
+    Base::finishCreation(globalData, data->lastNumSubPatterns + 1, CreateInitialized);
     RegExpConstructorPrivate* d = new RegExpConstructorPrivate;
     d->input = data->lastInput;
     d->lastInput = data->lastInput;
@@ -138,14 +148,14 @@ void RegExpMatchesArray::fillArrayInstance(ExecState* exec)
     for (unsigned i = 0; i <= lastNumSubpatterns; ++i) {
         int start = d->lastOvector()[2 * i];
         if (start >= 0)
-            JSArray::put(exec, i, jsSubstring(exec, d->lastInput, start, d->lastOvector()[2 * i + 1] - start));
+            JSArray::putByIndex(this, exec, i, jsSubstring(exec, d->lastInput, start, d->lastOvector()[2 * i + 1] - start));
         else
-            JSArray::put(exec, i, jsUndefined());
+            JSArray::putByIndex(this, exec, i, jsUndefined());
     }
 
     PutPropertySlot slot;
-    JSArray::put(exec, exec->propertyNames().index, jsNumber(d->lastOvector()[0]), slot);
-    JSArray::put(exec, exec->propertyNames().input, jsString(exec, d->input), slot);
+    JSArray::put(this, exec, exec->propertyNames().index, jsNumber(d->lastOvector()[0]), slot);
+    JSArray::put(this, exec, exec->propertyNames().input, jsString(exec, d->input), slot);
 
     delete d;
     setSubclassData(0);
@@ -192,9 +202,14 @@ JSValue RegExpConstructor::getRightContext(ExecState* exec) const
     return jsEmptyString(exec);
 }
     
-bool RegExpConstructor::getOwnPropertySlot(ExecState* exec, const Identifier& propertyName, PropertySlot& slot)
+bool RegExpConstructor::getOwnPropertySlotVirtual(ExecState* exec, const Identifier& propertyName, PropertySlot& slot)
 {
-    return getStaticValueSlot<RegExpConstructor, InternalFunction>(exec, ExecState::regExpConstructorTable(exec), this, propertyName, slot);
+    return getOwnPropertySlot(this, exec, propertyName, slot);
+}
+
+bool RegExpConstructor::getOwnPropertySlot(JSCell* cell, ExecState* exec, const Identifier& propertyName, PropertySlot& slot)
+{
+    return getStaticValueSlot<RegExpConstructor, InternalFunction>(exec, ExecState::regExpConstructorTable(exec), static_cast<RegExpConstructor*>(cell), propertyName, slot);
 }
 
 bool RegExpConstructor::getOwnPropertyDescriptor(ExecState* exec, const Identifier& propertyName, PropertyDescriptor& descriptor)
@@ -277,9 +292,14 @@ JSValue regExpConstructorRightContext(ExecState* exec, JSValue slotBase, const I
     return asRegExpConstructor(slotBase)->getRightContext(exec);
 }
 
-void RegExpConstructor::put(ExecState* exec, const Identifier& propertyName, JSValue value, PutPropertySlot& slot)
+void RegExpConstructor::putVirtual(ExecState* exec, const Identifier& propertyName, JSValue value, PutPropertySlot& slot)
 {
-    lookupPut<RegExpConstructor, InternalFunction>(exec, propertyName, value, ExecState::regExpConstructorTable(exec), this, slot);
+    put(this, exec, propertyName, value, slot);
+}
+
+void RegExpConstructor::put(JSCell* cell, ExecState* exec, const Identifier& propertyName, JSValue value, PutPropertySlot& slot)
+{
+    lookupPut<RegExpConstructor, InternalFunction>(exec, propertyName, value, ExecState::regExpConstructorTable(exec), static_cast<RegExpConstructor*>(cell), slot);
 }
 
 void setRegExpConstructorInput(ExecState* exec, JSObject* baseObject, JSValue value)
@@ -334,7 +354,12 @@ static EncodedJSValue JSC_HOST_CALL constructWithRegExpConstructor(ExecState* ex
     return JSValue::encode(constructRegExp(exec, asInternalFunction(exec->callee())->globalObject(), args, true));
 }
 
-ConstructType RegExpConstructor::getConstructData(ConstructData& constructData)
+ConstructType RegExpConstructor::getConstructDataVirtual(ConstructData& constructData)
+{
+    return getConstructData(this, constructData);
+}
+
+ConstructType RegExpConstructor::getConstructData(JSCell*, ConstructData& constructData)
 {
     constructData.native.function = constructWithRegExpConstructor;
     return ConstructTypeHost;
@@ -347,7 +372,7 @@ static EncodedJSValue JSC_HOST_CALL callRegExpConstructor(ExecState* exec)
     return JSValue::encode(constructRegExp(exec, asInternalFunction(exec->callee())->globalObject(), args));
 }
 
-CallType RegExpConstructor::getCallData(CallData& callData)
+CallType RegExpConstructor::getCallData(JSCell*, CallData& callData)
 {
     callData.native.function = callRegExpConstructor;
     return CallTypeHost;

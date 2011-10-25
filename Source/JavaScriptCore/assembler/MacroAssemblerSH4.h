@@ -221,6 +221,18 @@ public:
         releaseScratch(scr);
     }
 
+    void or32(RegisterID op1, RegisterID op2, RegisterID dest)
+    {
+        if (op1 == op2)
+            move(op1, dest);
+        else if (op1 == dest)
+            or32(op2, dest);
+        else {
+            move(op2, dest);
+            or32(op1, dest);
+        }
+    }
+
     void rshift32(RegisterID shiftamount, RegisterID dest)
     {
         compare32(32, shiftamount, Equal);
@@ -509,6 +521,16 @@ public:
         load8(address.base, address.offset, dest);
     }
 
+    void load8(BaseIndex address, RegisterID dest)
+    {
+        RegisterID scr = claimScratch();
+        move(address.index, scr);
+        lshift32(TrustedImm32(address.scale), scr);
+        add32(address.base, scr);
+        load8(scr, address.offset, dest);
+        releaseScratch(scr);
+    }
+
     void load32(BaseIndex address, RegisterID dest)
     {
         RegisterID scr = claimScratch();
@@ -519,9 +541,9 @@ public:
         releaseScratch(scr);
     }
 
-    void load32(void* address, RegisterID dest)
+    void load32(const void* address, RegisterID dest)
     {
-        m_assembler.loadConstant(reinterpret_cast<uint32_t>(address), dest);
+        m_assembler.loadConstant(reinterpret_cast<uint32_t>(const_cast<void*>(address)), dest);
         m_assembler.movlMemReg(dest, dest);
     }
 
@@ -1352,8 +1374,9 @@ public:
         return branchTrue();
     }
 
-    Jump branch16(RelationalCondition cond,  BaseIndex left, RegisterID right)
+    Jump branch8(RelationalCondition cond, BaseIndex left, TrustedImm32 right)
     {
+        ASSERT(!(right.m_value & 0xFFFFFF00));
         RegisterID scr = claimScratch();
 
         move(left.index, scr);
@@ -1362,25 +1385,8 @@ public:
         if (left.offset)
             add32(TrustedImm32(left.offset), scr);
         add32(left.base, scr);
-        load16(scr, scr);
-        extuw(scr, scr);
-        releaseScratch(scr);
-
-        return branch32(cond, scr, right);
-    }
-
-    Jump branch16(RelationalCondition cond, BaseIndex left, TrustedImm32 right)
-    {
-        RegisterID scr = claimScratch();
-
-        move(left.index, scr);
-        lshift32(TrustedImm32(left.scale), scr);
-
-        if (left.offset)
-            add32(TrustedImm32(left.offset), scr);
-        add32(left.base, scr);
-        load16(scr, scr);
-        extuw(scr, scr);
+        load8(scr, scr);
+        m_assembler.extub(scr, scr);
         RegisterID scr1 = claimScratch();
         m_assembler.loadConstant(right.m_value, scr1);
         releaseScratch(scr);
