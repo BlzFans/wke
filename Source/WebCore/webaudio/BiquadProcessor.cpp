@@ -32,7 +32,7 @@
 
 namespace WebCore {
     
-BiquadProcessor::BiquadProcessor(double sampleRate, size_t numberOfChannels, bool autoInitialize)
+BiquadProcessor::BiquadProcessor(float sampleRate, size_t numberOfChannels, bool autoInitialize)
     : AudioDSPKernelProcessor(sampleRate, numberOfChannels)
     , m_type(LowPass)
     , m_parameter1(0)
@@ -51,7 +51,7 @@ BiquadProcessor::BiquadProcessor(double sampleRate, size_t numberOfChannels, boo
         initialize();
 }
 
-BiquadProcessor::BiquadProcessor(FilterType type, double sampleRate, size_t numberOfChannels, bool autoInitialize)
+BiquadProcessor::BiquadProcessor(FilterType type, float sampleRate, size_t numberOfChannels, bool autoInitialize)
     : AudioDSPKernelProcessor(sampleRate, numberOfChannels)
     , m_type(type)
     , m_parameter1(0)
@@ -120,6 +120,14 @@ void BiquadProcessor::process(AudioBus* source, AudioBus* destination, size_t fr
     // For each channel of our input, process using the corresponding BiquadDSPKernel into the output channel.
     for (unsigned i = 0; i < m_kernels.size(); ++i)
         m_kernels[i]->process(source->channel(i)->data(), destination->channel(i)->data(), framesToProcess);
+}
+
+void BiquadProcessor::setType(FilterType type)
+{
+    if (type != m_type) {
+        m_type = type;
+        reset(); // The filter state must be reset only if the type has changed.
+    }
 }
 
 } // namespace WebCore

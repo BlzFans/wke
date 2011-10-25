@@ -33,9 +33,18 @@
 
 namespace WebCore {
 
+PassRefPtr<AudioProcessingEvent> AudioProcessingEvent::create()
+{
+    return adoptRef(new AudioProcessingEvent);
+}
+
 PassRefPtr<AudioProcessingEvent> AudioProcessingEvent::create(PassRefPtr<AudioBuffer> inputBuffer, PassRefPtr<AudioBuffer> outputBuffer)
 {
     return adoptRef(new AudioProcessingEvent(inputBuffer, outputBuffer));
+}
+
+AudioProcessingEvent::AudioProcessingEvent()
+{
 }
 
 AudioProcessingEvent::AudioProcessingEvent(PassRefPtr<AudioBuffer> inputBuffer, PassRefPtr<AudioBuffer> outputBuffer)
@@ -49,9 +58,9 @@ AudioProcessingEvent::~AudioProcessingEvent()
 {
 }
 
-bool AudioProcessingEvent::isAudioProcessingEvent() const
+const AtomicString& AudioProcessingEvent::interfaceName() const
 {
-    return true;
+    return eventNames().interfaceForAudioProcessingEvent;
 }
 
 } // namespace WebCore

@@ -76,7 +76,7 @@ public:
     static PassRefPtr<AudioContext> create(Document*);
 
     // Create an AudioContext for offline (non-realtime) rendering.
-    static PassRefPtr<AudioContext> createOfflineContext(Document*, unsigned numberOfChannels, size_t numberOfFrames, double sampleRate, ExceptionCode&);
+    static PassRefPtr<AudioContext> createOfflineContext(Document*, unsigned numberOfChannels, size_t numberOfFrames, float sampleRate, ExceptionCode&);
 
     virtual ~AudioContext();
 
@@ -95,9 +95,9 @@ public:
 
     AudioDestinationNode* destination() { return m_destinationNode.get(); }
     double currentTime() { return m_destinationNode->currentTime(); }
-    double sampleRate() { return m_destinationNode->sampleRate(); }
+    float sampleRate() { return m_destinationNode->sampleRate(); }
 
-    PassRefPtr<AudioBuffer> createBuffer(unsigned numberOfChannels, size_t numberOfFrames, double sampleRate);
+    PassRefPtr<AudioBuffer> createBuffer(unsigned numberOfChannels, size_t numberOfFrames, float sampleRate);
     PassRefPtr<AudioBuffer> createBuffer(ArrayBuffer* arrayBuffer, bool mixToMono);
 
     // Asynchronous audio file data decoding.
@@ -110,7 +110,9 @@ public:
 
     // The AudioNode create methods are called on the main thread (from JavaScript).
     PassRefPtr<AudioBufferSourceNode> createBufferSource();
+#if ENABLE(VIDEO)
     PassRefPtr<MediaElementAudioSourceNode> createMediaElementSource(HTMLMediaElement*, ExceptionCode&);
+#endif
     PassRefPtr<AudioGainNode> createGainNode();
     PassRefPtr<BiquadFilterNode> createBiquadFilter();
     PassRefPtr<WaveShaperNode> createWaveShaper();
@@ -224,11 +226,12 @@ public:
     
 private:
     AudioContext(Document*);
-    AudioContext(Document*, unsigned numberOfChannels, size_t numberOfFrames, double sampleRate);
+    AudioContext(Document*, unsigned numberOfChannels, size_t numberOfFrames, float sampleRate);
     void constructCommon();
 
     void lazyInitialize();
     void uninitialize();
+    static void uninitializeDispatch(void* userData);
 
     void scheduleNodeDeletion();
     static void deleteMarkedNodesDispatch(void* userData);

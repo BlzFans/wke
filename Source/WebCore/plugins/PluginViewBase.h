@@ -27,6 +27,7 @@
 
 #include "Widget.h"
 #include "GraphicsLayer.h"
+#include "ScrollTypes.h"
 #include <wtf/text/WTFString.h>
 
 namespace JSC {
@@ -36,6 +37,8 @@ namespace JSC {
 }
 
 namespace WebCore {
+
+class Scrollbar;
 
 // PluginViewBase is a widget that all plug-in views inherit from, both in Webkit and WebKit2.
 // It's intended as a stopgap measure until we can merge all plug-in views into a single plug-in view.
@@ -48,6 +51,11 @@ public:
     virtual JSC::JSObject* scriptObject(JSC::JSGlobalObject*) { return 0; }
     virtual void privateBrowsingStateChanged(bool) { }
     virtual bool getFormValue(String&) { return false; }
+    virtual bool scroll(ScrollDirection, ScrollGranularity) { return false; }
+
+    // A plug-in can ask WebKit to handle scrollbars for it.
+    virtual Scrollbar* horizontalScrollbar() { return 0; }
+    virtual Scrollbar* verticalScrollbar() { return 0; }
 
 protected:
     PluginViewBase(PlatformWidget widget = 0) : Widget(widget) { }

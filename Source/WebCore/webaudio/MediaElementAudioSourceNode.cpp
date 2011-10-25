@@ -24,7 +24,7 @@
 
 #include "config.h"
 
-#if ENABLE(WEB_AUDIO)
+#if ENABLE(WEB_AUDIO) && ENABLE(VIDEO)
 
 #include "MediaElementAudioSourceNode.h"
 
@@ -46,7 +46,7 @@ MediaElementAudioSourceNode::MediaElementAudioSourceNode(AudioContext* context, 
     // Default to stereo. This could change depending on what the media element .src is set to.
     addOutput(adoptPtr(new AudioNodeOutput(this, 2)));
     
-    setType(NodeTypeMediaElementAudioSource);
+    setNodeType(NodeTypeMediaElementAudioSource);
 
     initialize();
 }

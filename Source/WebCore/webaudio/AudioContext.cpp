@@ -49,17 +49,20 @@
 #include "FFTFrame.h"
 #include "HRTFDatabaseLoader.h"
 #include "HRTFPanner.h"
-#include "HTMLMediaElement.h"
 #include "HighPass2FilterNode.h"
 #include "JavaScriptAudioNode.h"
 #include "LowPass2FilterNode.h"
-#include "MediaElementAudioSourceNode.h"
 #include "OfflineAudioCompletionEvent.h"
 #include "OfflineAudioDestinationNode.h"
 #include "PlatformString.h"
 #include "RealtimeAnalyserNode.h"
 #include "WaveShaperNode.h"
 #include "ScriptCallStack.h"
+
+#if ENABLE(VIDEO)
+#include "HTMLMediaElement.h"
+#include "MediaElementAudioSourceNode.h"
+#endif
 
 #if DEBUG_AUDIONODE_REFERENCES
 #include <stdio.h>
@@ -79,9 +82,11 @@ namespace WebCore {
     
 namespace {
     
-bool isSampleRateRangeGood(double sampleRate)
+bool isSampleRateRangeGood(float sampleRate)
 {
-    return sampleRate >= 22050 && sampleRate <= 96000;
+    // FIXME: It would be nice if the minimum sample-rate could be less than 44.1KHz,
+    // but that will require some fixes in HRTFPanner::fftSizeForSampleRate(), and some testing there.
+    return sampleRate >= 44100 && sampleRate <= 96000;
 }
 
 }
@@ -100,7 +105,7 @@ PassRefPtr<AudioContext> AudioContext::create(Document* document)
     return adoptRef(new AudioContext(document));
 }
 
-PassRefPtr<AudioContext> AudioContext::createOfflineContext(Document* document, unsigned numberOfChannels, size_t numberOfFrames, double sampleRate, ExceptionCode& ec)
+PassRefPtr<AudioContext> AudioContext::createOfflineContext(Document* document, unsigned numberOfChannels, size_t numberOfFrames, float sampleRate, ExceptionCode& ec)
 {
     ASSERT(document);
 
@@ -140,7 +145,7 @@ AudioContext::AudioContext(Document* document)
 }
 
 // Constructor for offline (non-realtime) rendering.
-AudioContext::AudioContext(Document* document, unsigned numberOfChannels, size_t numberOfFrames, double sampleRate)
+AudioContext::AudioContext(Document* document, unsigned numberOfChannels, size_t numberOfFrames, float sampleRate)
     : ActiveDOMObject(document, this)
     , m_isInitialized(false)
     , m_isAudioThreadFinished(false)
@@ -254,10 +259,25 @@ bool AudioContext::isRunnable() const
     return m_hrtfDatabaseLoader->isLoaded();
 }
 
+void AudioContext::uninitializeDispatch(void* userData)
+{
+    AudioContext* context = reinterpret_cast<AudioContext*>(userData);
+    ASSERT(context);
+    if (!context)
+        return;
+
+    context->uninitialize();
+}
+
 void AudioContext::stop()
 {
     m_document = 0; // document is going away
-    uninitialize();
+
+    // Don't call uninitialize() immediately here because the ScriptExecutionContext is in the middle
+    // of dealing with all of its ActiveDOMObjects at this point. uninitialize() can de-reference other
+    // ActiveDOMObjects so let's schedule uninitialize() to be called later.
+    // FIXME: see if there's a more direct way to handle this issue.
+    callOnMainThread(uninitializeDispatch, this);
 }
 
 Document* AudioContext::document() const
@@ -276,11 +296,8 @@ void AudioContext::refBuffer(PassRefPtr<AudioBuffer> buffer)
     m_allocatedBuffers.append(buffer);
 }
 
-PassRefPtr<AudioBuffer> AudioContext::createBuffer(unsigned numberOfChannels, size_t numberOfFrames, double sampleRate)
+PassRefPtr<AudioBuffer> AudioContext::createBuffer(unsigned numberOfChannels, size_t numberOfFrames, float sampleRate)
 {
-    if (!isSampleRateRangeGood(sampleRate) || numberOfChannels > 10 || !numberOfFrames)
-        return 0;
-    
     return AudioBuffer::create(numberOfChannels, numberOfFrames, sampleRate);
 }
 
@@ -312,6 +329,7 @@ PassRefPtr<AudioBufferSourceNode> AudioContext::createBufferSource()
     return node;
 }
 
+#if ENABLE(VIDEO)
 PassRefPtr<MediaElementAudioSourceNode> AudioContext::createMediaElementSource(HTMLMediaElement* mediaElement, ExceptionCode& ec)
 {
     ASSERT(mediaElement);
@@ -336,6 +354,7 @@ PassRefPtr<MediaElementAudioSourceNode> AudioContext::createMediaElementSource(H
     refNode(node.get()); // context keeps reference until node is disconnected
     return node;
 }
+#endif
 
 PassRefPtr<JavaScriptAudioNode> AudioContext::createJavaScriptNode(size_t bufferSize)
 {

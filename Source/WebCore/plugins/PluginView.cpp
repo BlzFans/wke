@@ -143,8 +143,8 @@ void PluginView::setFrameRect(const IntRect& rect)
 
     updatePluginWidget();
 
-#if OS(WINDOWS) || OS(SYMBIAN)
-    // On Windows and Symbian, always call plugin to change geometry.
+#if OS(WINDOWS)
+    // On Windows always call plugin to change geometry.
     setNPWindowRect(rect);
 #elif defined(XP_UNIX)
     // On Unix, multiple calls to setNPWindow() in windowed mode causes Flash to crash
@@ -170,6 +170,8 @@ void PluginView::handleEvent(Event* event)
         handleMouseEvent(static_cast<MouseEvent*>(event));
     else if (event->isKeyboardEvent())
         handleKeyboardEvent(static_cast<KeyboardEvent*>(event));
+    else if (event->type() == eventNames().contextmenuEvent)
+        event->setDefaultHandled(); // We don't know if the plug-in has handled mousedown event by displaying a context menu, so we never want WebKit to show a default one.
 #if defined(XP_UNIX) && ENABLE(NETSCAPE_PLUGIN_API)
     else if (event->type() == eventNames().focusoutEvent)
         handleFocusOutEvent();

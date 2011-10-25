@@ -36,13 +36,13 @@
 
 namespace WebCore {
     
-AudioDestinationNode::AudioDestinationNode(AudioContext* context, double sampleRate)
+AudioDestinationNode::AudioDestinationNode(AudioContext* context, float sampleRate)
     : AudioNode(context, sampleRate)
     , m_currentTime(0.0)
 {
     addInput(adoptPtr(new AudioNodeInput(this)));
     
-    setType(NodeTypeDestination);
+    setNodeType(NodeTypeDestination);
 }
 
 AudioDestinationNode::~AudioDestinationNode()

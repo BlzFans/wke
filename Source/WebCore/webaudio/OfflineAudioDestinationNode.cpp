@@ -43,6 +43,7 @@ const size_t renderQuantumSize = 128;
 OfflineAudioDestinationNode::OfflineAudioDestinationNode(AudioContext* context, AudioBuffer* renderTarget)
     : AudioDestinationNode(context, renderTarget->sampleRate())
     , m_renderTarget(renderTarget)
+    , m_renderThread(0)
     , m_startedRendering(false)
 {
     m_renderBus = adoptPtr(new AudioBus(renderTarget->numberOfChannels(), renderQuantumSize));
@@ -68,6 +69,11 @@ void OfflineAudioDestinationNode::uninitialize()
     if (!isInitialized())
         return;
 
+    if (m_renderThread) {
+        waitForThreadCompletion(m_renderThread, 0);
+        m_renderThread = 0;
+    }
+
     AudioNode::uninitialize();
 }
 
@@ -80,6 +86,7 @@ void OfflineAudioDestinationNode::startRendering()
     
     if (!m_startedRendering) {
         m_startedRendering = true;
+        ref(); // See corresponding deref() call in notifyCompleteDispatch().
         m_renderThread = createThread(OfflineAudioDestinationNode::renderEntry, this, "offline renderer");
     }
 }
@@ -154,6 +161,7 @@ void OfflineAudioDestinationNode::notifyCompleteDispatch(void* userData)
         return;
 
     destinationNode->notifyComplete();
+    destinationNode->deref();
 }
 
 void OfflineAudioDestinationNode::notifyComplete()

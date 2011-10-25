@@ -43,7 +43,7 @@ class AudioContext;
 
 class AudioBufferSourceNode : public AudioSourceNode {
 public:
-    static PassRefPtr<AudioBufferSourceNode> create(AudioContext*, double sampleRate);
+    static PassRefPtr<AudioBufferSourceNode> create(AudioContext*, float sampleRate);
 
     virtual ~AudioBufferSourceNode();
     
@@ -52,7 +52,8 @@ public:
     virtual void reset();
     
     // setBuffer() is called on the main thread.  This is the buffer we use for playback.
-    void setBuffer(AudioBuffer*);
+    // returns true on success.
+    bool setBuffer(AudioBuffer*);
     AudioBuffer* buffer() { return m_buffer.get(); }
                     
     // numberOfChannels() returns the number of output channels.  This value equals the number of channels from the buffer.
@@ -82,7 +83,7 @@ public:
     void setPannerNode(PassRefPtr<AudioPannerNode> pannerNode) { m_pannerNode = pannerNode; }
 
 private:
-    AudioBufferSourceNode(AudioContext*, double sampleRate);
+    AudioBufferSourceNode(AudioContext*, float sampleRate);
 
     void renderFromBuffer(AudioBus*, unsigned destinationFrameOffset, size_t numberOfFrames);
 

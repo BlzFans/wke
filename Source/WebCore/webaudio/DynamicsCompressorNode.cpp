@@ -35,13 +35,13 @@
 
 namespace WebCore {
 
-DynamicsCompressorNode::DynamicsCompressorNode(AudioContext* context, double sampleRate)
+DynamicsCompressorNode::DynamicsCompressorNode(AudioContext* context, float sampleRate)
     : AudioNode(context, sampleRate)
 {
     addInput(adoptPtr(new AudioNodeInput(this)));
     addOutput(adoptPtr(new AudioNodeOutput(this, 2)));
     
-    setType(NodeTypeDynamicsCompressor);
+    setNodeType(NodeTypeDynamicsCompressor);
     
     initialize();
 }

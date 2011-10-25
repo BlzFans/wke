@@ -49,10 +49,10 @@ public:
         Allpass = 7
     };
 
-    BiquadProcessor(double sampleRate, size_t numberOfChannels, bool autoInitialize);
+    BiquadProcessor(float sampleRate, size_t numberOfChannels, bool autoInitialize);
 
     // Old constructor used by deprecated LowPass2FilterNode and HighPass2FilterNode
-    BiquadProcessor(FilterType, double sampleRate, size_t numberOfChannels, bool autoInitialize = true);
+    BiquadProcessor(FilterType, float sampleRate, size_t numberOfChannels, bool autoInitialize = true);
 
     virtual ~BiquadProcessor();
     
@@ -67,7 +67,7 @@ public:
     AudioParam* parameter3() { return m_parameter3.get(); }
 
     FilterType type() const { return m_type; }
-    void setType(FilterType type) { m_type = type; }
+    void setType(FilterType);
 
 private:
     FilterType m_type;

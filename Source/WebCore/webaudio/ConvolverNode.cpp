@@ -45,13 +45,13 @@ const size_t MaxFFTSize = 32768;
 
 namespace WebCore {
 
-ConvolverNode::ConvolverNode(AudioContext* context, double sampleRate)
+ConvolverNode::ConvolverNode(AudioContext* context, float sampleRate)
     : AudioNode(context, sampleRate)
 {
     addInput(adoptPtr(new AudioNodeInput(this)));
     addOutput(adoptPtr(new AudioNodeOutput(this, 2)));
     
-    setType(NodeTypeConvolver);
+    setNodeType(NodeTypeConvolver);
     
     initialize();
 }
