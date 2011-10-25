@@ -30,6 +30,7 @@
 #ifndef AccessibilityObject_h
 #define AccessibilityObject_h
 
+#include "FloatQuad.h"
 #include "LayoutTypes.h"
 #include "VisiblePosition.h"
 #include "VisibleSelection.h"
@@ -49,7 +50,6 @@
 typedef struct _NSRange NSRange;
 
 #ifdef __OBJC__
-@class AccessibilityObjectWrapper;
 @class NSArray;
 @class NSAttributedString;
 @class NSData;
@@ -57,6 +57,7 @@ typedef struct _NSRange NSRange;
 @class NSString;
 @class NSValue;
 @class NSView;
+@class WebAccessibilityObjectWrapper;
 #else
 class NSArray;
 class NSAttributedString;
@@ -68,9 +69,15 @@ class NSView;
 #if PLATFORM(GTK)
 typedef struct _AtkObject AtkObject;
 typedef struct _AtkObject AccessibilityObjectWrapper;
+#elif PLATFORM(MAC)
+class WebAccessibilityObjectWrapper;
 #else
 class AccessibilityObjectWrapper;
 #endif
+#endif
+
+#if PLATFORM(MAC)
+typedef WebAccessibilityObjectWrapper AccessibilityObjectWrapper;
 #endif
 
 namespace WebCore {
@@ -172,6 +179,8 @@ enum AccessibilityRole {
     SheetRole,
     SliderRole,
     SliderThumbRole,
+    SpinButtonRole,
+    SpinButtonPartRole,
     SplitGroupRole,
     SplitterRole,
     StaticTextRole,
@@ -363,7 +372,11 @@ public:
     virtual bool isMenuList() const { return false; }
     virtual bool isMenuListPopup() const { return false; }
     virtual bool isMenuListOption() const { return false; }
+    virtual bool isSpinButton() const { return false; }
+    virtual bool isSpinButtonPart() const { return false; }
+    virtual bool isMockObject() const { return false; }
     bool isTextControl() const { return roleValue() == TextAreaRole || roleValue() == TextFieldRole; }
+    bool isARIATextControl() const;
     bool isTabList() const { return roleValue() == TabListRole; }
     bool isTabItem() const { return roleValue() == TabRole; }
     bool isRadioGroup() const { return roleValue() == RadioGroupRole; }
@@ -500,8 +513,9 @@ public:
     virtual LayoutRect boundingBoxRect() const { return LayoutRect(); }
     virtual LayoutRect elementRect() const = 0;
     virtual LayoutSize size() const { return elementRect().size(); }
-    virtual LayoutPoint clickPoint() const;
-
+    virtual LayoutPoint clickPoint();
+    static LayoutRect boundingBoxForQuads(RenderObject*, const Vector<FloatQuad>&);
+    
     virtual PlainTextRange selectedTextRange() const { return PlainTextRange(); }
     unsigned selectionStart() const { return selectedTextRange().start; }
     unsigned selectionEnd() const { return selectedTextRange().length; }
@@ -545,11 +559,14 @@ public:
 
     virtual void childrenChanged() { }
     virtual void contentChanged() { }
-    virtual const AccessibilityChildrenVector& children() { return m_children; }
+    const AccessibilityChildrenVector& children();
     virtual void addChildren() { }
     virtual bool canHaveChildren() const { return true; }
     virtual bool hasChildren() const { return m_haveChildren; }
     virtual void updateChildrenIfNecessary();
+    virtual void clearChildren();
+    virtual void detachFromParent() { }
+
     virtual void selectedChildren(AccessibilityChildrenVector&) { }
     virtual void visibleChildren(AccessibilityChildrenVector&) { }
     virtual void tabChildren(AccessibilityChildrenVector&) { }
@@ -670,7 +687,6 @@ protected:
     mutable bool m_haveChildren;
     AccessibilityRole m_role;
     
-    virtual void clearChildren();
     virtual bool isDetached() const { return true; }
     
 #if PLATFORM(GTK)
@@ -682,7 +698,7 @@ protected:
 #endif
 
 #if PLATFORM(MAC)
-    RetainPtr<AccessibilityObjectWrapper> m_wrapper;
+    RetainPtr<WebAccessibilityObjectWrapper> m_wrapper;
 #elif PLATFORM(WIN) && !OS(WINCE)
     COMPtr<AccessibilityObjectWrapper> m_wrapper;
 #elif PLATFORM(GTK)

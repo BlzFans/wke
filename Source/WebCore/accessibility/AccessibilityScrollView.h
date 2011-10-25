@@ -45,6 +45,7 @@ private:
     
     virtual bool accessibilityIsIgnored() const { return false; }
     virtual bool isAccessibilityScrollView() const { return true; }
+    virtual bool isEnabled() const { return true; }
     
     virtual bool isAttachment() const;
     virtual Widget* widgetForAttachmentView() const;
@@ -52,8 +53,8 @@ private:
     virtual AccessibilityObject* scrollBar(AccessibilityOrientation) const;
     virtual void addChildren();
     virtual AccessibilityObject* accessibilityHitTest(const LayoutPoint&) const;
-    virtual const AccessibilityChildrenVector& children();
     virtual void updateChildrenIfNecessary();
+    void updateScrollbars();
     
     virtual FrameView* documentFrameView() const;
     virtual LayoutRect elementRect() const;

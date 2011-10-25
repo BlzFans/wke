@@ -26,40 +26,27 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef AccessibilityTableRow_h
-#define AccessibilityTableRow_h
-
-#include "AccessibilityRenderObject.h"
+#ifndef WebAccessibilityObjectWrapper_h
+#define WebAccessibilityObjectWrapper_h
 
 namespace WebCore {
-    
-class AccessibilityTableRow : public AccessibilityRenderObject {
-    
-protected:
-    AccessibilityTableRow(RenderObject*);
-public:
-    static PassRefPtr<AccessibilityTableRow> create(RenderObject*);
-    virtual ~AccessibilityTableRow();
-    
-    virtual bool isTableRow() const;
-    virtual AccessibilityRole roleValue() const;
-    virtual bool accessibilityIsIgnored() const;
+class AccessibilityObject;
+class VisiblePosition;
+}
 
-    // retrieves the "row" header (a th tag in the rightmost column)
-    virtual AccessibilityObject* headerObject();
-    virtual AccessibilityObject* parentTable() const;
-    
-    void setRowIndex(int rowIndex) { m_rowIndex = rowIndex; }
-    int rowIndex() const { return m_rowIndex; }
+@interface WebAccessibilityObjectWrapper : NSObject {
+    WebCore::AccessibilityObject* m_object;
+}
+ 
+- (id)initWithAccessibilityObject:(WebCore::AccessibilityObject*)axObject;
+- (void)detach;
+- (WebCore::AccessibilityObject*)accessibilityObject;
 
-    // allows the table to add other children that may not originate
-    // in the row, but their col/row spans overlap into it
-    void appendChild(AccessibilityObject*);
-    
-private:
-    int m_rowIndex;
-}; 
-   
-} // namespace WebCore 
+// Used to inform an element when a notification is posted for it. Used by DRT.
+- (void)accessibilityPostedNotification:(NSString *)notificationName;
 
-#endif // AccessibilityTableRow_h
+- (NSView*)attachmentView;
+
+@end
+
+#endif // WebAccessibilityObjectWrapper_h

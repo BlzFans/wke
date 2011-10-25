@@ -50,7 +50,9 @@
 #include "RenderView.h"
 #include "RenderWidget.h"
 #include "RenderedPosition.h"
+#include "Settings.h"
 #include "TextCheckerClient.h"
+#include "TextCheckingHelper.h"
 #include "TextIterator.h"
 #include "htmlediting.h"
 #include "visible_units.h"
@@ -245,6 +247,12 @@ bool AccessibilityObject::isBlockquote() const
     return node() && node()->hasTagName(blockquoteTag);
 }
 
+
+bool AccessibilityObject::isARIATextControl() const
+{
+    return ariaRoleAttribute() == TextAreaRole || ariaRoleAttribute() == TextFieldRole;
+}
+
 bool AccessibilityObject::isLandmark() const
 {
     AccessibilityRole role = roleValue();
@@ -282,19 +290,20 @@ bool AccessibilityObject::hasMisspelling() const
     const UChar* chars = stringValue().characters();
     int charsLength = stringValue().length();
     bool isMisspelled = false;
-    
-#if USE(UNIFIED_TEXT_CHECKING)
-    Vector<TextCheckingResult> results;
-    textChecker->checkTextOfParagraph(chars, charsLength, TextCheckingTypeSpelling, results);
-    if (!results.isEmpty())
-        isMisspelled = true;
-#else
+
+    if (unifiedTextCheckerEnabled(frame)) {
+        Vector<TextCheckingResult> results;
+        checkTextOfParagraph(textChecker, chars, charsLength, TextCheckingTypeSpelling, results);
+        if (!results.isEmpty())
+            isMisspelled = true;
+        return isMisspelled;
+    }
+
     int misspellingLength = 0;
     int misspellingLocation = -1;
     textChecker->checkSpellingOfString(chars, charsLength, &misspellingLocation, &misspellingLength);
     if (misspellingLength || misspellingLocation != -1)
         isMisspelled = true;
-#endif
     
     return isMisspelled;
 }
@@ -393,12 +402,34 @@ bool AccessibilityObject::isARIAControl(AccessibilityRole ariaRole)
     || ariaRole == ComboBoxRole || ariaRole == SliderRole; 
 }
 
-LayoutPoint AccessibilityObject::clickPoint() const
+LayoutPoint AccessibilityObject::clickPoint()
 {
     LayoutRect rect = elementRect();
     return LayoutPoint(rect.x() + rect.width() / 2, rect.y() + rect.height() / 2);
 }
 
+LayoutRect AccessibilityObject::boundingBoxForQuads(RenderObject* obj, const Vector<FloatQuad>& quads)
+{
+    ASSERT(obj);
+    if (!obj)
+        return LayoutRect();
+    
+    size_t count = quads.size();
+    if (!count)
+        return LayoutRect();
+    
+    LayoutRect result;
+    for (size_t i = 0; i < count; ++i) {
+        LayoutRect r = quads[i].enclosingBoundingBox();
+        if (!r.isEmpty()) {
+            if (obj->style()->hasAppearance())
+                obj->theme()->adjustRepaintRect(obj, r);
+            result.unite(r);
+        }
+    }
+    return result;
+}
+    
 bool AccessibilityObject::press() const
 {
     Element* actionElem = actionElement();
@@ -479,7 +510,7 @@ static VisiblePosition updateAXLineStartForVisiblePosition(const VisiblePosition
     VisiblePosition startPosition = visiblePosition;
     while (true) {
         tempPosition = startPosition.previous();
-        if (tempPosition.isNull() || tempPosition.isNull())
+        if (tempPosition.isNull())
             break;
         Position p = tempPosition.deepEquivalent();
         RenderObject* renderer = p.deprecatedNode()->renderer();
@@ -1004,6 +1035,13 @@ FrameView* AccessibilityObject::documentFrameView() const
 
     return object->documentFrameView();
 }
+
+const AccessibilityObject::AccessibilityChildrenVector& AccessibilityObject::children()
+{
+    updateChildrenIfNecessary();
+    
+    return m_children;
+}
     
 void AccessibilityObject::updateChildrenIfNecessary()
 {
@@ -1013,6 +1051,11 @@ void AccessibilityObject::updateChildrenIfNecessary()
 
 void AccessibilityObject::clearChildren()
 {
+    // Some objects have weak pointers to their parents and those associations need to be detached.
+    size_t length = m_children.size();
+    for (size_t i = 0; i < length; i++)
+        m_children[i]->detachFromParent();
+    
     m_children.clear();
     m_haveChildren = false;
 }
@@ -1303,6 +1346,13 @@ AccessibilityObject* AccessibilityObject::elementAccessibilityHitTest(const Layo
         // Normalize the point for the widget's bounds.
         if (widget && widget->isFrameView())
             return axObjectCache()->getOrCreate(widget)->accessibilityHitTest(toPoint(point - widget->frameRect().location()));
+    }
+    
+    // Check if there are any mock elements that need to be handled.
+    size_t count = m_children.size();
+    for (size_t k = 0; k < count; k++) {
+        if (m_children[k]->isMockObject() && m_children[k]->elementRect().contains(point))
+            return m_children[k]->elementAccessibilityHitTest(point);
     }
 
     return const_cast<AccessibilityObject*>(this); 

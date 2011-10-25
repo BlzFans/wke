@@ -50,13 +50,6 @@ PassRefPtr<AccessibilitySlider> AccessibilitySlider::create(RenderObject* render
     return adoptRef(new AccessibilitySlider(renderer));
 }
 
-const AccessibilityObject::AccessibilityChildrenVector& AccessibilitySlider::children()
-{
-    if (!m_haveChildren)
-        addChildren();
-    return m_children;
-}
-
 AccessibilityOrientation AccessibilitySlider::orientation() const
 {
     // Default to horizontal in the unknown case.
@@ -93,7 +86,7 @@ void AccessibilitySlider::addChildren()
     AXObjectCache* cache = m_renderer->document()->axObjectCache();
 
     AccessibilitySliderThumb* thumb = static_cast<AccessibilitySliderThumb*>(cache->getOrCreate(SliderThumbRole));
-    thumb->setParentObject(this);
+    thumb->setParent(this);
 
     // Before actually adding the value indicator to the hierarchy,
     // allow the platform to make a final decision about it.
@@ -165,7 +158,6 @@ HTMLInputElement* AccessibilitySlider::element() const
 
 
 AccessibilitySliderThumb::AccessibilitySliderThumb()
-    : m_parentSlider(0)
 {
 }
 
@@ -176,7 +168,10 @@ PassRefPtr<AccessibilitySliderThumb> AccessibilitySliderThumb::create()
     
 LayoutRect AccessibilitySliderThumb::elementRect() const
 {
-    RenderObject* sliderRenderer = m_parentSlider->renderer();
+    if (!m_parent)
+        return LayoutRect();
+    
+    RenderObject* sliderRenderer = m_parent->renderer();
     if (!sliderRenderer || !sliderRenderer->isSlider())
         return LayoutRect();
     return sliderThumbElementOf(sliderRenderer->node())->getRect();

@@ -1,4 +1,3 @@
-
 /*
  * Copyright (C) 2008 Apple Inc. All rights reserved.
  *
@@ -167,7 +166,7 @@ public:
     virtual LayoutRect boundingBoxRect() const;
     virtual LayoutRect elementRect() const;
     virtual LayoutSize size() const;
-    virtual LayoutPoint clickPoint() const;
+    virtual LayoutPoint clickPoint();
     
     void setRenderer(RenderObject* renderer) { m_renderer = renderer; }
     virtual RenderObject* renderer() const { return m_renderer; }
@@ -202,7 +201,6 @@ public:
     virtual FrameView* documentFrameView() const;
     virtual unsigned hierarchicalLevel() const;
 
-    virtual const AccessibilityChildrenVector& children();
     virtual void clearChildren();
     virtual void updateChildrenIfNecessary();
     
@@ -247,7 +245,7 @@ public:
 
     virtual VisiblePosition visiblePositionForIndex(int) const;
     virtual int indexForVisiblePosition(const VisiblePosition&) const;
-    
+
     virtual PlainTextRange doAXRangeForLine(unsigned) const;
     virtual PlainTextRange doAXRangeForIndex(unsigned) const;
     
@@ -280,13 +278,15 @@ private:
     bool hasTextAlternative() const;
     String positionalDescriptionForMSAA() const;
     PlainTextRange ariaSelectedTextRange() const;
+    Element* rootEditableElementForPosition(const Position&) const;
+    bool nodeIsTextControl(const Node*) const;
 
     Element* menuElementForMenuButton() const;
     Element* menuItemElementForMenu() const;
     AccessibilityRole determineAccessibilityRole();
     AccessibilityRole determineAriaRoleAttribute() const;
     AccessibilityRole remapAriaRoleDueToParent(AccessibilityRole) const;
-    
+
     bool isTabItemSelected() const;
     void alterSliderValue(bool increase);
     void changeValueByStep(bool increase);
@@ -298,6 +298,10 @@ private:
     AccessibilityObject* accessibilityParentForImageMap(HTMLMapElement*) const;
     bool renderObjectIsObservable(RenderObject*) const;
     RenderObject* renderParentObject() const;
+    bool isDescendantOfElementType(const QualifiedName& tagName) const;
+
+    void addTextFieldChildren();
+    void addImageMapChildren();
     
     void ariaSelectedRows(AccessibilityChildrenVector&);
     

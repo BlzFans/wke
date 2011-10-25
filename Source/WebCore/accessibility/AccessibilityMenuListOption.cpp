@@ -36,7 +36,6 @@ namespace WebCore {
 using namespace HTMLNames;
 
 AccessibilityMenuListOption::AccessibilityMenuListOption()
-    : m_popup(0)
 {
 }
 
@@ -50,12 +49,7 @@ Element* AccessibilityMenuListOption::actionElement() const
 {
     return m_element.get();
 }
-
-AccessibilityObject* AccessibilityMenuListOption::parentObject() const
-{
-    return m_popup;
-}
-
+    
 bool AccessibilityMenuListOption::isEnabled() const
 {
     // disabled() returns true if the parent <select> element is disabled,
@@ -65,9 +59,12 @@ bool AccessibilityMenuListOption::isEnabled() const
 
 bool AccessibilityMenuListOption::isVisible() const
 {
+    if (!m_parent)
+        return false;
+    
     // In a single-option select with the popup collapsed, only the selected
     // item is considered visible.
-    return !m_popup->isOffScreen() || isSelected();
+    return !m_parent->isOffScreen() || isSelected();
 }
 
 bool AccessibilityMenuListOption::isOffScreen() const

@@ -29,13 +29,13 @@
 #ifndef AccessibilityTableHeaderContainer_h
 #define AccessibilityTableHeaderContainer_h
 
-#include "AccessibilityObject.h"
+#include "AccessibilityMockObject.h"
 #include "AccessibilityTable.h"
 #include "IntRect.h"
 
 namespace WebCore {
 
-class AccessibilityTableHeaderContainer : public AccessibilityObject {
+class AccessibilityTableHeaderContainer : public AccessibilityMockObject {
     
 private:
     AccessibilityTableHeaderContainer();
@@ -45,17 +45,12 @@ public:
     
     virtual AccessibilityRole roleValue() const { return TableHeaderContainerRole; }
     
-    void setParentTable(AccessibilityTable* table) { m_parentTable = table; }
-    virtual AccessibilityObject* parentObject() const { return m_parentTable; }
-    
-    virtual const AccessibilityChildrenVector& children();
     virtual void addChildren();
     
     virtual LayoutSize size() const;
     virtual LayoutRect elementRect() const;
     
 private:
-    AccessibilityTable* m_parentTable;
     LayoutRect m_headerRect;
     
     virtual bool accessibilityIsIgnored() const;

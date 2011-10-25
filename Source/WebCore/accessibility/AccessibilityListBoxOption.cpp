@@ -180,7 +180,7 @@ void AccessibilityListBoxOption::setSelected(bool selected)
         return;
     
     // Convert from the entire list index to the option index.
-    int optionIndex = static_cast<SelectElement*>(selectElement)->listToOptionIndex(listBoxOptionIndex());
+    int optionIndex = selectElement->listToOptionIndex(listBoxOptionIndex());
     selectElement->accessKeySetSelectedIndex(optionIndex);
 }
 
@@ -207,7 +207,7 @@ int AccessibilityListBoxOption::listBoxOptionIndex() const
     if (!selectElement) 
         return -1;
     
-    const Vector<Element*>& listItems = selectElement->listItems();
+    const Vector<HTMLElement*>& listItems = selectElement->listItems();
     unsigned length = listItems.size();
     for (unsigned i = 0; i < length; i++)
         if (listItems[i] == m_optionElement)
