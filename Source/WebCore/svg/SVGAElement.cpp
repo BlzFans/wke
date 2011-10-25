@@ -94,7 +94,7 @@ bool SVGAElement::isSupportedAttribute(const QualifiedName& attrName)
         SVGExternalResourcesRequired::addSupportedAttributes(supportedAttributes);
         supportedAttributes.add(SVGNames::targetAttr);
     }
-    return supportedAttributes.contains(attrName);
+    return supportedAttributes.contains<QualifiedName, SVGAttributeHashTranslator>(attrName);
 }
 
 void SVGAElement::parseMappedAttribute(Attribute* attr)
@@ -163,13 +163,11 @@ void SVGAElement::defaultEventHandler(Event* event)
 
             if (url[0] == '#') {
                 Element* targetElement = treeScope()->getElementById(url.substring(1));
-#if ENABLE(SVG_ANIMATION)
                 if (SVGSMILElement::isSMILElement(targetElement)) {
                     static_cast<SVGSMILElement*>(targetElement)->beginByLinkActivation();
                     event->setDefaultHandled();
                     return;
                 }
-#endif
                 // Only allow navigation to internal <view> anchors.
                 if (targetElement && !targetElement->hasTagName(SVGNames::viewTag))
                     return;

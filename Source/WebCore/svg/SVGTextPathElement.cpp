@@ -69,7 +69,7 @@ bool SVGTextPathElement::isSupportedAttribute(const QualifiedName& attrName)
         supportedAttributes.add(SVGNames::methodAttr);
         supportedAttributes.add(SVGNames::spacingAttr);
     }
-    return supportedAttributes.contains(attrName);
+    return supportedAttributes.contains<QualifiedName, SVGAttributeHashTranslator>(attrName);
 }
 
 void SVGTextPathElement::parseMappedAttribute(Attribute* attr)
@@ -145,7 +145,12 @@ void SVGTextPathElement::insertedIntoDocument()
     String id;
     Element* targetElement = SVGURIReference::targetElementFromIRIString(href(), document(), &id);
     if (!targetElement) {
+        if (hasPendingResources() || id.isEmpty())
+            return;
+
+        ASSERT(!hasPendingResources());
         document()->accessSVGExtensions()->addPendingResource(id, this);
+        ASSERT(hasPendingResources());
         return;
     }
 }

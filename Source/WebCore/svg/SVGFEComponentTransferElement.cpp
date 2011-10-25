@@ -59,7 +59,7 @@ bool SVGFEComponentTransferElement::isSupportedAttribute(const QualifiedName& at
     DEFINE_STATIC_LOCAL(HashSet<QualifiedName>, supportedAttributes, ());
     if (supportedAttributes.isEmpty())
         supportedAttributes.add(SVGNames::inAttr);
-    return supportedAttributes.contains(attrName);
+    return supportedAttributes.contains<QualifiedName, SVGAttributeHashTranslator>(attrName);
 }
 
 void SVGFEComponentTransferElement::parseMappedAttribute(Attribute* attr)
@@ -96,7 +96,7 @@ PassRefPtr<FilterEffect> SVGFEComponentTransferElement::build(SVGFilterBuilder* 
         else if (node->hasTagName(SVGNames::feFuncGTag))
             green = static_cast<SVGFEFuncGElement*>(node)->transferFunction();
         else if (node->hasTagName(SVGNames::feFuncBTag))
-           blue = static_cast<SVGFEFuncBElement*>(node)->transferFunction();
+            blue = static_cast<SVGFEFuncBElement*>(node)->transferFunction();
         else if (node->hasTagName(SVGNames::feFuncATag))
             alpha = static_cast<SVGFEFuncAElement*>(node)->transferFunction();
     }

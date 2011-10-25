@@ -89,7 +89,7 @@ public:
 
     virtual void updateAnimatedSVGAttribute(const QualifiedName&) const;
  
-    virtual PassRefPtr<RenderStyle> styleForRenderer(const NodeRenderingContext&);
+    virtual PassRefPtr<RenderStyle> customStyleForRenderer();
 
     static void synchronizeRequiredFeatures(void* contextElement);
     static void synchronizeRequiredExtensions(void* contextElement);
@@ -101,8 +101,12 @@ public:
 
     virtual SVGAttributeToPropertyMap& localAttributeToPropertyMap();
 
+#ifndef NDEBUG
+    static bool isAnimatableAttribute(const QualifiedName&);
+#endif
+
 protected:
-    SVGElement(const QualifiedName&, Document*);
+    SVGElement(const QualifiedName&, Document*, ConstructionType = CreateSVGElement);
 
     virtual void parseMappedAttribute(Attribute*);
 
@@ -128,6 +132,15 @@ private:
     void removeInstanceMapping(SVGElementInstance*);
 
     virtual bool haveLoadedRequiredResources();
+};
+
+struct SVGAttributeHashTranslator {
+    static unsigned hash(QualifiedName key)
+    {
+        key.setPrefix(nullAtom);
+        return DefaultHash<QualifiedName>::Hash::hash(key);
+    }
+    static bool equal(QualifiedName a, QualifiedName b) { return a.matches(b); }
 };
 
 }

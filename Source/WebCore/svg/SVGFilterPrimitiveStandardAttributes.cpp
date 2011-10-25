@@ -74,7 +74,7 @@ bool SVGFilterPrimitiveStandardAttributes::isSupportedAttribute(const QualifiedN
         supportedAttributes.add(SVGNames::heightAttr);
         supportedAttributes.add(SVGNames::resultAttr);
     }
-    return supportedAttributes.contains(attrName);
+    return supportedAttributes.contains<QualifiedName, SVGAttributeHashTranslator>(attrName);
 }
 
 void SVGFilterPrimitiveStandardAttributes::parseMappedAttribute(Attribute* attr)
@@ -167,6 +167,23 @@ bool SVGFilterPrimitiveStandardAttributes::rendererIsNeeded(const NodeRenderingC
         return SVGStyledElement::rendererIsNeeded(context);
 
     return false;
+}
+
+void invalidateFilterPrimitiveParent(SVGElement* element)
+{
+    if (!element)
+        return;
+
+    ContainerNode* parent = element->parentNode();
+
+    if (!parent)
+        return;
+
+    RenderObject* renderer = parent->renderer();
+    if (!renderer || !renderer->isSVGResourceFilterPrimitive())
+        return;
+
+    RenderSVGResource::markForLayoutAndParentResourceInvalidation(renderer, false);
 }
 
 }

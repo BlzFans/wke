@@ -21,7 +21,7 @@
 
 #include "config.h"
 
-#if ENABLE(SVG) && ENABLE(SVG_ANIMATION)
+#if ENABLE(SVG)
 #include "SVGAnimateMotionElement.h"
 
 #include "Attribute.h"
@@ -81,9 +81,7 @@ bool SVGAnimateMotionElement::hasValidAttributeType()
         || targetElement->hasTagName(clipPathTag)
         || targetElement->hasTagName(maskTag)
         || targetElement->hasTagName(aTag)
-#if ENABLE(SVG_FOREIGN_OBJECT)
         || targetElement->hasTagName(foreignObjectTag)
-#endif
         )
         return true;
     return false;
@@ -94,7 +92,7 @@ bool SVGAnimateMotionElement::isSupportedAttribute(const QualifiedName& attrName
     DEFINE_STATIC_LOCAL(HashSet<QualifiedName>, supportedAttributes, ());
     if (supportedAttributes.isEmpty())
         supportedAttributes.add(SVGNames::pathAttr);
-    return supportedAttributes.contains(attrName);
+    return supportedAttributes.contains<QualifiedName, SVGAttributeHashTranslator>(attrName);
 }
 
 void SVGAnimateMotionElement::parseMappedAttribute(Attribute* attr)
@@ -118,7 +116,7 @@ SVGAnimateMotionElement::RotateMode SVGAnimateMotionElement::rotateMode() const
 {
     DEFINE_STATIC_LOCAL(const AtomicString, autoVal, ("auto"));
     DEFINE_STATIC_LOCAL(const AtomicString, autoReverse, ("auto-reverse"));
-    String rotate = fastGetAttribute(SVGNames::rotateAttr);
+    const AtomicString& rotate = getAttribute(SVGNames::rotateAttr);
     if (rotate == autoVal)
         return RotateAuto;
     if (rotate == autoReverse)

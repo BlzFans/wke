@@ -50,7 +50,8 @@ public:
     void setInstanceUpdatesBlocked(bool);
 
     bool hasPendingResources() const;
-    void setHasPendingResources(bool);
+    void setHasPendingResources();
+    void clearHasPendingResourcesIfPossible();
 
     virtual void animatedPropertyTypeForAttribute(const QualifiedName&, Vector<AnimatedPropertyType>&);
     static bool isAnimatableCSSProperty(const QualifiedName&);
@@ -61,7 +62,7 @@ public:
     virtual bool needsPendingResourceHandling() const { return true; }
 
 protected: 
-    SVGStyledElement(const QualifiedName&, Document*);
+    SVGStyledElement(const QualifiedName&, Document*, ConstructionType = CreateSVGElement);
     virtual bool rendererIsNeeded(const NodeRenderingContext&);
 
     virtual bool mapToEntry(const QualifiedName&, MappedAttributeEntry&) const;
@@ -94,6 +95,12 @@ private:
         DECLARE_ANIMATED_STRING(ClassName, className)
     END_DECLARE_ANIMATED_PROPERTIES
 };
+
+inline SVGStyledElement* toSVGStyledElement(Node* node)
+{
+    ASSERT(!node || (node->isStyledElement() && node->isSVGElement()));
+    return static_cast<SVGStyledElement*>(node);
+}
 
 } // namespace WebCore
 

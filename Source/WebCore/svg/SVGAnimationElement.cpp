@@ -24,7 +24,7 @@
 
 #include "config.h"
 
-#if ENABLE(SVG_ANIMATION)
+#if ENABLE(SVG)
 #include "SVGAnimationElement.h"
 
 #include "Attribute.h"
@@ -154,7 +154,7 @@ bool SVGAnimationElement::isSupportedAttribute(const QualifiedName& attrName)
         supportedAttributes.add(SVGNames::keyPointsAttr);
         supportedAttributes.add(SVGNames::keySplinesAttr);
     }
-    return supportedAttributes.contains(attrName);
+    return supportedAttributes.contains<QualifiedName, SVGAttributeHashTranslator>(attrName);
 }
      
 void SVGAnimationElement::parseMappedAttribute(Attribute* attr)
@@ -253,7 +253,7 @@ AnimationMode SVGAnimationElement::animationMode() const
         return ToAnimation;
     if (!animationPath().isEmpty())
         return PathAnimation;
-    if (fastHasAttribute(SVGNames::valuesAttr))
+    if (hasAttribute(SVGNames::valuesAttr))
         return ValuesAnimation;
     if (!toValue().isEmpty())
         return fromValue().isEmpty() ? ToAnimation : FromToAnimation;
@@ -461,6 +461,14 @@ float SVGAnimationElement::calculatePercentFromKeyPoints(float percent) const
     }
     return (toKeyPoint - fromKeyPoint) * keyPointPercent + fromKeyPoint;
 }
+
+float SVGAnimationElement::calculatePercentForFromTo(float percent) const
+{
+    if (calcMode() == CalcModeDiscrete && m_keyTimes.size() == 2)
+        return percent > m_keyTimes[1] ? 1 : 0;
+
+    return percent;
+}
     
 void SVGAnimationElement::currentValuesFromKeyPoints(float percent, float& effectivePercent, String& from, String& to) const
 {
@@ -608,6 +616,8 @@ void SVGAnimationElement::updateAnimation(float percent, unsigned repeat, SVGSMI
         effectivePercent = calculatePercentFromKeyPoints(percent);
     else if (m_keyPoints.isEmpty() && mode == CalcModeSpline && m_keyTimes.size() > 1)
         effectivePercent = calculatePercentForSpline(percent, calculateKeyTimesIndex(percent));
+    else if (animationMode() == FromToAnimation || animationMode() == ToAnimation)
+        effectivePercent = calculatePercentForFromTo(percent);
     else
         effectivePercent = percent;
 
@@ -619,5 +629,5 @@ void SVGAnimationElement::endedActiveInterval()
 }
 
 }
-#endif // ENABLE(SVG_ANIMATION)
+#endif // ENABLE(SVG)
 

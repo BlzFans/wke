@@ -20,7 +20,7 @@
 
 #include "config.h"
 
-#if ENABLE(SVG) && ENABLE(SVG_FOREIGN_OBJECT)
+#if ENABLE(SVG)
 #include "SVGForeignObjectElement.h"
 
 #include "Attribute.h"
@@ -81,7 +81,7 @@ bool SVGForeignObjectElement::isSupportedAttribute(const QualifiedName& attrName
         supportedAttributes.add(SVGNames::widthAttr);
         supportedAttributes.add(SVGNames::heightAttr);
     }
-    return supportedAttributes.contains(attrName);
+    return supportedAttributes.contains<QualifiedName, SVGAttributeHashTranslator>(attrName);
 }
 
 void SVGForeignObjectElement::parseMappedAttribute(Attribute* attr)

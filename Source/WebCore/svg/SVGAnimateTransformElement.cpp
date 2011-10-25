@@ -22,7 +22,7 @@
 
 #include "config.h"
 
-#if ENABLE(SVG) && ENABLE(SVG_ANIMATION)
+#if ENABLE(SVG)
 #include "SVGAnimateTransformElement.h"
 
 #include "AffineTransform.h"
@@ -89,7 +89,7 @@ bool SVGAnimateTransformElement::isSupportedAttribute(const QualifiedName& attrN
     DEFINE_STATIC_LOCAL(HashSet<QualifiedName>, supportedAttributes, ());
     if (supportedAttributes.isEmpty())
         supportedAttributes.add(SVGNames::typeAttr);
-    return supportedAttributes.contains(attrName);
+    return supportedAttributes.contains<QualifiedName, SVGAttributeHashTranslator>(attrName);
 }
 
 void SVGAnimateTransformElement::parseMappedAttribute(Attribute* attr)

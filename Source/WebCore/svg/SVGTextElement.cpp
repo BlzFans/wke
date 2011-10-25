@@ -60,7 +60,7 @@ bool SVGTextElement::isSupportedAttribute(const QualifiedName& attrName)
     DEFINE_STATIC_LOCAL(HashSet<QualifiedName>, supportedAttributes, ());
     if (supportedAttributes.isEmpty())
         supportedAttributes.add(SVGNames::transformAttr);
-    return supportedAttributes.contains(attrName);
+    return supportedAttributes.contains<QualifiedName, SVGAttributeHashTranslator>(attrName);
 }
 
 void SVGTextElement::parseMappedAttribute(Attribute* attr)
@@ -113,7 +113,7 @@ AffineTransform SVGTextElement::animatedLocalTransform() const
     AffineTransform matrix;
     transform().concatenate(matrix);
     if (m_supplementalTransform)
-        matrix *= *m_supplementalTransform;
+        return *m_supplementalTransform * matrix;
     return matrix;
 }
 

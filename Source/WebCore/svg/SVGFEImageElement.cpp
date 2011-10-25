@@ -96,7 +96,7 @@ bool SVGFEImageElement::isSupportedAttribute(const QualifiedName& attrName)
         SVGExternalResourcesRequired::addSupportedAttributes(supportedAttributes);
         supportedAttributes.add(SVGNames::preserveAspectRatioAttr);
     }
-    return supportedAttributes.contains(attrName);
+    return supportedAttributes.contains<QualifiedName, SVGAttributeHashTranslator>(attrName);
 }
 
 void SVGFEImageElement::parseMappedAttribute(Attribute* attr)
@@ -178,7 +178,7 @@ PassRefPtr<FilterEffect> SVGFEImageElement::build(SVGFilterBuilder*, Filter* fil
         SVGImageBufferTools::renderSubtreeToImageBuffer(m_targetImage.get(), renderer, contentTransformation);
     }
 
-    return FEImage::create(filter, m_targetImage ? m_targetImage->copyImage(CopyBackingStore) : m_cachedImage->image(), preserveAspectRatio());
+    return FEImage::create(filter, m_targetImage ? m_targetImage->copyImage(CopyBackingStore) : m_cachedImage->imageForRenderer(renderer()), preserveAspectRatio());
 }
 
 void SVGFEImageElement::addSubresourceAttributeURLs(ListHashSet<KURL>& urls) const

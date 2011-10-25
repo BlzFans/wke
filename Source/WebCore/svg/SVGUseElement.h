@@ -64,7 +64,9 @@ private:
     virtual void parseMappedAttribute(Attribute*);
     virtual void svgAttributeChanged(const QualifiedName&);
 
-    virtual void recalcStyle(StyleChange = NoChange);
+    virtual bool willRecalcStyle(StyleChange);
+    virtual void didRecalcStyle(StyleChange);
+
     virtual RenderObject* createRenderer(RenderArena*, RenderStyle*);
     virtual void attach();
     virtual void detach();
@@ -89,10 +91,8 @@ private:
     // Shadow tree handling
     void buildShadowTree(SVGShadowTreeRootElement*, SVGElement* target, SVGElementInstance* targetInstance);
 
-#if ENABLE(SVG) && ENABLE(SVG_USE)
     void expandUseElementsInShadowTree(Node* element);
     void expandSymbolElementsInShadowTree(Node* element);
-#endif
 
     // "Tree connector" 
     void associateInstancesWithShadowTreeElements(Node* target, SVGElementInstance* targetInstance);

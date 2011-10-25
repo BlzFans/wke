@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2006 Eric Seidel <eric@webkit.org>
  * Copyright (C) 2008, 2009 Apple Inc. All rights reserved.
+ * Copyright (C) Research In Motion Limited 2011. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -25,11 +26,13 @@
  */
 
 #include "config.h"
+
 #if ENABLE(SVG)
 #include "SVGImage.h"
 
 #include "CachedPage.h"
 #include "DocumentLoader.h"
+#include "EmptyClients.h"
 #include "FileChooser.h"
 #include "FileIconLoader.h"
 #include "FloatRect.h"
@@ -48,11 +51,6 @@
 #include "SVGRenderSupport.h"
 #include "SVGSVGElement.h"
 #include "Settings.h"
-
-// Moving this #include above FrameLoader.h causes the Windows build to fail due to warnings about
-// alignment in Timer<FrameLoader>. It seems that the definition of EmptyFrameLoaderClient is what
-// causes this (removing that definition fixes the warnings), but it isn't clear why.
-#include "EmptyClients.h" // NOLINT
 
 namespace WebCore {
 
@@ -101,7 +99,7 @@ SVGImage::~SVGImage()
     ASSERT(!m_chromeClient || !m_chromeClient->image());
 }
 
-void SVGImage::setContainerSize(const LayoutSize& containerSize)
+void SVGImage::setContainerSize(const IntSize& containerSize)
 {
     if (containerSize.isEmpty())
         return;
@@ -213,6 +211,24 @@ void SVGImage::draw(GraphicsContext* context, const FloatRect& dstRect, const Fl
 
     if (imageObserver())
         imageObserver()->didDraw(this);
+}
+
+void SVGImage::computeIntrinsicDimensions(Length& intrinsicWidth, Length& intrinsicHeight, FloatSize& intrinsicRatio)
+{
+    if (!m_page)
+        return;
+    Frame* frame = m_page->mainFrame();
+    SVGSVGElement* rootElement = static_cast<SVGDocument*>(frame->document())->rootElement();
+    if (!rootElement)
+        return;
+    RenderBox* renderer = toRenderBox(rootElement->renderer());
+    if (!renderer)
+        return;
+
+    intrinsicWidth = renderer->style()->width();
+    intrinsicHeight = renderer->style()->height();
+    // FIXME: Add intrinsicRatio calculation from webkit.org/b/47156.
+    intrinsicRatio = FloatSize();
 }
 
 NativeImagePtr SVGImage::nativeImageForCurrentFrame()

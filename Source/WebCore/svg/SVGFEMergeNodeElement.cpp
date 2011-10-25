@@ -28,6 +28,7 @@
 #include "RenderSVGResource.h"
 #include "SVGElementInstance.h"
 #include "SVGFilterElement.h"
+#include "SVGFilterPrimitiveStandardAttributes.h"
 #include "SVGNames.h"
 
 namespace WebCore {
@@ -56,7 +57,7 @@ bool SVGFEMergeNodeElement::isSupportedAttribute(const QualifiedName& attrName)
     DEFINE_STATIC_LOCAL(HashSet<QualifiedName>, supportedAttributes, ());
     if (supportedAttributes.isEmpty())
         supportedAttributes.add(SVGNames::inAttr);
-    return supportedAttributes.contains(attrName);
+    return supportedAttributes.contains<QualifiedName, SVGAttributeHashTranslator>(attrName);
 }
 
 void SVGFEMergeNodeElement::parseMappedAttribute(Attribute* attr)
@@ -82,17 +83,9 @@ void SVGFEMergeNodeElement::svgAttributeChanged(const QualifiedName& attrName)
     }
 
     SVGElementInstance::InvalidationGuard invalidationGuard(this);
-    
+
     if (attrName == SVGNames::inAttr) {
-        ContainerNode* parent = parentNode();
-        if (!parent)
-            return;
-
-        RenderObject* renderer = parent->renderer();
-        if (!renderer || !renderer->isSVGResourceFilterPrimitive())
-            return;
-
-        RenderSVGResource::markForLayoutAndParentResourceInvalidation(renderer);
+        invalidateFilterPrimitiveParent(this);
         return;
     }
 

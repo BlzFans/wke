@@ -54,7 +54,7 @@ PassRefPtr<SVGStyleElement> SVGStyleElement::create(const QualifiedName& tagName
 const AtomicString& SVGStyleElement::type() const
 {
     DEFINE_STATIC_LOCAL(const AtomicString, defaultValue, ("text/css"));
-    const AtomicString& n = fastGetAttribute(SVGNames::typeAttr);
+    const AtomicString& n = getAttribute(SVGNames::typeAttr);
     return n.isNull() ? defaultValue : n;
 }
 
@@ -92,7 +92,7 @@ bool SVGStyleElement::isSupportedAttribute(const QualifiedName& attrName)
         SVGLangSpace::addSupportedAttributes(supportedAttributes);
         supportedAttributes.add(SVGNames::titleAttr);
     }
-    return supportedAttributes.contains(attrName);
+    return supportedAttributes.contains<QualifiedName, SVGAttributeHashTranslator>(attrName);
 }
 
 void SVGStyleElement::parseMappedAttribute(Attribute* attr)

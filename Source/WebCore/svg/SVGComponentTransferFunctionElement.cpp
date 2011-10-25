@@ -24,6 +24,7 @@
 #include "SVGComponentTransferFunctionElement.h"
 
 #include "Attribute.h"
+#include "SVGElementInstance.h"
 #include "SVGFEComponentTransferElement.h"
 #include "SVGNames.h"
 #include "SVGNumberList.h"
@@ -71,7 +72,7 @@ bool SVGComponentTransferFunctionElement::isSupportedAttribute(const QualifiedNa
         supportedAttributes.add(SVGNames::exponentAttr);
         supportedAttributes.add(SVGNames::offsetAttr);
     }
-    return supportedAttributes.contains(attrName);
+    return supportedAttributes.contains<QualifiedName, SVGAttributeHashTranslator>(attrName);
 }
 
 void SVGComponentTransferFunctionElement::parseMappedAttribute(Attribute* attr)
@@ -123,6 +124,18 @@ void SVGComponentTransferFunctionElement::parseMappedAttribute(Attribute* attr)
     }
 
     ASSERT_NOT_REACHED();
+}
+
+void SVGComponentTransferFunctionElement::svgAttributeChanged(const QualifiedName& attrName)
+{
+    if (!isSupportedAttribute(attrName)) {
+        SVGElement::svgAttributeChanged(attrName);
+        return;
+    }
+
+    SVGElementInstance::InvalidationGuard invalidationGuard(this);
+
+    invalidateFilterPrimitiveParent(this);
 }
 
 ComponentTransferFunction SVGComponentTransferFunctionElement::transferFunction() const

@@ -40,8 +40,8 @@ BEGIN_REGISTER_ANIMATED_PROPERTIES(SVGStyledTransformableElement)
     REGISTER_PARENT_ANIMATED_PROPERTIES(SVGStyledLocatableElement)
 END_REGISTER_ANIMATED_PROPERTIES
 
-SVGStyledTransformableElement::SVGStyledTransformableElement(const QualifiedName& tagName, Document* document)
-    : SVGStyledLocatableElement(tagName, document)
+SVGStyledTransformableElement::SVGStyledTransformableElement(const QualifiedName& tagName, Document* document, ConstructionType constructionType)
+    : SVGStyledLocatableElement(tagName, document, constructionType)
 {
     registerAnimatedPropertiesForSVGStyledTransformableElement();
 }
@@ -65,7 +65,7 @@ AffineTransform SVGStyledTransformableElement::animatedLocalTransform() const
     AffineTransform matrix;
     transform().concatenate(matrix);
     if (m_supplementalTransform)
-        matrix *= *m_supplementalTransform;
+        return *m_supplementalTransform * matrix;
     return matrix;
 }
 
@@ -81,7 +81,7 @@ bool SVGStyledTransformableElement::isSupportedAttribute(const QualifiedName& at
     DEFINE_STATIC_LOCAL(HashSet<QualifiedName>, supportedAttributes, ());
     if (supportedAttributes.isEmpty())
         supportedAttributes.add(SVGNames::transformAttr);
-    return supportedAttributes.contains(attrName);
+    return supportedAttributes.contains<QualifiedName, SVGAttributeHashTranslator>(attrName);
 }
 
 void SVGStyledTransformableElement::parseMappedAttribute(Attribute* attr)
