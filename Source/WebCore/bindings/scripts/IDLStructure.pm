@@ -40,6 +40,7 @@ struct( domClass => {
     functions => '@',    # List of 'domFunction'
     attributes => '@',    # List of 'domAttribute'    
     extendedAttributes => '$', # Extended attributes
+    constructor => '$', # Constructor
 });
 
 # Used to represent domClass contents (name of method, signature)
@@ -70,6 +71,7 @@ struct( domConstant => {
     name => '$',      # DOM Constant identifier
     type => '$',      # Type of data
     value => '$',      # Constant value
+    extendedAttributes => '$', # Extended attributes
 });
 
 # Helpers
@@ -87,13 +89,13 @@ our $idlDataType = '[a-zA-Z0-9\ ]';   # Generic data type identifier
 # Magic IDL parsing regular expressions
 my $supportedTypes = "((?:unsigned )?(?:int|short|(?:long )?long)|(?:$idlIdNs*))";
 
-# Special IDL notations
-our $extendedAttributeSyntax = '\[[^]]*\]'; # Used for extended attributes
+# Special IDL notations. This regular expression extracts the string between the first [ and its corresponding ].
+our $extendedAttributeSyntax = qr/\[[^\[\]]*(?:(??{$IDLStructure::extendedAttributeSyntax})[^\[\]]*)*\]/x; # Used for extended attributes
 
 # Regular expression based IDL 'syntactical tokenizer' used in the IDLParser
 our $moduleSelector = 'module\s*(' . $idlId . '*)\s*{';
 our $moduleNSSelector = 'module\s*(' . $idlId . '*)\s*\[ns\s*(' . $idlIdNs . '*)\s*(' . $idlIdNs . '*)\]\s*;';
-our $constantSelector = 'const\s*' . $supportedTypes . '\s*(' . $idlType . '*)\s*=\s*(' . $constValue . ')';
+our $constantSelector = 'const\s*(' . $extendedAttributeSyntax . ' )?' . $supportedTypes . '\s*(' . $idlType . '*)\s*=\s*(' . $constValue . ')';
 our $raisesSelector = 'raises\s*\((' . $idlIdNsList . '*)\s*\)';
 our $getterRaisesSelector = '\bgetter\s+raises\s*\((' . $idlIdNsList . '*)\s*\)';
 our $setterRaisesSelector = '\bsetter\s+raises\s*\((' . $idlIdNsList . '*)\s*\)';

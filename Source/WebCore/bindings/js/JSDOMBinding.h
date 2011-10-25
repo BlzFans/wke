@@ -22,11 +22,14 @@
 #ifndef JSDOMBinding_h
 #define JSDOMBinding_h
 
+#include "CSSRule.h"
+#include "CSSStyleSheet.h"
 #include "JSDOMGlobalObject.h"
 #include "JSDOMWrapper.h"
 #include "DOMWrapperWorld.h"
 #include "Document.h"
 #include "Element.h"
+#include "MediaList.h"
 #include "StyleBase.h"
 #include <heap/Weak.h>
 #include <runtime/FunctionPrototype.h>
@@ -44,10 +47,11 @@ namespace WebCore {
 
     // Base class for all constructor objects in the JSC bindings.
     class DOMConstructorObject : public JSDOMWrapper {
+        typedef JSDOMWrapper Base;
     public:
-        static JSC::Structure* createStructure(JSC::JSGlobalData& globalData, JSC::JSValue prototype)
+        static JSC::Structure* createStructure(JSC::JSGlobalData& globalData, JSC::JSGlobalObject* globalObject, JSC::JSValue prototype)
         {
-            return JSC::Structure::create(globalData, prototype, JSC::TypeInfo(JSC::ObjectType, StructureFlags), AnonymousSlotCount, &s_info);
+            return JSC::Structure::create(globalData, globalObject, prototype, JSC::TypeInfo(JSC::ObjectType, StructureFlags), &s_info);
         }
 
     protected:
@@ -61,6 +65,7 @@ namespace WebCore {
     // Constructors using this base class depend on being in a Document and
     // can never be used from a WorkerContext.
     class DOMConstructorWithDocument : public DOMConstructorObject {
+        typedef DOMConstructorObject Base;
     public:
         Document* document() const
         {
@@ -71,6 +76,11 @@ namespace WebCore {
         DOMConstructorWithDocument(JSC::Structure* structure, JSDOMGlobalObject* globalObject)
             : DOMConstructorObject(structure, globalObject)
         {
+        }
+
+        void finishCreation(JSDOMGlobalObject* globalObject)
+        {
+            Base::finishCreation(globalObject->globalData());
             ASSERT(globalObject->scriptExecutionContext()->isDocument());
         }
     };
@@ -90,7 +100,7 @@ namespace WebCore {
     {
         if (JSC::Structure* structure = getCachedDOMStructure(globalObject, &WrapperClass::s_info))
             return structure;
-        return cacheDOMStructure(globalObject, WrapperClass::createStructure(exec->globalData(), WrapperClass::createPrototype(exec, globalObject)), &WrapperClass::s_info);
+        return cacheDOMStructure(globalObject, WrapperClass::createStructure(exec->globalData(), globalObject, WrapperClass::createPrototype(exec, globalObject)), &WrapperClass::s_info);
     }
 
     template<class WrapperClass> inline JSC::Structure* deprecatedGetDOMStructure(JSC::ExecState* exec)
@@ -175,6 +185,33 @@ namespace WebCore {
         if (Node* node = styleBase->node())
             return root(node);
         return styleBase;
+    }
+
+    inline void* root(CSSStyleDeclaration* style)
+    {
+        if (CSSRule* parentRule = style->parentRule())
+            return root(parentRule);
+        if (CSSStyleSheet* styleSheet = style->parentStyleSheet())
+            return root(styleSheet);
+        return style;
+    }
+
+    inline void* root(CSSMutableStyleDeclaration* style)
+    {
+        if (CSSRule* parentRule = style->parentRule())
+            return root(parentRule);
+        if (CSSStyleSheet* styleSheet = style->parentStyleSheet())
+            return root(styleSheet);
+        if (Node* node = style->node())
+            return root(node);
+        return style;
+    }
+
+    inline void* root(MediaList* mediaList)
+    {
+        if (CSSStyleSheet* parentStyleSheet = mediaList->parentStyleSheet())
+            return root(parentStyleSheet);
+        return mediaList;
     }
 
     const JSC::HashTable* getHashTableForGlobalData(JSC::JSGlobalData&, const JSC::HashTable* staticTable);

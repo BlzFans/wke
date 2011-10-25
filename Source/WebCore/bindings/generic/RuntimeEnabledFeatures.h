@@ -80,6 +80,14 @@ public:
     static bool webkitCancelFullScreenEnabled() { return isFullScreenAPIEnabled; }
 #endif
 
+#if ENABLE(MOUSE_LOCK_API)
+    static bool webkitMouseLockAPIEnabled() { return isMouseLockAPIEnabled; }
+    static void setWebkitMouseLockAPIEnabled(bool isEnabled) { isMouseLockAPIEnabled = isEnabled; }
+    static bool webkitLockMouseEnabled() { return isMouseLockAPIEnabled; }
+    static bool webkitUnlockMouseEnabled() { return isMouseLockAPIEnabled; }
+    static bool webkitMouseLockedEnabled() { return isMouseLockAPIEnabled; }
+#endif
+
 #if ENABLE(VIDEO)
     static bool audioEnabled();
     static bool htmlMediaElementEnabled();
@@ -98,7 +106,7 @@ public:
     static bool webSocketEnabled();
 #endif
 
-#if ENABLE(DATABASE)
+#if ENABLE(SQL_DATABASE)
     static bool openDatabaseEnabled();
     static bool openDatabaseSyncEnabled();
 #endif
@@ -159,12 +167,22 @@ public:
     static bool mediaStreamEnabled() { return isMediaStreamEnabled; }
     static void setMediaStreamEnabled(bool isEnabled) { isMediaStreamEnabled = isEnabled; }
     static bool webkitGetUserMediaEnabled() { return isMediaStreamEnabled; }
-    static bool peerConnectionEnabled() { return isMediaStreamEnabled; }
+    static bool webkitPeerConnectionEnabled() { return isMediaStreamEnabled; }
 #endif
 
 #if ENABLE(QUOTA)
     static bool quotaEnabled() { return isQuotaEnabled; }
     static void setQuotaEnabled(bool isEnabled) { isQuotaEnabled = isEnabled; }
+#endif
+
+#if ENABLE(MEDIA_SOURCE)
+    static bool webkitMediaSourceEnabled() { return isMediaSourceEnabled; }
+    static void setWebkitMediaSourceEnabled(bool isEnabled) { isMediaSourceEnabled = isEnabled; }
+#endif
+
+#if ENABLE(VIDEO_TRACK)
+    static bool webkitVideoTrackEnabled() { return isVideoTrackEnabled; }
+    static void setWebkitVideoTrackEnabled(bool isEnabled) { isVideoTrackEnabled = isEnabled; }
 #endif
 
 private:
@@ -206,6 +224,18 @@ private:
 
 #if ENABLE(FULLSCREEN_API)
     static bool isFullScreenAPIEnabled;
+#endif
+
+#if ENABLE(MOUSE_LOCK_API)
+    static bool isMouseLockAPIEnabled;
+#endif
+
+#if ENABLE(MEDIA_SOURCE)
+    static bool isMediaSourceEnabled;
+#endif
+
+#if ENABLE(VIDEO_TRACK)
+    static bool isVideoTrackEnabled;
 #endif
 };
 

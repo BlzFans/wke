@@ -102,12 +102,12 @@ bool ScriptValue::isFunction() const
 
 PassRefPtr<SerializedScriptValue> ScriptValue::serialize(ScriptState* scriptState, SerializationErrorMode throwExceptions)
 {
-    return SerializedScriptValue::create(scriptState, jsValue(), throwExceptions);
+    return SerializedScriptValue::create(scriptState, jsValue(), 0, throwExceptions);
 }
 
 ScriptValue ScriptValue::deserialize(ScriptState* scriptState, SerializedScriptValue* value, SerializationErrorMode throwExceptions)
 {
-    return ScriptValue(scriptState->globalData(), value->deserialize(scriptState, scriptState->lexicalGlobalObject(), throwExceptions));
+    return ScriptValue(scriptState->globalData(), value->deserialize(scriptState, scriptState->lexicalGlobalObject(), 0, throwExceptions));
 }
 
 #if ENABLE(INSPECTOR)
@@ -125,9 +125,9 @@ static PassRefPtr<InspectorValue> jsToInspectorValue(ScriptState* scriptState, J
     if (value.isNull() || value.isUndefined())
         return InspectorValue::null();
     if (value.isBoolean())
-        return InspectorBasicValue::create(value.getBoolean());
+        return InspectorBasicValue::create(value.asBoolean());
     if (value.isNumber())
-        return InspectorBasicValue::create(value.uncheckedGetNumber());
+        return InspectorBasicValue::create(value.asNumber());
     if (value.isString()) {
         UString s = value.getString(scriptState);
         return InspectorString::create(String(s.characters(), s.length()));

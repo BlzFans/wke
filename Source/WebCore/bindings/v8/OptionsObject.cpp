@@ -28,6 +28,8 @@
 
 #include "DOMStringList.h"
 #include "V8Binding.h"
+#include "V8DOMWindow.h"
+#include "V8MessagePortCustom.h"
 #include <limits>
 
 #if ENABLE(INDEXED_DATABASE)
@@ -86,6 +88,19 @@ bool OptionsObject::getKeyInt32(const String& key, int32_t& value) const
     if (v8Int32.IsEmpty())
         return false;
     value = v8Int32->Value();
+    return true;
+}
+
+bool OptionsObject::getKeyDouble(const String& key, double& value) const
+{
+    v8::Local<v8::Value> v8Value;
+    if (!getKey(key, v8Value))
+        return false;
+
+    v8::Local<v8::Number> v8Number = v8Value->ToNumber();
+    if (v8Number.IsEmpty())
+        return false;
+    value = v8Number->Value();
     return true;
 }
 
@@ -162,9 +177,78 @@ bool OptionsObject::getKey(const String& key, v8::Local<v8::Value>& value) const
     if (!options->Has(v8Key))
         return false;
     value = options->Get(v8Key);
-    if (value.IsEmpty()) 
+    if (value.IsEmpty())
         return false;
     return true;
+}
+
+bool OptionsObject::getKeyValue(const String& key, unsigned short& value) const
+{
+    v8::Local<v8::Value> v8Value;
+    if (!getKey(key, v8Value))
+        return false;
+
+    v8::Local<v8::Int32> v8Int32 = v8Value->ToInt32();
+    if (v8Int32.IsEmpty())
+        return false;
+    value = static_cast<unsigned short>(v8Int32->Value());
+    return true;
+}
+
+bool OptionsObject::getKeyValue(const String& key, unsigned& value) const
+{
+    v8::Local<v8::Value> v8Value;
+    if (!getKey(key, v8Value))
+        return false;
+
+    v8::Local<v8::Int32> v8Int32 = v8Value->ToInt32();
+    if (v8Int32.IsEmpty())
+        return false;
+    value = static_cast<unsigned>(v8Int32->Value());
+    return true;
+}
+
+bool OptionsObject::getKeyValue(const String& key, unsigned long long& value) const
+{
+    v8::Local<v8::Value> v8Value;
+    if (!getKey(key, v8Value))
+        return false;
+
+    v8::Local<v8::Number> v8Number = v8Value->ToNumber();
+    if (v8Number.IsEmpty())
+        return false;
+    double d = v8Number->Value();
+    if (isnan(d) || isinf(d))
+        value = 0;
+    else
+        value = static_cast<unsigned long long>(fmod(trunc(d), std::numeric_limits<unsigned long long>::max() + 1.0));
+    return true;
+}
+
+bool OptionsObject::getKeyValue(const String& key, RefPtr<DOMWindow>& value) const
+{
+    v8::Local<v8::Value> v8Value;
+    if (!getKey(key, v8Value))
+        return false;
+
+    DOMWindow* source = 0;
+    if (v8Value->IsObject()) {
+        v8::Handle<v8::Object> wrapper = v8::Handle<v8::Object>::Cast(v8Value);
+        v8::Handle<v8::Object> window = V8DOMWrapper::lookupDOMWrapper(V8DOMWindow::GetTemplate(), wrapper);
+        if (!window.IsEmpty())
+            source = V8DOMWindow::toNative(window);
+    }
+    value = source;
+    return true;
+}
+
+bool OptionsObject::getKeyValue(const String& key, MessagePortArray& value) const
+{
+    v8::Local<v8::Value> v8Value;
+    if (!getKey(key, v8Value))
+        return false;
+
+    return getMessagePortArray(v8Value, value);
 }
 
 } // namespace WebCore

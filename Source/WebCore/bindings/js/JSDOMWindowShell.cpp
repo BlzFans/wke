@@ -33,6 +33,7 @@
 #include "JSDOMWindow.h"
 #include "DOMWindow.h"
 #include "ScriptController.h"
+#include <heap/StrongInlines.h>
 #include <runtime/JSObject.h>
 
 using namespace JSC;
@@ -41,12 +42,17 @@ namespace WebCore {
 
 ASSERT_CLASS_FITS_IN_CELL(JSDOMWindowShell);
 
-const ClassInfo JSDOMWindowShell::s_info = { "JSDOMWindowShell", &Base::s_info, 0, 0 };
+const ClassInfo JSDOMWindowShell::s_info = { "JSDOMWindowShell", &Base::s_info, 0, 0, CREATE_METHOD_TABLE(JSDOMWindowShell) };
 
-JSDOMWindowShell::JSDOMWindowShell(PassRefPtr<DOMWindow> window, Structure* structure, DOMWrapperWorld* world)
+JSDOMWindowShell::JSDOMWindowShell(Structure* structure, DOMWrapperWorld* world)
     : Base(*world->globalData(), structure)
     , m_world(world)
 {
+}
+
+void JSDOMWindowShell::finishCreation(JSGlobalData& globalData, PassRefPtr<DOMWindow> window)
+{
+    Base::finishCreation(globalData);
     ASSERT(inherits(&s_info));
     setWindow(window);
 }
@@ -63,27 +69,30 @@ void JSDOMWindowShell::setWindow(PassRefPtr<DOMWindow> domWindow)
     // Explicitly protect the global object's prototype so it isn't collected
     // when we allocate the global object. (Once the global object is fully
     // constructed, it can mark its own prototype.)
-    Structure* prototypeStructure = JSDOMWindowPrototype::createStructure(*JSDOMWindow::commonJSGlobalData(), jsNull());
+    Structure* prototypeStructure = JSDOMWindowPrototype::createStructure(*JSDOMWindow::commonJSGlobalData(), 0, jsNull());
     Strong<JSDOMWindowPrototype> prototype(*JSDOMWindow::commonJSGlobalData(), JSDOMWindowPrototype::create(*JSDOMWindow::commonJSGlobalData(), 0, prototypeStructure));
 
-    Structure* structure = JSDOMWindow::createStructure(*JSDOMWindow::commonJSGlobalData(), prototype.get());
+    Structure* structure = JSDOMWindow::createStructure(*JSDOMWindow::commonJSGlobalData(), 0, prototype.get());
     JSDOMWindow* jsDOMWindow = JSDOMWindow::create(*JSDOMWindow::commonJSGlobalData(), structure, domWindow, this);
-    prototype->putAnonymousValue(*JSDOMWindow::commonJSGlobalData(), 0, jsDOMWindow);
+    prototype->structure()->setGlobalObject(*JSDOMWindow::commonJSGlobalData(), jsDOMWindow);
     setWindow(*JSDOMWindow::commonJSGlobalData(), jsDOMWindow);
+    ASSERT(jsDOMWindow->globalObject() == jsDOMWindow);
+    ASSERT(prototype->globalObject() == jsDOMWindow);
 }
 
 // ----
 // JSObject methods
 // ----
 
-void JSDOMWindowShell::visitChildren(SlotVisitor& visitor)
+void JSDOMWindowShell::visitChildren(JSCell* cell, SlotVisitor& visitor)
 {
-    ASSERT_GC_OBJECT_INHERITS(this, &s_info);
+    JSDOMWindowShell* thisObject = static_cast<JSDOMWindowShell*>(cell);
+    ASSERT_GC_OBJECT_INHERITS(thisObject, &s_info);
     COMPILE_ASSERT(StructureFlags & OverridesVisitChildren, OverridesVisitChildrenWithoutSettingFlag);
-    ASSERT(structure()->typeInfo().overridesVisitChildren());
-    Base::visitChildren(visitor);
-    if (m_window)
-        visitor.append(&m_window);
+    ASSERT(thisObject->structure()->typeInfo().overridesVisitChildren());
+    Base::visitChildren(thisObject, visitor);
+    if (thisObject->m_window)
+        visitor.append(&thisObject->m_window);
 }
 
 UString JSDOMWindowShell::className() const
@@ -91,9 +100,14 @@ UString JSDOMWindowShell::className() const
     return m_window->className();
 }
 
-bool JSDOMWindowShell::getOwnPropertySlot(ExecState* exec, const Identifier& propertyName, PropertySlot& slot)
+bool JSDOMWindowShell::getOwnPropertySlotVirtual(ExecState* exec, const Identifier& propertyName, PropertySlot& slot)
 {
-    return m_window->getOwnPropertySlot(exec, propertyName, slot);
+    return getOwnPropertySlot(this, exec, propertyName, slot);
+}
+
+bool JSDOMWindowShell::getOwnPropertySlot(JSCell* cell, ExecState* exec, const Identifier& propertyName, PropertySlot& slot)
+{
+    return static_cast<JSDOMWindowShell*>(cell)->m_window->getOwnPropertySlotVirtual(exec, propertyName, slot);
 }
 
 bool JSDOMWindowShell::getOwnPropertyDescriptor(ExecState* exec, const Identifier& propertyName, PropertyDescriptor& descriptor)
@@ -101,9 +115,9 @@ bool JSDOMWindowShell::getOwnPropertyDescriptor(ExecState* exec, const Identifie
     return m_window->getOwnPropertyDescriptor(exec, propertyName, descriptor);
 }
 
-void JSDOMWindowShell::put(ExecState* exec, const Identifier& propertyName, JSValue value, PutPropertySlot& slot)
+void JSDOMWindowShell::putVirtual(ExecState* exec, const Identifier& propertyName, JSValue value, PutPropertySlot& slot)
 {
-    m_window->put(exec, propertyName, value, slot);
+    m_window->putVirtual(exec, propertyName, value, slot);
 }
 
 void JSDOMWindowShell::putWithAttributes(ExecState* exec, const Identifier& propertyName, JSValue value, unsigned attributes)
@@ -116,9 +130,9 @@ bool JSDOMWindowShell::defineOwnProperty(JSC::ExecState* exec, const JSC::Identi
     return m_window->defineOwnProperty(exec, propertyName, descriptor, shouldThrow);
 }
 
-bool JSDOMWindowShell::deleteProperty(ExecState* exec, const Identifier& propertyName)
+bool JSDOMWindowShell::deletePropertyVirtual(ExecState* exec, const Identifier& propertyName)
 {
-    return m_window->deleteProperty(exec, propertyName);
+    return m_window->deletePropertyVirtual(exec, propertyName);
 }
 
 void JSDOMWindowShell::getPropertyNames(ExecState* exec, PropertyNameArray& propertyNames, EnumerationMode mode)

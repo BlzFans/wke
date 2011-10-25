@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010 Google Inc. All rights reserved.
+ * Copyright (C) 2011 Google Inc. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -30,50 +30,43 @@
 
 #include "config.h"
 
-#if ENABLE(EVENTSOURCE)
-#include "V8EventSource.h"
+#if ENABLE(MUTATION_OBSERVERS)
 
-#include "EventSource.h"
-#include "Frame.h"
-#include "V8Binding.h"
-#include "V8Proxy.h"
-#include "V8Utilities.h"
-#include "WorkerContext.h"
-#include "WorkerContextExecutionProxy.h"
+#include "JSMutationCallback.h"
+
+#include "JSMutationRecord.h"
+#include "JSWebKitMutationObserver.h"
+#include "ScriptExecutionContext.h"
+#include <runtime/JSLock.h>
+
+using namespace JSC;
 
 namespace WebCore {
 
-v8::Handle<v8::Value> V8EventSource::constructorCallback(const v8::Arguments& args)
+bool JSMutationCallback::handleEvent(MutationRecordArray* mutations, WebKitMutationObserver* observer)
 {
-    INC_STATS("DOM.EventSource.Constructor");
+    if (!canInvokeCallback())
+        return true;
 
-    if (!args.IsConstructCall())
-        return throwError("DOM object constructor cannot be called as a function.", V8Proxy::TypeError);
+    RefPtr<JSMutationCallback> protect(this);
 
-    // Expect one parameter.
-    // Allocate an EventSource object as its internal field.
-    ScriptExecutionContext* context = getScriptExecutionContext();
-    if (!context)
-        return throwError("EventSource constructor's associated context is not available", V8Proxy::ReferenceError);
-    if (args.Length() != 1)
-        return throwError("Not enough arguments", V8Proxy::TypeError);
+    JSLock lock(SilenceAssertionsOnly);
 
-    ExceptionCode ec = 0;
-    String url = toWebCoreString(args[0]);
+    ExecState* exec = m_data->globalObject()->globalExec();
 
-    RefPtr<EventSource> eventSource = EventSource::create(url, context, ec);
+    MarkedArgumentBuffer mutationList;
+    for (size_t i = 0; i < mutations->size(); ++i)
+        mutationList.append(toJS(exec, m_data->globalObject(), mutations->at(i).get()));
 
-    if (ec)
-        return throwError(ec);
+    MarkedArgumentBuffer args;
+    args.append(constructArray(exec, m_data->globalObject(), mutationList));
+    args.append(toJS(exec, m_data->globalObject(), observer));
 
-    V8DOMWrapper::setDOMWrapper(args.Holder(), &info, eventSource.get());
-
-    // Add object to the wrapper map.
-    eventSource->ref();
-    V8DOMWrapper::setJSWrapperForActiveDOMObject(eventSource.get(), v8::Persistent<v8::Object>::New(args.Holder()));
-    return args.Holder();
+    bool raisedException = false;
+    m_data->invokeCallback(args, &raisedException);
+    return !raisedException;
 }
 
 } // namespace WebCore
 
-#endif // ENABLE(EVENTSOURCE)
+#endif // ENABLE(MUTATION_OBSERVERS)

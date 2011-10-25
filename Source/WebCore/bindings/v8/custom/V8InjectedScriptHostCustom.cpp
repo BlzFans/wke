@@ -169,7 +169,7 @@ v8::Handle<v8::Value> V8InjectedScriptHost::databaseIdCallback(const v8::Argumen
     INC_STATS("InjectedScriptHost.databaseId()");
     if (args.Length() < 1)
         return v8::Undefined();
-#if ENABLE(DATABASE)
+#if ENABLE(SQL_DATABASE)
     InjectedScriptHost* host = V8InjectedScriptHost::toNative(args.Holder());
     Database* database = V8Database::toNative(v8::Handle<v8::Object>::Cast(args[0]));
     if (database)
@@ -182,13 +182,11 @@ v8::Handle<v8::Value> V8InjectedScriptHost::storageIdCallback(const v8::Argument
 {
     if (args.Length() < 1)
         return v8::Undefined();
-#if ENABLE(DOM_STORAGE)
     INC_STATS("InjectedScriptHost.storageId()");
     InjectedScriptHost* host = V8InjectedScriptHost::toNative(args.Holder());
     Storage* storage = V8Storage::toNative(v8::Handle<v8::Object>::Cast(args[0]));
     if (storage)
         return v8::Number::New(host->storageIdImpl(storage));
-#endif
     return v8::Undefined();
 }
 

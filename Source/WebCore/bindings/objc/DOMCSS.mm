@@ -44,6 +44,9 @@
 #import "DOMCSSValueList.h"
 #import "DOMInternal.h"
 #import "DOMStyleSheetInternal.h"
+#if ENABLE(CSS_FILTERS)
+#import "DOMWebKitCSSFilterValue.h"
+#endif
 #import "DOMWebKitCSSKeyframeRule.h"
 #import "DOMWebKitCSSKeyframesRule.h"
 #import "DOMWebKitCSSTransformValue.h"
@@ -86,6 +89,8 @@ Class kitClass(WebCore::CSSRule* impl)
             return [DOMWebKitCSSKeyframesRule class];
         case DOM_WEBKIT_KEYFRAME_RULE:
             return [DOMWebKitCSSKeyframeRule class];
+        case DOM_WEBKIT_REGION_STYLE_RULE:
+            return [DOMCSSUnknownRule class];
     }
     ASSERT_NOT_REACHED();
     return nil;
@@ -102,6 +107,10 @@ Class kitClass(WebCore::CSSValue* impl)
         case WebCore::CSSValue::CSS_VALUE_LIST:
             if (impl->isWebKitCSSTransformValue())
                 return [DOMWebKitCSSTransformValue class];
+#if ENABLE(CSS_FILTERS)
+            if (impl->isWebKitCSSFilterValue())
+                return [DOMWebKitCSSFilterValue class];
+#endif
             return [DOMCSSValueList class];
         case WebCore::CSSValue::CSS_INHERIT:
         case WebCore::CSSValue::CSS_INITIAL:

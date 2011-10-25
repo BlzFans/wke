@@ -102,14 +102,8 @@ ConvertTo(DOMWindow)
 ConvertTo(XMLHttpRequest)
 ConvertTo(XMLHttpRequestUpload)
 ConvertTo(MessagePort)
-
-#if ENABLE(EVENTSOURCE)
 ConvertTo(EventSource)
-#endif
-
-#if ENABLE(OFFLINE_WEB_APPLICATIONS)
 ConvertTo(DOMApplicationCache)
-#endif
 
 #if ENABLE(WORKERS)
 ConvertTo(Worker)
@@ -151,10 +145,8 @@ WebDOMEventTarget toWebKit(WebCore::EventTarget* value)
     if (WebCore::MessagePort* messagePort = value->toMessagePort())
         return toWebKit(messagePort);
 
-#if ENABLE(EVENTSOURCE)
     if (WebCore::EventSource* eventSource = value->toEventSource())
         return toWebKit(eventSource);
-#endif
 
 #if ENABLE(SVG) && 0
     // FIXME: Enable once SVG bindings are generated.
@@ -163,10 +155,8 @@ WebDOMEventTarget toWebKit(WebCore::EventTarget* value)
         return toWebKit(instance);
 #endif
 
-#if ENABLE(OFFLINE_WEB_APPLICATIONS)
     if (WebCore::DOMApplicationCache* cache = value->toDOMApplicationCache())
         return toWebKit(cache);
-#endif
 
 #if ENABLE(WORKERS)
     if (WebCore::Worker* worker = value->toWorker())

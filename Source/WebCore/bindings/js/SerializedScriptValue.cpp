@@ -333,11 +333,11 @@ private:
     {
         PropertySlot slot(array);
         if (isJSArray(&m_exec->globalData(), array)) {
-            if (array->JSArray::getOwnPropertySlot(m_exec, propertyName, slot)) {
+            if (JSArray::getOwnPropertySlot(array, m_exec, propertyName, slot)) {
                 hasIndex = true;
                 return slot.getValue(m_exec, propertyName);
             }
-        } else if (array->getOwnPropertySlot(m_exec, propertyName, slot)) {
+        } else if (array->getOwnPropertySlotVirtual(m_exec, propertyName, slot)) {
             hasIndex = true;
             return slot.getValue(m_exec, propertyName);
         }
@@ -348,7 +348,7 @@ private:
     JSValue getProperty(JSObject* object, const Identifier& propertyName)
     {
         PropertySlot slot(object);
-        if (object->getOwnPropertySlot(m_exec, propertyName, slot))
+        if (object->getOwnPropertySlotVirtual(m_exec, propertyName, slot))
             return slot.getValue(m_exec, propertyName);
         return JSValue();
     }
@@ -406,7 +406,7 @@ private:
 
         if (value.isNumber()) {
             write(DoubleTag);
-            write(value.uncheckedGetNumber());
+            write(value.asNumber());
             return true;
         }
 
@@ -1031,7 +1031,7 @@ private:
         if (array->canSetIndex(index))
             array->setIndex(m_exec->globalData(), index, value);
         else
-            array->put(m_exec, index, value);
+            array->putVirtual(m_exec, index, value);
     }
 
     void putProperty(JSObject* object, const Identifier& property, JSValue value)
@@ -1339,7 +1339,7 @@ SerializedScriptValue::SerializedScriptValue(Vector<uint8_t>& buffer)
     m_data.swap(buffer);
 }
 
-PassRefPtr<SerializedScriptValue> SerializedScriptValue::create(ExecState* exec, JSValue value, SerializationErrorMode throwExceptions)
+PassRefPtr<SerializedScriptValue> SerializedScriptValue::create(ExecState* exec, JSValue value, MessagePortArray*, SerializationErrorMode throwExceptions)
 {
     Vector<uint8_t> buffer;
     SerializationReturnCode code = CloneSerializer::serialize(exec, value, buffer);
@@ -1366,12 +1366,13 @@ PassRefPtr<SerializedScriptValue> SerializedScriptValue::create(const String& st
     return adoptRef(new SerializedScriptValue(buffer));
 }
 
-PassRefPtr<SerializedScriptValue> SerializedScriptValue::create(JSContextRef originContext, JSValueRef apiValue, JSValueRef* exception)
+PassRefPtr<SerializedScriptValue> SerializedScriptValue::create(JSContextRef originContext, JSValueRef apiValue, 
+                                                                MessagePortArray* messagePorts, JSValueRef* exception)
 {
     ExecState* exec = toJS(originContext);
     APIEntryShim entryShim(exec);
     JSValue value = toJS(exec, apiValue);
-    RefPtr<SerializedScriptValue> serializedValue = SerializedScriptValue::create(exec, value);
+    RefPtr<SerializedScriptValue> serializedValue = SerializedScriptValue::create(exec, value, messagePorts);
     if (exec->hadException()) {
         if (exception)
             *exception = toRef(exec, exec->exception());
@@ -1382,12 +1383,19 @@ PassRefPtr<SerializedScriptValue> SerializedScriptValue::create(JSContextRef ori
     return serializedValue.release();
 }
 
+PassRefPtr<SerializedScriptValue> SerializedScriptValue::create(JSContextRef originContext, JSValueRef apiValue,
+                                                                JSValueRef* exception)
+{
+    return create(originContext, apiValue, 0, exception);
+}
+
 String SerializedScriptValue::toString()
 {
     return CloneDeserializer::deserializeString(m_data);
 }
 
-JSValue SerializedScriptValue::deserialize(ExecState* exec, JSGlobalObject* globalObject, SerializationErrorMode throwExceptions)
+JSValue SerializedScriptValue::deserialize(ExecState* exec, JSGlobalObject* globalObject, 
+                                           MessagePortArray*, SerializationErrorMode throwExceptions)
 {
     DeserializationResult result = CloneDeserializer::deserialize(exec, globalObject, m_data);
     if (throwExceptions == Throwing)
@@ -1395,11 +1403,11 @@ JSValue SerializedScriptValue::deserialize(ExecState* exec, JSGlobalObject* glob
     return result.first;
 }
 
-JSValueRef SerializedScriptValue::deserialize(JSContextRef destinationContext, JSValueRef* exception)
+JSValueRef SerializedScriptValue::deserialize(JSContextRef destinationContext, JSValueRef* exception, MessagePortArray* messagePorts)
 {
     ExecState* exec = toJS(destinationContext);
     APIEntryShim entryShim(exec);
-    JSValue value = deserialize(exec, exec->lexicalGlobalObject());
+    JSValue value = deserialize(exec, exec->lexicalGlobalObject(), messagePorts);
     if (exec->hadException()) {
         if (exception)
             *exception = toRef(exec, exec->exception());
@@ -1408,6 +1416,12 @@ JSValueRef SerializedScriptValue::deserialize(JSContextRef destinationContext, J
     }
     ASSERT(value);
     return toRef(exec, value);
+}
+
+
+JSValueRef SerializedScriptValue::deserialize(JSContextRef destinationContext, JSValueRef* exception)
+{
+    return deserialize(destinationContext, exception, 0);
 }
 
 SerializedScriptValue* SerializedScriptValue::nullValue()

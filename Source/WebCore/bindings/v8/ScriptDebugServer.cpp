@@ -149,10 +149,11 @@ void ScriptDebugServer::setPauseOnNextStatement(bool pause)
 {
     if (isPaused())
         return;
+    v8::Isolate* isolate = v8::Isolate::GetCurrent();
     if (pause)
-        v8::Debug::DebugBreak();
+        v8::Debug::DebugBreak(isolate);
     else
-        v8::Debug::CancelDebugBreak();
+        v8::Debug::CancelDebugBreak(isolate);
 }
 
 void ScriptDebugServer::breakProgram()
@@ -251,8 +252,11 @@ ScriptValue ScriptDebugServer::currentCallFrame()
     v8::Handle<v8::Function> currentCallFrameFunction = v8::Local<v8::Function>::Cast(m_debuggerScript.get()->Get(v8::String::New("currentCallFrame")));
     v8::Handle<v8::Value> argv[] = { m_executionState.get() };
     v8::Handle<v8::Value> currentCallFrameV8 = currentCallFrameFunction->Call(m_debuggerScript.get(), 1, argv);
+
+    ASSERT(!currentCallFrameV8.IsEmpty());
     if (!currentCallFrameV8->IsObject())
         return ScriptValue(v8::Null());
+
     RefPtr<JavaScriptCallFrame> currentCallFrame = JavaScriptCallFrame::create(v8::Debug::GetDebugContext(), v8::Handle<v8::Object>::Cast(currentCallFrameV8));
     v8::Context::Scope contextScope(m_pausedContext);
     return ScriptValue(toV8(currentCallFrame.release()));

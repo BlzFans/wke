@@ -56,6 +56,8 @@
 #include "V8Uint32Array.h"
 #include "V8Uint8Array.h"
 #include "V8WebGLBuffer.h"
+#include "V8WebGLDebugRendererInfo.h"
+#include "V8WebGLDebugShaders.h"
 #include "V8WebGLFramebuffer.h"
 #include "V8WebGLProgram.h"
 #include "V8WebGLRenderbuffer.h"
@@ -182,6 +184,14 @@ static v8::Handle<v8::Value> toV8Object(WebGLExtension* extension, v8::Handle<v8
         extensionObject = toV8(static_cast<OESVertexArrayObject*>(extension));
         referenceName = "oesVertexArrayObjectName";
         break;
+    case WebGLExtension::WebGLDebugRendererInfoName:
+        extensionObject = toV8(static_cast<WebGLDebugRendererInfo*>(extension));
+        referenceName = "webGLDebugRendererInfoName";
+        break;
+    case WebGLExtension::WebGLDebugShadersName:
+        extensionObject = toV8(static_cast<WebGLDebugShaders*>(extension));
+        referenceName = "webGLDebugShadersName";
+        break;
     }
     ASSERT(!extensionObject.IsEmpty());
     V8DOMWrapper::setNamedHiddenReference(contextObject, referenceName, extensionObject);
@@ -260,7 +270,7 @@ v8::Handle<v8::Value> V8WebGLRenderingContext::getAttachedShadersCallback(const 
         return notHandledByInterceptor();
     }
     WebGLProgram* program = V8WebGLProgram::HasInstance(args[0]) ? V8WebGLProgram::toNative(v8::Handle<v8::Object>::Cast(args[0])) : 0;
-    Vector<WebGLShader*> shaders;
+    Vector<RefPtr<WebGLShader> > shaders;
     bool succeed = context->getAttachedShaders(program, shaders, ec);
     if (ec) {
         V8Proxy::setDOMException(ec);
@@ -270,7 +280,7 @@ v8::Handle<v8::Value> V8WebGLRenderingContext::getAttachedShadersCallback(const 
         return v8::Null();
     v8::Local<v8::Array> array = v8::Array::New(shaders.size());
     for (size_t ii = 0; ii < shaders.size(); ++ii)
-        array->Set(v8::Integer::New(ii), toV8(shaders[ii]));
+        array->Set(v8::Integer::New(ii), toV8(shaders[ii].get()));
     return array;
 }
 

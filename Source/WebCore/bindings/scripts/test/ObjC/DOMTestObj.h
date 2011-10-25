@@ -31,6 +31,9 @@
 @class DOMIDBKey;
 @class DOMOptionsObject;
 @class DOMTestObj;
+@class DOMTestObjectAConstructor;
+@class DOMTestObjectBConstructor;
+@class DOMTestObjectCConstructor;
 @class DOMlog;
 @class NSString;
 @protocol DOMEventListener;
@@ -116,6 +119,18 @@ enum {
 - (int)conditionalAttr3;
 - (void)setConditionalAttr3:(int)newConditionalAttr3;
 #endif
+#if ENABLE(Condition1)
+- (DOMTestObjectAConstructor *)conditionalAttr4;
+- (void)setConditionalAttr4:(DOMTestObjectAConstructor *)newConditionalAttr4;
+#endif
+#if ENABLE(Condition1) && ENABLE(Condition2)
+- (DOMTestObjectBConstructor *)conditionalAttr5;
+- (void)setConditionalAttr5:(DOMTestObjectBConstructor *)newConditionalAttr5;
+#endif
+#if ENABLE(Condition1) || ENABLE(Condition2)
+- (DOMTestObjectCConstructor *)conditionalAttr6;
+- (void)setConditionalAttr6:(DOMTestObjectCConstructor *)newConditionalAttr6;
+#endif
 - (int)descriptionName;
 - (int)idName;
 - (void)setIdName:(int)newIdName;
@@ -150,6 +165,9 @@ enum {
 - (void)methodWithOptionalArg:(int)opt;
 - (void)methodWithNonOptionalArgAndOptionalArg:(int)nonOpt opt:(int)opt;
 - (void)methodWithNonOptionalArgAndTwoOptionalArgs:(int)nonOpt opt1:(int)opt1 opt2:(int)opt2;
+- (NSString *)conditionalMethod1;
+- (void)conditionalMethod2;
+- (void)conditionalMethod3;
 - (void)classMethod;
 - (int)classMethodWithOptional:(int)arg;
 @end

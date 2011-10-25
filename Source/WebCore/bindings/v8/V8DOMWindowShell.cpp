@@ -1,10 +1,10 @@
 /*
- * Copyright (C) 2008, 2009 Google Inc. All rights reserved.
- * 
+ * Copyright (C) 2008, 2009, 2011 Google Inc. All rights reserved.
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  * notice, this list of conditions and the following disclaimer.
  *     * Redistributions in binary form must reproduce the above
@@ -14,7 +14,7 @@
  *     * Neither the name of Google Inc. nor the names of its
  * contributors may be used to endorse or promote products derived from
  * this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -31,7 +31,7 @@
 #include "config.h"
 #include "V8DOMWindowShell.h"
 
-#include "PlatformBridge.h"
+#include "PlatformSupport.h"
 #include "CSSMutableStyleDeclaration.h"
 #include "DateExtension.h"
 #include "DocumentLoader.h"
@@ -92,7 +92,7 @@ static void reportFatalErrorInV8(const char* location, const char* message)
     // FIXME: clean up V8Proxy and disable JavaScript.
     int memoryUsageMB = -1;
 #if PLATFORM(CHROMIUM)
-    memoryUsageMB = PlatformBridge::actualMemoryUsageMB();
+    memoryUsageMB = PlatformSupport::actualMemoryUsageMB();
 #endif
     printf("V8 error: %s (%s).  Current memory usage: %d MB\n", message, location, memoryUsageMB);
     handleFatalErrorInV8();
@@ -173,7 +173,7 @@ bool V8DOMWindowShell::isContextInitialized()
 void V8DOMWindowShell::disposeContextHandles()
 {
     if (!m_context.IsEmpty()) {
-        m_frame->loader()->client()->didDestroyScriptContextForFrame();
+        m_frame->loader()->client()->willReleaseScriptContext(m_context, 0);
         m_context.Dispose();
         m_context.Clear();
 
@@ -277,7 +277,7 @@ bool V8DOMWindowShell::initContextIfNeeded()
 {
     // Bail out if the context has already been initialized.
     if (!m_context.IsEmpty())
-        return false;
+        return true;
 
     // Create a handle scope for all local handles.
     v8::HandleScope handleScope;
@@ -339,7 +339,7 @@ bool V8DOMWindowShell::initContextIfNeeded()
 
     setSecurityToken();
 
-    m_frame->loader()->client()->didCreateScriptContextForFrame();
+    m_frame->loader()->client()->didCreateScriptContext(m_context, 0);
 
     // FIXME: This is wrong. We should actually do this for the proper world once
     // we do isolated worlds the WebCore way.
@@ -538,10 +538,7 @@ void V8DOMWindowShell::updateDocument()
     // reference to this wrapper. We eagerly initialize the JavaScript
     // context for the new document to make property access on the
     // global object wrapper succeed.
-    initContextIfNeeded();
-
-    // Bail out if context initialization failed.
-    if (m_context.IsEmpty())
+    if (!initContextIfNeeded())
         return;
 
     // We have a new document and we need to update the cache.
@@ -567,7 +564,8 @@ v8::Handle<v8::Value> getter(v8::Local<v8::String> property, const v8::AccessorI
 
 void V8DOMWindowShell::namedItemAdded(HTMLDocument* doc, const AtomicString& name)
 {
-    initContextIfNeeded();
+    if (!initContextIfNeeded())
+        return;
 
     v8::HandleScope handleScope;
     v8::Context::Scope contextScope(m_context);
@@ -618,7 +616,9 @@ bool V8DOMWindowShell::installHiddenObjectPrototype(v8::Handle<v8::Context> cont
 v8::Local<v8::Object> V8DOMWindowShell::createWrapperFromCacheSlowCase(WrapperTypeInfo* type)
 {
     // Not in cache.
-    initContextIfNeeded();
+    if (!initContextIfNeeded())
+        return notHandledByInterceptor();
+
     v8::Context::Scope scope(m_context);
     v8::Local<v8::Function> function = V8DOMWrapper::getConstructor(type, getHiddenObjectPrototype(m_context));
     v8::Local<v8::Object> instance = SafeAllocation::newInstance(function);

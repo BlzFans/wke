@@ -51,7 +51,10 @@ static v8::Handle<v8::Value> v8HTMLOptionElementConstructorCallback(const v8::Ar
     INC_STATS("DOM.HTMLOptionElement.Contructor");
 
     if (!args.IsConstructCall())
-        return throwError("DOM object constructor cannot be called as a function.");
+        return throwError("DOM object constructor cannot be called as a function.", V8Proxy::TypeError);
+
+    if (ConstructorMode::current() == ConstructorMode::WrapExistingObject)
+        return args.Holder();
 
     Frame* frame = V8Proxy::retrieveFrameForCurrentContext();
     if (!frame)

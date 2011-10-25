@@ -39,6 +39,7 @@
 #include "V8SharedWorkerContext.h"
 #include "WorkerContext.h"
 #include "WorkerContextExecutionProxy.h"
+#include "WorkerDebuggerAgent.h"
 #include "WorkerThread.h"
 #include <v8.h>
 #include <wtf/MessageQueue.h>
@@ -65,8 +66,6 @@ static WorkerContext* retrieveWorkerContext(v8::Handle<v8::Context> context)
     return 0;
 }
 
-const char* WorkerScriptDebugServer::debuggerTaskMode = "debugger";
-
 WorkerScriptDebugServer::WorkerScriptDebugServer()
     : ScriptDebugServer()
     , m_pausedWorkerContext(0)
@@ -87,10 +86,10 @@ void WorkerScriptDebugServer::addListener(ScriptDebugListener* listener, WorkerC
     }
     m_listenersMap.set(workerContext, listener);
     
+    // TODO: Should we remove |proxy|? It looks like unused now.
     WorkerContextExecutionProxy* proxy = workerContext->script()->proxy();
     if (!proxy)
         return;
-    v8::Handle<v8::Context> context = proxy->context();
 
     v8::Handle<v8::Function> getScriptsFunction = v8::Local<v8::Function>::Cast(m_debuggerScript.get()->Get(v8::String::New("getWorkerScripts")));
     v8::Handle<v8::Value> argv[] = { v8::Handle<v8::Value>() };
@@ -134,7 +133,7 @@ void WorkerScriptDebugServer::runMessageLoopOnPause(v8::Handle<v8::Context> cont
 
     MessageQueueWaitResult result;
     do {
-        result = workerThread->runLoop().runInMode(workerContext, debuggerTaskMode);
+        result = workerThread->runLoop().runInMode(workerContext, WorkerDebuggerAgent::debuggerTaskMode);
     // Keep waiting until execution is resumed.
     } while (result == MessageQueueMessageReceived && isPaused());
     m_pausedWorkerContext = 0;

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 Google Inc. All rights reserved.
+ * Copyright (C) 2009, 2011 Google Inc. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -313,41 +313,53 @@ v8::Handle<v8::Value> V8DOMWindow::removeEventListenerCallback(const v8::Argumen
     return v8::Undefined();
 }
 
-v8::Handle<v8::Value> V8DOMWindow::postMessageCallback(const v8::Arguments& args)
+static v8::Handle<v8::Value> handlePostMessageCallback(const v8::Arguments& args, bool doTransfer)
 {
-    INC_STATS("DOM.DOMWindow.postMessage()");
     DOMWindow* window = V8DOMWindow::toNative(args.Holder());
 
     DOMWindow* source = V8Proxy::retrieveFrameForCallingContext()->domWindow();
     ASSERT(source->frame());
 
-    bool didThrow = false;
-    RefPtr<SerializedScriptValue> message = SerializedScriptValue::create(args[0], didThrow);
-    if (didThrow)
-        return v8::Undefined();
-
-    MessagePortArray portArray;
-    String targetOrigin;
-
     // This function has variable arguments and can either be:
     //   postMessage(message, port, targetOrigin);
     // or
     //   postMessage(message, targetOrigin);
-    v8::TryCatch tryCatch;
-    if (args.Length() > 2) {
-        if (!getMessagePortArray(args[1], portArray))
+    MessagePortArray portArray;
+    String targetOrigin;
+    {
+        v8::TryCatch tryCatch;
+        if (args.Length() > 2) {
+            if (!getMessagePortArray(args[1], portArray))
+                return v8::Undefined();
+            targetOrigin = toWebCoreStringWithNullOrUndefinedCheck(args[2]);
+        } else
+            targetOrigin = toWebCoreStringWithNullOrUndefinedCheck(args[1]);
+
+        if (tryCatch.HasCaught())
             return v8::Undefined();
-        targetOrigin = toWebCoreStringWithNullOrUndefinedCheck(args[2]);
-    } else {
-        targetOrigin = toWebCoreStringWithNullOrUndefinedCheck(args[1]);
     }
 
-    if (tryCatch.HasCaught())
+
+    bool didThrow = false;
+    RefPtr<SerializedScriptValue> message = SerializedScriptValue::create(args[0], doTransfer ? &portArray : 0, didThrow);
+    if (didThrow)
         return v8::Undefined();
 
     ExceptionCode ec = 0;
     window->postMessage(message.release(), &portArray, targetOrigin, source, ec);
     return throwError(ec);
+}
+
+v8::Handle<v8::Value> V8DOMWindow::postMessageCallback(const v8::Arguments& args)
+{
+    INC_STATS("DOM.DOMWindow.postMessage()");
+    return handlePostMessageCallback(args, false);
+}
+
+v8::Handle<v8::Value> V8DOMWindow::webkitPostMessageCallback(const v8::Arguments& args)
+{
+    INC_STATS("DOM.DOMWindow.webkitPostMessage()");
+    return handlePostMessageCallback(args, true);
 }
 
 // FIXME(fqian): returning string is cheating, and we should
@@ -499,9 +511,8 @@ v8::Handle<v8::Value> V8DOMWindow::namedPropertyGetter(v8::Local<v8::String> nam
         return toV8(child->domWindow());
 
     // Search IDL functions defined in the prototype
-    v8::Handle<v8::Value> result = info.Holder()->GetRealNamedProperty(name);
-    if (!result.IsEmpty())
-        return result;
+    if (!info.Holder()->GetRealNamedProperty(name).IsEmpty())
+        return notHandledByInterceptor();
 
     // Search named items in the document.
     Document* doc = frame->document();
@@ -549,12 +560,17 @@ bool V8DOMWindow::namedSecurityCheck(v8::Local<v8::Object> host, v8::Local<v8::V
         return false;
 
     if (key->IsString()) {
+        DEFINE_STATIC_LOCAL(AtomicString, nameOfProtoProperty, ("__proto__"));
+
         String name = toWebCoreString(key);
         // Notice that we can't call HasRealNamedProperty for ACCESS_HAS
         // because that would generate infinite recursion.
         if (type == v8::ACCESS_HAS && target->tree()->child(name))
             return true;
-        if (type == v8::ACCESS_GET && target->tree()->child(name) && !host->HasRealNamedProperty(key->ToString()))
+        // We need to explicitly compare against nameOfProtoProperty because
+        // V8's JSObject::LocalLookup finds __proto__ before
+        // interceptors and even when __proto__ isn't a "real named property".
+        if (type == v8::ACCESS_GET && target->tree()->child(name) && !host->HasRealNamedProperty(key->ToString()) && name != nameOfProtoProperty)
             return true;
     }
 

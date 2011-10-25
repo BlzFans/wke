@@ -30,90 +30,14 @@
 #include "JSEvent.h"
 
 #include "Clipboard.h"
-#include "CompositionEvent.h"
-#include "CustomEvent.h"
-#include "DeviceMotionEvent.h"
-#include "DeviceOrientationEvent.h"
 #include "Event.h"
-#include "JSBeforeLoadEvent.h"
+#include "EventHeaders.h"
+#include "EventInterfaces.h"
+#include "EventNames.h"
 #include "JSClipboard.h"
-#include "JSCustomEvent.h"
-#include "JSCompositionEvent.h"
-#include "JSDeviceMotionEvent.h"
-#include "JSDeviceOrientationEvent.h"
-#include "JSErrorEvent.h"
-#include "JSHashChangeEvent.h"
-#include "JSKeyboardEvent.h"
-#include "JSMessageEvent.h"
-#include "JSMouseEvent.h"
-#include "JSMutationEvent.h"
-#include "JSOverflowEvent.h"
-#include "JSPageTransitionEvent.h"
-#include "JSPopStateEvent.h"
-#include "JSProgressEvent.h"
-#include "JSSpeechInputEvent.h"
-#include "JSTextEvent.h"
-#include "JSUIEvent.h"
-#include "JSWebKitAnimationEvent.h"
-#include "JSWebKitTransitionEvent.h"
-#include "JSWheelEvent.h"
-#include "JSXMLHttpRequestProgressEvent.h"
-#include "BeforeLoadEvent.h"
-#include "ErrorEvent.h"
-#include "HashChangeEvent.h"
-#include "KeyboardEvent.h"
-#include "MessageEvent.h"
-#include "MouseEvent.h"
-#include "MutationEvent.h"
-#include "OverflowEvent.h"
-#include "PageTransitionEvent.h"
-#include "PopStateEvent.h"
-#include "ProgressEvent.h"
-#include "SpeechInputEvent.h"
-#include "TextEvent.h"
-#include "UIEvent.h"
-#include "WebKitAnimationEvent.h"
-#include "WebKitTransitionEvent.h"
-#include "WheelEvent.h"
-#include "XMLHttpRequestProgressEvent.h"
 #include <runtime/JSLock.h>
-
-#if ENABLE(DOM_STORAGE)
-#include "JSStorageEvent.h"
-#include "StorageEvent.h"
-#endif
-
-#if ENABLE(SVG)
-#include "JSSVGZoomEvent.h"
-#include "SVGZoomEvent.h"
-#endif
-
-#if ENABLE(TOUCH_EVENTS)
-#include "JSTouchEvent.h"
-#include "TouchEvent.h"
-#endif
-
-#if ENABLE(INDEXED_DATABASE)
-#include "IDBVersionChangeEvent.h"
-#include "JSIDBVersionChangeEvent.h"
-#endif
-
-#if ENABLE(WEB_AUDIO)
-#include "AudioProcessingEvent.h"
-#include "JSAudioProcessingEvent.h"
-#include "JSOfflineAudioCompletionEvent.h"
-#include "OfflineAudioCompletionEvent.h"
-#endif
-
-#if ENABLE(WEB_SOCKETS)
-#include "CloseEvent.h"
-#include "JSCloseEvent.h"
-#endif
-
-#if ENABLE(MEDIA_STREAM)
-#include "JSMediaStreamEvent.h"
-#include "MediaStreamEvent.h"
-#endif
+#include <wtf/HashMap.h>
+#include <wtf/text/AtomicString.h>
 
 using namespace JSC;
 
@@ -123,6 +47,10 @@ JSValue JSEvent::clipboardData(ExecState* exec) const
 {
     return impl()->isClipboardEvent() ? toJS(exec, globalObject(), impl()->clipboardData()) : jsUndefined();
 }
+
+#define TRY_TO_WRAP_WITH_INTERFACE(interfaceName) \
+    if (eventNames().interfaceFor##interfaceName == desiredInterface) \
+        return CREATE_DOM_WRAPPER(exec, globalObject, interfaceName, event);
 
 JSValue toJS(ExecState* exec, JSDOMGlobalObject* globalObject, Event* event)
 {
@@ -135,92 +63,10 @@ JSValue toJS(ExecState* exec, JSDOMGlobalObject* globalObject, Event* event)
     if (wrapper)
         return wrapper;
 
-    if (event->isUIEvent()) {
-        if (event->isKeyboardEvent())
-            wrapper = CREATE_DOM_WRAPPER(exec, globalObject, KeyboardEvent, event);
-        else if (event->isTextEvent())
-            wrapper = CREATE_DOM_WRAPPER(exec, globalObject, TextEvent, event);
-        else if (event->isMouseEvent())
-            wrapper = CREATE_DOM_WRAPPER(exec, globalObject, MouseEvent, event);
-        else if (event->isWheelEvent())
-            wrapper = CREATE_DOM_WRAPPER(exec, globalObject, WheelEvent, event);
-#if ENABLE(SVG)
-        else if (event->isSVGZoomEvent())
-            wrapper = CREATE_DOM_WRAPPER(exec, globalObject, SVGZoomEvent, event);
-#endif
-        else if (event->isCompositionEvent())
-            wrapper = CREATE_DOM_WRAPPER(exec, globalObject, CompositionEvent, event);
-#if ENABLE(TOUCH_EVENTS)
-        else if (event->isTouchEvent())
-            wrapper = CREATE_DOM_WRAPPER(exec, globalObject, TouchEvent, event);
-#endif
-        else
-            wrapper = CREATE_DOM_WRAPPER(exec, globalObject, UIEvent, event);
-    } else if (event->isMutationEvent())
-        wrapper = CREATE_DOM_WRAPPER(exec, globalObject, MutationEvent, event);
-    else if (event->isOverflowEvent())
-        wrapper = CREATE_DOM_WRAPPER(exec, globalObject, OverflowEvent, event);
-    else if (event->isMessageEvent())
-        wrapper = CREATE_DOM_WRAPPER(exec, globalObject, MessageEvent, event);
-    else if (event->isPageTransitionEvent())
-        wrapper = CREATE_DOM_WRAPPER(exec, globalObject, PageTransitionEvent, event);
-    else if (event->isProgressEvent()) {
-        if (event->isXMLHttpRequestProgressEvent())
-            wrapper = CREATE_DOM_WRAPPER(exec, globalObject, XMLHttpRequestProgressEvent, event);
-        else
-            wrapper = CREATE_DOM_WRAPPER(exec, globalObject, ProgressEvent, event);
-    } else if (event->isBeforeLoadEvent())
-        wrapper = CREATE_DOM_WRAPPER(exec, globalObject, BeforeLoadEvent, event);
-#if ENABLE(DOM_STORAGE)
-    else if (event->isStorageEvent())
-        wrapper = CREATE_DOM_WRAPPER(exec, globalObject, StorageEvent, event);
-#endif
-#if ENABLE(INDEXED_DATABASE)
-    else if (event->isIDBVersionChangeEvent())
-        wrapper = CREATE_DOM_WRAPPER(exec, globalObject, IDBVersionChangeEvent, event);
-#endif
-    else if (event->isWebKitAnimationEvent())
-        wrapper = CREATE_DOM_WRAPPER(exec, globalObject, WebKitAnimationEvent, event);
-    else if (event->isWebKitTransitionEvent())
-        wrapper = CREATE_DOM_WRAPPER(exec, globalObject, WebKitTransitionEvent, event);
-#if ENABLE(WORKERS)
-    else if (event->isErrorEvent())
-        wrapper = CREATE_DOM_WRAPPER(exec, globalObject, ErrorEvent, event);
-#endif
-    else if (event->isHashChangeEvent())
-        wrapper = CREATE_DOM_WRAPPER(exec, globalObject, HashChangeEvent, event);
-    else if (event->isPopStateEvent())
-        wrapper = CREATE_DOM_WRAPPER(exec, globalObject, PopStateEvent, event);
-    else if (event->isCustomEvent())
-        wrapper = CREATE_DOM_WRAPPER(exec, globalObject, CustomEvent, event);
-#if ENABLE(DEVICE_ORIENTATION)
-    else if (event->isDeviceMotionEvent())
-        wrapper = CREATE_DOM_WRAPPER(exec, globalObject, DeviceMotionEvent, event);
-    else if (event->isDeviceOrientationEvent())
-        wrapper = CREATE_DOM_WRAPPER(exec, globalObject, DeviceOrientationEvent, event);
-#endif
-#if ENABLE(WEB_AUDIO)
-    else if (event->isAudioProcessingEvent())
-        wrapper = CREATE_DOM_WRAPPER(exec, globalObject, AudioProcessingEvent, event);
-    else if (event->isOfflineAudioCompletionEvent())
-        wrapper = CREATE_DOM_WRAPPER(exec, globalObject, OfflineAudioCompletionEvent, event);
-#endif
-#if ENABLE(INPUT_SPEECH)
-    else if (event->isSpeechInputEvent())
-        wrapper = CREATE_DOM_WRAPPER(exec, globalObject, SpeechInputEvent, event);
-#endif
-#if ENABLE(WEB_SOCKETS)
-    else if (event->isCloseEvent())
-        wrapper = CREATE_DOM_WRAPPER(exec, globalObject, CloseEvent, event);
-#endif
-#if ENABLE(MEDIA_STREAM)
-    else if (event->isMediaStreamEvent())
-        wrapper = CREATE_DOM_WRAPPER(exec, globalObject, MediaStreamEvent, event);
-#endif
-    else
-        wrapper = CREATE_DOM_WRAPPER(exec, globalObject, Event, event);
+    String desiredInterface = event->interfaceName();
+    DOM_EVENT_INTERFACES_FOR_EACH(TRY_TO_WRAP_WITH_INTERFACE)
 
-    return wrapper;
+    return CREATE_DOM_WRAPPER(exec, globalObject, Event, event);
 }
 
 } // namespace WebCore

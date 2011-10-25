@@ -32,29 +32,20 @@
 using namespace JSC;
 
 namespace WebCore {
-    
-void JSMessageChannel::visitChildren(SlotVisitor& visitor)
+
+void JSMessageChannel::visitChildren(JSCell* cell, SlotVisitor& visitor)
 {
-    ASSERT_GC_OBJECT_INHERITS(this, &s_info);
+    JSMessageChannel* thisObject = static_cast<JSMessageChannel*>(cell);
+    ASSERT_GC_OBJECT_INHERITS(thisObject, &s_info);
     COMPILE_ASSERT(StructureFlags & OverridesVisitChildren, OverridesVisitChildrenWithoutSettingFlag);
-    ASSERT(structure()->typeInfo().overridesVisitChildren());
-    Base::visitChildren(visitor);
+    ASSERT(thisObject->structure()->typeInfo().overridesVisitChildren());
+    Base::visitChildren(thisObject, visitor);
 
-    if (MessagePort* port = m_impl->port1())
+    if (MessagePort* port = thisObject->m_impl->port1())
         visitor.addOpaqueRoot(port);
 
-    if (MessagePort* port = m_impl->port2())
+    if (MessagePort* port = thisObject->m_impl->port2())
         visitor.addOpaqueRoot(port);
-}
-
-EncodedJSValue JSC_HOST_CALL JSMessageChannelConstructor::constructJSMessageChannel(ExecState* exec)
-{
-    JSMessageChannelConstructor* jsConstructor = static_cast<JSMessageChannelConstructor*>(exec->callee());
-    ScriptExecutionContext* context = jsConstructor->scriptExecutionContext();
-    if (!context)
-        return throwVMError(exec, createReferenceError(exec, "MessageChannel constructor associated document is unavailable"));
-
-    return JSValue::encode(asObject(toJS(exec, jsConstructor->globalObject(), MessageChannel::create(context))));
 }
 
 } // namespace WebCore

@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2008, 2009 Apple Inc. All Rights Reserved.
+ * Copyright (C) 2011 Google Inc. All Rights Reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -41,21 +42,27 @@ using namespace JSC;
 
 namespace WebCore {
 
-void JSMessagePort::visitChildren(SlotVisitor& visitor)
+void JSMessagePort::visitChildren(JSCell* cell, SlotVisitor& visitor)
 {
-    ASSERT_GC_OBJECT_INHERITS(this, &s_info);
+    JSMessagePort* thisObject = static_cast<JSMessagePort*>(cell);
+    ASSERT_GC_OBJECT_INHERITS(thisObject, &s_info);
     COMPILE_ASSERT(StructureFlags & OverridesVisitChildren, OverridesVisitChildrenWithoutSettingFlag);
-    ASSERT(structure()->typeInfo().overridesVisitChildren());
-    Base::visitChildren(visitor);
+    ASSERT(thisObject->structure()->typeInfo().overridesVisitChildren());
+    Base::visitChildren(thisObject, visitor);
 
     // If we have a locally entangled port, we can directly mark it as reachable. Ports that are remotely entangled are marked in-use by markActiveObjectsForContext().
-    if (MessagePort* port = m_impl->locallyEntangledPort())
+    if (MessagePort* port = thisObject->m_impl->locallyEntangledPort())
         visitor.addOpaqueRoot(port);
 
-    m_impl->visitJSEventListeners(visitor);
+    thisObject->m_impl->visitJSEventListeners(visitor);
 }
 
 JSC::JSValue JSMessagePort::postMessage(JSC::ExecState* exec)
+{
+    return handlePostMessage(exec, impl());
+}
+
+JSC::JSValue JSMessagePort::webkitPostMessage(JSC::ExecState* exec)
 {
     return handlePostMessage(exec, impl());
 }
@@ -79,9 +86,9 @@ void fillMessagePortArray(JSC::ExecState* exec, JSC::JSValue value, MessagePortA
         JSValue value = object->get(exec, i);
         if (exec->hadException())
             return;
-        // Validation of non-null objects, per HTML5 spec 8.3.3.
+        // Validation of non-null objects, per HTML5 spec 10.3.3.
         if (value.isUndefinedOrNull()) {
-            setDOMException(exec, INVALID_STATE_ERR);
+            setDOMException(exec, DATA_CLONE_ERR);
             return;
         }
 

@@ -29,6 +29,9 @@
  */
 
 #include "config.h"
+
+#if ENABLE(VIDEO)
+
 #include "V8HTMLAudioElementConstructor.h"
 
 #include "HTMLAudioElement.h"
@@ -44,14 +47,17 @@
 
 namespace WebCore {
 
-WrapperTypeInfo V8HTMLAudioElementConstructor::info = { V8HTMLAudioElementConstructor::GetTemplate, 0, 0, 0 };
+WrapperTypeInfo V8HTMLAudioElementConstructor::info = { V8HTMLAudioElementConstructor::GetTemplate, V8HTMLAudioElement::derefObject, V8HTMLAudioElement::toActiveDOMObject, 0 };
 
 static v8::Handle<v8::Value> v8HTMLAudioElementConstructorCallback(const v8::Arguments& args)
 {
     INC_STATS("DOM.HTMLAudioElement.Contructor");
 
     if (!args.IsConstructCall())
-        return throwError("DOM object constructor cannot be called as a function.");
+        return throwError("DOM object constructor cannot be called as a function.", V8Proxy::TypeError);
+
+    if (ConstructorMode::current() == ConstructorMode::WrapExistingObject)
+        return args.Holder();
 
     Frame* frame = V8Proxy::retrieveFrameForCurrentContext();
     if (!frame)
@@ -65,7 +71,6 @@ static v8::Handle<v8::Value> v8HTMLAudioElementConstructorCallback(const v8::Arg
     // may end up being the only node in the map and get garbage-collected prematurely.
     toV8(document);
 
-
     String src;
     if (args.Length() > 0)
         src = toWebCoreString(args[0]);
@@ -73,7 +78,7 @@ static v8::Handle<v8::Value> v8HTMLAudioElementConstructorCallback(const v8::Arg
 
     V8DOMWrapper::setDOMWrapper(args.Holder(), &V8HTMLAudioElementConstructor::info, audio.get());
     audio->ref();
-    V8DOMWrapper::setJSWrapperForDOMNode(audio.get(), v8::Persistent<v8::Object>::New(args.Holder()));
+    V8DOMWrapper::setJSWrapperForActiveDOMObject(audio.get(), v8::Persistent<v8::Object>::New(args.Holder()));
     return args.Holder();
 }
 
@@ -96,3 +101,5 @@ v8::Persistent<v8::FunctionTemplate> V8HTMLAudioElementConstructor::GetTemplate(
 }
 
 } // namespace WebCore
+
+#endif // ENABLE(VIDEO)

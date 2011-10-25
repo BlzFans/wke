@@ -31,7 +31,7 @@
 #ifndef V8Proxy_h
 #define V8Proxy_h
 
-#include "PlatformBridge.h"
+#include "PlatformSupport.h"
 #include "SharedPersistent.h"
 #include "V8AbstractEventListener.h"
 #include "V8DOMWindowShell.h"
@@ -46,7 +46,7 @@
 #include <wtf/text/TextPosition.h>
 
 #if defined(ENABLE_DOM_STATS_COUNTERS) && PLATFORM(CHROMIUM)
-#define INC_STATS(name) PlatformBridge::incrementStatsCounter(name)
+#define INC_STATS(name) PlatformSupport::incrementStatsCounter(name)
 #else
 #define INC_STATS(name)
 #endif
@@ -57,6 +57,7 @@ namespace WebCore {
     class DOMWindow;
     class Frame;
     class Node;
+    class Page;
     class ScriptExecutionContext;
     class ScriptSourceCode;
     class SecurityOrigin;
@@ -146,9 +147,6 @@ namespace WebCore {
         bool inlineCode() const { return m_inlineCode; }
         void setInlineCode(bool value) { m_inlineCode = value; }
 
-        bool timerCallback() const { return m_timerCallback; }
-        void setTimerCallback(bool value) { m_timerCallback = value; }
-
         void finishedWithEvent(Event*) { }
 
         // Evaluate JavaScript in a new isolated world. The script gets its own
@@ -175,6 +173,9 @@ namespace WebCore {
 
         // Call the function with the given receiver and arguments.
         static v8::Local<v8::Value> callFunctionWithoutFrame(v8::Handle<v8::Function>, v8::Handle<v8::Object>, int argc, v8::Handle<v8::Value> argv[]);
+
+        // call the function with the given receiver and arguments and report times to DevTools.
+        static v8::Local<v8::Value> instrumentedCallFunction(Page*, v8::Handle<v8::Function>, v8::Handle<v8::Object> receiver, int argc, v8::Handle<v8::Value> args[]);
 
         // Call the function as constructor with the given arguments.
         v8::Local<v8::Value> newInstance(v8::Handle<v8::Function>, int argc, v8::Handle<v8::Value> argv[]);
@@ -237,7 +238,7 @@ namespace WebCore {
 
         static v8::Handle<v8::Value> checkNewLegal(const v8::Arguments&);
 
-        static v8::Handle<v8::Script> compileScript(v8::Handle<v8::String> code, const String& fileName, const TextPosition0& scriptStartPosition, v8::ScriptData* = 0);
+        static v8::Handle<v8::Script> compileScript(v8::Handle<v8::String> code, const String& fileName, const TextPosition& scriptStartPosition, v8::ScriptData* = 0);
 
         // If the exception code is different from zero, a DOM exception is
         // schedule to be thrown.
@@ -292,16 +293,13 @@ namespace WebCore {
         static const char* eventExceptionName(int exceptionCode);
         static const char* xmlHttpRequestExceptionName(int exceptionCode);
         static const char* domExceptionName(int exceptionCode);
-
-#if ENABLE(XPATH)
         static const char* xpathExceptionName(int exceptionCode);
-#endif
 
 #if ENABLE(SVG)
         static const char* svgExceptionName(int exceptionCode);
 #endif
 
-#if ENABLE(DATABASE)
+#if ENABLE(SQL_DATABASE)
         static const char* sqlExceptionName(int exceptionCode);
 #endif
 
@@ -313,10 +311,6 @@ namespace WebCore {
         // True for <a href="javascript:foo()"> and false for <script>foo()</script>.
         // Only valid during execution.
         bool m_inlineCode;
-
-        // True when executing from within a timer callback. Only valid during
-        // execution.
-        bool m_timerCallback;
 
         // Track the recursion depth to be able to avoid too deep recursion. The V8
         // engine allows much more recursion than KJS does so we need to guard against

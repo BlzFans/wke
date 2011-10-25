@@ -45,7 +45,7 @@
 #include "InspectorInstrumentation.h"
 #include "Page.h"
 #include "PageGroup.h"
-#include "PlatformBridge.h"
+#include "PlatformSupport.h"
 #include "ScriptSourceCode.h"
 #include "SecurityOrigin.h"
 #include "Settings.h"
@@ -65,6 +65,7 @@
 #include "V8SQLException.h"
 #include "V8XMLHttpRequestException.h"
 #include "V8XPathException.h"
+#include "WebKitMutationObserver.h"
 #include "WorkerContext.h"
 #include "WorkerContextExecutionProxy.h"
 
@@ -191,7 +192,6 @@ V8Proxy::V8Proxy(Frame* frame)
     : m_frame(frame)
     , m_windowShell(V8DOMWindowShell::create(frame))
     , m_inlineCode(false)
-    , m_timerCallback(false)
     , m_recursion(0)
 {
 }
@@ -202,7 +202,7 @@ V8Proxy::~V8Proxy()
     windowShell()->destroyGlobal();
 }
 
-v8::Handle<v8::Script> V8Proxy::compileScript(v8::Handle<v8::String> code, const String& fileName, const TextPosition0& scriptStartPosition, v8::ScriptData* scriptData)
+v8::Handle<v8::Script> V8Proxy::compileScript(v8::Handle<v8::String> code, const String& fileName, const TextPosition& scriptStartPosition, v8::ScriptData* scriptData)
 {
     const uint16_t* fileNameString = fromWebCoreString(fileName);
     v8::Handle<v8::String> name = v8::String::New(fileNameString, fileName.length());
@@ -232,7 +232,7 @@ bool V8Proxy::handleOutOfMemory()
     }
 
 #if PLATFORM(CHROMIUM)
-    PlatformBridge::notifyJSOutOfMemory(frame);
+    PlatformSupport::notifyJSOutOfMemory(frame);
 #endif
 
     // Disable JS.
@@ -246,7 +246,8 @@ bool V8Proxy::handleOutOfMemory()
 void V8Proxy::evaluateInIsolatedWorld(int worldID, const Vector<ScriptSourceCode>& sources, int extensionGroup)
 {
     // FIXME: This will need to get reorganized once we have a windowShell for the isolated world.
-    windowShell()->initContextIfNeeded();
+    if (!windowShell()->initContextIfNeeded())
+        return;
 
     v8::HandleScope handleScope;
     V8IsolatedContext* isolatedContext = 0;
@@ -369,17 +370,17 @@ v8::Local<v8::Value> V8Proxy::evaluate(const ScriptSourceCode& source, Node* nod
         // Compile the script.
         v8::Local<v8::String> code = v8ExternalString(source.source());
 #if PLATFORM(CHROMIUM)
-        PlatformBridge::traceEventBegin("v8.compile", node, "");
+        PlatformSupport::traceEventBegin("v8.compile", node, "");
 #endif
         OwnPtr<v8::ScriptData> scriptData = precompileScript(code, source.cachedScript());
 
         // NOTE: For compatibility with WebCore, ScriptSourceCode's line starts at
         // 1, whereas v8 starts at 0.
-        v8::Handle<v8::Script> script = compileScript(code, source.url(), WTF::toZeroBasedTextPosition(source.startPosition()), scriptData.get());
+        v8::Handle<v8::Script> script = compileScript(code, source.url(), source.startPosition(), scriptData.get());
 #if PLATFORM(CHROMIUM)
-        PlatformBridge::traceEventEnd("v8.compile", node, "");
+        PlatformSupport::traceEventEnd("v8.compile", node, "");
 
-        PlatformBridge::traceEventBegin("v8.run", node, "");
+        PlatformSupport::traceEventBegin("v8.run", node, "");
 #endif
         // Set inlineCode to true for <a href="javascript:doSomething()">
         // and false for <script>doSomething</script>. We make a rough guess at
@@ -387,7 +388,7 @@ v8::Local<v8::Value> V8Proxy::evaluate(const ScriptSourceCode& source, Node* nod
         result = runScript(script, source.url().string().isNull());
     }
 #if PLATFORM(CHROMIUM)
-    PlatformBridge::traceEventEnd("v8.run", node, "");
+    PlatformSupport::traceEventEnd("v8.run", node, "");
 #endif
 
     InspectorInstrumentation::didEvaluateScript(cookie);
@@ -407,7 +408,7 @@ v8::Local<v8::Value> V8Proxy::runScript(v8::Handle<v8::Script> script, bool isIn
         // FIXME: Ideally, we should be able to re-use the origin of the
         // script passed to us as the argument instead of using an empty string
         // and 0 baseLine.
-        script = compileScript(code, "", TextPosition0::minimumPosition());
+        script = compileScript(code, "", TextPosition::minimumPosition());
     }
 
     if (handleOutOfMemory())
@@ -478,23 +479,9 @@ v8::Local<v8::Value> V8Proxy::callFunction(v8::Handle<v8::Function> function, v8
             return result;
         }
 
-        InspectorInstrumentationCookie cookie;
-        if (InspectorInstrumentation::hasFrontends()) {
-            v8::ScriptOrigin origin = function->GetScriptOrigin();
-            String resourceName("undefined");
-            int lineNumber = 1;
-            if (!origin.ResourceName().IsEmpty()) {
-                resourceName = toWebCoreString(origin.ResourceName());
-                lineNumber = function->GetScriptLineNumber() + 1;
-            }
-            cookie = InspectorInstrumentation::willCallFunction(m_frame, resourceName, lineNumber);
-        }
-
         m_recursion++;
-        result = function->Call(receiver, argc, args);
+        result = V8Proxy::instrumentedCallFunction(m_frame->page(), function, receiver, argc, args);
         m_recursion--;
-
-        InspectorInstrumentation::didCallFunction(cookie);
     }
 
     // Release the storage mutex if applicable.
@@ -514,6 +501,24 @@ v8::Local<v8::Value> V8Proxy::callFunctionWithoutFrame(v8::Handle<v8::Function> 
     if (v8::V8::IsDead())
         handleFatalErrorInV8();
 
+    return result;
+}
+
+v8::Local<v8::Value> V8Proxy::instrumentedCallFunction(Page* page, v8::Handle<v8::Function> function, v8::Handle<v8::Object> receiver, int argc, v8::Handle<v8::Value> args[])
+{
+    InspectorInstrumentationCookie cookie;
+    if (InspectorInstrumentation::hasFrontends()) {
+        String resourceName("undefined");
+        int lineNumber = 1;
+        v8::ScriptOrigin origin = function->GetScriptOrigin();
+        if (!origin.ResourceName().IsEmpty()) {
+            resourceName = toWebCoreString(origin.ResourceName());
+            lineNumber = function->GetScriptLineNumber() + 1;
+        }
+        cookie = InspectorInstrumentation::willCallFunction(page, resourceName, lineNumber);
+    }
+    v8::Local<v8::Value> result = function->Call(receiver, argc, args);
+    InspectorInstrumentation::didCallFunction(cookie);
     return result;
 }
 
@@ -616,6 +621,10 @@ void V8Proxy::didLeaveScriptContext()
 #endif // ENABLE(INDEXED_DATABASE)
     if (page->group().hasLocalStorage())
         page->group().localStorage()->unlock();
+
+#if ENABLE(MUTATION_OBSERVERS)
+    WebCore::WebKitMutationObserver::deliverAllMutations();
+#endif
 }
 
 void V8Proxy::resetIsolatedWorlds()
@@ -667,12 +676,10 @@ void V8Proxy::setDOMException(int exceptionCode)
         exception = toV8(SVGException::create(description));
         break;
 #endif
-#if ENABLE(XPATH)
     case XPathExceptionType:
         exception = toV8(XPathException::create(description));
         break;
-#endif
-#if ENABLE(DATABASE)
+#if ENABLE(SQL_DATABASE)
     case SQLExceptionType:
         exception = toV8(SQLException::create(description));
         break;
@@ -775,7 +782,7 @@ v8::Local<v8::Context> V8Proxy::currentContext()
 
 v8::Handle<v8::Value> V8Proxy::checkNewLegal(const v8::Arguments& args)
 {
-    if (!AllowAllocation::current())
+    if (ConstructorMode::current() == ConstructorMode::CreateNewObject)
         return throwError(TypeError, "Illegal constructor");
 
     return args.This();

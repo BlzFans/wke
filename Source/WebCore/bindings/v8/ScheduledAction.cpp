@@ -49,7 +49,7 @@ namespace WebCore {
 
 ScheduledAction::ScheduledAction(v8::Handle<v8::Context> context, v8::Handle<v8::Function> func, int argc, v8::Handle<v8::Value> argv[])
     : m_context(context)
-    , m_code(String(), KURL(), TextPosition1::belowRangePosition())
+    , m_code(String(), KURL(), TextPosition::belowRangePosition())
 {
     m_function = v8::Persistent<v8::Function>::New(func);
 
@@ -120,8 +120,6 @@ void ScheduledAction::execute(V8Proxy* proxy)
 
     v8::Context::Scope scope(v8Context);
 
-    proxy->setTimerCallback(true);
-
     // FIXME: Need to implement timeouts for preempting a long-running script.
     if (!m_function.IsEmpty() && m_function->IsFunction()) {
         proxy->callFunction(v8::Persistent<v8::Function>::Cast(m_function), v8Context->Global(), m_argc, m_argv);
@@ -129,7 +127,7 @@ void ScheduledAction::execute(V8Proxy* proxy)
     } else
         proxy->evaluate(m_code, 0);
 
-    proxy->setTimerCallback(false);
+    // The 'proxy' may be invalid at this point since JS could have released the owning Frame.
 }
 
 #if ENABLE(WORKERS)

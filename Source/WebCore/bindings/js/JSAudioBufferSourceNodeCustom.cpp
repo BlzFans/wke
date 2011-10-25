@@ -26,20 +26,28 @@
 
 #if ENABLE(WEB_AUDIO)
 
-#include "AudioBufferSourceNode.h"
+#include "JSAudioBufferSourceNode.h"
 
 #include "AudioBuffer.h"
+#include "AudioBufferSourceNode.h"
 #include "JSAudioBuffer.h"
-#include "JSAudioBufferSourceNode.h"
+#include <runtime/Error.h>
 
 using namespace JSC;
 
 namespace WebCore {
 
-void JSAudioBufferSourceNode::setBuffer(ExecState*, JSValue value)
+void JSAudioBufferSourceNode::setBuffer(ExecState* exec, JSValue value)
 {
     AudioBufferSourceNode* imp = static_cast<AudioBufferSourceNode*>(impl());
-    imp->setBuffer(toAudioBuffer(value));
+    AudioBuffer* buffer = toAudioBuffer(value);
+    if (!buffer) {
+        throwError(exec, createSyntaxError(exec, "Value is not of type AudioBuffer"));
+        return;
+    }
+    
+    if (!imp->setBuffer(buffer))
+        throwError(exec, createSyntaxError(exec, "AudioBuffer unsupported number of channels"));
 }
 
 } // namespace WebCore

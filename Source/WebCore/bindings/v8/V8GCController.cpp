@@ -38,7 +38,7 @@
 #include "HTMLImageElement.h"
 #include "HTMLNames.h"
 #include "MessagePort.h"
-#include "PlatformBridge.h"
+#include "PlatformSupport.h"
 #include "RetainedDOMInfo.h"
 #include "RetainedObjectInfo.h"
 #include "V8Binding.h"
@@ -421,7 +421,7 @@ namespace {
 int getMemoryUsageInMB()
 {
 #if PLATFORM(CHROMIUM)
-    return PlatformBridge::memoryUsageMB();
+    return PlatformSupport::memoryUsageMB();
 #else
     return 0;
 #endif
@@ -430,7 +430,7 @@ int getMemoryUsageInMB()
 int getActualMemoryUsageInMB()
 {
 #if PLATFORM(CHROMIUM)
-    return PlatformBridge::actualMemoryUsageMB();
+    return PlatformSupport::actualMemoryUsageMB();
 #else
     return 0;
 #endif
@@ -463,17 +463,16 @@ void V8GCController::gcEpilogue()
 
 void V8GCController::checkMemoryUsage()
 {
-#if PLATFORM(CHROMIUM) || PLATFORM(QT) && !OS(SYMBIAN)
-    // These values are appropriate for Chromium only.
-    const int lowUsageMB = 256;  // If memory usage is below this threshold, do not bother forcing GC.
-    const int highUsageMB = 1024;  // If memory usage is above this threshold, force GC more aggresively.
-    const int highUsageDeltaMB = 128;  // Delta of memory usage growth (vs. last workingSetEstimateMB) to force GC when memory usage is high.
+#if PLATFORM(CHROMIUM) || PLATFORM(QT)
+    const int lowMemoryUsageMB = PlatformSupport::lowMemoryUsageMB();
+    const int highMemoryUsageMB = PlatformSupport::highMemoryUsageMB();
+    const int highUsageDeltaMB = PlatformSupport::highUsageDeltaMB();
 #else
     return;
 #endif
 
     int memoryUsageMB = getMemoryUsageInMB();
-    if ((memoryUsageMB > lowUsageMB && memoryUsageMB > 2 * workingSetEstimateMB) || (memoryUsageMB > highUsageMB && memoryUsageMB > workingSetEstimateMB + highUsageDeltaMB))
+    if ((memoryUsageMB > lowMemoryUsageMB && memoryUsageMB > 2 * workingSetEstimateMB) || (memoryUsageMB > highMemoryUsageMB && memoryUsageMB > workingSetEstimateMB + highUsageDeltaMB))
         v8::V8::LowMemoryNotification();
 }
 

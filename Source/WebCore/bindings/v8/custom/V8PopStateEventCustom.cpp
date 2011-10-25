@@ -42,11 +42,12 @@ v8::Handle<v8::Value> V8PopStateEvent::stateAccessorGetter(v8::Local<v8::String>
     INC_STATS("DOM.PopStateEvent.state");
 
     PopStateEvent* event = V8PopStateEvent::toNative(info.Holder());
-    SerializedScriptValue* state = event->state();
-    if (!state)
-        return v8::Null();
-
-    return state->deserialize();
+    SerializedScriptValue* serializedState = event->serializedState();
+    if (serializedState)
+        return serializedState->deserialize();
+    if (!event->state().hasNoValue())
+        return event->state().v8Value();
+    return v8::Null();
 }
 
 } // namespace WebCore

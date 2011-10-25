@@ -74,7 +74,7 @@ void JSErrorHandler::handleEvent(ScriptExecutionContext* scriptExecutionContext,
     ExecState* exec = globalObject->globalExec();
 
     CallData callData;
-    CallType callType = jsFunction->getCallData(callData);
+    CallType callType = jsFunction->methodTable()->getCallData(jsFunction, callData);
 
     if (callType != CallTypeNone) {
         RefPtr<JSErrorHandler> protectedctor(this);
@@ -101,8 +101,7 @@ void JSErrorHandler::handleEvent(ScriptExecutionContext* scriptExecutionContext,
         if (exec->hadException())
             reportCurrentException(exec);
         else {
-            bool retvalbool;
-            if (returnValue.getBoolean(retvalbool) && !retvalbool)
+            if (returnValue.isTrue())
                 event->preventDefault();
         }
     }

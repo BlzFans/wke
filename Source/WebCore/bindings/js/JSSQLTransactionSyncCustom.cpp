@@ -28,7 +28,7 @@
 
 #include "config.h"
 
-#if ENABLE(DATABASE)
+#if ENABLE(SQL_DATABASE)
 
 #include "JSSQLTransactionSync.h"
 
@@ -77,7 +77,7 @@ JSValue JSSQLTransactionSync::executeSql(ExecState* exec)
             if (value.isUndefinedOrNull())
                 sqlValues.append(SQLValue());
             else if (value.isNumber())
-                sqlValues.append(value.uncheckedGetNumber());
+                sqlValues.append(value.asNumber());
             else {
                 // Convert the argument to a string and append it
                 sqlValues.append(ustringToString(value.toString(exec)));
@@ -96,4 +96,4 @@ JSValue JSSQLTransactionSync::executeSql(ExecState* exec)
 
 } // namespace WebCore
 
-#endif // ENABLE(DATABASE)
+#endif // ENABLE(SQL_DATABASE)

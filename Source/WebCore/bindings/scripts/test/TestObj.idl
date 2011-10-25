@@ -32,6 +32,7 @@
 module test {
     interface [
         LegacyDefaultOptionalArguments,
+        Constructor
     ] TestObj {
         // Attributes
         readonly attribute long            readOnlyIntAttr;
@@ -134,6 +135,20 @@ module test {
         attribute [Conditional=Condition1] long conditionalAttr1;
         attribute [Conditional=Condition1&Condition2] long conditionalAttr2;
         attribute [Conditional=Condition1|Condition2] long conditionalAttr3;
+
+        // 'Conditional' extended method
+        [Conditional=Condition1] DOMString conditionalMethod1();
+        [Conditional=Condition1&Condition2] void conditionalMethod2();
+        [Conditional=Condition1|Condition2] void conditionalMethod3();
+
+        attribute [Conditional=Condition1] TestObjectAConstructor conditionalAttr4;
+        attribute [Conditional=Condition1&Condition2] TestObjectBConstructor conditionalAttr5;
+        attribute [Conditional=Condition1|Condition2] TestObjectCConstructor conditionalAttr6;
+
+#if defined(TESTING_V8) || defined(TESTING_JS)
+        readonly attribute [CachedAttribute] any cachedAttribute1;
+        readonly attribute [CachedAttribute] any cachedAttribute2;
+#endif
 
 #if defined(TESTING_V8) || defined(TESTING_JS)
         // Overloads

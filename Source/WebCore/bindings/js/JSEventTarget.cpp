@@ -51,15 +51,11 @@
 #include "XMLHttpRequest.h"
 #include "XMLHttpRequestUpload.h"
 
-#if ENABLE(EVENTSOURCE)
 #include "EventSource.h"
 #include "JSEventSource.h"
-#endif
 
-#if ENABLE(OFFLINE_WEB_APPLICATIONS)
 #include "DOMApplicationCache.h"
 #include "JSDOMApplicationCache.h"
-#endif
 
 #if ENABLE(SVG)
 #include "SVGElementInstance.h"
@@ -113,11 +109,9 @@ JSValue toJS(ExecState* exec, JSDOMGlobalObject* globalObject, EventTarget* targ
 {
     if (!target)
         return jsNull();
-    
-#if ENABLE(EVENTSOURCE)
+
     if (EventSource* eventSource = target->toEventSource())
         return toJS(exec, globalObject, eventSource);
-#endif
 
 #if ENABLE(SVG)
     // SVGElementInstance supports both toSVGElementInstance and toNode since so much mouse handling code depends on toNode returning a valid node.
@@ -137,10 +131,8 @@ JSValue toJS(ExecState* exec, JSDOMGlobalObject* globalObject, EventTarget* targ
     if (XMLHttpRequestUpload* upload = target->toXMLHttpRequestUpload())
         return toJS(exec, globalObject, upload);
 
-#if ENABLE(OFFLINE_WEB_APPLICATIONS)
     if (DOMApplicationCache* cache = target->toDOMApplicationCache())
         return toJS(exec, globalObject, cache);
-#endif
 
     if (MessagePort* messagePort = target->toMessagePort())
         return toJS(exec, globalObject, messagePort);
@@ -220,13 +212,8 @@ EventTarget* toEventTarget(JSC::JSValue value)
     if (value.inherits(&JSDOMWindowShell::s_info))
         return static_cast<JSDOMWindowShell*>(asObject(value))->impl();
 
-#if ENABLE(EVENTSOURCE)
     CONVERT_TO_EVENT_TARGET(EventSource)
-#endif
-
-#if ENABLE(OFFLINE_WEB_APPLICATIONS)
     CONVERT_TO_EVENT_TARGET(DOMApplicationCache)
-#endif
 
 #if ENABLE(SVG)
     CONVERT_TO_EVENT_TARGET(SVGElementInstance)

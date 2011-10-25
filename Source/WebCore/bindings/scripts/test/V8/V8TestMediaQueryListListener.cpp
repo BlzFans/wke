@@ -30,6 +30,7 @@
 #include "V8DOMWrapper.h"
 #include "V8IsolatedContext.h"
 #include "V8Proxy.h"
+#include <wtf/UnusedParam.h>
 
 namespace WebCore {
 
@@ -43,7 +44,7 @@ static v8::Handle<v8::Value> methodCallback(const v8::Arguments& args)
 {
     INC_STATS("DOM.TestMediaQueryListListener.method");
     TestMediaQueryListListener* imp = V8TestMediaQueryListListener::toNative(args.Holder());
-    EXCEPTION_BLOCK(RefPtr<MediaQueryListListener>, listener, MediaQueryListListener::create(args[0]));
+    EXCEPTION_BLOCK(RefPtr<MediaQueryListListener>, listener, MediaQueryListListener::create(MAYBE_MISSING_PARAMETER(args, 0, MissingIsUndefined)));
     imp->method(listener);
     return v8::Handle<v8::Value>();
 }
@@ -53,15 +54,20 @@ static v8::Handle<v8::Value> methodCallback(const v8::Arguments& args)
 static const BatchedCallback TestMediaQueryListListenerCallbacks[] = {
     {"method", TestMediaQueryListListenerInternal::methodCallback},
 };
+
 static v8::Persistent<v8::FunctionTemplate> ConfigureV8TestMediaQueryListListenerTemplate(v8::Persistent<v8::FunctionTemplate> desc)
 {
     desc->ReadOnlyPrototype();
 
-    v8::Local<v8::Signature> defaultSignature = configureTemplate(desc, "TestMediaQueryListListener", v8::Persistent<v8::FunctionTemplate>(), V8TestMediaQueryListListener::internalFieldCount,
+    v8::Local<v8::Signature> defaultSignature;
+    defaultSignature = configureTemplate(desc, "TestMediaQueryListListener", v8::Persistent<v8::FunctionTemplate>(), V8TestMediaQueryListListener::internalFieldCount,
         0, 0,
         TestMediaQueryListListenerCallbacks, WTF_ARRAY_LENGTH(TestMediaQueryListListenerCallbacks));
+    UNUSED_PARAM(defaultSignature); // In some cases, it will not be used.
     v8::Local<v8::ObjectTemplate> instance = desc->InstanceTemplate();
     v8::Local<v8::ObjectTemplate> proto = desc->PrototypeTemplate();
+    UNUSED_PARAM(instance); // In some cases, it will not be used.
+    UNUSED_PARAM(proto); // In some cases, it will not be used.
     
 
     // Custom toString template

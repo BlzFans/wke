@@ -28,9 +28,10 @@
 
 #include "NPV8Object.h"
 
-#include "PlatformBridge.h"
+#include "PlatformSupport.h"
 #include "DOMWindow.h"
 #include "Frame.h"
+#include "NPObjectWrapper.h"
 #include "OwnArrayPtr.h"
 #include "PlatformString.h"
 #include "ScriptSourceCode.h"
@@ -42,12 +43,6 @@
 #include "WrapperTypeInfo.h"
 #include "npruntime_impl.h"
 #include "npruntime_priv.h"
-
-#if PLATFORM(CHROMIUM)
-#include <bindings/npruntime.h>
-#else
-#include "npruntime.h"
-#endif
 
 #include <stdio.h>
 #include <wtf/StringExtras.h>
@@ -279,7 +274,7 @@ bool _NPN_InvokeDefault(NPP npp, NPObject* npObject, const NPVariant* arguments,
 
 bool _NPN_Evaluate(NPP npp, NPObject* npObject, NPString* npScript, NPVariant* result)
 {
-    bool popupsAllowed = PlatformBridge::popupsAllowed(npp);
+    bool popupsAllowed = PlatformSupport::popupsAllowed(npp);
     return _NPN_EvaluateHelper(npp, popupsAllowed, npObject, npScript, result);
 }
 
@@ -289,8 +284,13 @@ bool _NPN_EvaluateHelper(NPP npp, bool popupsAllowed, NPObject* npObject, NPStri
     if (!npObject)
         return false;
 
-    if (npObject->_class != npScriptObjectClass)
-        return false;
+    if (npObject->_class != npScriptObjectClass) {
+        // Check if the object passed in is wrapped. If yes, then we need to invoke on the underlying object.
+        NPObject* actualObject = NPObjectWrapper::getUnderlyingNPObject(npObject);
+        if (!actualObject)
+            return false;
+        npObject = actualObject;
+    }
 
     v8::HandleScope handleScope;
     v8::Handle<v8::Context> context = toV8Context(npp, npObject);

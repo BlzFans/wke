@@ -29,8 +29,6 @@
 */
 
 #include "config.h"
-
-#if ENABLE(DOM_STORAGE)
 #include "V8Storage.h"
 
 #include "Storage.h"
@@ -102,8 +100,7 @@ static v8::Handle<v8::Value> storageSetter(v8::Local<v8::String> v8Name, v8::Loc
     if (name == "length")
         return v8Value;
 
-    v8::Handle<v8::Value> prototypeValue = info.Holder()->GetRealNamedPropertyInPrototypeChain(v8Name);
-    if (!prototypeValue.IsEmpty())
+    if (!info.Holder()->GetRealNamedPropertyInPrototypeChain(v8Name).IsEmpty())
         return notHandledByInterceptor();
 
     ExceptionCode ec = 0;
@@ -154,5 +151,3 @@ v8::Handle<v8::Boolean> V8Storage::namedPropertyDeleter(v8::Local<v8::String> na
 }
 
 } // namespace WebCore
-
-#endif

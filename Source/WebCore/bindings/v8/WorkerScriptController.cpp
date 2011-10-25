@@ -81,7 +81,7 @@ ScriptValue WorkerScriptController::evaluate(const ScriptSourceCode& sourceCode,
         return ScriptValue();
 
     WorkerContextExecutionState state;
-    ScriptValue result = m_proxy->evaluate(sourceCode.source(), sourceCode.url().string(), WTF::toZeroBasedTextPosition(sourceCode.startPosition()), &state);
+    ScriptValue result = m_proxy->evaluate(sourceCode.source(), sourceCode.url().string(), sourceCode.startPosition(), &state);
     if (state.hadException) {
         if (exception)
             *exception = state.exception;
@@ -107,6 +107,10 @@ bool WorkerScriptController::isExecutionForbidden() const
 {
     ASSERT(m_workerContext->isContextThread());
     return m_executionForbidden;
+}
+
+void WorkerScriptController::disableEval()
+{
 }
 
 void WorkerScriptController::setException(ScriptValue exception)

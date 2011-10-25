@@ -29,42 +29,44 @@
 
 #include "JSWebGLRenderingContext.h"
 
-#include "WebKitLoseContext.h"
 #include "ExceptionCode.h"
+#include "Float32Array.h"
 #include "HTMLCanvasElement.h"
 #include "HTMLImageElement.h"
-#include "JSWebKitLoseContext.h"
+#include "Int32Array.h"
+#include "JSFloat32Array.h"
 #include "JSHTMLCanvasElement.h"
 #include "JSHTMLImageElement.h"
 #include "JSImageData.h"
+#include "JSInt32Array.h"
 #include "JSOESStandardDerivatives.h"
 #include "JSOESTextureFloat.h"
 #include "JSOESVertexArrayObject.h"
-#include "JSWebGLVertexArrayObjectOES.h"
+#include "JSUint8Array.h"
 #include "JSWebGLBuffer.h"
-#include "JSFloat32Array.h"
 #include "JSWebGLFramebuffer.h"
-#include "JSInt32Array.h"
 #include "JSWebGLProgram.h"
 #include "JSWebGLRenderbuffer.h"
 #include "JSWebGLShader.h"
 #include "JSWebGLTexture.h"
 #include "JSWebGLUniformLocation.h"
-#include "JSUint8Array.h"
+#include "JSWebGLVertexArrayObjectOES.h"
 #include "JSWebKitCSSMatrix.h"
+#include "JSWebKitLoseContext.h"
 #include "NotImplemented.h"
 #include "OESStandardDerivatives.h"
 #include "OESTextureFloat.h"
 #include "OESVertexArrayObject.h"
-#include "WebGLVertexArrayObjectOES.h"
 #include "WebGLBuffer.h"
-#include "Float32Array.h"
+#include "WebGLDebugRendererInfo.h"
+#include "WebGLDebugShaders.h"
 #include "WebGLExtension.h"
 #include "WebGLFramebuffer.h"
 #include "WebGLGetInfo.h"
-#include "Int32Array.h"
 #include "WebGLProgram.h"
 #include "WebGLRenderingContext.h"
+#include "WebGLVertexArrayObjectOES.h"
+#include "WebKitLoseContext.h"
 #include <runtime/Error.h>
 #include <runtime/JSArray.h>
 #include <wtf/FastMalloc.h>
@@ -187,18 +189,23 @@ static JSValue toJS(ExecState* exec, JSDOMGlobalObject* globalObject, WebGLExten
         return toJS(exec, globalObject, static_cast<OESTextureFloat*>(extension));
     case WebGLExtension::OESVertexArrayObjectName:
         return toJS(exec, globalObject, static_cast<OESVertexArrayObject*>(extension));
+    case WebGLExtension::WebGLDebugRendererInfoName:
+        return toJS(exec, globalObject, static_cast<WebGLDebugRendererInfo*>(extension));
+    case WebGLExtension::WebGLDebugShadersName:
+        return toJS(exec, globalObject, static_cast<WebGLDebugShaders*>(extension));
     }
     ASSERT_NOT_REACHED();
     return jsNull();
 }
 
-void JSWebGLRenderingContext::visitChildren(SlotVisitor& visitor)
+void JSWebGLRenderingContext::visitChildren(JSCell* cell, SlotVisitor& visitor)
 {
-    ASSERT_GC_OBJECT_INHERITS(this, &s_info);
+    JSWebGLRenderingContext* thisObject = static_cast<JSWebGLRenderingContext*>(cell);
+    ASSERT_GC_OBJECT_INHERITS(thisObject, &s_info);
     COMPILE_ASSERT(StructureFlags & OverridesVisitChildren, OverridesVisitChildrenWithoutSettingFlag);
-    ASSERT(structure()->typeInfo().overridesVisitChildren());
-    Base::visitChildren(visitor);
-    visitor.addOpaqueRoot(impl());
+    ASSERT(thisObject->structure()->typeInfo().overridesVisitChildren());
+    Base::visitChildren(thisObject, visitor);
+    visitor.addOpaqueRoot(thisObject->impl());
 }
 
 JSValue JSWebGLRenderingContext::getAttachedShaders(ExecState* exec)
@@ -212,7 +219,7 @@ JSValue JSWebGLRenderingContext::getAttachedShaders(ExecState* exec)
     WebGLProgram* program = toWebGLProgram(exec->argument(0));
     if (exec->hadException())
         return jsNull();
-    Vector<WebGLShader*> shaders;
+    Vector<RefPtr<WebGLShader> > shaders;
     bool succeed = context->getAttachedShaders(program, shaders, ec);
     if (ec) {
         setDOMException(exec, ec);
@@ -222,7 +229,7 @@ JSValue JSWebGLRenderingContext::getAttachedShaders(ExecState* exec)
         return jsNull();
     MarkedArgumentBuffer list;
     for (size_t ii = 0; ii < shaders.size(); ++ii)
-        list.append(toJS(exec, globalObject(), shaders[ii]));
+        list.append(toJS(exec, globalObject(), shaders[ii].get()));
     return constructArray(exec, globalObject(), list);
 }
 
