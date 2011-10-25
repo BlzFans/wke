@@ -204,14 +204,16 @@ public:
     static QtPixmapRuntimeObject* create(ExecState* exec, JSGlobalObject* globalObject, PassRefPtr<Instance> instance)
     {
         Structure* domStructure = WebCore::deprecatedGetDOMStructure<QtPixmapRuntimeObject>(exec);
-        return new (allocateCell<QtPixmapRuntimeObject>(*exec->heap())) QtPixmapRuntimeObject(exec, globalObject, domStructure, instance);
+        QtPixmapRuntimeObject* object = new (allocateCell<QtPixmapRuntimeObject>(*exec->heap())) QtPixmapRuntimeObject(exec, globalObject, domStructure, instance);
+        object->finishCreation(globalObject);
+        return object;
     }
 
     static const ClassInfo s_info;
 
-    static Structure* createStructure(JSGlobalData& globalData, JSValue prototype)
+    static Structure* createStructure(JSGlobalData& globalData, JSGlobalObject* globalObject, JSValue prototype)
     {
-        return Structure::create(globalData, prototype, TypeInfo(ObjectType,  StructureFlags), AnonymousSlotCount, &s_info);
+        return Structure::create(globalData, globalObject, prototype, TypeInfo(ObjectType,  StructureFlags), &s_info);
     }
 
 protected:
@@ -226,7 +228,7 @@ QtPixmapRuntimeObject::QtPixmapRuntimeObject(ExecState* exec, JSGlobalObject* gl
 {
 }
 
-const ClassInfo QtPixmapRuntimeObject::s_info = { "QtPixmapRuntimeObject", &RuntimeObject::s_info, 0, 0 };
+const ClassInfo QtPixmapRuntimeObject::s_info = { "QtPixmapRuntimeObject", &RuntimeObject::s_info, 0, 0, CREATE_METHOD_TABLE(QtPixmapRuntimeObject) };
 
 QtPixmapClass::QtPixmapClass()
 {
@@ -376,7 +378,7 @@ QVariant QtPixmapInstance::variantFromObject(JSObject* object, QMetaType::Type h
         if (!cachedImage)
             goto returnEmptyVariant;
 
-        Image* image = cachedImage->image();
+        Image* image = cachedImage->imageForRenderer(imageElement->renderer());
         if (!image)
             goto returnEmptyVariant;
 

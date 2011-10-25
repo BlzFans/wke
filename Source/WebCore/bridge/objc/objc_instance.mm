@@ -130,13 +130,12 @@ ObjcInstance::~ObjcInstance()
 
 static NSAutoreleasePool* allocateAutoReleasePool()
 {
-#if defined(OBJC_API_VERSION) && OBJC_API_VERSION >= 2
     // If GC is enabled an autorelease pool is unnecessary, and the
     // pool cannot be protected from GC so may be collected leading
     // to a crash when we try to drain the release pool.
     if (objc_collectingEnabled())
         return nil;
-#endif
+
     return [[NSAutoreleasePool alloc] init];
 }
 
@@ -178,25 +177,34 @@ public:
         // FIXME: deprecatedGetDOMStructure uses the prototype off of the wrong global object
         // We need to pass in the right global object for "i".
         Structure* domStructure = WebCore::deprecatedGetDOMStructure<ObjCRuntimeMethod>(exec);
-        return new (allocateCell<ObjCRuntimeMethod>(*exec->heap())) ObjCRuntimeMethod(exec, globalObject, domStructure, name, list);
+        ObjCRuntimeMethod* method = new (allocateCell<ObjCRuntimeMethod>(*exec->heap())) ObjCRuntimeMethod(globalObject, domStructure, list);
+        method->finishCreation(exec->globalData(), name);
+        return method;
     }
 
-    static Structure* createStructure(JSGlobalData& globalData, JSValue prototype)
+    static Structure* createStructure(JSGlobalData& globalData, JSC::JSGlobalObject* globalObject, JSValue prototype)
     {
-        return Structure::create(globalData, prototype, TypeInfo(ObjectType, StructureFlags), AnonymousSlotCount, &s_info);
+        return Structure::create(globalData, globalObject, prototype, TypeInfo(ObjectType, StructureFlags), &s_info);
     }
 
     static const ClassInfo s_info;
 
 private:
-    ObjCRuntimeMethod(ExecState* exec, JSGlobalObject* globalObject, Structure* structure, const Identifier& name, Bindings::MethodList& list)
-        : RuntimeMethod(exec, globalObject, structure, name, list)
+    typedef RuntimeMethod Base;
+
+    ObjCRuntimeMethod(JSGlobalObject* globalObject, Structure* structure, Bindings::MethodList& list)
+        : RuntimeMethod(globalObject, structure, list)
     {
+    }
+
+    void finishCreation(JSGlobalData& globalData, const Identifier& name)
+    {
+        Base::finishCreation(globalData, name);
         ASSERT(inherits(&s_info));
     }
 };
 
-const ClassInfo ObjCRuntimeMethod::s_info = { "ObjCRuntimeMethod", &RuntimeMethod::s_info, 0, 0 };
+const ClassInfo ObjCRuntimeMethod::s_info = { "ObjCRuntimeMethod", &RuntimeMethod::s_info, 0, 0, CREATE_METHOD_TABLE(ObjCRuntimeMethod) };
 
 JSValue ObjcInstance::getMethod(ExecState* exec, const Identifier& propertyName)
 {

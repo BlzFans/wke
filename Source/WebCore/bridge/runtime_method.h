@@ -39,7 +39,9 @@ public:
 
     static RuntimeMethod* create(ExecState* exec, JSGlobalObject* globalObject, Structure* structure, const Identifier& name, Bindings::MethodList& methodList)
     {
-        return new (allocateCell<RuntimeMethod>(*exec->heap())) RuntimeMethod(exec, globalObject, structure, name, methodList);
+        RuntimeMethod* method = new (allocateCell<RuntimeMethod>(*exec->heap())) RuntimeMethod(globalObject, structure, methodList);
+        method->finishCreation(exec->globalData(), name);
+        return method;
     }
 
     Bindings::MethodList* methods() const { return _methodList.get(); }
@@ -51,20 +53,22 @@ public:
         return globalObject->functionPrototype();
     }
 
-    static Structure* createStructure(JSGlobalData& globalData, JSValue prototype)
+    static Structure* createStructure(JSGlobalData& globalData, JSGlobalObject* globalObject, JSValue prototype)
     {
-        return Structure::create(globalData, prototype, TypeInfo(ObjectType, StructureFlags), AnonymousSlotCount, &s_info);
+        return Structure::create(globalData, globalObject, prototype, TypeInfo(ObjectType, StructureFlags), &s_info);
     }
 
 protected:
-    RuntimeMethod(ExecState*, JSGlobalObject*, Structure*, const Identifier& name, Bindings::MethodList&);
+    RuntimeMethod(JSGlobalObject*, Structure*, Bindings::MethodList&);
+    void finishCreation(JSGlobalData&, const Identifier&);
     static const unsigned StructureFlags = OverridesGetOwnPropertySlot | InternalFunction::StructureFlags;
+    static CallType getCallData(JSCell*, CallData&);
 
 private:
     static JSValue lengthGetter(ExecState*, JSValue, const Identifier&);
-    virtual bool getOwnPropertySlot(ExecState*, const Identifier&, PropertySlot&);
+    virtual bool getOwnPropertySlotVirtual(ExecState*, const Identifier&, PropertySlot&);
+    static bool getOwnPropertySlot(JSCell*, ExecState*, const Identifier&, PropertySlot&);
     virtual bool getOwnPropertyDescriptor(ExecState*, const Identifier&, PropertyDescriptor&);
-    virtual CallType getCallData(CallData&);
 
     OwnPtr<Bindings::MethodList> _methodList;
 };

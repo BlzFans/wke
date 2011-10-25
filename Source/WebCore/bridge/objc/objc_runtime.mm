@@ -76,11 +76,7 @@ NSMethodSignature* ObjcMethod::getMethodSignature() const
 
 ObjcField::ObjcField(Ivar ivar) 
     : _ivar(ivar)
-#if defined(OBJC_API_VERSION) && OBJC_API_VERSION >= 2
     , _name(AdoptCF, CFStringCreateWithCString(0, ivar_getName(_ivar), kCFStringEncodingASCII))
-#else
-    , _name(AdoptCF, CFStringCreateWithCString(0, _ivar->ivar_name, kCFStringEncodingASCII))
-#endif
 {
 }
 
@@ -194,17 +190,27 @@ unsigned int ObjcArray::getLength() const
     return [_array.get() count];
 }
 
-const ClassInfo ObjcFallbackObjectImp::s_info = { "ObjcFallbackObject", &JSObjectWithGlobalObject::s_info, 0, 0 };
+const ClassInfo ObjcFallbackObjectImp::s_info = { "ObjcFallbackObject", &JSNonFinalObject::s_info, 0, 0, CREATE_METHOD_TABLE(ObjcFallbackObjectImp) };
 
 ObjcFallbackObjectImp::ObjcFallbackObjectImp(JSGlobalObject* globalObject, Structure* structure, ObjcInstance* i, const Identifier& propertyName)
-    : JSObjectWithGlobalObject(globalObject, structure)
+    : JSNonFinalObject(globalObject->globalData(), structure)
     , _instance(i)
     , _item(propertyName)
 {
+}
+
+void ObjcFallbackObjectImp::finishCreation(JSGlobalObject* globalObject)
+{
+    Base::finishCreation(globalObject->globalData());
     ASSERT(inherits(&s_info));
 }
 
-bool ObjcFallbackObjectImp::getOwnPropertySlot(ExecState*, const Identifier&, PropertySlot& slot)
+bool ObjcFallbackObjectImp::getOwnPropertySlotVirtual(ExecState* exec, const Identifier& identifier, PropertySlot& slot)
+{
+    return getOwnPropertySlot(this, exec, identifier, slot);
+}
+
+bool ObjcFallbackObjectImp::getOwnPropertySlot(JSCell*, ExecState*, const Identifier&, PropertySlot& slot)
 {
     // keep the prototype from getting called instead of just returning false
     slot.setUndefined();
@@ -218,7 +224,11 @@ bool ObjcFallbackObjectImp::getOwnPropertyDescriptor(ExecState*, const Identifie
     return true;
 }
 
-void ObjcFallbackObjectImp::put(ExecState*, const Identifier&, JSValue, PutPropertySlot&)
+void ObjcFallbackObjectImp::putVirtual(ExecState*, const Identifier&, JSValue, PutPropertySlot&)
+{
+}
+
+void ObjcFallbackObjectImp::put(JSCell*, ExecState*, const Identifier&, JSValue, PutPropertySlot&)
 {
 }
 
@@ -254,16 +264,22 @@ static EncodedJSValue JSC_HOST_CALL callObjCFallbackObject(ExecState* exec)
     return JSValue::encode(result);
 }
 
-CallType ObjcFallbackObjectImp::getCallData(CallData& callData)
+CallType ObjcFallbackObjectImp::getCallData(JSCell* cell, CallData& callData)
 {
-    id targetObject = _instance->getObject();
+    ObjcFallbackObjectImp* thisObject = static_cast<ObjcFallbackObjectImp*>(cell);
+    id targetObject = thisObject->_instance->getObject();
     if (![targetObject respondsToSelector:@selector(invokeUndefinedMethodFromWebScript:withArguments:)])
         return CallTypeNone;
     callData.native.function = callObjCFallbackObject;
     return CallTypeHost;
 }
 
-bool ObjcFallbackObjectImp::deleteProperty(ExecState*, const Identifier&)
+bool ObjcFallbackObjectImp::deletePropertyVirtual(ExecState* exec, const Identifier& identifier)
+{
+    return deleteProperty(this, exec, identifier);
+}
+
+bool ObjcFallbackObjectImp::deleteProperty(JSCell*, ExecState*, const Identifier&)
 {
     return false;
 }

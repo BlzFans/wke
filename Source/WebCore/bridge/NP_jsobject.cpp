@@ -274,20 +274,12 @@ bool _NPN_Evaluate(NPP instance, NPObject* o, NPString* s, NPVariant* variant)
         JSLock lock(SilenceAssertionsOnly);
         String scriptString = convertNPStringToUTF16(s);
         RefPtr<JSGlobalData> globalData(&exec->globalData());
-        globalData->timeoutChecker.start();
-        Completion completion = JSC::evaluate(rootObject->globalObject()->globalExec(), rootObject->globalObject()->globalScopeChain(), makeSource(scriptString), JSC::JSValue());
-        globalData->timeoutChecker.stop();
-        ComplType type = completion.complType();
         
-        JSValue result;
-        if (type == Normal) {
-            result = completion.value();
-            if (!result)
-                result = jsUndefined();
-        } else
-            result = jsUndefined();
+        globalData->timeoutChecker.start();
+        JSValue returnValue = JSC::evaluate(rootObject->globalObject()->globalExec(), rootObject->globalObject()->globalScopeChain(), makeSource(scriptString), JSC::JSValue());
+        globalData->timeoutChecker.stop();
 
-        convertValueToNPVariant(exec, result, variant);
+        convertValueToNPVariant(exec, returnValue, variant);
         exec->clearException();
         return true;
     }
@@ -345,9 +337,9 @@ bool _NPN_SetProperty(NPP, NPObject* o, NPIdentifier propertyName, const NPVaria
 
         if (i->isString()) {
             PutPropertySlot slot;
-            obj->imp->put(exec, identifierFromNPIdentifier(exec, i->string()), convertNPVariantToValue(exec, variant, rootObject), slot);
+            obj->imp->putVirtual(exec, identifierFromNPIdentifier(exec, i->string()), convertNPVariantToValue(exec, variant, rootObject), slot);
         } else
-            obj->imp->put(exec, i->number(), convertNPVariantToValue(exec, variant, rootObject));
+            obj->imp->putVirtual(exec, i->number(), convertNPVariantToValue(exec, variant, rootObject));
         exec->clearException();
         return true;
     }
@@ -383,9 +375,9 @@ bool _NPN_RemoveProperty(NPP, NPObject* o, NPIdentifier propertyName)
 
         JSLock lock(SilenceAssertionsOnly);
         if (i->isString())
-            obj->imp->deleteProperty(exec, identifierFromNPIdentifier(exec, i->string()));
+            obj->imp->deletePropertyVirtual(exec, identifierFromNPIdentifier(exec, i->string()));
         else
-            obj->imp->deleteProperty(exec, i->number());
+            obj->imp->deletePropertyVirtual(exec, i->number());
 
         exec->clearException();
         return true;

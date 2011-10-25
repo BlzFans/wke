@@ -41,21 +41,29 @@ public:
         // FIXME: deprecatedGetDOMStructure uses the prototype off of the wrong global object
         // We need to pass in the right global object for "array".
         Structure* domStructure = WebCore::deprecatedGetDOMStructure<RuntimeArray>(exec);
-        return new (allocateCell<RuntimeArray>(*exec->heap())) RuntimeArray(exec, domStructure, array);
+        RuntimeArray* runtimeArray = new (allocateCell<RuntimeArray>(*exec->heap())) RuntimeArray(exec, domStructure);
+        runtimeArray->finishCreation(exec->globalData(), array);
+        return runtimeArray;
     }
 
     typedef Bindings::Array BindingsArray;
     virtual ~RuntimeArray();
 
     virtual void getOwnPropertyNames(ExecState*, PropertyNameArray&, EnumerationMode mode = ExcludeDontEnumProperties);
-    virtual bool getOwnPropertySlot(ExecState*, const Identifier&, PropertySlot&);
-    virtual bool getOwnPropertySlot(ExecState*, unsigned, PropertySlot&);
+    virtual bool getOwnPropertySlotVirtual(ExecState*, const Identifier&, PropertySlot&);
+    static bool getOwnPropertySlot(JSCell*, ExecState*, const Identifier&, PropertySlot&);
+    virtual bool getOwnPropertySlotVirtual(ExecState*, unsigned, PropertySlot&);
+    static bool getOwnPropertySlot(JSCell*, ExecState*, unsigned, PropertySlot&);
     virtual bool getOwnPropertyDescriptor(ExecState*, const Identifier&, PropertyDescriptor&);
-    virtual void put(ExecState*, const Identifier& propertyName, JSValue, PutPropertySlot&);
-    virtual void put(ExecState*, unsigned propertyName, JSValue);
+    virtual void putVirtual(ExecState*, const Identifier& propertyName, JSValue, PutPropertySlot&);
+    static void put(JSCell*, ExecState*, const Identifier& propertyName, JSValue, PutPropertySlot&);
+    virtual void putVirtual(ExecState*, unsigned propertyName, JSValue);
+    static void putByIndex(JSCell*, ExecState*, unsigned propertyName, JSValue);
     
-    virtual bool deleteProperty(ExecState* exec, const Identifier &propertyName);
-    virtual bool deleteProperty(ExecState* exec, unsigned propertyName);
+    virtual bool deletePropertyVirtual(ExecState*, const Identifier &propertyName);
+    static bool deleteProperty(JSCell*, ExecState*, const Identifier &propertyName);
+    virtual bool deletePropertyVirtual(ExecState*, unsigned propertyName);
+    static bool deletePropertyByIndex(JSCell*, ExecState*, unsigned propertyName);
     
     unsigned getLength() const { return getConcreteArray()->getLength(); }
     
@@ -68,16 +76,18 @@ public:
         return globalObject->arrayPrototype();
     }
 
-    static Structure* createStructure(JSGlobalData& globalData, JSValue prototype)
+    static Structure* createStructure(JSGlobalData& globalData, JSGlobalObject* globalObject, JSValue prototype)
     {
-        return Structure::create(globalData, prototype, TypeInfo(ObjectType, StructureFlags), AnonymousSlotCount, &s_info);
+        return Structure::create(globalData, globalObject, prototype, TypeInfo(ObjectType, StructureFlags), &s_info);
     }
 
 protected:
+    void finishCreation(JSGlobalData&, Bindings::Array*);
+
     static const unsigned StructureFlags = OverridesGetOwnPropertySlot | OverridesGetPropertyNames | JSArray::StructureFlags;
 
 private:
-    RuntimeArray(ExecState*, Structure*, Bindings::Array*);
+    RuntimeArray(ExecState*, Structure*);
     static JSValue lengthGetter(ExecState*, JSValue, const Identifier&);
     static JSValue indexGetter(ExecState*, JSValue, unsigned);
 };
