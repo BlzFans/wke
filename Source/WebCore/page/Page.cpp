@@ -63,21 +63,19 @@
 #include "RenderTheme.h"
 #include "RenderWidget.h"
 #include "RuntimeEnabledFeatures.h"
+#include "SchemeRegistry.h"
 #include "Settings.h"
 #include "SharedBuffer.h"
 #include "SpeechInput.h"
 #include "SpeechInputClient.h"
+#include "StorageArea.h"
+#include "StorageNamespace.h"
 #include "TextResourceDecoder.h"
 #include "Widget.h"
 #include <wtf/HashMap.h>
 #include <wtf/RefCountedLeakCounter.h>
 #include <wtf/StdLibExtras.h>
 #include <wtf/text/StringHash.h>
-
-#if ENABLE(DOM_STORAGE)
-#include "StorageArea.h"
-#include "StorageNamespace.h"
-#endif
 
 #if ENABLE(CLIENT_BASED_GEOLOCATION)
 #include "GeolocationController.h"
@@ -87,9 +85,7 @@ namespace WebCore {
 
 static HashSet<Page*>* allPages;
 
-#ifndef NDEBUG
-static WTF::RefCountedLeakCounter pageCounter("Page");
-#endif
+DEFINE_DEBUG_ONLY_GLOBAL(WTF::RefCountedLeakCounter, pageCounter, ("Page"));
 
 static void networkStateChanged()
 {
@@ -106,6 +102,16 @@ static void networkStateChanged()
     AtomicString eventName = networkStateNotifier().onLine() ? eventNames().onlineEvent : eventNames().offlineEvent;
     for (unsigned i = 0; i < frames.size(); i++)
         frames[i]->document()->dispatchWindowEvent(Event::create(eventName, false, false));
+}
+
+float deviceScaleFactor(Frame* frame)
+{
+    if (!frame)
+        return 1;
+    Page* page = frame->page();
+    if (!page)
+        return 1;
+    return page->deviceScaleFactor();
 }
 
 Page::Page(PageClients& pageClients)
@@ -147,6 +153,7 @@ Page::Page(PageClients& pageClients)
     , m_cookieEnabled(true)
     , m_areMemoryCacheClientCallsEnabled(true)
     , m_mediaVolume(1)
+    , m_pageScaleFactor(1)
     , m_deviceScaleFactor(1)
     , m_javaScriptURLsAreAllowed(true)
     , m_didLoadUserStyleSheet(false)
@@ -162,6 +169,7 @@ Page::Page(PageClients& pageClients)
 #if ENABLE(PAGE_VISIBILITY_API)
     , m_visibilityState(PageVisibilityStateVisible)
 #endif
+    , m_displayID(0)
 {
     if (!allPages) {
         allPages = new HashSet<Page*>;
@@ -499,6 +507,34 @@ bool Page::findString(const String& target, FindOptions options)
     return false;
 }
 
+PassRefPtr<Range> Page::rangeOfString(const String& target, Range* referenceRange, FindOptions options)
+{
+    if (target.isEmpty() || !mainFrame())
+        return 0;
+
+    if (referenceRange && referenceRange->ownerDocument()->page() != this)
+        return 0;
+
+    bool shouldWrap = options & WrapAround;
+    Frame* frame = referenceRange ? referenceRange->ownerDocument()->frame() : mainFrame();
+    Frame* startFrame = frame;
+    do {
+        if (RefPtr<Range> resultRange = frame->editor()->rangeOfString(target, frame == startFrame ? referenceRange : 0, (options & ~WrapAround) | StartInSelection))
+            return resultRange.release();
+
+        frame = incrementFrame(frame, !(options & Backwards), shouldWrap);
+    } while (frame && frame != startFrame);
+
+    // Search contents of startFrame, on the other side of the reference range that we did earlier.
+    // We cheat a bit and just search again with wrap on.
+    if (shouldWrap && referenceRange) {
+        if (RefPtr<Range> resultRange = startFrame->editor()->rangeOfString(target, referenceRange, options | WrapAround | StartInSelection))
+            return resultRange.release();
+    }
+
+    return 0;
+}
+
 unsigned int Page::markAllMatchesForText(const String& target, TextCaseSensitivity caseSensitivity, bool shouldHighlight, unsigned limit)
 {
     return markAllMatchesForText(target, caseSensitivity == TextCaseInsensitive ? CaseInsensitive : 0, shouldHighlight, limit);
@@ -580,6 +616,34 @@ void Page::setMediaVolume(float volume)
     }
 }
 
+void Page::setPageScaleFactor(float scale, const LayoutPoint& origin)
+{
+    if (scale == m_pageScaleFactor)
+        return;
+
+    Document* document = mainFrame()->document();
+
+    m_pageScaleFactor = scale;
+
+    if (document->renderer())
+        document->renderer()->setNeedsLayout(true);
+
+    document->recalcStyle(Node::Force);
+
+#if USE(ACCELERATED_COMPOSITING)
+    mainFrame()->deviceOrPageScaleFactorChanged();
+#endif
+
+    if (FrameView* view = document->view()) {
+        if (view->scrollPosition() != origin) {
+          if (document->renderer() && document->renderer()->needsLayout() && view->didFirstLayout())
+              view->layout();
+          view->setScrollPosition(origin);
+        }
+    }
+}
+
+
 void Page::setDeviceScaleFactor(float scaleFactor)
 {
     if (m_deviceScaleFactor == scaleFactor)
@@ -592,6 +656,9 @@ void Page::setDeviceScaleFactor(float scaleFactor)
     m_mainFrame->deviceOrPageScaleFactorChanged();
 #endif
 
+    for (Frame* frame = mainFrame(); frame; frame = frame->tree()->traverseNext())
+        frame->editor()->deviceScaleFactorChanged();
+
     backForward()->markPagesForFullStyleRecalc();
 }
 
@@ -601,6 +668,8 @@ void Page::didMoveOnscreen()
         if (frame->view())
             frame->view()->didMoveOnscreen();
     }
+    
+    resumeScriptedAnimations();
 }
 
 void Page::willMoveOffscreen()
@@ -609,6 +678,34 @@ void Page::willMoveOffscreen()
         if (frame->view())
             frame->view()->willMoveOffscreen();
     }
+    
+    suspendScriptedAnimations();
+}
+
+void Page::windowScreenDidChange(PlatformDisplayID displayID)
+{
+    m_displayID = displayID;
+    
+    for (Frame* frame = mainFrame(); frame; frame = frame->tree()->traverseNext()) {
+        if (frame->document())
+            frame->document()->windowScreenDidChange(displayID);
+    }
+}
+
+void Page::suspendScriptedAnimations()
+{
+    for (Frame* frame = mainFrame(); frame; frame = frame->tree()->traverseNext()) {
+        if (frame->document())
+            frame->document()->suspendScriptedAnimationControllerCallbacks();
+    }
+}
+
+void Page::resumeScriptedAnimations()
+{
+    for (Frame* frame = mainFrame(); frame; frame = frame->tree()->traverseNext()) {
+        if (frame->document())
+            frame->document()->resumeScriptedAnimationControllerCallbacks();
+    }
 }
 
 void Page::userStyleSheetLocationChanged()
@@ -616,7 +713,9 @@ void Page::userStyleSheetLocationChanged()
     // FIXME: Eventually we will move to a model of just being handed the sheet
     // text instead of loading the URL ourselves.
     KURL url = m_settings->userStyleSheetLocation();
-    if (url.isLocalFile())
+    
+    // Allow any local file URL scheme to be loaded.
+    if (SchemeRegistry::shouldTreatURLSchemeAsLocal(url.protocol()))
         m_userStyleSheetPath = url.fileSystemPath();
     else
         m_userStyleSheetPath = String();
@@ -753,7 +852,6 @@ void Page::setDebugger(JSC::Debugger* debugger)
         frame->script()->attachDebugger(m_debugger);
 }
 
-#if ENABLE(DOM_STORAGE)
 StorageNamespace* Page::sessionStorage(bool optionalCreate)
 {
     if (!m_sessionStorage && optionalCreate)
@@ -766,7 +864,6 @@ void Page::setSessionStorage(PassRefPtr<StorageNamespace> newStorage)
 {
     m_sessionStorage = newStorage;
 }
-#endif
 
 void Page::setCustomHTMLTokenizerTimeDelay(double customHTMLTokenizerTimeDelay)
 {

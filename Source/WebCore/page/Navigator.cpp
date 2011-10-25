@@ -167,7 +167,6 @@ Geolocation* Navigator::geolocation() const
     return m_geolocation.get();
 }
 
-#if ENABLE(DOM_STORAGE)
 void Navigator::getStorageUpdates()
 {
     if (!m_frame)
@@ -181,7 +180,6 @@ void Navigator::getStorageUpdates()
     if (localStorage)
         localStorage->unlock();
 }
-#endif
 
 #if ENABLE(REGISTER_PROTOCOL_HANDLER)
 static HashSet<String>* protocolWhitelist;
@@ -190,10 +188,15 @@ static void initProtocolHandlerWhitelist()
 {
     protocolWhitelist = new HashSet<String>;
     static const char* protocols[] = {
+        "irc",
         "mailto",
         "mms",
+        "news",
         "nntp",
-        "rtsp",
+        "sms",
+        "smsto",
+        "tel",
+        "urn",
         "webcal",
     };
     for (size_t i = 0; i < WTF_ARRAY_LENGTH(protocols); ++i)

@@ -23,7 +23,9 @@
 
 #include "FrameLoaderTypes.h"
 #include "FindOptions.h"
+#include "LayoutTypes.h"
 #include "PageVisibilityState.h"
+#include "PlatformScreen.h"
 #include "PlatformString.h"
 #include "ViewportArguments.h"
 #include <wtf/Forward.h>
@@ -75,15 +77,14 @@ namespace WebCore {
     class PageGroup;
     class PluginData;
     class ProgressTracker;
+    class Range;
     class RenderTheme;
     class VisibleSelection;
     class ScrollableArea;
     class Settings;
     class SpeechInput;
     class SpeechInputClient;
-#if ENABLE(DOM_STORAGE)
     class StorageNamespace;
-#endif
 #if ENABLE(NOTIFICATIONS)
     class NotificationPresenter;
 #endif
@@ -91,6 +92,8 @@ namespace WebCore {
     typedef uint64_t LinkHash;
 
     enum FindDirection { FindDirectionForward, FindDirectionBackward };
+
+    float deviceScaleFactor(Frame*);
 
     class Page {
         WTF_MAKE_NONCOPYABLE(Page);
@@ -210,6 +213,9 @@ namespace WebCore {
         bool findString(const String&, FindOptions);
         // FIXME: Switch callers over to the FindOptions version and retire this one.
         bool findString(const String&, TextCaseSensitivity, FindDirection, bool shouldWrap);
+
+        PassRefPtr<Range> rangeOfString(const String&, Range*, FindOptions);
+
         unsigned markAllMatchesForText(const String&, FindOptions, bool shouldHighlight, unsigned);
         // FIXME: Switch callers over to the FindOptions version and retire this one.
         unsigned markAllMatchesForText(const String&, TextCaseSensitivity, bool shouldHighlight, unsigned);
@@ -239,6 +245,9 @@ namespace WebCore {
         float mediaVolume() const { return m_mediaVolume; }
         void setMediaVolume(float volume);
 
+        void setPageScaleFactor(float scale, const LayoutPoint& origin);
+        float pageScaleFactor() const { return m_pageScaleFactor; }
+
         float deviceScaleFactor() const { return m_deviceScaleFactor; }
         void setDeviceScaleFactor(float);
 
@@ -246,6 +255,11 @@ namespace WebCore {
         void didMoveOnscreen();
         void willMoveOffscreen();
 
+        void windowScreenDidChange(PlatformDisplayID);
+        
+        void suspendScriptedAnimations();
+        void resumeScriptedAnimations();
+        
         void userStyleSheetLocationChanged();
         const String& userStyleSheet() const;
 
@@ -261,10 +275,8 @@ namespace WebCore {
         static void allVisitedStateChanged(PageGroup*);
         static void visitedStateChanged(PageGroup*, LinkHash visitedHash);
 
-#if ENABLE(DOM_STORAGE)
         StorageNamespace* sessionStorage(bool optionalCreate = true);
         void setSessionStorage(PassRefPtr<StorageNamespace>);
-#endif
 
         void setCustomHTMLTokenizerTimeDelay(double);
         bool hasCustomHTMLTokenizerTimeDelay() const { return m_customHTMLTokenizerTimeDelay != -1; }
@@ -300,6 +312,8 @@ namespace WebCore {
         void setVisibilityState(PageVisibilityState, bool);
 #endif
 
+        PlatformDisplayID displayID() const { return m_displayID; }
+        
     private:
         void initGroup();
 
@@ -365,6 +379,7 @@ namespace WebCore {
         bool m_areMemoryCacheClientCallsEnabled;
         float m_mediaVolume;
 
+        float m_pageScaleFactor;
         float m_deviceScaleFactor;
 
         bool m_javaScriptURLsAreAllowed;
@@ -384,9 +399,7 @@ namespace WebCore {
 
         bool m_canStartMedia;
 
-#if ENABLE(DOM_STORAGE)
         RefPtr<StorageNamespace> m_sessionStorage;
-#endif
 
 #if ENABLE(NOTIFICATIONS)
         NotificationPresenter* m_notificationPresenter;
@@ -405,6 +418,7 @@ namespace WebCore {
 #if ENABLE(PAGE_VISIBILITY_API)
         PageVisibilityState m_visibilityState;
 #endif
+        PlatformDisplayID m_displayID;
     };
 
 } // namespace WebCore

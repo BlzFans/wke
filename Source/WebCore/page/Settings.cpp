@@ -79,6 +79,8 @@ bool Settings::gShouldPaintNativeControls = true;
 bool Settings::gAVFoundationEnabled(false);
 #endif
 
+bool Settings::gMockScrollbarsEnabled = false;
+
 #if PLATFORM(WIN) || (OS(WINDOWS) && PLATFORM(WX))
 bool Settings::gShouldUseHighResolutionTimers = true;
 #endif
@@ -120,9 +122,7 @@ Settings::Settings(Page* page)
     , m_maximumDecodedImageSize(numeric_limits<size_t>::max())
     , m_deviceWidth(480)
     , m_deviceHeight(854)
-#if ENABLE(DOM_STORAGE)
     , m_sessionStorageQuota(StorageMap::noQuota)
-#endif
     , m_editingBehaviorType(editingBehaviorTypeForPlatform())
     , m_maximumHTMLParserDOMTreeDepth(defaultMaximumHTMLParserDOMTreeDepth)
     , m_isSpatialNavigationEnabled(false)
@@ -165,7 +165,6 @@ Settings::Settings(Page* page)
     , m_localFileContentSniffingEnabled(false)
     , m_inApplicationChromeMode(false)
     , m_offlineWebApplicationCacheEnabled(false)
-    , m_shouldPaintCustomScrollbars(false)
     , m_enforceCSSMIMETypeInNoQuirksMode(true)
     , m_usesEncodingDetector(false)
     , m_allowScriptsToCloseWindows(false)
@@ -196,7 +195,15 @@ Settings::Settings(Page* page)
 #if ENABLE(FULLSCREEN_API)
     , m_fullScreenAPIEnabled(false)
 #endif
+#if ENABLE(MOUSE_LOCK_API)
+    , m_mouseLockAPIEnabled(false)
+#endif
     , m_asynchronousSpellCheckingEnabled(false)
+#if USE(UNIFIED_TEXT_CHECKING)
+    , m_unifiedTextCheckerEnabled(true)
+#else
+    , m_unifiedTextCheckerEnabled(false)
+#endif
     , m_memoryInfoEnabled(false)
     , m_interactiveFormValidation(false)
     , m_usePreHTML5ParserQuirks(false)
@@ -207,14 +214,19 @@ Settings::Settings(Page* page)
     , m_allowDisplayOfInsecureContent(true)
     , m_allowRunningOfInsecureContent(true)
 #if ENABLE(SMOOTH_SCROLLING)
-    , m_scrollAnimatorEnabled(false)
+    , m_scrollAnimatorEnabled(true)
 #endif
 #if ENABLE(WEB_SOCKETS)
     , m_useHixie76WebSocketProtocol(true)
 #endif
     , m_mediaPlaybackRequiresUserGesture(false)
     , m_mediaPlaybackAllowsInline(true)
+#if OS(SYMBIAN)
+    , m_passwordEchoEnabled(true)
+#else
     , m_passwordEchoEnabled(false)
+#endif
+    , m_suppressIncrementalRendering(false)
     , m_loadsImagesAutomaticallyTimer(this, &Settings::loadsImagesAutomaticallyTimerFired)
 {
     // A Frame may not have been created yet, so we initialize the AtomicString 
@@ -402,24 +414,32 @@ void Settings::setLocalStorageEnabled(bool localStorageEnabled)
     m_localStorageEnabled = localStorageEnabled;
 }
 
-#if ENABLE(DOM_STORAGE)
 void Settings::setSessionStorageQuota(unsigned sessionStorageQuota)
 {
     m_sessionStorageQuota = sessionStorageQuota;
 }
-#endif
 
 void Settings::setPrivateBrowsingEnabled(bool privateBrowsingEnabled)
 {
-    if (m_privateBrowsingEnabled == privateBrowsingEnabled)
-        return;
-
+    // FIXME http://webkit.org/b/67870: The private browsing storage session and cookie private
+    // browsing mode (which is used if storage sessions are not available) are global settings, so
+    // it is misleading to have them as per-page settings.
+    // In addition, if they are treated as a per Page settings, the global values can get out of
+    // sync with the per Page value in the following situation:
+    // 1. The global values get set to true when setPrivateBrowsingEnabled(true) is called.
+    // 2. All Pages are closed, so all Settings objects go away.
+    // 3. A new Page is created, and a corresponding new Settings object is created - with
+    //    m_privateBrowsingEnabled starting out as false in the constructor.
+    // 4. The WebPage settings get applied to the new Page and setPrivateBrowsingEnabled(false)
+    //    is called, but an if (m_privateBrowsingEnabled == privateBrowsingEnabled) early return
+    //    prevents the global values from getting changed from true to false.
 #if USE(CFURLSTORAGESESSIONS)
     ResourceHandle::setPrivateBrowsingEnabled(privateBrowsingEnabled);
 #endif
-
-    // FIXME: We can only enable cookie private browsing mode globally, so it's misleading to have it as a per-page setting.
     setCookieStoragePrivateBrowsingEnabled(privateBrowsingEnabled);
+
+    if (m_privateBrowsingEnabled == privateBrowsingEnabled)
+        return;
 
     m_privateBrowsingEnabled = privateBrowsingEnabled;
     m_page->privateBrowsingStateChanged();
@@ -635,11 +655,6 @@ void Settings::setOfflineWebApplicationCacheEnabled(bool enabled)
     m_offlineWebApplicationCacheEnabled = enabled;
 }
 
-void Settings::setShouldPaintCustomScrollbars(bool shouldPaintCustomScrollbars)
-{
-    m_shouldPaintCustomScrollbars = shouldPaintCustomScrollbars;
-}
-
 void Settings::setEnforceCSSMIMETypeInNoQuirksMode(bool enforceCSSMIMETypeInNoQuirksMode)
 {
     m_enforceCSSMIMETypeInNoQuirksMode = enforceCSSMIMETypeInNoQuirksMode;
@@ -798,10 +813,20 @@ void Settings::setLoadDeferringEnabled(bool enabled)
 void Settings::setTiledBackingStoreEnabled(bool enabled)
 {
     m_tiledBackingStoreEnabled = enabled;
-#if ENABLE(TILED_BACKING_STORE)
+#if USE(TILED_BACKING_STORE)
     if (m_page->mainFrame())
         m_page->mainFrame()->setTiledBackingStoreEnabled(enabled);
 #endif
+}
+
+void Settings::setMockScrollbarsEnabled(bool flag)
+{
+    gMockScrollbarsEnabled = flag;
+}
+
+bool Settings::mockScrollbarsEnabled()
+{
+    return gMockScrollbarsEnabled;
 }
 
 } // namespace WebCore

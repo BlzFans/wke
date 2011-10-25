@@ -127,6 +127,21 @@ const double autoscrollInterval = 0.05;
 
 const double fakeMouseMoveInterval = 0.1;
 
+enum NoCursorChangeType { NoCursorChange };
+
+class OptionalCursor {
+public:
+    OptionalCursor(NoCursorChangeType) : m_isCursorChange(false) { }
+    OptionalCursor(const Cursor& cursor) : m_isCursorChange(true), m_cursor(cursor) { }
+
+    bool isCursorChange() const { return m_isCursorChange; }
+    const Cursor& cursor() const { return m_cursor; }
+
+private:
+    bool m_isCursorChange;
+    Cursor m_cursor;
+};
+
 static inline bool scrollNode(float delta, WheelEvent::Granularity granularity, ScrollDirection positiveDirection, ScrollDirection negativeDirection, Node* node, Node** stopNode)
 {
     if (!delta)
@@ -473,7 +488,7 @@ bool EventHandler::handleMousePressEvent(const MouseEventWithHitTestResults& eve
         && static_cast<SVGDocument*>(m_frame->document())->zoomAndPanEnabled()) {
         if (event.event().shiftKey() && singleClick) {
             m_svgPan = true;
-            static_cast<SVGDocument*>(m_frame->document())->startPan(event.event().pos());
+            static_cast<SVGDocument*>(m_frame->document())->startPan(m_frame->view()->windowToContents(event.event().pos()));
             return true;
         }
     }
@@ -690,7 +705,8 @@ void EventHandler::updateSelectionForMouseDrag(const HitTestResult& hitTestResul
     if (m_frame->selection()->granularity() != CharacterGranularity)
         newSelection.expandUsingGranularity(m_frame->selection()->granularity());
 
-    m_frame->selection()->setNonDirectionalSelectionIfNeeded(newSelection, m_frame->selection()->granularity());
+    m_frame->selection()->setNonDirectionalSelectionIfNeeded(newSelection, m_frame->selection()->granularity(),
+        FrameSelection::AdjustEndpointsAtBidiBoundary);
 }
 #endif // ENABLE(DRAG_SUPPORT)
 
@@ -1149,12 +1165,20 @@ static bool nodeIsNotBeingEdited(Node* node, Frame* frame)
     return frame->selection()->rootEditableElement() != node->rootEditableElement();
 }
 
-Cursor EventHandler::selectCursor(const MouseEventWithHitTestResults& event, Scrollbar* scrollbar)
+OptionalCursor EventHandler::selectCursor(const MouseEventWithHitTestResults& event, Scrollbar* scrollbar)
 {
+    if (m_resizeLayer && m_resizeLayer->inResizeMode())
+        return NoCursorChange;
+
+    Page* page = m_frame->page();
+    if (!page)
+        return NoCursorChange;
+    if (page->mainFrame()->eventHandler()->m_panScrollInProgress)
+        return NoCursorChange;
+
     Node* node = targetNode(event);
     RenderObject* renderer = node ? node->renderer() : 0;
     RenderStyle* style = renderer ? renderer->style() : 0;
-
     bool horizontalText = !style || style->isHorizontalWritingMode();
     const Cursor& iBeam = horizontalText ? iBeamCursor() : verticalTextCursor();
 
@@ -1163,18 +1187,22 @@ Cursor EventHandler::selectCursor(const MouseEventWithHitTestResults& event, Scr
     if (m_mousePressed && m_mouseDownMayStartSelect && m_frame->selection()->isCaretOrRange() && !m_capturingMouseEventsNode)
         return iBeam;
 
-    if (renderer && renderer->isFrameSet()) {
-        RenderFrameSet* frameSetRenderer = toRenderFrameSet(renderer);
-        if (frameSetRenderer->canResizeRow(event.localPoint()))
-            return rowResizeCursor();
-        if (frameSetRenderer->canResizeColumn(event.localPoint()))
-            return columnResizeCursor();
+    if (renderer) {
+        Cursor overrideCursor;
+        switch (renderer->getCursor(event.localPoint(), overrideCursor)) {
+        case SetCursorBasedOnStyle:
+            break;
+        case SetCursor:
+            return overrideCursor;
+        case DoNotSetCursor:
+            return NoCursorChange;
+        }
     }
 
     if (style && style->cursors()) {
         const CursorList* cursors = style->cursors();
         for (unsigned i = 0; i < cursors->size(); ++i) {
-            const CachedImage* cimage = 0;
+            CachedImage* cimage = 0;
             StyleImage* image = (*cursors)[i].image();
             if (image && image->isCachedImage())
                 cimage = static_cast<StyleCachedImage*>(image)->cachedImage();
@@ -1182,11 +1210,11 @@ Cursor EventHandler::selectCursor(const MouseEventWithHitTestResults& event, Scr
                 continue;
             IntPoint hotSpot = (*cursors)[i].hotSpot();
             // Limit the size of cursors so that they cannot be used to cover UI elements in chrome.
-            IntSize size = cimage->image()->size();
+            IntSize size = cimage->imageForRenderer(renderer)->size();
             if (size.width() > 128 || size.height() > 128)
                 continue;
             if (!cimage->errorOccurred())
-                return Cursor(cimage->image(), hotSpot);
+                return Cursor(cimage->imageForRenderer(renderer), hotSpot);
         }
     }
 
@@ -1341,6 +1369,9 @@ bool EventHandler::handleMousePressEvent(const PlatformMouseEvent& mouseEvent)
 
     UserGestureIndicator gestureIndicator(DefinitelyProcessingUserGesture);
 
+    // FIXME (bug 68185): this call should be made at another abstraction layer
+    m_frame->loader()->resetMultipleFormSubmissionProtection();
+    
     cancelFakeMouseMoveEvent();
     m_mousePressed = true;
     m_capturesDragging = true;
@@ -1561,7 +1592,7 @@ bool EventHandler::handleMouseMoveEvent(const PlatformMouseEvent& mouseEvent, Hi
 
 #if ENABLE(SVG)
     if (m_svgPan) {
-        static_cast<SVGDocument*>(m_frame->document())->updatePan(m_currentMousePosition);
+        static_cast<SVGDocument*>(m_frame->document())->updatePan(m_frame->view()->windowToContents(m_currentMousePosition));
         return true;
     }
 #endif
@@ -1625,21 +1656,10 @@ bool EventHandler::handleMouseMoveEvent(const PlatformMouseEvent& mouseEvent, Hi
     } else {
         if (scrollbar && !m_mousePressed)
             scrollbar->mouseMoved(mouseEvent); // Handle hover effects on platforms that support visual feedback on scrollbar hovering.
-        if (Page* page = m_frame->page()) {
-            if ((!m_resizeLayer || !m_resizeLayer->inResizeMode()) && !page->mainFrame()->eventHandler()->m_panScrollInProgress) {
-                // Plugins set cursor on their own. The only case WebKit intervenes is resetting cursor to arrow on mouse enter,
-                // in case the particular plugin doesn't manipulate cursor at all. Thus,  even a CSS cursor set on body has no
-                // effect on plugins (which matches Firefox).
-                bool overPluginElement = false;
-                if (targetNode(mev) && targetNode(mev)->isHTMLElement()) {
-                    HTMLElement* el = toHTMLElement(targetNode(mev));
-                    overPluginElement = el->hasTagName(appletTag) || el->hasTagName(objectTag) || el->hasTagName(embedTag);
-                }
-                if (!overPluginElement) {
-                    if (FrameView* view = m_frame->view())
-                        view->setCursor(selectCursor(mev, scrollbar));
-                }
-            }
+        if (FrameView* view = m_frame->view()) {
+            OptionalCursor optionalCursor = selectCursor(mev, scrollbar);
+            if (optionalCursor.isCursorChange())
+                view->setCursor(optionalCursor.cursor());
         }
     }
     
@@ -1682,7 +1702,7 @@ bool EventHandler::handleMouseReleaseEvent(const PlatformMouseEvent& mouseEvent)
 #if ENABLE(SVG)
     if (m_svgPan) {
         m_svgPan = false;
-        static_cast<SVGDocument*>(m_frame->document())->updatePan(m_currentMousePosition);
+        static_cast<SVGDocument*>(m_frame->document())->updatePan(m_frame->view()->windowToContents(m_currentMousePosition));
         return true;
     }
 #endif
@@ -2147,6 +2167,7 @@ bool EventHandler::handleWheelEvent(PlatformWheelEvent& e)
         isOverWidget = result.isOverWidget();
     }
 
+    // FIXME: This should not mutate the event.
     if (shouldTurnVerticalTicksIntoHorizontal(result))
         e.turnVerticalTicksIntoHorizontal();
 
@@ -2156,29 +2177,22 @@ bool EventHandler::handleWheelEvent(PlatformWheelEvent& e)
         
         if (isOverWidget && target && target->isWidget()) {
             Widget* widget = toRenderWidget(target)->widget();
-            if (widget && passWheelEventToWidget(e, widget)) {
-                e.accept();
+            if (widget && passWheelEventToWidget(e, widget))
                 return true;
-            }
         }
 
         node = node->shadowAncestorNode();
-        if (node && !node->dispatchWheelEvent(e)) {
-            e.accept();
+        if (node && !node->dispatchWheelEvent(e))
             return true;
-        }
     }
 
-    if (e.isAccepted())
-        return true;
 
     // We do another check on the frame view because the event handler can run JS which results in the frame getting destroyed.
     view = m_frame->view();
     if (!view)
         return false;
     
-    view->wheelEvent(e);
-    return e.isAccepted();
+    return view->wheelEvent(e);
 }
     
 void EventHandler::defaultWheelEventHandler(Node* startNode, WheelEvent* wheelEvent)
@@ -2209,6 +2223,8 @@ bool EventHandler::handleGestureEvent(const PlatformGestureEvent& gestureEvent)
     // end gesture as well.
 
     switch (gestureEvent.type()) {
+    case PlatformGestureEvent::TapDownType:
+        break;
     case PlatformGestureEvent::TapType: {
         // FIXME: Refactor this code to not hit test multiple times once hit testing has been corrected as suggested above.
         PlatformMouseEvent fakeMouseMove(gestureEvent.position(), gestureEvent.globalPosition(), NoButton, MouseEventMoved, /* clickCount */ 1, gestureEvent.shiftKey(), gestureEvent.ctrlKey(), gestureEvent.altKey(), gestureEvent.metaKey(), gestureEvent.timestamp());
@@ -2222,11 +2238,13 @@ bool EventHandler::handleGestureEvent(const PlatformGestureEvent& gestureEvent)
     case PlatformGestureEvent::ScrollUpdateType: {
         const float tickDivisor = (float)WheelEvent::tickMultiplier;
         // FIXME: Replace this interim implementation once the above fixme has been addressed.
-        IntPoint point(gestureEvent.position().x() + gestureEvent.deltaX(), gestureEvent.position().y() + gestureEvent.deltaY());
-        PlatformWheelEvent syntheticWheelEvent(point, point, gestureEvent.deltaX(), gestureEvent.deltaY(), gestureEvent.deltaX() / tickDivisor, gestureEvent.deltaY() / tickDivisor, ScrollByPixelWheelEvent, /* isAccepted */ false, gestureEvent.shiftKey(), gestureEvent.ctrlKey(), gestureEvent.altKey(), gestureEvent.metaKey());
+        IntPoint point(gestureEvent.position().x(), gestureEvent.position().y());
+        IntPoint globalPoint(gestureEvent.globalPosition().x(), gestureEvent.globalPosition().y());
+        PlatformWheelEvent syntheticWheelEvent(point, globalPoint, gestureEvent.deltaX(), gestureEvent.deltaY(), gestureEvent.deltaX() / tickDivisor, gestureEvent.deltaY() / tickDivisor, ScrollByPixelWheelEvent, gestureEvent.shiftKey(), gestureEvent.ctrlKey(), gestureEvent.altKey(), gestureEvent.metaKey());
         handleWheelEvent(syntheticWheelEvent);
         return true;
     }
+    case PlatformGestureEvent::DoubleTapType:
     case PlatformGestureEvent::ScrollBeginType:
     case PlatformGestureEvent::ScrollEndType:
         FrameView* view = m_frame->view();
@@ -2513,7 +2531,7 @@ bool EventHandler::keyEvent(const PlatformKeyboardEvent& initialKeyEvent)
     if (FrameView* view = m_frame->view())
         view->resetDeferredRepaintDelay();
 
-    // FIXME: what is this doing here, in keyboard event handler?
+    // FIXME (bug 68185): this call should be made at another abstraction layer
     m_frame->loader()->resetMultipleFormSubmissionProtection();
 
     // In IE, access keys are special, they are handled after default keydown processing, but cannot be canceled - this is hard to match.
@@ -2940,7 +2958,7 @@ bool EventHandler::isKeyboardOptionTab(KeyboardEvent* event)
 
 bool EventHandler::eventInvertsTabsToLinksClientCallResult(KeyboardEvent* event)
 {
-#if PLATFORM(MAC) || PLATFORM(QT) || PLATFORM(HAIKU) || PLATFORM(EFL)
+#if PLATFORM(MAC) || PLATFORM(QT) || PLATFORM(EFL)
     return EventHandler::isKeyboardOptionTab(event);
 #else
     return false;
@@ -3210,8 +3228,10 @@ bool EventHandler::handleTouchEvent(const PlatformTouchEvent& event)
             pagePoint = documentPointForWindowPoint(doc->frame(), point.pos());
         }
 
-        int adjustedPageX = lroundf(pagePoint.x() / m_frame->pageZoomFactor());
-        int adjustedPageY = lroundf(pagePoint.y() / m_frame->pageZoomFactor());
+        float scaleFactor = m_frame->pageZoomFactor() * m_frame->frameScaleFactor();
+
+        int adjustedPageX = lroundf(pagePoint.x() / scaleFactor);
+        int adjustedPageY = lroundf(pagePoint.y() / scaleFactor);
 
         // Increment the platform touch id by 1 to avoid storing a key of 0 in the hashmap.
         unsigned touchPointTargetKey = point.id() + 1;

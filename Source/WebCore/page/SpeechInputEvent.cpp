@@ -29,24 +29,42 @@
  */
 
 #include "config.h"
-#include "SpeechInputEvent.h"
 
 #if ENABLE(INPUT_SPEECH)
 
+#include "SpeechInputEvent.h"
+
+#include "EventNames.h"
+
 namespace WebCore {
+
+PassRefPtr<SpeechInputEvent> SpeechInputEvent::create()
+{
+    return adoptRef(new SpeechInputEvent);
+}
 
 PassRefPtr<SpeechInputEvent> SpeechInputEvent::create(const AtomicString& eventType, const SpeechInputResultArray& results)
 {
     return adoptRef(new SpeechInputEvent(eventType, results));
 }
 
-SpeechInputEvent::~SpeechInputEvent() {
+SpeechInputEvent::SpeechInputEvent()
+{
 }
 
 SpeechInputEvent::SpeechInputEvent(const AtomicString& eventType, const SpeechInputResultArray& results)
     : Event(eventType, true, false) // Can bubble, not cancelable
     , m_results(SpeechInputResultList::create(results))
 {
+}
+
+SpeechInputEvent::~SpeechInputEvent()
+{
+}
+
+const AtomicString& SpeechInputEvent::interfaceName() const
+{
+    return eventNames().interfaceForSpeechInputEvent;
 }
 
 } // namespace WebCore

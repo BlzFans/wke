@@ -96,9 +96,9 @@ public:
     virtual ~SerializerMarkupAccumulator();
 
 protected:
-    virtual void appendText(Vector<UChar>& out, Text*);
-    virtual void appendElement(Vector<UChar>& out, Element*, Namespaces*);
-    virtual void appendCustomAttributes(Vector<UChar>& out, Element*, Namespaces*);
+    virtual void appendText(StringBuilder& out, Text*);
+    virtual void appendElement(StringBuilder& out, Element*, Namespaces*);
+    virtual void appendCustomAttributes(StringBuilder& out, Element*, Namespaces*);
     virtual void appendEndTag(Node*);
 
 private:
@@ -120,27 +120,28 @@ SerializerMarkupAccumulator::~SerializerMarkupAccumulator()
 {
 }
 
-void SerializerMarkupAccumulator::appendText(Vector<UChar>& out, Text* text)
+void SerializerMarkupAccumulator::appendText(StringBuilder& out, Text* text)
 {
     Element* parent = text->parentElement();
     if (parent && !shouldIgnoreElement(parent))
         MarkupAccumulator::appendText(out, text);
 }
 
-void SerializerMarkupAccumulator::appendElement(Vector<UChar>& out, Element* element, Namespaces* namespaces)
+void SerializerMarkupAccumulator::appendElement(StringBuilder& out, Element* element, Namespaces* namespaces)
 {
     if (!shouldIgnoreElement(element))
         MarkupAccumulator::appendElement(out, element, namespaces);
 
     if (element->hasTagName(HTMLNames::headTag)) {
-        String meta = "<meta charset=\"" + m_document->charset() + "\">";
-        out.append(meta.characters(), meta.length());
+        out.append("<meta charset=\"");
+        out.append(m_document->charset());
+        out.append("\">");
     }
 
     // FIXME: For object (plugins) tags and video tag we could replace them by an image of their current contents.
 }
 
-void SerializerMarkupAccumulator::appendCustomAttributes(Vector<UChar>& out, Element* element, Namespaces* namespaces)
+void SerializerMarkupAccumulator::appendCustomAttributes(StringBuilder& out, Element* element, Namespaces* namespaces)
 {
     if (!element->isFrameOwnerElement())
         return;
@@ -230,7 +231,7 @@ void PageSerializer::serializeFrame(Frame* frame)
             HTMLImageElement* imageElement = static_cast<HTMLImageElement*>(element);
             KURL url = document->completeURL(imageElement->getAttribute(HTMLNames::srcAttr));
             CachedImage* cachedImage = imageElement->cachedImage();
-            addImageToResources(cachedImage, url);
+            addImageToResources(cachedImage, imageElement->renderer(), url);
         } else if (element->hasTagName(HTMLNames::linkTag)) {
             HTMLLinkElement* linkElement = static_cast<HTMLLinkElement*>(element);
             StyleSheet* sheet = linkElement->sheet();
@@ -255,25 +256,25 @@ void PageSerializer::serializeCSSStyleSheet(CSSStyleSheet* styleSheet, const KUR
 {
     StringBuilder cssText;
     for (unsigned i = 0; i < styleSheet->length(); ++i) {
-        StyleBase* item = styleSheet->item(i);
-        String itemText = item->cssText();
+        CSSRule* rule = styleSheet->item(i);
+        String itemText = rule->cssText();
         if (!itemText.isEmpty()) {
             cssText.append(itemText);
             if (i < styleSheet->length() - 1)
                 cssText.append("\n\n");
         }
         // Some rules have resources associated with them that we need to retrieve.
-        if (item->isImportRule()) {
-            CSSImportRule* importRule = static_cast<CSSImportRule*>(item);
+        if (rule->isImportRule()) {
+            CSSImportRule* importRule = static_cast<CSSImportRule*>(rule);
             KURL importURL = styleSheet->document()->completeURL(importRule->href());
             if (m_resourceURLs.contains(importURL))
                 continue;
             serializeCSSStyleSheet(importRule->styleSheet(), importURL);
-        } else if (item->isFontFaceRule()) {
+        } else if (rule->isFontFaceRule()) {
             // FIXME: Add support for font face rule. It is not clear to me at this point if the actual otf/eot file can
             // be retrieved from the CSSFontFaceRule object.
-        } else if (item->isStyleRule())
-            retrieveResourcesForCSSRule(static_cast<CSSStyleRule*>(item));
+        } else if (rule->isStyleRule())
+            retrieveResourcesForCSSRule(static_cast<CSSStyleRule*>(rule));
     }
 
     if (url.isValid() && !m_resourceURLs.contains(url)) {
@@ -287,7 +288,7 @@ void PageSerializer::serializeCSSStyleSheet(CSSStyleSheet* styleSheet, const KUR
     }
 }
 
-void PageSerializer::addImageToResources(CachedImage* image, const KURL& url)
+void PageSerializer::addImageToResources(CachedImage* image, RenderObject* imageRenderer, const KURL& url)
 {
     if (!url.isValid() || m_resourceURLs.contains(url))
         return;
@@ -296,7 +297,7 @@ void PageSerializer::addImageToResources(CachedImage* image, const KURL& url)
         return;
 
     String mimeType = image->response().mimeType();
-    m_resources->append(Resource(url, mimeType, image->image()->data()));
+    m_resources->append(Resource(url, mimeType, imageRenderer ? image->imageForRenderer(imageRenderer)->data() : image->image()->data()));
     m_resourceURLs.add(url);
 }
 
@@ -310,10 +311,8 @@ void PageSerializer::retrieveResourcesForCSSDeclaration(CSSStyleDeclaration* sty
     if (!styleDeclaration)
         return;
 
-    if (!styleDeclaration->stylesheet()->isCSSStyleSheet())
-        return;
-
-    CSSStyleSheet* cssStyleSheet = static_cast<CSSStyleSheet*>(styleDeclaration->stylesheet());
+    CSSStyleSheet* cssStyleSheet = styleDeclaration->parentStyleSheet();
+    ASSERT(cssStyleSheet);
 
     // The background-image and list-style-image (for ul or ol) are the CSS properties
     // that make use of images. We iterate to make sure we include any other
@@ -336,7 +335,7 @@ void PageSerializer::retrieveResourcesForCSSDeclaration(CSSStyleDeclaration* sty
         CachedImage* image = static_cast<StyleCachedImage*>(styleImage)->cachedImage();
 
         KURL url = cssStyleSheet->document()->completeURL(image->url());
-        addImageToResources(image, url);
+        addImageToResources(image, 0, url);
     }
 }
 

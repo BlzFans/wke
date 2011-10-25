@@ -152,13 +152,11 @@ namespace WebCore {
         void setLocalStorageEnabled(bool);
         bool localStorageEnabled() const { return m_localStorageEnabled; }
 
-#if ENABLE(DOM_STORAGE)
         // Allow clients concerned with memory consumption to set a quota on session storage
         // since the memory used won't be released until the Page is destroyed.
         // Default is noQuota.
         void setSessionStorageQuota(unsigned);
         unsigned sessionStorageQuota() const { return m_sessionStorageQuota; }
-#endif
 
         // When this option is set, WebCore will avoid storing any record of browsing activity
         // that may persist on disk or remain displayed when the option is reset.
@@ -278,21 +276,12 @@ namespace WebCore {
 
         void setOfflineWebApplicationCacheEnabled(bool);
         bool offlineWebApplicationCacheEnabled() const { return m_offlineWebApplicationCacheEnabled; }
-
-        void setShouldPaintCustomScrollbars(bool);
-        bool shouldPaintCustomScrollbars() const { return m_shouldPaintCustomScrollbars; }
         
         void setEnforceCSSMIMETypeInNoQuirksMode(bool);
         bool enforceCSSMIMETypeInNoQuirksMode() { return m_enforceCSSMIMETypeInNoQuirksMode; }
 
         void setMaximumDecodedImageSize(size_t size) { m_maximumDecodedImageSize = size; }
         size_t maximumDecodedImageSize() const { return m_maximumDecodedImageSize; }
-
-#if USE(SAFARI_THEME)
-        // Windows debugging pref (global) for switching between the Aqua look and a native windows look.
-        static void setShouldPaintNativeControls(bool);
-        static bool shouldPaintNativeControls() { return gShouldPaintNativeControls; }
-#endif
 
         void setAllowScriptsToCloseWindows(bool);
         bool allowScriptsToCloseWindows() const { return m_allowScriptsToCloseWindows; }
@@ -384,6 +373,11 @@ namespace WebCore {
         bool fullScreenEnabled() const  { return m_fullScreenAPIEnabled; }
 #endif
 
+#if ENABLE(MOUSE_LOCK_API)
+        void setMouseLockEnabled(bool flag) { m_mouseLockAPIEnabled = flag; }
+        bool mouseLockEnabled() const  { return m_mouseLockAPIEnabled; }
+#endif
+
 #if USE(AVFOUNDATION)
         static void setAVFoundationEnabled(bool flag) { gAVFoundationEnabled = flag; }
         static bool isAVFoundationEnabled() { return gAVFoundationEnabled; }
@@ -391,6 +385,9 @@ namespace WebCore {
 
         void setAsynchronousSpellCheckingEnabled(bool flag) { m_asynchronousSpellCheckingEnabled = flag; }
         bool asynchronousSpellCheckingEnabled() const  { return m_asynchronousSpellCheckingEnabled; }
+
+        void setUnifiedTextCheckerEnabled(bool flag) { m_unifiedTextCheckerEnabled = flag; }
+        bool unifiedTextCheckerEnabled() const { return m_unifiedTextCheckerEnabled; }
 
         void setMemoryInfoEnabled(bool flag) { m_memoryInfoEnabled = flag; }
         bool memoryInfoEnabled() const { return m_memoryInfoEnabled; }
@@ -437,7 +434,7 @@ namespace WebCore {
 
         void setForceCompositingMode(bool flag) { m_forceCompositingMode = flag; }
         bool forceCompositingMode() { return m_forceCompositingMode; }
-        
+
         void setShouldInjectUserScriptsInInitialEmptyDocument(bool flag) { m_shouldInjectUserScriptsInInitialEmptyDocument = flag; }
         bool shouldInjectUserScriptsInInitialEmptyDocument() { return m_shouldInjectUserScriptsInInitialEmptyDocument; }
 
@@ -464,8 +461,20 @@ namespace WebCore {
         void setPasswordEchoEnabled(bool flag) { m_passwordEchoEnabled = flag; }
         bool passwordEchoEnabled() const { return m_passwordEchoEnabled; }
 
+        void setSuppressIncrementalRendering(bool flag) { m_suppressIncrementalRendering = flag; }
+        bool suppressIncrementalRendering() const { return m_suppressIncrementalRendering; }
+
         void setPasswordEchoDurationInSeconds(double durationInSeconds) { m_passwordEchoDurationInSeconds = durationInSeconds; }
         double passwordEchoDurationInSeconds() const { return m_passwordEchoDurationInSeconds; }
+
+#if USE(SAFARI_THEME)
+        // Windows debugging pref (global) for switching between the Aqua look and a native windows look.
+        static void setShouldPaintNativeControls(bool);
+        static bool shouldPaintNativeControls() { return gShouldPaintNativeControls; }
+#endif
+
+        static void setMockScrollbarsEnabled(bool flag);
+        static bool mockScrollbarsEnabled();
 
     private:
         Page* m_page;
@@ -495,9 +504,7 @@ namespace WebCore {
         size_t m_maximumDecodedImageSize;
         int m_deviceWidth;
         int m_deviceHeight;
-#if ENABLE(DOM_STORAGE)
         unsigned m_sessionStorageQuota;
-#endif
         unsigned m_editingBehaviorType;
         unsigned m_maximumHTMLParserDOMTreeDepth;
         bool m_isSpatialNavigationEnabled : 1;
@@ -540,7 +547,6 @@ namespace WebCore {
         bool m_localFileContentSniffingEnabled : 1;
         bool m_inApplicationChromeMode : 1;
         bool m_offlineWebApplicationCacheEnabled : 1;
-        bool m_shouldPaintCustomScrollbars : 1;
         bool m_enforceCSSMIMETypeInNoQuirksMode : 1;
         bool m_usesEncodingDetector : 1;
         bool m_allowScriptsToCloseWindows : 1;
@@ -569,7 +575,11 @@ namespace WebCore {
 #if ENABLE(FULLSCREEN_API)
         bool m_fullScreenAPIEnabled : 1;
 #endif
+#if ENABLE(MOUSE_LOCK_API)
+        bool m_mouseLockAPIEnabled : 1;
+#endif
         bool m_asynchronousSpellCheckingEnabled: 1;
+        bool m_unifiedTextCheckerEnabled: 1;
         bool m_memoryInfoEnabled: 1;
         bool m_interactiveFormValidation: 1;
         bool m_usePreHTML5ParserQuirks: 1;
@@ -588,6 +598,7 @@ namespace WebCore {
         bool m_mediaPlaybackRequiresUserGesture : 1;
         bool m_mediaPlaybackAllowsInline : 1;
         bool m_passwordEchoEnabled : 1;
+        bool m_suppressIncrementalRendering : 1;
 
         Timer<Settings> m_loadsImagesAutomaticallyTimer;
         void loadsImagesAutomaticallyTimerFired(Timer<Settings>*);
@@ -595,6 +606,7 @@ namespace WebCore {
 #if USE(AVFOUNDATION)
         static bool gAVFoundationEnabled;
 #endif
+        static bool gMockScrollbarsEnabled;
 
 #if USE(SAFARI_THEME)
         static bool gShouldPaintNativeControls;

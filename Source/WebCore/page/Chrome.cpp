@@ -43,14 +43,12 @@
 #include "ResourceHandle.h"
 #include "SecurityOrigin.h"
 #include "Settings.h"
+#include "StorageNamespace.h"
 #include "WindowFeatures.h"
 #include <wtf/PassRefPtr.h>
 #include <wtf/RefPtr.h>
 #include <wtf/Vector.h>
-
-#if ENABLE(DOM_STORAGE)
-#include "StorageNamespace.h"
-#endif
+#include <wtf/text/StringBuilder.h>
 
 #if ENABLE(INPUT_COLOR)
 #include "ColorChooser.h"
@@ -93,7 +91,7 @@ void Chrome::scroll(const IntSize& scrollDelta, const IntRect& rectToScroll, con
     m_client->scroll(scrollDelta, rectToScroll, clipRect);
 }
 
-#if ENABLE(TILED_BACKING_STORE)
+#if USE(TILED_BACKING_STORE)
 void Chrome::delegatedScrollRequested(const IntPoint& scrollPoint)
 {
     m_client->delegatedScrollRequested(scrollPoint);
@@ -127,8 +125,7 @@ void Chrome::layoutUpdated(Frame* frame) const
 
 void Chrome::scrollRectIntoView(const IntRect& rect) const
 {
-    // FIXME: The unused ScrollView* argument can and should be removed from ChromeClient::scrollRectIntoView.
-    m_client->scrollRectIntoView(rect, 0);
+    m_client->scrollRectIntoView(rect);
 }
 
 void Chrome::scrollbarsModeDidChange() const
@@ -185,12 +182,10 @@ Page* Chrome::createWindow(Frame* frame, const FrameLoadRequest& request, const 
 {
     Page* newPage = m_client->createWindow(frame, request, features, action);
 
-#if ENABLE(DOM_STORAGE)
     if (newPage) {
         if (StorageNamespace* oldSessionStorage = m_page->sessionStorage(false))
             newPage->setSessionStorage(oldSessionStorage->copy());
     }
-#endif
 
     return newPage;
 }
@@ -424,21 +419,14 @@ void Chrome::setToolTip(const HitTestResult& result)
         if (Node* node = result.innerNonSharedNode()) {
             if (node->hasTagName(inputTag)) {
                 HTMLInputElement* input = static_cast<HTMLInputElement*>(node);
-                if (input->isFileUpload()) {
-                    FileList* files = input->files();
-                    unsigned listSize = files->length();
-                    if (listSize > 1) {
-                        Vector<UChar> names;
-                        for (size_t i = 0; i < listSize; ++i) {
-                            append(names, files->item(i)->fileName());
-                            if (i != listSize - 1)
-                                names.append('\n');
-                        }
-                        toolTip = String::adopt(names);
-                        // filename always display as LTR.
-                        toolTipDirection = LTR;
-                    }
-                }
+                toolTip = input->defaultToolTip();
+
+                // FIXME: We should obtain text direction of tooltip from
+                // ChromeClient or platform. As of October 2011, all client
+                // implementations don't use text direction information for
+                // ChromeClient::setToolTip. We'll work on tooltip text
+                // direction during bidi cleanup in form inputs.
+                toolTipDirection = LTR;
             }
         }
     }
@@ -475,9 +463,9 @@ void Chrome::openColorChooser(ColorChooser* colorChooser, const Color& initialCo
     m_client->openColorChooser(colorChooser, initialColor);
 }
 
-void Chrome::closeColorChooser()
+void Chrome::cleanupColorChooser()
 {
-    m_client->closeColorChooser();
+    m_client->cleanupColorChooser();
 }
 
 void Chrome::setSelectedColorInColorChooser(const Color& color)
@@ -514,7 +502,9 @@ void Chrome::setCursorHiddenUntilMouseMoves(bool hiddenUntilMouseMoves)
 #if ENABLE(REQUEST_ANIMATION_FRAME)
 void Chrome::scheduleAnimation()
 {
+#if !USE(REQUEST_ANIMATION_FRAME_TIMER)
     m_client->scheduleAnimation();
+#endif
 }
 #endif
 
@@ -555,18 +545,6 @@ String ChromeClient::generateReplacementFile(const String&)
 {
     ASSERT_NOT_REACHED();
     return String();
-}
-
-bool ChromeClient::paintCustomScrollbar(GraphicsContext*, const FloatRect&, ScrollbarControlSize,
-                                        ScrollbarControlState, ScrollbarPart, bool,
-                                        float, float, ScrollbarControlPartMask)
-{
-    return false;
-}
-
-bool ChromeClient::paintCustomScrollCorner(GraphicsContext*, const FloatRect&)
-{
-    return false;
 }
 
 bool ChromeClient::paintCustomOverhangArea(GraphicsContext*, const IntRect&, const IntRect&, const IntRect&)

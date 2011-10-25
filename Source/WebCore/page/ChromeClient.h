@@ -150,7 +150,7 @@ namespace WebCore {
         virtual void invalidateContentsAndWindow(const IntRect&, bool) = 0;
         virtual void invalidateContentsForSlowScroll(const IntRect&, bool) = 0;
         virtual void scroll(const IntSize&, const IntRect&, const IntRect&) = 0;
-#if ENABLE(TILED_BACKING_STORE)
+#if USE(TILED_BACKING_STORE)
         virtual void delegatedScrollRequested(const IntPoint&) = 0;
 #endif
         virtual IntPoint screenToWindow(const IntPoint&) const = 0;
@@ -159,7 +159,7 @@ namespace WebCore {
         virtual void scrollbarsModeDidChange() const = 0;
         virtual void setCursor(const Cursor&) = 0;
         virtual void setCursorHiddenUntilMouseMoves(bool) = 0;
-#if ENABLE(REQUEST_ANIMATION_FRAME)
+#if ENABLE(REQUEST_ANIMATION_FRAME) && !USE(REQUEST_ANIMATION_FRAME_TIMER)
         virtual void scheduleAnimation() = 0;
 #endif
         // End methods used by HostWindow.
@@ -168,7 +168,7 @@ namespace WebCore {
 
         virtual void contentsSizeChanged(Frame*, const IntSize&) const = 0;
         virtual void layoutUpdated(Frame*) const { }
-        virtual void scrollRectIntoView(const IntRect&, const ScrollView*) const = 0; // Currently only Mac has a non empty implementation.
+        virtual void scrollRectIntoView(const IntRect&) const { }; // Currently only Mac has a non empty implementation.
        
         virtual bool shouldMissingPluginMessageBeButton() const { return false; }
         virtual void missingPluginButtonClicked(Element*) const { }
@@ -179,11 +179,10 @@ namespace WebCore {
         virtual void print(Frame*) = 0;
         virtual bool shouldRubberBandInDirection(ScrollDirection) const = 0;
 
-#if ENABLE(DATABASE)
+#if ENABLE(SQL_DATABASE)
         virtual void exceededDatabaseQuota(Frame*, const String& databaseName) = 0;
 #endif
 
-#if ENABLE(OFFLINE_WEB_APPLICATIONS)
         // Callback invoked when the application cache fails to save a cache object
         // because storing it would grow the database file past its defined maximum
         // size or past the amount of free space on the device. 
@@ -200,7 +199,6 @@ namespace WebCore {
         // other existing caches for the origin that would not be replaced by
         // the new cache.
         virtual void reachedApplicationCacheOriginQuota(SecurityOrigin*, int64_t totalSpaceNeeded) = 0;
-#endif
 
 #if ENABLE(DASHBOARD_SUPPORT)
         virtual void dashboardRegionsChanged();
@@ -219,11 +217,6 @@ namespace WebCore {
         virtual bool shouldReplaceWithGeneratedFileForUpload(const String& path, String& generatedFilename);
         virtual String generateReplacementFile(const String& path);
 
-        virtual bool paintCustomScrollbar(GraphicsContext*, const FloatRect&, ScrollbarControlSize, 
-                                          ScrollbarControlState, ScrollbarPart pressedPart, bool vertical,
-                                          float value, float proportion, ScrollbarControlPartMask);
-        virtual bool paintCustomScrollCorner(GraphicsContext*, const FloatRect&);
-
         virtual bool paintCustomOverhangArea(GraphicsContext*, const IntRect&, const IntRect&, const IntRect&);
 
         // FIXME: Remove once all ports are using client-based geolocation. https://bugs.webkit.org/show_bug.cgi?id=40373
@@ -235,7 +228,7 @@ namespace WebCore {
 
 #if ENABLE(INPUT_COLOR)
         virtual void openColorChooser(ColorChooser*, const Color&) = 0;
-        virtual void closeColorChooser() = 0;
+        virtual void cleanupColorChooser() = 0;
         virtual void setSelectedColorInColorChooser(const Color&) = 0;
 #endif
 
@@ -295,7 +288,7 @@ namespace WebCore {
         virtual void setRootFullScreenLayer(GraphicsLayer*) { }
 #endif
         
-#if ENABLE(TILED_BACKING_STORE)
+#if USE(TILED_BACKING_STORE)
         virtual IntRect visibleRectForTiledBackingStore() const { return IntRect(); }
 #endif
 

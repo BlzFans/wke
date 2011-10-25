@@ -27,12 +27,12 @@
 #include "ContentSecurityPolicy.h"
 
 #include "Console.h"
-#include "DOMWindow.h"
 #include "Document.h"
 #include "FormData.h"
 #include "FormDataList.h"
 #include "Frame.h"
 #include "PingLoader.h"
+#include "ScriptCallStack.h"
 #include "SecurityOrigin.h"
 #include "TextEncoding.h"
 #include <wtf/text/WTFString.h>
@@ -147,8 +147,19 @@ private:
     {
         if (m_portHasWildcard)
             return true;
+
         int port = url.port();
-        return port ? port == m_port : isDefaultPortForProtocol(m_port, url.protocol());
+
+        if (port == m_port)
+            return true;
+
+        if (!port)
+            return isDefaultPortForProtocol(m_port, m_scheme);
+
+        if (!m_port)
+            return isDefaultPortForProtocol(port, m_scheme);
+
+        return false;
     }
 
     bool isSchemeOnly() const { return m_host.isEmpty(); }
@@ -179,17 +190,20 @@ private:
     bool parsePort(const UChar* begin, const UChar* end, int& port, bool& portHasWildcard);
 
     void addSourceSelf();
+    void addSourceStar();
     void addSourceUnsafeInline();
     void addSourceUnsafeEval();
 
     SecurityOrigin* m_origin;
     Vector<CSPSource> m_list;
+    bool m_allowStar;
     bool m_allowInline;
     bool m_allowEval;
 };
 
 CSPSourceList::CSPSourceList(SecurityOrigin* origin)
     : m_origin(origin)
+    , m_allowStar(false)
     , m_allowInline(false)
     , m_allowEval(false)
 {
@@ -202,10 +216,14 @@ void CSPSourceList::parse(const String& value)
 
 bool CSPSourceList::matches(const KURL& url)
 {
+    if (m_allowStar)
+        return true;
+
     for (size_t i = 0; i < m_list.size(); ++i) {
         if (m_list[i].matches(url))
             return true;
     }
+
     return false;
 }
 
@@ -251,6 +269,11 @@ bool CSPSourceList::parseSource(const UChar* begin, const UChar* end,
 {
     if (begin == end)
         return false;
+
+    if (end - begin == 1 && *begin == '*') {
+        addSourceStar();
+        return false;
+    }
 
     if (equalIgnoringCase("'self'", begin, end - begin)) {
         addSourceSelf();
@@ -418,6 +441,11 @@ void CSPSourceList::addSourceSelf()
     m_list.append(CSPSource(m_origin->protocol(), m_origin->host(), m_origin->port(), false, false));
 }
 
+void CSPSourceList::addSourceStar()
+{
+    m_allowStar = true;
+}
+
 void CSPSourceList::addSourceUnsafeInline()
 {
     m_allowInline = true;
@@ -452,9 +480,9 @@ private:
     String m_text;
 };
 
-ContentSecurityPolicy::ContentSecurityPolicy(Document* document)
+ContentSecurityPolicy::ContentSecurityPolicy(ScriptExecutionContext* scriptExecutionContext)
     : m_havePolicy(false)
-    , m_document(document)
+    , m_scriptExecutionContext(scriptExecutionContext)
     , m_reportOnly(false)
 {
 }
@@ -480,22 +508,25 @@ void ContentSecurityPolicy::didReceiveHeader(const String& header, HeaderType ty
         break;
     }
 
-    if (!checkEval(operativeDirective(m_scriptSrc.get()))) {
-        if (Frame* frame = m_document->frame())
-            frame->script()->disableEval();
-    }
+    if (!checkEval(operativeDirective(m_scriptSrc.get())))
+        m_scriptExecutionContext->disableEval();
 }
 
 void ContentSecurityPolicy::reportViolation(const String& directiveText, const String& consoleMessage) const
 {
-    Frame* frame = m_document->frame();
-    if (!frame)
-        return;
-
     String message = m_reportOnly ? "[Report Only] " + consoleMessage : consoleMessage;
-    frame->domWindow()->console()->addMessage(JSMessageSource, LogMessageType, ErrorMessageLevel, message, 1, String());
+    m_scriptExecutionContext->addMessage(JSMessageSource, LogMessageType, ErrorMessageLevel, message, 1, String(), 0);
 
     if (m_reportURLs.isEmpty())
+        return;
+
+    // FIXME: Support sending reports from worker.
+    if (!m_scriptExecutionContext->isDocument())
+        return;
+
+    Document* document = static_cast<Document*>(m_scriptExecutionContext);
+    Frame* frame = document->frame();
+    if (!frame)
         return;
 
     // We need to be careful here when deciding what information to send to the
@@ -509,7 +540,7 @@ void ContentSecurityPolicy::reportViolation(const String& directiveText, const S
     // harmless information.
 
     FormDataList reportList(UTF8Encoding());
-    reportList.appendData("document-url", m_document->url());
+    reportList.appendData("document-url", document->url());
     if (!directiveText.isEmpty())
         reportList.appendData("violated-directive", directiveText);
 
@@ -517,6 +548,12 @@ void ContentSecurityPolicy::reportViolation(const String& directiveText, const S
 
     for (size_t i = 0; i < m_reportURLs.size(); ++i)
         PingLoader::reportContentSecurityPolicyViolation(frame, m_reportURLs[i], report);
+}
+
+void ContentSecurityPolicy::logUnrecognizedDirective(const String& name) const
+{
+    String message = makeString("Unrecognized Content-Security-Policy directive '", name, "'.\n");
+    m_scriptExecutionContext->addMessage(JSMessageSource, LogMessageType, ErrorMessageLevel, message, 1, String(), 0);
 }
 
 bool ContentSecurityPolicy::checkEval(CSPDirective* directive) const
@@ -625,6 +662,12 @@ bool ContentSecurityPolicy::allowMediaFromSource(const KURL& url) const
     return checkSourceAndReportViolation(operativeDirective(m_mediaSrc.get()), url, type);
 }
 
+bool ContentSecurityPolicy::allowConnectFromSource(const KURL& url) const
+{
+    DEFINE_STATIC_LOCAL(String, type, ("connect"));
+    return checkSourceAndReportViolation(operativeDirective(m_connectSrc.get()), url, type);
+}
+
 // policy            = directive-list
 // directive-list    = [ directive *( ";" [ directive ] ) ]
 //
@@ -709,14 +752,14 @@ void ContentSecurityPolicy::parseReportURI(const String& value)
 
         if (urlBegin < position) {
             String url = String(urlBegin, position - urlBegin);
-            m_reportURLs.append(m_document->completeURL(url));
+            m_reportURLs.append(m_scriptExecutionContext->completeURL(url));
         }
     }
 }
 
 PassOwnPtr<CSPDirective> ContentSecurityPolicy::createCSPDirective(const String& name, const String& value)
 {
-    return adoptPtr(new CSPDirective(name, value, m_document->securityOrigin()));
+    return adoptPtr(new CSPDirective(name, value, m_scriptExecutionContext->securityOrigin()));
 }
 
 void ContentSecurityPolicy::addDirective(const String& name, const String& value)
@@ -729,6 +772,7 @@ void ContentSecurityPolicy::addDirective(const String& name, const String& value
     DEFINE_STATIC_LOCAL(String, styleSrc, ("style-src"));
     DEFINE_STATIC_LOCAL(String, fontSrc, ("font-src"));
     DEFINE_STATIC_LOCAL(String, mediaSrc, ("media-src"));
+    DEFINE_STATIC_LOCAL(String, connectSrc, ("connect-src"));
     DEFINE_STATIC_LOCAL(String, reportURI, ("report-uri"));
 
     ASSERT(!name.isEmpty());
@@ -749,8 +793,12 @@ void ContentSecurityPolicy::addDirective(const String& name, const String& value
         m_fontSrc = createCSPDirective(name, value);
     else if (!m_mediaSrc && equalIgnoringCase(name, mediaSrc))
         m_mediaSrc = createCSPDirective(name, value);
+    else if (!m_connectSrc && equalIgnoringCase(name, connectSrc))
+        m_connectSrc = createCSPDirective(name, value);
     else if (m_reportURLs.isEmpty() && equalIgnoringCase(name, reportURI))
         parseReportURI(value);
+    else
+        logUnrecognizedDirective(name);
 }
 
 }

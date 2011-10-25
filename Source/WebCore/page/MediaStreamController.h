@@ -28,6 +28,7 @@
 #if ENABLE(MEDIA_STREAM)
 
 #include "MediaStreamClient.h"
+#include "MediaStreamSource.h"
 #include "NavigatorUserMediaError.h"
 #include <wtf/Forward.h>
 #include <wtf/HashMap.h>
@@ -38,7 +39,6 @@ namespace WebCore {
 
 class MediaStreamClient;
 class MediaStreamFrameController;
-class MediaStreamTrackList;
 class SecurityOrigin;
 
 class MediaStreamController {
@@ -51,49 +51,20 @@ public:
     void unregisterFrameController(MediaStreamFrameController*);
 
     void generateStream(MediaStreamFrameController*, int requestId, GenerateStreamOptionFlags, PassRefPtr<SecurityOrigin>);
-    void stopGeneratedStream(const String& streamLabel);
 
-    // Enable/disable an track.
-    void setMediaStreamTrackEnabled(const String& trackId, bool enabled);
-
-    void streamGenerated(int requestId, const String& streamLabel, PassRefPtr<MediaStreamTrackList> tracks);
+    void streamGenerated(int requestId, const MediaStreamSourceVector& sources);
     void streamGenerationFailed(int requestId, NavigatorUserMediaError::ErrorCode);
-    void streamFailed(const String& streamLabel);
-
-    /* JS -> UA */
-    void newPeerConnection(MediaStreamFrameController*, int framePeerConnectionId, const String& configuration);
-    void startNegotiation(MediaStreamFrameController*, int framePeerConnectionId);
-    void processSignalingMessage(MediaStreamFrameController*, int framePeerConnectionId, const String& message);
-    void message(MediaStreamFrameController*, int framePeerConnectionId, const String& message);
-    void addStream(MediaStreamFrameController*, int framePeerConnectionId, const String& streamLabel);
-    void removeStream(MediaStreamFrameController*, int framePeerConnectionId, const String& streamLabel);
-    void closePeerConnection(MediaStreamFrameController*, int framePeerConnectionId);
-
-    /* UA -> JS */
-    void onSignalingMessage(int controllerPeerConnectionId, const String& message);
-    void onMessage(int controllerPeerConnectionId, const String& message);
-    void onAddStream(int controllerPeerConnectionId, const String& streamLabel, PassRefPtr<MediaStreamTrackList> tracks);
-    void onRemoveStream(int controllerPeerConnectionId, const String& streamLabel);
-    void onNegotiationStarted(int controllerPeerConnectionId);
-    void onNegotiationDone(int controllerPeerConnectionId);
 
 private:
     int registerRequest(int localRequestId, MediaStreamFrameController*);
-    void registerStream(const String& streamLabel, MediaStreamFrameController*);
-
-    bool frameToPagePeerConnectionId(MediaStreamFrameController*, int framePeerConnectionId, int& pagePeerConnectionId);
 
     class Request;
     typedef HashMap<int, Request> RequestMap;
-    typedef HashMap<String, MediaStreamFrameController*> StreamMap;
 
     RequestMap m_requests;
-    StreamMap m_streams;
-    RequestMap m_peerConnections;
 
     MediaStreamClient* m_client;
     int m_nextGlobalRequestId;
-    int m_nextGlobalPeerConnectionId;
 };
 
 } // namespace WebCore

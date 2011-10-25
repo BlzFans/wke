@@ -52,15 +52,6 @@
 #include <wtf/MainThread.h>
 #include <wtf/StdLibExtras.h>
 
-#if !(defined(OBJC_API_VERSION) && OBJC_API_VERSION > 0)
-static inline IMP method_setImplementation(Method m, IMP i)
-{
-    IMP oi = m->method_imp;
-    m->method_imp = i;
-    return oi;
-}
-#endif
-
 namespace WebCore {
 
 #if ENABLE(DRAG_SUPPORT)
@@ -115,9 +106,7 @@ bool EventHandler::wheelEvent(NSEvent *event)
     CurrentEventScope scope(event);
 
     PlatformWheelEvent wheelEvent(event, page->chrome()->platformPageClient());
-    handleWheelEvent(wheelEvent);
-
-    return wheelEvent.isAccepted();
+    return handleWheelEvent(wheelEvent);
 }
 
 bool EventHandler::keyEvent(NSEvent *event)
@@ -236,10 +225,11 @@ bool EventHandler::passMouseDownEventToWidget(Widget* pWidget)
 
     ASSERT(!m_sendingEventToSubview);
     m_sendingEventToSubview = true;
-    NSView *outerView = widget->getOuterView();
-    widget->beforeMouseDown(outerView, widget.get());
+
+    RenderWidget::suspendWidgetHierarchyUpdates();
     [view mouseDown:currentNSEvent()];
-    widget->afterMouseDown(outerView, widget.get());
+    RenderWidget::resumeWidgetHierarchyUpdates();
+
     m_sendingEventToSubview = false;
     
     if (!wasDeferringLoading)
@@ -478,8 +468,6 @@ void EventHandler::mouseDown(NSEvent *event)
 
     BEGIN_BLOCK_OBJC_EXCEPTIONS;
     
-    m_frame->loader()->resetMultipleFormSubmissionProtection();
-
     m_mouseDownView = nil;
     
     CurrentEventScope scope(event);

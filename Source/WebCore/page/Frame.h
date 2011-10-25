@@ -44,7 +44,7 @@
 #include "FrameWin.h"
 #endif
 
-#if ENABLE(TILED_BACKING_STORE)
+#if USE(TILED_BACKING_STORE)
 #include "TiledBackingStoreClient.h"
 #endif
 
@@ -70,7 +70,7 @@ namespace WebCore {
     class RenderPart;
     class TiledBackingStore;
 
-#if !ENABLE(TILED_BACKING_STORE)
+#if !USE(TILED_BACKING_STORE)
     class TiledBackingStoreClient { };
 #endif
 
@@ -147,7 +147,7 @@ namespace WebCore {
 
         Settings* settings() const; // can be NULL
 
-        void setPrinting(bool printing, const FloatSize& pageSize, float maximumShrinkRatio, AdjustViewSizeOrNot);
+        void setPrinting(bool printing, const FloatSize& pageSize, const FloatSize& originalPageSize, float maximumShrinkRatio, AdjustViewSizeOrNot);
         FloatSize resizePageRectsKeepingRatio(const FloatSize& originalSize, const FloatSize& expectedSize);
 
         bool inViewSourceMode() const;
@@ -161,9 +161,9 @@ namespace WebCore {
         float textZoomFactor() const { return m_textZoomFactor; }
         void setPageAndTextZoomFactors(float pageZoomFactor, float textZoomFactor);
 
-        // FIXME: These functions should move to Page.
-        void scalePage(float scale, const LayoutPoint& origin);
-        float pageScaleFactor() const { return m_pageScaleFactor; }
+        // Scale factor of this frame with respect to the container.
+        float frameScaleFactor() const;
+
 #if USE(ACCELERATED_COMPOSITING)
         void deviceOrPageScaleFactorChanged();
 #endif
@@ -195,9 +195,6 @@ namespace WebCore {
         String matchLabelsAgainstElement(const Vector<String>& labels, Element*);
         
 #if PLATFORM(MAC)
-        NSString* searchForLabelsBeforeElement(NSArray* labels, Element*, size_t* resultDistance, bool* resultIsInCellAbove);
-        NSString* matchLabelsAgainstElement(NSArray* labels, Element*);
-
         NSImage* selectionImage(bool forceBlackText = false) const;
         NSImage* snapshotDragImage(Node*, NSRect* imageRect, NSRect* elementRect) const;
         NSImage* imageFromRect(NSRect) const;
@@ -241,8 +238,6 @@ namespace WebCore {
         float m_pageZoomFactor;
         float m_textZoomFactor;
 
-        float m_pageScaleFactor;
-
 #if ENABLE(ORIENTATION_EVENTS)
         int m_orientation;
 #endif
@@ -251,7 +246,7 @@ namespace WebCore {
         bool m_isDisconnected;
         bool m_excludeFromTextSearch;
 
-#if ENABLE(TILED_BACKING_STORE)
+#if USE(TILED_BACKING_STORE)
     // FIXME: The tiled backing store belongs in FrameView, not Frame.
 
     public:

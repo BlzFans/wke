@@ -39,14 +39,16 @@ namespace WebCore {
 
 class SpeechInputEvent : public Event {
 public:
+    static PassRefPtr<SpeechInputEvent> create();
     static PassRefPtr<SpeechInputEvent> create(const AtomicString& eventType, const SpeechInputResultArray& results);
     ~SpeechInputEvent();
 
-    virtual bool isSpeechInputEvent() const { return true; }
-
     SpeechInputResultList* results() const { return m_results.get(); }
 
+    virtual const AtomicString& interfaceName() const;
+
 private:
+    SpeechInputEvent();
     SpeechInputEvent(const AtomicString& eventType, const SpeechInputResultArray& results);
 
     RefPtr<SpeechInputResultList> m_results;

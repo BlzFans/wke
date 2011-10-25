@@ -32,13 +32,10 @@
 #include "Frame.h"
 #include "LocalMediaStream.h"
 #include "MediaStreamController.h"
-#include "MediaStreamTrackList.h"
 #include "NavigatorUserMediaErrorCallback.h"
 #include "NavigatorUserMediaSuccessCallback.h"
 #include "Page.h"
-#include "PeerConnection.h"
 #include "SecurityOrigin.h"
-#include "SignalingCallback.h"
 #include <wtf/RefCounted.h>
 
 namespace WebCore {
@@ -50,8 +47,6 @@ public:
 
     ScriptExecutionContext* scriptExecutionContext() const { return m_scriptExecutionContext; }
     virtual bool isGenerateStreamRequest() const { return false; }
-    virtual bool isRecordedDataRequest() const { return false; }
-    virtual bool isSignalingRequest() const { return false; }
 
     virtual void abort() = 0;
 
@@ -117,24 +112,6 @@ void MediaStreamFrameController::RequestMap::abortAll()
     }
 }
 
-template <typename T>
-void MediaStreamFrameController::ClientMapBase<T>::unregisterAll()
-{
-    while (!this->isEmpty()) {
-        T key = this->begin()->first;
-        // unregister should remove the element from the map.
-        this->begin()->second->unregister();
-        ASSERT_UNUSED(key, !this->contains(key));
-    }
-}
-
-template <typename T>
-void MediaStreamFrameController::ClientMapBase<T>::detachEmbedder()
-{
-    for (typename MapType::iterator it = this->begin(); it != this->end(); ++it)
-        it->second->detachEmbedder();
-}
-
 MediaStreamFrameController::MediaStreamFrameController(Frame* frame)
     : m_frame(frame)
     , m_isInDetachedState(false)
@@ -162,33 +139,6 @@ MediaStreamController* MediaStreamFrameController::pageController() const
     return m_frame && m_frame->page() ? m_frame->page()->mediaStreamController() : 0;
 }
 
-void MediaStreamFrameController::unregister(MediaStreamClient* client)
-{
-    ASSERT(m_streams.contains(client->clientId()));
-
-    // Assuming we should stop any live streams when losing access to the embedder.
-    if (client->isLocalMediaStream()) {
-        LocalMediaStream* stream = static_cast<LocalMediaStream*>(client);
-        if (stream->readyState() == MediaStream::LIVE)
-            stopGeneratedStream(stream->label());
-    }
-
-    m_streams.remove(client->clientId());
-}
-
-void MediaStreamFrameController::unregister(GenericClient* client)
-{
-    ASSERT(m_clients.contains(client->clientId()));
-    m_clients.remove(client->clientId());
-}
-
-MediaStream* MediaStreamFrameController::getStreamFromLabel(const String& label) const
-{
-    ASSERT(m_streams.contains(label));
-    ASSERT(m_streams.get(label)->isMediaStream());
-    return static_cast<MediaStream*>(m_streams.get(label));
-}
-
 void MediaStreamFrameController::enterDetachedState()
 {
     if (m_isInDetachedState) {
@@ -197,8 +147,6 @@ void MediaStreamFrameController::enterDetachedState()
     }
 
     m_requests.abortAll();
-    m_streams.detachEmbedder();
-    m_clients.detachEmbedder();
     m_isInDetachedState = true;
 }
 
@@ -226,8 +174,6 @@ void MediaStreamFrameController::disconnectFrame()
     disconnectPage();
 
     ASSERT(m_requests.isEmpty());
-    m_streams.unregisterAll();
-    m_clients.unregisterAll();
 
     m_frame = 0;
 }
@@ -300,43 +246,16 @@ void MediaStreamFrameController::generateStream(const String& options,
     pageController()->generateStream(this, requestId, flags, securityOrigin());
 }
 
-void MediaStreamFrameController::stopGeneratedStream(const String& streamLabel)
-{
-    ASSERT(m_streams.contains(streamLabel));
-    ASSERT(m_streams.get(streamLabel)->isLocalMediaStream());
-
-    if (isClientAvailable())
-        pageController()->stopGeneratedStream(streamLabel);
-}
-
-void MediaStreamFrameController::setMediaStreamTrackEnabled(const String& trackId, bool enabled)
-{
-    if (isClientAvailable())
-        pageController()->setMediaStreamTrackEnabled(trackId, enabled);
-}
-
-void MediaStreamFrameController::streamGenerated(int requestId, const String& label, PassRefPtr<MediaStreamTrackList> tracksParam)
+void MediaStreamFrameController::streamGenerated(int requestId, const MediaStreamSourceVector& sources)
 {
     // Don't assert since the request can have been aborted as a result of embedder detachment.
     if (!m_requests.contains(requestId))
         return;
 
     ASSERT(m_requests.get(requestId)->isGenerateStreamRequest());
-    ASSERT(!label.isNull());
-    ASSERT(tracksParam);
-
-    RefPtr<MediaStreamTrackList> tracks = tracksParam;
-
-    for (unsigned i = 0; i < tracks->length(); ++i) {
-        int trackClientId = m_clients.getNextId();
-        RefPtr<MediaStreamTrack> track = tracks->item(i);
-        track->associateFrameController(this, trackClientId);
-        m_clients.add(trackClientId, track.get());
-    }
 
     RefPtr<GenerateStreamRequest> streamRequest = static_cast<GenerateStreamRequest*>(m_requests.get(requestId).get());
-    RefPtr<LocalMediaStream> generatedStream = LocalMediaStream::create(this, label, tracks.release());
-    m_streams.add(label, generatedStream.get());
+    RefPtr<LocalMediaStream> generatedStream = LocalMediaStream::create(scriptExecutionContext(), sources);
     m_requests.remove(requestId);
     streamRequest->successCallback()->handleEvent(generatedStream.get());
 }
@@ -356,131 +275,6 @@ void MediaStreamFrameController::streamGenerationFailed(int requestId, Navigator
         RefPtr<NavigatorUserMediaError> error = NavigatorUserMediaError::create(code);
         streamRequest->errorCallback()->handleEvent(error.get());
     }
-}
-
-void MediaStreamFrameController::streamFailed(const String& label)
-{
-    getStreamFromLabel(label)->streamEnded();
-}
-
-PassRefPtr<PeerConnection> MediaStreamFrameController::createPeerConnection(const String& configuration, PassRefPtr<SignalingCallback> signalingCallback)
-{
-    int clientId = m_clients.getNextId();
-    RefPtr<PeerConnection> peerConnection = PeerConnection::create(this, clientId, configuration, signalingCallback);
-    if (peerConnection)
-        m_clients.add(clientId, peerConnection.get());
-    return peerConnection.release();
-}
-
-void MediaStreamFrameController::newPeerConnection(int peerConnectionId, const String& configuration)
-{
-    if (pageController())
-        pageController()->newPeerConnection(this, peerConnectionId, configuration);
-}
-
-void MediaStreamFrameController::closePeerConnection(int peerConnectionId)
-{
-    if (pageController())
-        pageController()->closePeerConnection(this, peerConnectionId);
-}
-
-void MediaStreamFrameController::startNegotiation(int peerConnectionId)
-{
-    if (pageController())
-        pageController()->startNegotiation(this, peerConnectionId);
-}
-
-void MediaStreamFrameController::processSignalingMessage(int peerConnectionId, const String& message)
-{
-    if (pageController())
-        pageController()->processSignalingMessage(this, peerConnectionId, message);
-}
-
-void MediaStreamFrameController::message(int peerConnectionId, const String& message)
-{
-    if (pageController())
-        pageController()->message(this, peerConnectionId, message);
-}
-
-void MediaStreamFrameController::addStream(int peerConnectionId, PassRefPtr<MediaStream> prpStream)
-{
-    RefPtr<MediaStream> stream = prpStream;
-    ASSERT(m_streams.contains(stream->label()));
-
-    if (pageController())
-        pageController()->addStream(this, peerConnectionId, stream->label());
-}
-
-void MediaStreamFrameController::removeStream(int peerConnectionId, PassRefPtr<MediaStream> prpStream)
-{
-    RefPtr<MediaStream> stream = prpStream;
-    ASSERT(m_streams.contains(stream->label()));
-
-    if (pageController())
-        pageController()->removeStream(this, peerConnectionId, stream->label());
-}
-
-void MediaStreamFrameController::onMessage(int peerConnectionId, const String& message)
-{
-    ASSERT(m_clients.contains(peerConnectionId));
-    ASSERT(m_clients.get(peerConnectionId)->isPeerConnection());
-
-    RefPtr<PeerConnection> peerConnection = static_cast<PeerConnection*>(m_clients.get(peerConnectionId));
-
-    peerConnection->onMessage(message);
-}
-
-void MediaStreamFrameController::onAddStream(int peerConnectionId, const String& streamLabel, PassRefPtr<MediaStreamTrackList> tracks)
-{
-    ASSERT(!streamLabel.isEmpty());
-    ASSERT(m_clients.contains(peerConnectionId));
-    ASSERT(m_clients.get(peerConnectionId)->isPeerConnection());
-
-    RefPtr<MediaStream> stream = MediaStream::create(this, streamLabel, tracks);
-
-    RefPtr<PeerConnection> peerConnection = static_cast<PeerConnection*>(m_clients.get(peerConnectionId));
-    peerConnection->streamAdded(stream.release());
-}
-
-void MediaStreamFrameController::onRemoveStream(int peerConnectionId, const String& streamLabel)
-{
-    ASSERT(!streamLabel.isEmpty());
-    ASSERT(m_clients.contains(peerConnectionId));
-    ASSERT(m_clients.get(peerConnectionId)->isPeerConnection());
-
-    RefPtr<PeerConnection> peerConnection = static_cast<PeerConnection*>(m_clients.get(peerConnectionId));
-    peerConnection->streamRemoved(streamLabel);
-}
-
-void MediaStreamFrameController::onSignalingMessage(int peerConnectionId, const String& message)
-{
-    ASSERT(m_clients.contains(peerConnectionId));
-    ASSERT(m_clients.get(peerConnectionId)->isPeerConnection());
-
-    RefPtr<PeerConnection> peerConnection = static_cast<PeerConnection*>(m_clients.get(peerConnectionId));
-    peerConnection->onSignalingMessage(message);
-}
-
-void MediaStreamFrameController::onNegotiationStarted(int peerConnectionId)
-{
-    // FIXME: Assert or not?
-    ASSERT(m_clients.contains(peerConnectionId));
-    ASSERT(m_clients.get(peerConnectionId)->isPeerConnection());
-
-    RefPtr<PeerConnection> peerConnection = static_cast<PeerConnection*>(m_clients.get(peerConnectionId));
-
-    peerConnection->onNegotiationStarted();
-}
-
-void MediaStreamFrameController::onNegotiationDone(int peerConnectionId)
-{
-    // FIXME: Assert or not?
-    ASSERT(m_clients.contains(peerConnectionId));
-    ASSERT(m_clients.get(peerConnectionId)->isPeerConnection());
-
-    RefPtr<PeerConnection> peerConnection = static_cast<PeerConnection*>(m_clients.get(peerConnectionId));
-
-    peerConnection->onNegotiationDone();
 }
 
 } // namespace WebCore

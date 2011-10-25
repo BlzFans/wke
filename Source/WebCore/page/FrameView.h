@@ -36,6 +36,7 @@
 namespace WebCore {
 
 class Color;
+class Element;
 class Event;
 class FloatSize;
 class Frame;
@@ -54,6 +55,7 @@ typedef unsigned long long DOMTimeStamp;
 class FrameView : public ScrollView {
 public:
     friend class RenderView;
+    friend class Internals;
 
     static PassRefPtr<FrameView> create(Frame*);
     static PassRefPtr<FrameView> create(Frame*, const IntSize& initialSize);
@@ -62,8 +64,9 @@ public:
 
     virtual HostWindow* hostWindow() const;
     
-    virtual void invalidateRect(const LayoutRect&);
-    virtual void setFrameRect(const LayoutRect&);
+    virtual void invalidateRect(const IntRect&);
+    virtual void setFrameRect(const IntRect&);
+
 #if ENABLE(REQUEST_ANIMATION_FRAME)
     void scheduleAnimation();
 #endif
@@ -162,10 +165,13 @@ public:
 
     virtual LayoutRect windowResizerRect() const;
 
+    virtual void setFixedVisibleContentRect(const IntRect&) OVERRIDE;
     void setScrollPosition(const LayoutPoint&);
     void scrollPositionChangedViaPlatformWidget();
     virtual void repaintFixedElementsAfterScrolling();
     virtual bool shouldRubberBandInDirection(ScrollDirection) const;
+
+    virtual void zoomAnimatorTransformChanged(float, float, float, ZoomAnimationState);
 
     String mediaType() const;
     void setMediaType(const String&);
@@ -235,7 +241,7 @@ public:
     bool isVisuallyNonEmpty() const { return m_isVisuallyNonEmpty; }
 
     void forceLayout(bool allowSubtree = false);
-    void forceLayoutForPagination(const FloatSize& pageSize, float maximumShrinkFactor, AdjustViewSizeOrNot);
+    void forceLayoutForPagination(const FloatSize& pageSize, const FloatSize& originalPageSize, float maximumShrinkFactor, AdjustViewSizeOrNot);
 
     // FIXME: This method is retained because of embedded WebViews in AppKit.  When a WebView is embedded inside
     // some enclosing view with auto-pagination, no call happens to resize the view.  The new pagination model
@@ -258,6 +264,7 @@ public:
     bool scrollToFragment(const KURL&);
     bool scrollToAnchor(const String&);
     void maintainScrollPositionAtAnchor(Node*);
+    void scrollElementToRect(Element*, const IntRect&);
 
     // Methods to convert points and rects between the coordinate space of the renderer, and this view.
     virtual LayoutRect convertFromRenderer(const RenderObject*, const LayoutRect&) const;
@@ -289,6 +296,13 @@ public:
 
     RenderBox* embeddedContentBox() const;
 
+    void clearOwningRendererForCustomScrollbars(RenderBox*);
+    
+    void setTracksRepaints(bool);
+    bool isTrackingRepaints() const { return m_isTrackingRepaints; }
+    void resetTrackedRepaints() { m_trackedRepaintRects.clear(); }
+    const Vector<IntRect>& trackedRepaintRects() const { return m_trackedRepaintRects; }
+
 protected:
     virtual bool scrollContentsFastPath(const IntSize& scrollDelta, const LayoutRect& rectToScroll, const LayoutRect& clipRect);
     virtual void scrollContentsSlowPath(const LayoutRect& updateRect);
@@ -315,6 +329,8 @@ private:
     void applyOverflowToViewport(RenderObject*, ScrollbarMode& hMode, ScrollbarMode& vMode);
 
     void updateOverflowStatus(bool horizontalOverflow, bool verticalOverflow);
+
+    void paintControlTints();
 
     void forceLayoutParentViewIfNeeded();
     void performPostLayoutTasks();
@@ -347,6 +363,9 @@ private:
     virtual GraphicsLayer* layerForHorizontalScrollbar() const;
     virtual GraphicsLayer* layerForVerticalScrollbar() const;
     virtual GraphicsLayer* layerForScrollCorner() const;
+#if PLATFORM(CHROMIUM) && ENABLE(RUBBER_BANDING)
+    virtual GraphicsLayer* layerForOverhangAreas() const;
+#endif
 #endif
 
     virtual void notifyPageThatContentAreaWillPaint() const;
@@ -435,6 +454,9 @@ private:
     Timer<FrameView> m_deferredRepaintTimer;
     double m_deferredRepaintDelay;
     double m_lastPaintTime;
+    
+    bool m_isTrackingRepaints; // Used for testing.
+    Vector<IntRect> m_trackedRepaintRects;
 
     bool m_shouldUpdateWhileOffscreen;
 

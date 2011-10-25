@@ -349,8 +349,7 @@ namespace WebCore {
         DOMURL* webkitURL() const;
 #endif
 
-#if ENABLE(DATABASE)
-        // HTML 5 client-side database
+#if ENABLE(SQL_DATABASE)
         PassRefPtr<Database> openDatabase(const String& name, const String& version, const String& displayName, unsigned long estimatedSize, PassRefPtr<DatabaseCallback> creationCallback, ExceptionCode&);
 #endif
 
@@ -359,11 +358,9 @@ namespace WebCore {
         DEFINE_ATTRIBUTE_EVENT_LISTENER(deviceorientation);
 #endif
 
-#if ENABLE(DOM_STORAGE)
         // HTML 5 key/value storage
         Storage* sessionStorage(ExceptionCode&) const;
         Storage* localStorage(ExceptionCode&) const;
-#endif
 
 #if ENABLE(FILE_SYSTEM)
         // They are placed here and in all capital letters so they can be checked against the constants in the
@@ -383,16 +380,17 @@ namespace WebCore {
 
 #if ENABLE(NOTIFICATIONS)
         NotificationCenter* webkitNotifications() const;
+        // Renders webkitNotifications object safely inoperable, disconnects
+        // if from embedder-provided NotificationPresenter.
+        void resetNotifications();
 #endif
 
 #if ENABLE(QUOTA)
         StorageInfo* webkitStorageInfo() const;
 #endif
 
-#if ENABLE(OFFLINE_WEB_APPLICATIONS)
         DOMApplicationCache* applicationCache() const;
         DOMApplicationCache* optionalApplicationCache() const { return m_applicationCache.get(); }
-#endif
 
 #if ENABLE(ORIENTATION_EVENTS)
         // This is the interface orientation in degrees. Some examples are:
@@ -416,6 +414,12 @@ namespace WebCore {
 
     private:
         DOMWindow(Frame*);
+
+        // FIXME: When this DOMWindow is no longer the active DOMWindow (i.e.,
+        // when its document is no longer the document that is displayed in its
+        // frame), we would like to zero out m_frame to avoid being confused
+        // by the document that is currently active in m_frame.
+        bool isCurrentlyDisplayedInFrame() const;
 
         virtual void refEventTarget() { ref(); }
         virtual void derefEventTarget() { deref(); }
@@ -452,18 +456,14 @@ namespace WebCore {
         String m_status;
         String m_defaultStatus;
 
-#if ENABLE(DOM_STORAGE)
         mutable RefPtr<Storage> m_sessionStorage;
         mutable RefPtr<Storage> m_localStorage;
-#endif
 
 #if ENABLE(INDEXED_DATABASE)
         mutable RefPtr<IDBFactory> m_idbFactory;
 #endif
 
-#if ENABLE(OFFLINE_WEB_APPLICATIONS)
         mutable RefPtr<DOMApplicationCache> m_applicationCache;
-#endif
 
 #if ENABLE(NOTIFICATIONS)
         mutable RefPtr<NotificationCenter> m_notifications;

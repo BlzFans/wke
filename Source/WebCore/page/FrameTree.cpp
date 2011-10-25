@@ -25,6 +25,7 @@
 #include "FrameView.h"
 #include "Page.h"
 #include "PageGroup.h"
+#include "Document.h"
 #include <stdarg.h>
 #include <wtf/StringExtras.h>
 #include <wtf/Vector.h>
@@ -335,3 +336,46 @@ Frame* FrameTree::top(bool checkForDisconnectedFrame) const
 }
 
 } // namespace WebCore
+
+#ifndef NDEBUG
+
+static void printIndent(int indent)
+{
+    for (int i = 0; i < indent; ++i)
+        printf("    ");
+}
+
+static void printFrames(const WebCore::Frame* frame, const WebCore::Frame* targetFrame, int indent)
+{
+    if (frame == targetFrame) {
+        printf("--> ");
+        printIndent(indent - 1);
+    } else
+        printIndent(indent);
+
+    WebCore::FrameView* view = frame->view();
+    printf("Frame %p %dx%d\n", frame, view ? view->width() : 0, view ? view->height() : 0);
+    printIndent(indent);
+    printf("  ownerElement=%p\n", frame->ownerElement());
+    printIndent(indent);
+    printf("  frameView=%p\n", view);
+    printIndent(indent);
+    printf("  document=%p\n", frame->document());
+    printIndent(indent);
+    printf("  uri=%s\n\n", frame->document()->documentURI().utf8().data());
+
+    for (WebCore::Frame* child = frame->tree()->firstChild(); child; child = child->tree()->nextSibling())
+        printFrames(child, targetFrame, indent + 1);
+}
+
+void showFrameTree(const WebCore::Frame* frame)
+{
+    if (!frame) {
+        printf("Null input frame\n");
+        return;
+    }
+
+    printFrames(frame->tree()->top(), frame, 0);
+}
+
+#endif

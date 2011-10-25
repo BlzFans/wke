@@ -37,6 +37,7 @@
 #include "SchemeRegistry.h"
 #include <wtf/MainThread.h>
 #include <wtf/StdLibExtras.h>
+#include <wtf/text/StringBuilder.h>
 
 namespace WebCore {
 
@@ -331,9 +332,32 @@ bool SecurityOrigin::isAccessToURLWhiteListed(const KURL& url) const
     return isAccessWhiteListed(targetOrigin.get());
 }
 
+// This is a hack to allow keep navigation to http/https feeds working. To remove this
+// we need to introduce new API akin to registerURLSchemeAsLocal, that registers a
+// protocols navigation policy.
+// feed(|s|search): is considered a 'nesting' scheme by embedders that support it, so it can be
+// local or remote depending on what is nested. Currently we just check if we are nesting
+// http or https, otherwise we ignore the nesting for the purpose of a security check. We need
+// a facility for registering nesting schemes, and some generalized logic for them.
+// This function should be removed as an outcome of https://bugs.webkit.org/show_bug.cgi?id=69196
+static bool isFeedWithNestedProtocolInHTTPFamily(const KURL& url)
+{
+    const String& urlString = url.string();
+    if (!urlString.startsWith("feed", false))
+        return false;
+
+    return urlString.startsWith("feed://", false) 
+        || urlString.startsWith("feed:http:", false) || urlString.startsWith("feed:https:", false)
+        || urlString.startsWith("feeds:http:", false) || urlString.startsWith("feeds:https:", false)
+        || urlString.startsWith("feedsearch:http:", false) || urlString.startsWith("feedsearch:https:", false);
+}
+
 bool SecurityOrigin::canDisplay(const KURL& url) const
 {
     String protocol = url.protocol().lower();
+
+    if (isFeedWithNestedProtocolInHTTPFamily(url))
+        return true;
 
     if (SchemeRegistry::canDisplayOnlyIfCanRequest(protocol))
         return canRequest(url);
@@ -395,18 +419,18 @@ String SecurityOrigin::toString() const
         return "file://";
     }
 
-    Vector<UChar> result;
-    result.reserveInitialCapacity(m_protocol.length() + m_host.length() + 10);
-    append(result, m_protocol);
-    append(result, "://");
-    append(result, m_host);
+    StringBuilder result;
+    result.reserveCapacity(m_protocol.length() + m_host.length() + 10);
+    result.append(m_protocol);
+    result.append("://");
+    result.append(m_host);
 
     if (m_port) {
-        append(result, ":");
-        append(result, String::number(m_port));
+        result.append(":");
+        result.append(String::number(m_port));
     }
 
-    return String::adopt(result);
+    return result.toString();
 }
 
 PassRefPtr<SecurityOrigin> SecurityOrigin::createFromString(const String& originString)
