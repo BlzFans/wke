@@ -30,11 +30,6 @@
 
 namespace WebCore {
 
-String StyleBase::cssText() const
-{
-    return "";
-}
-
 void StyleBase::checkLoaded()
 {
     if (parent())
@@ -45,9 +40,6 @@ Node* StyleBase::node()
 {
     if (isStyleSheet())
         return static_cast<StyleSheet*>(this)->ownerNode();
-
-    if (isMutableStyleDeclaration())
-        return static_cast<CSSMutableStyleDeclaration*>(this)->node();
 
     return 0;
 }
@@ -72,7 +64,7 @@ KURL StyleBase::baseURL() const
         return sheet->finalURL();
     if (sheet->parent())
         return sheet->parent()->baseURL();
-    if (!sheet->ownerNode()) 
+    if (!sheet->ownerNode())
         return KURL();
     return sheet->ownerNode()->document()->baseURL();
 }

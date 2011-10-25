@@ -20,7 +20,7 @@
  * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
  * OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 #include "config.h"
@@ -30,6 +30,7 @@
 #include "CSSFontFace.h"
 #include "CSSFontSelector.h"
 #include "CachedResourceLoader.h"
+#include "Document.h"
 #include "FontCache.h"
 #include "FontDescription.h"
 #include "GlyphPageTreeNode.h"
@@ -71,10 +72,7 @@ void CSSFontFaceSource::pruneTable()
 {
     if (m_fontDataTable.isEmpty())
         return;
-    HashMap<unsigned, SimpleFontData*>::iterator end = m_fontDataTable.end();
-    for (HashMap<unsigned, SimpleFontData*>::iterator it = m_fontDataTable.begin(); it != end; ++it)
-        GlyphPageTreeNode::pruneTreeCustomFontData(it->second);
-    deleteAllValues(m_fontDataTable);
+
     m_fontDataTable.clear();
 }
 
@@ -193,6 +191,9 @@ SimpleFontData* CSSFontFaceSource::getFontData(const FontDescription& fontDescri
 
     SimpleFontData* fontDataRawPtr = fontData.leakPtr();
     m_fontDataTable.set(hashKey, fontDataRawPtr);
+    ASSERT(fontSelector->document());
+    if (Document* doc = fontSelector->document())
+        doc->registerCustomFont(fontDataRawPtr);
 
     return fontDataRawPtr;
 }
@@ -214,8 +215,8 @@ SVGFontFaceElement* CSSFontFaceSource::svgFontFaceElement() const
     return m_svgFontFaceElement.get();
 }
 
-void CSSFontFaceSource::setSVGFontFaceElement(PassRefPtr<SVGFontFaceElement> element) 
-{ 
+void CSSFontFaceSource::setSVGFontFaceElement(PassRefPtr<SVGFontFaceElement> element)
+{
     m_svgFontFaceElement = element;
 }
 

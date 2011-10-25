@@ -26,17 +26,18 @@
 #include <wtf/RefCounted.h>
 #include <wtf/RefPtr.h>
 #include <wtf/Vector.h>
+#include <wtf/text/WTFString.h>
 
 namespace WebCore {
 
 class CSSRule;
-class StyleList;
+class CSSStyleSheet;
 
 class CSSRuleList : public RefCounted<CSSRuleList> {
 public:
-    static PassRefPtr<CSSRuleList> create(StyleList* list, bool omitCharsetRules = false)
+    static PassRefPtr<CSSRuleList> create(CSSStyleSheet* styleSheet, bool omitCharsetRules = false)
     {
-        return adoptRef(new CSSRuleList(list, omitCharsetRules));
+        return adoptRef(new CSSRuleList(styleSheet, omitCharsetRules));
     }
     static PassRefPtr<CSSRuleList> create()
     {
@@ -45,24 +46,23 @@ public:
     ~CSSRuleList();
 
     unsigned length() const;
-    CSSRule* item(unsigned index);
+    CSSRule* item(unsigned index) const;
 
-    // FIXME: Not part of the DOM.  Only used by media rules.  We should be able to remove them if we changed media rules to work
-    // as StyleLists instead.
+    // FIXME: Not part of the CSSOM. Only used by @media and @-webkit-keyframes rules.
     unsigned insertRule(CSSRule*, unsigned index);
     void deleteRule(unsigned index);
+
     void append(CSSRule*);
 
-    StyleList* styleList()
-    {
-        return m_list.get();
-    }
+    CSSStyleSheet* styleSheet() { return m_styleSheet.get(); }
+
+    String rulesText() const;
 
 private:
     CSSRuleList();
-    CSSRuleList(StyleList*, bool omitCharsetRules);
+    CSSRuleList(CSSStyleSheet*, bool omitCharsetRules);
 
-    RefPtr<StyleList> m_list;
+    RefPtr<CSSStyleSheet> m_styleSheet;
     Vector<RefPtr<CSSRule> > m_lstCSSRules; // FIXME: Want to eliminate, but used by IE rules() extension and still used by media rules.
 };
 

@@ -22,7 +22,7 @@
 #define CSSImageValue_h
 
 #include "CSSPrimitiveValue.h"
-#include "CachedResourceClient.h"
+#include "CachedImage.h"
 #include <wtf/RefPtr.h>
 
 namespace WebCore {
@@ -31,7 +31,7 @@ class CachedResourceLoader;
 class StyleCachedImage;
 class StyleImage;
 
-class CSSImageValue : public CSSPrimitiveValue, private CachedResourceClient {
+class CSSImageValue : public CSSPrimitiveValue, private CachedImageClient {
     WTF_MAKE_FAST_ALLOCATED;
 public:
     static PassRefPtr<CSSImageValue> create() { return adoptRef(new CSSImageValue); }
@@ -41,7 +41,7 @@ public:
     virtual StyleCachedImage* cachedImage(CachedResourceLoader*);
     // Returns a StyleCachedImage if the image is cached already, otherwise a StylePendingImage.
     StyleImage* cachedOrPendingImage();
-    
+
 protected:
     CSSImageValue(const String& url);
 

@@ -30,17 +30,17 @@ class CSSInitialValue : public CSSValue {
 public:
     static PassRefPtr<CSSInitialValue> createExplicit()
     {
-        static CSSInitialValue* explicitValue = create(false).releaseRef();
+        static CSSInitialValue* explicitValue = create(false).leakRef();
         return explicitValue;
     }
     static PassRefPtr<CSSInitialValue> createImplicit()
     {
-        static CSSInitialValue* explicitValue = create(true).releaseRef();
+        static CSSInitialValue* explicitValue = create(true).leakRef();
         return explicitValue;
     }
 
     virtual String cssText() const;
-        
+
 private:
     CSSInitialValue(bool implicit)
         : m_implicit(implicit)

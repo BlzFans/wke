@@ -37,10 +37,10 @@
 namespace WebCore {
 
 using namespace HTMLNames;
-    
+
 void CSSSelector::createRareData()
 {
-    if (m_hasRareData) 
+    if (m_hasRareData)
         return;
     // Move the value to the rare data stucture.
     m_data.m_rareData = new RareData(adoptRef(m_data.m_value));
@@ -150,7 +150,7 @@ PseudoId CSSSelector::pseudoId(PseudoType type)
     case PseudoAnimatingFullScreenTransition:
         return ANIMATING_FULL_SCREEN_TRANSITION;
 #endif
-            
+
     case PseudoInputListButton:
 #if ENABLE(DATALIST)
         return INPUT_LIST_BUTTON;
@@ -580,7 +580,7 @@ String CSSSelector::selectorText() const
         } else if (cs->m_match == CSSSelector::PseudoElement) {
             str += "::";
             str += cs->value();
-        } else if (cs->hasAttribute()) {
+        } else if (cs->isAttributeSelector()) {
             str += "[";
             const AtomicString& prefix = cs->attribute().prefix();
             if (!prefix.isNull()) {
@@ -640,33 +640,21 @@ String CSSSelector::selectorText() const
     return str;
 }
 
-const QualifiedName& CSSSelector::attribute() const
-{ 
-    switch (m_match) {
-    case Id:
-        return idAttr;
-    case Class:
-        return classAttr;
-    default:
-        return m_hasRareData ? m_data.m_rareData->m_attribute : anyQName();
-    }
+void CSSSelector::setAttribute(const QualifiedName& value)
+{
+    createRareData();
+    m_data.m_rareData->m_attribute = value;
 }
 
-void CSSSelector::setAttribute(const QualifiedName& value) 
-{ 
-    createRareData(); 
-    m_data.m_rareData->m_attribute = value; 
+void CSSSelector::setArgument(const AtomicString& value)
+{
+    createRareData();
+    m_data.m_rareData->m_argument = value;
 }
-    
-void CSSSelector::setArgument(const AtomicString& value) 
-{ 
-    createRareData(); 
-    m_data.m_rareData->m_argument = value; 
-}
-    
+
 void CSSSelector::setSelectorList(PassOwnPtr<CSSSelectorList> selectorList)
 {
-    createRareData(); 
+    createRareData();
     m_data.m_rareData->m_selectorList = selectorList;
 }
 
@@ -725,15 +713,15 @@ CSSSelector::RareData::~RareData()
     if (m_value)
         m_value->deref();
 }
-    
+
 // a helper function for parsing nth-arguments
 bool CSSSelector::RareData::parseNth()
 {
     String argument = m_argument.lower();
-    
+
     if (argument.isEmpty())
         return false;
-    
+
     m_a = 0;
     m_b = 0;
     if (argument == "odd") {
@@ -754,7 +742,7 @@ bool CSSSelector::RareData::parseNth()
                 m_a = 1; // n == 1n
             else
                 m_a = argument.substring(0, n).toInt();
-            
+
             size_t p = argument.find('+', n);
             if (p != notFound)
                 m_b = argument.substring(p + 1, argument.length() - p - 1).toInt();

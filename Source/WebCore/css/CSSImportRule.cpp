@@ -39,7 +39,7 @@ CSSImportRule::CSSImportRule(CSSStyleSheet* parent, const String& href, PassRefP
     , m_loading(false)
 {
     if (m_lstMedia)
-        m_lstMedia->setParent(this);
+        m_lstMedia->setParentStyleSheet(parent);
     else
         m_lstMedia = MediaList::create(this, String());
 }
@@ -47,7 +47,7 @@ CSSImportRule::CSSImportRule(CSSStyleSheet* parent, const String& href, PassRefP
 CSSImportRule::~CSSImportRule()
 {
     if (m_lstMedia)
-        m_lstMedia->setParent(0);
+        m_lstMedia->setParentStyleSheet(0);
     if (m_styleSheet)
         m_styleSheet->setParent(0);
     if (m_cachedSheet)
@@ -128,7 +128,7 @@ void CSSImportRule::insertedIntoParent()
     // in our parent chain with the same URL, then just bail.
     StyleBase* root = this;
     for (StyleBase* curr = parent(); curr; curr = curr->parent()) {
-        // FIXME: This is wrong if the finalURL was updated via document::updateBaseURL. 
+        // FIXME: This is wrong if the finalURL was updated via document::updateBaseURL.
         if (curr->isCSSStyleSheet() && absHref == static_cast<CSSStyleSheet*>(curr)->finalURL().string())
             return;
         root = curr;

@@ -529,6 +529,7 @@ input[type="hidden"], input[type="image"], input[type="file"] {
 
 input[type="file"] {
     -webkit-box-align: baseline;
+    color: inherit;
     text-align: start !important;
 }
 
@@ -554,6 +555,7 @@ input[type="file"]::-webkit-file-upload-button {
     -webkit-appearance: push-button;
     white-space: nowrap;
     margin: 0;
+    font-size: inherit;
 }
 
 input[type="button"], input[type="submit"], input[type="reset"], input[type="file"]::-webkit-file-upload-button, button {
@@ -848,7 +850,7 @@ strong, b {
     font-weight: bolder
 }
 
-i, cite, em, var, address {
+i, cite, em, var, address, dfn {
     font-style: italic
 }
 
@@ -988,6 +990,10 @@ summary::-webkit-details-marker {
     width: 0.66em;
     height: 0.66em;
     margin-right: 0.4em;
+}
+
+bdi {
+    unicode-bidi: -webkit-isolate;
 }
 
 /* page */

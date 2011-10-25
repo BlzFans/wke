@@ -72,11 +72,11 @@ bool CSSValueList::removeAll(CSSValue* val)
             found = true;
         }
     }
-    
+
     return found;
 }
-    
-bool CSSValueList::hasValue(CSSValue* val)
+
+bool CSSValueList::hasValue(CSSValue* val) const
 {
     // FIXME: we should be implementing operator== to CSSValue and its derived classes
     // to make comparison more flexible and fast.

@@ -56,8 +56,8 @@ struct CSSParserValue {
         Q_EMS    = 0x100002
     };
     int unit;
-    
-    
+
+
     PassRefPtr<CSSValue> createCSSValue();
 };
 
@@ -69,7 +69,7 @@ public:
     {
     }
     ~CSSParserValueList();
-    
+
     void addValue(const CSSParserValue&);
     void insertValueAt(unsigned, const CSSParserValue&);
     void deleteValueAt(unsigned);
@@ -78,9 +78,16 @@ public:
     unsigned size() const { return m_values.size(); }
     CSSParserValue* current() { return m_current < m_values.size() ? &m_values[m_current] : 0; }
     CSSParserValue* next() { ++m_current; return current(); }
+    CSSParserValue* previous()
+    {
+        if (!m_current)
+            return 0;
+        --m_current;
+        return current();
+    }
 
     CSSParserValue* valueAt(unsigned i) { return i < m_values.size() ? &m_values[i] : 0; }
-        
+
     void clear() { m_values.clear(); }
 
 private:
@@ -102,7 +109,7 @@ public:
     ~CSSParserSelector();
 
     PassOwnPtr<CSSSelector> releaseSelector() { return m_selector.release(); }
-    
+
     void setTag(const QualifiedName& value) { m_selector->setTag(value); }
     void setValue(const AtomicString& value) { m_selector->setValue(value); }
     void setAttribute(const QualifiedName& value) { m_selector->setAttribute(value); }

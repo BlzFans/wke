@@ -111,7 +111,7 @@ void CSSStyleSelector::applySVGProperty(int id, CSSValue* value)
 
     SVGRenderStyle* svgstyle = m_style->accessSVGStyle();
     unsigned short valueType = value->cssValueType();
-    
+
     bool isInherit = m_parentNode && valueType == CSSPrimitiveValue::CSS_INHERIT;
     bool isInitial = valueType == CSSPrimitiveValue::CSS_INITIAL || (!m_parentNode && valueType == CSSPrimitiveValue::CSS_INHERIT);
 
@@ -127,7 +127,7 @@ void CSSStyleSelector::applySVGProperty(int id, CSSValue* value)
             HANDLE_INHERIT_AND_INITIAL(alignmentBaseline, AlignmentBaseline)
             if (!primitiveValue)
                 break;
-            
+
             svgstyle->setAlignmentBaseline(*primitiveValue);
             break;
         }
@@ -226,16 +226,16 @@ void CSSStyleSelector::applySVGProperty(int id, CSSValue* value)
         {
             if (isInherit) {
                 const SVGRenderStyle* svgParentStyle = m_parentStyle->svgStyle();
-                svgstyle->setFillPaint(svgParentStyle->fillPaintType(), svgParentStyle->fillPaintColor(), svgParentStyle->fillPaintUri());
+                svgstyle->setFillPaint(svgParentStyle->fillPaintType(), svgParentStyle->fillPaintColor(), svgParentStyle->fillPaintUri(), applyPropertyToRegularStyle(), applyPropertyToVisitedLinkStyle());
                 return;
             }
             if (isInitial) {
-                svgstyle->setFillPaint(SVGRenderStyle::initialFillPaintType(), SVGRenderStyle::initialFillPaintColor(), SVGRenderStyle::initialFillPaintUri());
+                svgstyle->setFillPaint(SVGRenderStyle::initialFillPaintType(), SVGRenderStyle::initialFillPaintColor(), SVGRenderStyle::initialFillPaintUri(), applyPropertyToRegularStyle(), applyPropertyToVisitedLinkStyle());
                 return;
             }
             if (value->isSVGPaint()) {
                 SVGPaint* svgPaint = static_cast<SVGPaint*>(value);
-                svgstyle->setFillPaint(svgPaint->paintType(), colorFromSVGColorCSSValue(svgPaint, m_style->color()), svgPaint->uri());
+                svgstyle->setFillPaint(svgPaint->paintType(), colorFromSVGColorCSSValue(svgPaint, m_style->color()), svgPaint->uri(), applyPropertyToRegularStyle(), applyPropertyToVisitedLinkStyle());
             }
             break;
         }
@@ -243,16 +243,16 @@ void CSSStyleSelector::applySVGProperty(int id, CSSValue* value)
         {
             if (isInherit) {
                 const SVGRenderStyle* svgParentStyle = m_parentStyle->svgStyle();
-                svgstyle->setStrokePaint(svgParentStyle->strokePaintType(), svgParentStyle->strokePaintColor(), svgParentStyle->strokePaintUri());
+                svgstyle->setStrokePaint(svgParentStyle->strokePaintType(), svgParentStyle->strokePaintColor(), svgParentStyle->strokePaintUri(), applyPropertyToRegularStyle(), applyPropertyToVisitedLinkStyle());
                 return;
             }
             if (isInitial) {
-                svgstyle->setStrokePaint(SVGRenderStyle::initialStrokePaintType(), SVGRenderStyle::initialStrokePaintColor(), SVGRenderStyle::initialStrokePaintUri());
+                svgstyle->setStrokePaint(SVGRenderStyle::initialStrokePaintType(), SVGRenderStyle::initialStrokePaintColor(), SVGRenderStyle::initialStrokePaintUri(), applyPropertyToRegularStyle(), applyPropertyToVisitedLinkStyle());
                 return;
             }
             if (value->isSVGPaint()) {
                 SVGPaint* svgPaint = static_cast<SVGPaint*>(value);
-                svgstyle->setStrokePaint(svgPaint->paintType(), colorFromSVGColorCSSValue(svgPaint, m_style->color()), svgPaint->uri());
+                svgstyle->setStrokePaint(svgPaint->paintType(), colorFromSVGColorCSSValue(svgPaint, m_style->color()), svgPaint->uri(), applyPropertyToRegularStyle(), applyPropertyToVisitedLinkStyle());
             }
             break;
         }
@@ -299,8 +299,8 @@ void CSSStyleSelector::applySVGProperty(int id, CSSValue* value)
             HANDLE_INHERIT_AND_INITIAL(fillOpacity, FillOpacity)
             if (!primitiveValue)
                 return;
-        
-            float f = 0.0f;    
+
+            float f = 0.0f;
             int type = primitiveValue->primitiveType();
             if (type == CSSPrimitiveValue::CSS_PERCENTAGE)
                 f = primitiveValue->getFloatValue() / 100.0f;
@@ -317,8 +317,8 @@ void CSSStyleSelector::applySVGProperty(int id, CSSValue* value)
             HANDLE_INHERIT_AND_INITIAL(strokeOpacity, StrokeOpacity)
             if (!primitiveValue)
                 return;
-        
-            float f = 0.0f;    
+
+            float f = 0.0f;
             int type = primitiveValue->primitiveType();
             if (type == CSSPrimitiveValue::CSS_PERCENTAGE)
                 f = primitiveValue->getFloatValue() / 100.0f;
@@ -335,8 +335,8 @@ void CSSStyleSelector::applySVGProperty(int id, CSSValue* value)
             HANDLE_INHERIT_AND_INITIAL(stopOpacity, StopOpacity)
             if (!primitiveValue)
                 return;
-        
-            float f = 0.0f;    
+
+            float f = 0.0f;
             int type = primitiveValue->primitiveType();
             if (type == CSSPrimitiveValue::CSS_PERCENTAGE)
                 f = primitiveValue->getFloatValue() / 100.0f;
@@ -447,7 +447,7 @@ void CSSStyleSelector::applySVGProperty(int id, CSSValue* value)
                 s = primitiveValue->getStringValue();
             else
                 return;
-            
+
             svgstyle->setMaskerResource(SVGURIReference::fragmentIdentifierFromIRIString(s, m_element->document()));
             break;
         }
@@ -582,7 +582,7 @@ void CSSStyleSelector::applySVGProperty(int id, CSSValue* value)
             // -webkit-svg-shadow does should not have a spread or style
             ASSERT(!item->spread);
             ASSERT(!item->style);
-                
+
             OwnPtr<ShadowData> shadowData = adoptPtr(new ShadowData(x, y, blur, 0, Normal, false, color.isValid() ? color : Color::transparent));
             svgstyle->setShadow(shadowData.release());
             return;

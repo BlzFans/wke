@@ -33,6 +33,7 @@ namespace WebCore {
 class Counter;
 class DashboardRegion;
 class Pair;
+class Quad;
 class RGBColor;
 class Rect;
 class RenderStyle;
@@ -51,6 +52,7 @@ template<typename T, T max, T min> inline T roundForImpreciseConversion(double v
 
 class CSSPrimitiveValue : public CSSValue {
 public:
+    static const int UnitTypesBits = 8;
     enum UnitTypes {
         CSS_UNKNOWN = 0,
         CSS_NUMBER = 1,
@@ -81,27 +83,29 @@ public:
         CSS_PAIR = 100, // We envision this being exposed as a means of getting computed style values for pairs (border-spacing/radius, background-position, etc.)
         CSS_DASHBOARD_REGION = 101, // FIXME: Dashboard region should not be a primitive value.
         CSS_UNICODE_RANGE = 102,
-        
+
         // These next types are just used internally to allow us to translate back and forth from CSSPrimitiveValues to CSSParserValues.
         CSS_PARSER_OPERATOR = 103,
         CSS_PARSER_INTEGER = 104,
         CSS_PARSER_HEXCOLOR = 105,
-        
-        // This is used internally for unknown identifiers 
+
+        // This is used internally for unknown identifiers
         CSS_PARSER_IDENTIFIER = 106,
-        
+
         // These are from CSS3 Values and Units, but that isn't a finished standard yet
         CSS_TURN = 107,
         CSS_REMS = 108,
 
         // This is used internally for counter names (as opposed to counter values)
         CSS_COUNTER_NAME = 109,
-        CSS_FROM_FLOW = 110,
 
         // This is used by the CSS Exclusions draft
-        CSS_SHAPE = 111
+        CSS_SHAPE = 110,
+
+        // Used by border images.
+        CSS_QUAD = 111
     };
-    
+
     // This enum follows the CSSParser::Units enum augmented with UNIT_FREQUENCY for frequencies.
     enum UnitCategory {
         UNumber,
@@ -122,10 +126,21 @@ public:
     static PassRefPtr<CSSPrimitiveValue> createColor(unsigned rgbValue) { return adoptRef(new CSSPrimitiveValue(rgbValue)); }
     static PassRefPtr<CSSPrimitiveValue> create(double value, UnitTypes type) { return adoptRef(new CSSPrimitiveValue(value, type)); }
     static PassRefPtr<CSSPrimitiveValue> create(const String& value, UnitTypes type) { return adoptRef(new CSSPrimitiveValue(value, type)); }
-    
+
     template<typename T> static PassRefPtr<CSSPrimitiveValue> create(T value)
     {
         return adoptRef(new CSSPrimitiveValue(value));
+    }
+
+    // This value is used to handle quirky margins in reflow roots (body, td, and th) like WinIE.
+    // The basic idea is that a stylesheet can use the value __qem (for quirky em) instead of em.
+    // When the quirky value is used, if you're in quirks mode, the margin will collapse away
+    // inside a table cell.
+    static PassRefPtr<CSSPrimitiveValue> createAllowingMarginQuirk(double value, UnitTypes type)
+    {
+        CSSPrimitiveValue* quirkValue = new CSSPrimitiveValue(value, type);
+        quirkValue->m_isQuirkValue = true;
+        return adoptRef(quirkValue);
     }
 
     virtual ~CSSPrimitiveValue();
@@ -148,7 +163,7 @@ public:
 
     // use with care!!!
     void setPrimitiveType(unsigned short type) { m_type = type; }
-    
+
     double getDoubleValue(unsigned short unitType, ExceptionCode&) const;
     double getDoubleValue(unsigned short unitType) const;
     double getDoubleValue() const { return m_value.num; }
@@ -176,6 +191,9 @@ public:
     Rect* getRectValue(ExceptionCode&) const;
     Rect* getRectValue() const { return m_type != CSS_RECT ? 0 : m_value.rect; }
 
+    Quad* getQuadValue(ExceptionCode&) const;
+    Quad* getQuadValue() const { return m_type != CSS_QUAD ? 0 : m_value.quad; }
+
     PassRefPtr<RGBColor> getRGBColorValue(ExceptionCode&) const;
     RGBA32 getRGBA32Value() const { return m_type != CSS_RGBCOLOR ? 0 : m_value.rgbcolor; }
 
@@ -192,7 +210,7 @@ public:
     virtual bool parseString(const String&, bool = false);
     virtual String cssText() const;
 
-    virtual bool isQuirkValue() { return false; }
+    bool isQuirkValue() { return m_isQuirkValue; }
 
     virtual void addSubresourceStyleURLs(ListHashSet<KURL>&, const CSSStyleSheet*);
 
@@ -224,6 +242,7 @@ private:
     void init(PassRefPtr<Counter>);
     void init(PassRefPtr<Rect>);
     void init(PassRefPtr<Pair>);
+    void init(PassRefPtr<Quad>);
     void init(PassRefPtr<DashboardRegion>); // FIXME: Dashboard region should not be a primitive value.
     void init(PassRefPtr<CSSWrapShape>);
 
@@ -235,14 +254,16 @@ private:
 
     virtual unsigned short cssValueType() const;
 
-    signed m_type : 31;
+    signed m_type : UnitTypesBits;
     mutable unsigned m_hasCachedCSSText : 1;
+    unsigned m_isQuirkValue : 1;
     union {
         int ident;
         double num;
         StringImpl* string;
         Counter* counter;
         Rect* rect;
+        Quad* quad;
         unsigned rgbcolor;
         Pair* pair;
         DashboardRegion* region;

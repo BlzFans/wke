@@ -46,7 +46,7 @@ static bool isAcceptableCSSStyleSheetParent(Node* parentNode)
         || parentNode->hasTagName(HTMLNames::styleTag)
 #if ENABLE(SVG)
         || parentNode->hasTagName(SVGNames::styleTag)
-#endif    
+#endif
         || parentNode->nodeType() == Node::PROCESSING_INSTRUCTION_NODE;
 }
 #endif
@@ -85,6 +85,25 @@ CSSStyleSheet::CSSStyleSheet(CSSRule* ownerRule, const String& href, const KURL&
 
 CSSStyleSheet::~CSSStyleSheet()
 {
+    // For style rules outside the document, .parentStyleSheet can become null even if the style rule
+    // is still observable from JavaScript. This matches the behavior of .parentNode for nodes, but
+    // it's not ideal because it makes the CSSOM's behavior depend on the timing of garbage collection.
+    for (unsigned i = 0; i < length(); ++i) {
+        ASSERT(item(i)->parent() == this);
+        item(i)->setParent(0);
+    }
+}
+
+void CSSStyleSheet::append(PassRefPtr<CSSRule> child)
+{
+    CSSRule* c = child.get();
+    m_children.append(child);
+    c->insertedIntoParent();
+}
+
+void CSSStyleSheet::remove(unsigned index)
+{
+    m_children.remove(index);
 }
 
 CSSRule *CSSStyleSheet::ownerRule() const
@@ -125,10 +144,12 @@ unsigned CSSStyleSheet::insertRule(const String& rule, unsigned index, Exception
         }
     }
 
-    insert(index, r.release());
-    
+    CSSRule* c = r.get();
+    m_children.insert(index, r.release());
+    c->insertedIntoParent();
+
     styleSheetChanged();
-    
+
     return index;
 }
 
@@ -162,7 +183,7 @@ void CSSStyleSheet::deleteRule(unsigned index, ExceptionCode& ec)
 
     ec = 0;
     item(index)->setParent(0);
-    remove(index);
+    m_children.remove(index);
     styleSheetChanged();
 }
 
@@ -172,7 +193,7 @@ void CSSStyleSheet::addNamespace(CSSParser* p, const AtomicString& prefix, const
         return;
 
     m_namespaces = adoptPtr(new CSSNamespace(prefix, uri, m_namespaces.release()));
-    
+
     if (prefix.isEmpty())
         // Set the default namespace on the parser so that selectors that omit namespace info will
         // be able to pick it up easily.
@@ -209,7 +230,7 @@ bool CSSStyleSheet::isLoading()
 {
     unsigned len = length();
     for (unsigned i = 0; i < len; ++i) {
-        StyleBase* rule = item(i);
+        CSSRule* rule = item(i);
         if (rule->isImportRule() && static_cast<CSSImportRule*>(rule)->isLoading())
             return true;
     }
@@ -260,7 +281,7 @@ void CSSStyleSheet::styleSheetChanged()
     while (StyleBase* parent = root->parent())
         root = parent;
     Document* documentToUpdate = root->isCSSStyleSheet() ? static_cast<CSSStyleSheet*>(root)->document() : 0;
-    
+
     /* FIXME: We don't need to do everything updateStyleSelector does,
      * basically we just need to recreate the document's selector with the
      * already existing style sheets.
@@ -289,11 +310,7 @@ void CSSStyleSheet::addSubresourceStyleURLs(ListHashSet<KURL>& urls)
         CSSStyleSheet* styleSheet = styleSheetQueue.takeFirst();
 
         for (unsigned i = 0; i < styleSheet->length(); ++i) {
-            StyleBase* styleBase = styleSheet->item(i);
-            if (!styleBase->isRule())
-                continue;
-            
-            CSSRule* rule = static_cast<CSSRule*>(styleBase);
+            CSSRule* rule = styleSheet->item(i);
             if (rule->isImportRule()) {
                 if (CSSStyleSheet* ruleStyleSheet = static_cast<CSSImportRule*>(rule)->styleSheet())
                     styleSheetQueue.append(ruleStyleSheet);

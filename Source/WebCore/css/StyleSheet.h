@@ -23,7 +23,7 @@
 
 #include "KURLHash.h"
 #include "PlatformString.h"
-#include "StyleList.h"
+#include "StyleBase.h"
 #include <wtf/ListHashSet.h>
 
 namespace WebCore {
@@ -32,7 +32,7 @@ class CachedCSSStyleSheet;
 class MediaList;
 class Node;
 
-class StyleSheet : public StyleList {
+class StyleSheet : public StyleBase {
 public:
     virtual ~StyleSheet();
 

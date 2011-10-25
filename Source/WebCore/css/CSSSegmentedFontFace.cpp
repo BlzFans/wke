@@ -20,7 +20,7 @@
  * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
  * OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 #include "config.h"
@@ -28,6 +28,7 @@
 
 #include "CSSFontFace.h"
 #include "CSSFontSelector.h"
+#include "Document.h"
 #include "FontDescription.h"
 #include "SegmentedFontData.h"
 #include "SimpleFontData.h"
@@ -52,10 +53,7 @@ void CSSSegmentedFontFace::pruneTable()
     // Make sure the glyph page tree prunes out all uses of this custom font.
     if (m_fontDataTable.isEmpty())
         return;
-    HashMap<unsigned, SegmentedFontData*>::iterator end = m_fontDataTable.end();
-    for (HashMap<unsigned, SegmentedFontData*>::iterator it = m_fontDataTable.begin(); it != end; ++it)
-        GlyphPageTreeNode::pruneTreeCustomFontData(it->second);
-    deleteAllValues(m_fontDataTable);
+
     m_fontDataTable.clear();
 }
 
@@ -115,9 +113,12 @@ FontData* CSSSegmentedFontFace::getFontData(const FontDescription& fontDescripti
             }
         }
     }
-    if (fontData->numRanges())
+    if (fontData->numRanges()) {
         m_fontDataTable.set(hashKey, fontData);
-    else {
+        ASSERT(m_fontSelector->document());
+        if (Document* doc = m_fontSelector->document())
+            doc->registerCustomFont(fontData);
+    } else {
         delete fontData;
         fontData = 0;
     }

@@ -12,7 +12,7 @@
  *    copyright notice, this list of conditions and the following
  *    disclaimer in the documentation and/or other materials
  *    provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDER “AS IS” AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -31,6 +31,8 @@
 
 #include "CSSWrapShapes.h"
 
+#include <wtf/text/StringBuilder.h>
+
 using namespace WTF;
 
 namespace WebCore {
@@ -39,80 +41,80 @@ String CSSWrapShapeRect::cssText() const
 {
     DEFINE_STATIC_LOCAL(const String, rectParen, ("rect("));
     DEFINE_STATIC_LOCAL(const String, comma, (", "));
-    
-    Vector<UChar> result;
-    result.reserveInitialCapacity(32);
-    append(result, rectParen);
 
-    append(result, m_left->cssText());
-    append(result, comma);
+    StringBuilder result;
+    result.reserveCapacity(32);
+    result.append(rectParen);
 
-    append(result, m_top->cssText());
-    append(result, comma);
+    result.append(m_left->cssText());
+    result.append(comma);
 
-    append(result, m_width->cssText());
-    append(result, comma);
+    result.append(m_top->cssText());
+    result.append(comma);
 
-    append(result, m_height->cssText());
-    
+    result.append(m_width->cssText());
+    result.append(comma);
+
+    result.append(m_height->cssText());
+
     if (m_radiusX.get()) {
-        append(result, comma);
-        append(result, m_radiusX->cssText());
+        result.append(comma);
+        result.append(m_radiusX->cssText());
 
         if (m_radiusY.get()) {
-            append(result, comma);
-            append(result, m_radiusY->cssText());
+            result.append(comma);
+            result.append(m_radiusY->cssText());
         }
     }
-    
+
     result.append(')');
-            
-    return String::adopt(result);
+
+    return result.toString();
 }
 
 String CSSWrapShapeCircle::cssText() const
 {
     DEFINE_STATIC_LOCAL(const String, circleParen, ("circle("));
     DEFINE_STATIC_LOCAL(const String, comma, (", "));
-    
-    Vector<UChar> result;
-    result.reserveInitialCapacity(32);
-    append(result, circleParen);
 
-    append(result, m_left->cssText());
-    append(result, comma);
+    StringBuilder result;
+    result.reserveCapacity(32);
+    result.append(circleParen);
 
-    append(result, m_top->cssText());
-    append(result, comma);
+    result.append(m_left->cssText());
+    result.append(comma);
 
-    append(result, m_radius->cssText());
+    result.append(m_top->cssText());
+    result.append(comma);
+
+    result.append(m_radius->cssText());
     result.append(')');
-            
-    return String::adopt(result);
+
+    return result.toString();
 }
 
 String CSSWrapShapeEllipse::cssText() const
 {
     DEFINE_STATIC_LOCAL(const String, ellipseParen, ("ellipse("));
     DEFINE_STATIC_LOCAL(const String, comma, (", "));
-    
-    Vector<UChar> result;
-    result.reserveInitialCapacity(32);
-    append(result, ellipseParen);
 
-    append(result, m_left->cssText());
-    append(result, comma);
+    StringBuilder result;
+    result.reserveCapacity(32);
+    result.append(ellipseParen);
 
-    append(result, m_top->cssText());
-    append(result, comma);
+    result.append(m_left->cssText());
+    result.append(comma);
 
-    append(result, m_radiusX->cssText());
-    append(result, comma);
+    result.append(m_top->cssText());
+    result.append(comma);
 
-    append(result, m_radiusY->cssText());
+    result.append(m_radiusX->cssText());
+    result.append(comma);
+
+    result.append(m_radiusY->cssText());
     result.append(')');
-            
-    return String::adopt(result);
+
+    return result.toString();
 }
 
 String CSSWrapShapePolygon::cssText() const
@@ -120,27 +122,27 @@ String CSSWrapShapePolygon::cssText() const
     DEFINE_STATIC_LOCAL(const String, polygonParenEvenOdd, ("polygon(evenodd, "));
     DEFINE_STATIC_LOCAL(const String, polygonParenNonZero, ("polygon(nonzero, "));
     DEFINE_STATIC_LOCAL(const String, comma, (", "));
-    
-    Vector<UChar> result;
-    result.reserveInitialCapacity(32);
+
+    StringBuilder result;
+    result.reserveCapacity(32);
     if (m_windRule == RULE_EVENODD)
-        append(result, polygonParenEvenOdd);
+        result.append(polygonParenEvenOdd);
     else
-        append(result, polygonParenNonZero);
+        result.append(polygonParenNonZero);
 
     ASSERT(!(m_values.size() % 2));
 
     for (unsigned i = 0; i < m_values.size(); i += 2) {
         if (i)
             result.append(' ');
-        append(result, m_values.at(i)->cssText());
-        append(result, comma);
-        append(result, m_values.at(i + 1)->cssText());
+        result.append(m_values.at(i)->cssText());
+        result.append(comma);
+        result.append(m_values.at(i + 1)->cssText());
     }
-    
+
     result.append(')');
-            
-    return String::adopt(result);
+
+    return result.toString();
 }
 
 } // namespace WebCore
