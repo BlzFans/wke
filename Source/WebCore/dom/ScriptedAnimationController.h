@@ -28,6 +28,13 @@
 
 #if ENABLE(REQUEST_ANIMATION_FRAME)
 #include "DOMTimeStamp.h"
+#if USE(REQUEST_ANIMATION_FRAME_TIMER)
+#if USE(REQUEST_ANIMATION_FRAME_DISPLAY_MONITOR)
+#include "DisplayRefreshMonitor.h"
+#endif
+#include "Timer.h"
+#endif
+#include "PlatformScreen.h"
 #include <wtf/Noncopyable.h>
 #include <wtf/PassOwnPtr.h>
 #include <wtf/RefPtr.h>
@@ -39,12 +46,16 @@ class Document;
 class Element;
 class RequestAnimationFrameCallback;
 
-class ScriptedAnimationController {
+class ScriptedAnimationController
+#if USE(REQUEST_ANIMATION_FRAME_DISPLAY_MONITOR)
+    : public DisplayRefreshMonitorClient
+#endif
+{
 WTF_MAKE_NONCOPYABLE(ScriptedAnimationController);
 public:
-    static PassOwnPtr<ScriptedAnimationController> create(Document* document)
+    static PassOwnPtr<ScriptedAnimationController> create(Document* document, PlatformDisplayID displayID)
     {
-        return adoptPtr(new ScriptedAnimationController(document));
+        return adoptPtr(new ScriptedAnimationController(document, displayID));
     }
 
     typedef int CallbackId;
@@ -56,14 +67,32 @@ public:
     void suspend();
     void resume();
 
+    void windowScreenDidChange(PlatformDisplayID);
+
 private:
-    explicit ScriptedAnimationController(Document*);
+    explicit ScriptedAnimationController(Document*, PlatformDisplayID);
+    
     typedef Vector<RefPtr<RequestAnimationFrameCallback> > CallbackList;
     CallbackList m_callbacks;
 
     Document* m_document;
     CallbackId m_nextCallbackId;
     int m_suspendCount;
+
+    void scheduleAnimation();
+
+#if USE(REQUEST_ANIMATION_FRAME_TIMER)
+    void animationTimerFired(Timer<ScriptedAnimationController>*);
+    Timer<ScriptedAnimationController> m_animationTimer;
+    double m_lastAnimationFrameTime;
+
+#if USE(REQUEST_ANIMATION_FRAME_DISPLAY_MONITOR)
+    // Override for DisplayRefreshMonitorClient
+    virtual void displayRefreshFired(double timestamp) { serviceScriptedAnimations(convertSecondsToDOMTimeStamp(timestamp)); }
+
+    bool m_useTimer;
+#endif
+#endif
 };
 
 }

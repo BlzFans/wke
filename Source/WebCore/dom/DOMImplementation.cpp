@@ -48,6 +48,7 @@
 #include "RegularExpression.h"
 #include "Settings.h"
 #include "TextDocument.h"
+#include "ThreadGlobalData.h"
 #include "XMLNames.h"
 #include <wtf/StdLibExtras.h>
 
@@ -72,7 +73,7 @@ static bool isSVG10Feature(const String &feature)
     static bool initialized = false;
     DEFINE_STATIC_LOCAL(FeatureSet, svgFeatures, ());
     if (!initialized) {
-#if ENABLE(SVG_USE) && ENABLE(SVG_FOREIGN_OBJECT) && ENABLE(FILTERS) && ENABLE(SVG_FONTS)
+#if ENABLE(FILTERS) && ENABLE(SVG_FONTS)
         addString(svgFeatures, "svg");
         addString(svgFeatures, "svg.static");
 #endif
@@ -80,7 +81,7 @@ static bool isSVG10Feature(const String &feature)
 //      addString(svgFeatures, "svg.dynamic");
 //      addString(svgFeatures, "svg.dom.animation");
 //      addString(svgFeatures, "svg.dom.dynamic");
-#if ENABLE(SVG_USE) && ENABLE(SVG_FOREIGN_OBJECT) && ENABLE(FILTERS) && ENABLE(SVG_FONTS)
+#if ENABLE(FILTERS) && ENABLE(SVG_FONTS)
         addString(svgFeatures, "dom");
         addString(svgFeatures, "dom.svg");
         addString(svgFeatures, "dom.svg.static");
@@ -100,23 +101,19 @@ static bool isSVG11Feature(const String &feature)
         // Sadly, we cannot claim to implement any of the SVG 1.1 generic feature sets
         // lack of Font and Filter support.
         // http://bugs.webkit.org/show_bug.cgi?id=15480
-#if ENABLE(SVG_USE) && ENABLE(SVG_FOREIGN_OBJECT) && ENABLE(FILTERS) && ENABLE(SVG_FONTS)
+#if ENABLE(FILTERS) && ENABLE(SVG_FONTS)
         addString(svgFeatures, "SVG");
         addString(svgFeatures, "SVGDOM");
         addString(svgFeatures, "SVG-static");
         addString(svgFeatures, "SVGDOM-static");
 #endif
-#if ENABLE(SVG_ANIMATION)
         addString(svgFeatures, "SVG-animation");
         addString(svgFeatures, "SVGDOM-animation");
-#endif
 //      addString(svgFeatures, "SVG-dynamic);
 //      addString(svgFeatures, "SVGDOM-dynamic);
         addString(svgFeatures, "CoreAttribute");
-#if ENABLE(SVG_USE)
         addString(svgFeatures, "Structure");
         addString(svgFeatures, "BasicStructure");
-#endif
         addString(svgFeatures, "ContainerAttribute");
         addString(svgFeatures, "ConditionalProcessing");
         addString(svgFeatures, "Image");
@@ -150,16 +147,12 @@ static bool isSVG11Feature(const String &feature)
         addString(svgFeatures, "ExternalResourcesRequired");
 //      addString(svgFeatures, "View"); // buggy <view> support, bug 16962
         addString(svgFeatures, "Script");
-#if ENABLE(SVG_ANIMATION)
         addString(svgFeatures, "Animation"); 
-#endif
 #if ENABLE(SVG_FONTS)
         addString(svgFeatures, "Font");
         addString(svgFeatures, "BasicFont");
 #endif
-#if ENABLE(SVG_FOREIGN_OBJECT)
         addString(svgFeatures, "Extensibility");
-#endif
         initialized = true;
     }
     return svgFeatures.contains(feature);
@@ -272,13 +265,27 @@ PassRefPtr<CSSStyleSheet> DOMImplementation::createCSSStyleSheet(const String&, 
     return sheet.release();
 }
 
+static const char* const validXMLMIMETypeChars = "[0-9a-zA-Z_\\-+~!$\\^{}|.%'`#&*]"; // per RFCs: 3023, 2045
+
+XMLMIMETypeRegExp::XMLMIMETypeRegExp() :
+    m_regex(adoptPtr(new RegularExpression(WTF::makeString("^", validXMLMIMETypeChars, "+/", validXMLMIMETypeChars, "+\\+xml$"), TextCaseSensitive)))
+{
+}
+
+XMLMIMETypeRegExp::~XMLMIMETypeRegExp()
+{
+}
+
+bool XMLMIMETypeRegExp::isXMLMIMEType(const String& mimeType)
+{
+    return m_regex->match(mimeType) > -1;
+}
+
 bool DOMImplementation::isXMLMIMEType(const String& mimeType)
 {
     if (mimeType == "text/xml" || mimeType == "application/xml" || mimeType == "text/xsl")
         return true;
-    static const char* const validChars = "[0-9a-zA-Z_\\-+~!$\\^{}|.%'`#&*]"; // per RFCs: 3023, 2045
-    DEFINE_STATIC_LOCAL(RegularExpression, xmlTypeRegExp, (String("^") + validChars + "+/" + validChars + "+\\+xml$", TextCaseSensitive));
-    return xmlTypeRegExp.match(mimeType) > -1;
+    return threadGlobalData().xmlTypeRegExp().isXMLMIMEType(mimeType);
 }
 
 bool DOMImplementation::isTextMIMEType(const String& mimeType)
@@ -310,11 +317,7 @@ PassRefPtr<Document> DOMImplementation::createDocument(const String& type, Frame
     // Plugins cannot take HTML and XHTML from us, and we don't even need to initialize the plugin database for those.
     if (type == "text/html")
         return HTMLDocument::create(frame, url);
-    if (type == "application/xhtml+xml"
-#if ENABLE(XHTMLMP)
-        || type == "application/vnd.wap.xhtml+xml"
-#endif
-        )
+    if (type == "application/xhtml+xml")
         return Document::createXHTML(frame, url);
 
 #if ENABLE(FTPDIR)

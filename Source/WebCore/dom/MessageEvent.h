@@ -28,69 +28,113 @@
 #ifndef MessageEvent_h
 #define MessageEvent_h
 
+#include "ArrayBuffer.h"
+#include "Blob.h"
 #include "DOMWindow.h"
 #include "Event.h"
 #include "MessagePort.h"
+#include "ScriptValue.h"
 #include "SerializedScriptValue.h"
 
 namespace WebCore {
 
-    class DOMWindow;
+class DOMWindow;
 
-    class MessageEvent : public Event {
-    public:
-        static PassRefPtr<MessageEvent> create()
-        {
-            return adoptRef(new MessageEvent);
-        }
-        static PassRefPtr<MessageEvent> create(PassOwnPtr<MessagePortArray> ports, PassRefPtr<SerializedScriptValue> data = 0, const String& origin = "", const String& lastEventId = "", PassRefPtr<DOMWindow> source = 0)
-        {
-            return adoptRef(new MessageEvent(data, origin, lastEventId, source, ports));
-        }
-        static PassRefPtr<MessageEvent> create(const String& data)
-        {
-            return adoptRef(new MessageEvent(data));
-        }
-        virtual ~MessageEvent();
+struct MessageEventInit : public EventInit {
+    MessageEventInit();
 
-        void initMessageEvent(const AtomicString& type, bool canBubble, bool cancelable, PassRefPtr<SerializedScriptValue> data, const String& origin, const String& lastEventId, DOMWindow* source, PassOwnPtr<MessagePortArray>);
+    ScriptValue data;
+    String origin;
+    String lastEventId;
+    RefPtr<DOMWindow> source;
+    MessagePortArray ports;
+};
 
-        const String& origin() const { return m_origin; }
-        const String& lastEventId() const { return m_lastEventId; }
-        DOMWindow* source() const { return m_source.get(); }
-        MessagePortArray* ports() const { return m_ports.get(); }
+class MessageEvent : public Event {
+public:
+    static PassRefPtr<MessageEvent> create()
+    {
+        return adoptRef(new MessageEvent);
+    }
+    static PassRefPtr<MessageEvent> create(PassOwnPtr<MessagePortArray> ports, const ScriptValue& data = ScriptValue(), const String& origin = "", const String& lastEventId = "", PassRefPtr<DOMWindow> source = 0)
+    {
+        return adoptRef(new MessageEvent(data, origin, lastEventId, source, ports));
+    }
+    static PassRefPtr<MessageEvent> create(PassOwnPtr<MessagePortArray> ports, PassRefPtr<SerializedScriptValue> data, const String& origin = "", const String& lastEventId = "", PassRefPtr<DOMWindow> source = 0)
+    {
+        return adoptRef(new MessageEvent(data, origin, lastEventId, source, ports));
+    }
+    static PassRefPtr<MessageEvent> create(const String& data)
+    {
+        return adoptRef(new MessageEvent(data));
+    }
+    static PassRefPtr<MessageEvent> create(PassRefPtr<Blob> data)
+    {
+        return adoptRef(new MessageEvent(data));
+    }
+    static PassRefPtr<MessageEvent> create(PassRefPtr<ArrayBuffer> data)
+    {
+        return adoptRef(new MessageEvent(data));
+    }
+    static PassRefPtr<MessageEvent> create(const AtomicString& type, const MessageEventInit& initializer)
+    {
+        return adoptRef(new MessageEvent(type, initializer));
+    }
+    virtual ~MessageEvent();
 
-        // FIXME: Remove this when we have custom ObjC binding support.
-        SerializedScriptValue* data() const;
+    void initMessageEvent(const AtomicString& type, bool canBubble, bool cancelable, const ScriptValue& data, const String& origin, const String& lastEventId, DOMWindow* source, PassOwnPtr<MessagePortArray>);
+    void initMessageEvent(const AtomicString& type, bool canBubble, bool cancelable, PassRefPtr<SerializedScriptValue> data, const String& origin, const String& lastEventId, DOMWindow* source, PassOwnPtr<MessagePortArray>);
 
-        // FIXME: remove this when we update the ObjC bindings (bug #28774).
-        MessagePort* messagePort();
-        // FIXME: remove this when we update the ObjC bindings (bug #28774).
-        void initMessageEvent(const AtomicString& type, bool canBubble, bool cancelable, PassRefPtr<SerializedScriptValue> data, const String& origin, const String& lastEventId, DOMWindow* source, MessagePort*);
+    const String& origin() const { return m_origin; }
+    const String& lastEventId() const { return m_lastEventId; }
+    DOMWindow* source() const { return m_source.get(); }
+    MessagePortArray* ports() const { return m_ports.get(); }
 
-        virtual bool isMessageEvent() const;
+    // FIXME: Remove this when we have custom ObjC binding support.
+    SerializedScriptValue* data() const;
+    // FIXME: remove this when we update the ObjC bindings (bug #28774).
+    MessagePort* messagePort();
+    // FIXME: remove this when we update the ObjC bindings (bug #28774).
+    void initMessageEvent(const AtomicString& type, bool canBubble, bool cancelable, PassRefPtr<SerializedScriptValue> data, const String& origin, const String& lastEventId, DOMWindow* source, MessagePort*);
 
-        enum DataType {
-            DataTypeSerializedScriptValue,
-            DataTypeString
-        };
-        DataType dataType() const { return m_dataType; }
-        SerializedScriptValue* dataAsSerializedScriptValue() const { return m_dataAsSerializedScriptValue.get(); }
-        String dataAsString() const { return m_dataAsString; }
+    virtual const AtomicString& interfaceName() const;
+    virtual bool isMessageEvent() const;
 
-    private:
-        MessageEvent();
-        MessageEvent(PassRefPtr<SerializedScriptValue> data, const String& origin, const String& lastEventId, PassRefPtr<DOMWindow> source, PassOwnPtr<MessagePortArray>);
-        explicit MessageEvent(const String& data);
-
-        DataType m_dataType;
-        RefPtr<SerializedScriptValue> m_dataAsSerializedScriptValue;
-        String m_dataAsString;
-        String m_origin;
-        String m_lastEventId;
-        RefPtr<DOMWindow> m_source;
-        OwnPtr<MessagePortArray> m_ports;
+    enum DataType {
+        DataTypeScriptValue,
+        DataTypeSerializedScriptValue,
+        DataTypeString,
+        DataTypeBlob,
+        DataTypeArrayBuffer
     };
+    DataType dataType() const { return m_dataType; }
+    ScriptValue dataAsScriptValue() const { ASSERT(m_dataType == DataTypeScriptValue); return m_dataAsScriptValue; }
+    SerializedScriptValue* dataAsSerializedScriptValue() const { ASSERT(m_dataType == DataTypeSerializedScriptValue); return m_dataAsSerializedScriptValue.get(); }
+    String dataAsString() const { ASSERT(m_dataType == DataTypeString); return m_dataAsString; }
+    Blob* dataAsBlob() const { ASSERT(m_dataType == DataTypeBlob); return m_dataAsBlob.get(); }
+    ArrayBuffer* dataAsArrayBuffer() const { ASSERT(m_dataType == DataTypeArrayBuffer); return m_dataAsArrayBuffer.get(); }
+
+private:
+    MessageEvent();
+    MessageEvent(const AtomicString&, const MessageEventInit&);
+    MessageEvent(const ScriptValue& data, const String& origin, const String& lastEventId, PassRefPtr<DOMWindow> source, PassOwnPtr<MessagePortArray>);
+    MessageEvent(PassRefPtr<SerializedScriptValue> data, const String& origin, const String& lastEventId, PassRefPtr<DOMWindow> source, PassOwnPtr<MessagePortArray>);
+
+    explicit MessageEvent(const String& data);
+    explicit MessageEvent(PassRefPtr<Blob> data);
+    explicit MessageEvent(PassRefPtr<ArrayBuffer> data);
+
+    DataType m_dataType;
+    ScriptValue m_dataAsScriptValue;
+    RefPtr<SerializedScriptValue> m_dataAsSerializedScriptValue;
+    String m_dataAsString;
+    RefPtr<Blob> m_dataAsBlob;
+    RefPtr<ArrayBuffer> m_dataAsArrayBuffer;
+    String m_origin;
+    String m_lastEventId;
+    RefPtr<DOMWindow> m_source;
+    OwnPtr<MessagePortArray> m_ports;
+};
 
 } // namespace WebCore
 

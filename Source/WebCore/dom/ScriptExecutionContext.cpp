@@ -30,6 +30,7 @@
 #include "ActiveDOMObject.h"
 #include "Blob.h"
 #include "BlobURL.h"
+#include "ContentSecurityPolicy.h"
 #include "DOMTimer.h"
 #include "DOMURL.h"
 #include "Database.h"
@@ -91,7 +92,7 @@ ScriptExecutionContext::ScriptExecutionContext()
     : m_iteratingActiveDOMObjects(false)
     , m_inDestructor(false)
     , m_inDispatchErrorEvent(false)
-#if ENABLE(DATABASE)
+#if ENABLE(SQL_DATABASE)
     , m_hasOpenDatabases(false)
 #endif
 {
@@ -112,7 +113,7 @@ ScriptExecutionContext::~ScriptExecutionContext()
         ASSERT((*iter)->scriptExecutionContext() == this);
         (*iter)->contextDestroyed();
     }
-#if ENABLE(DATABASE)
+#if ENABLE(SQL_DATABASE)
     if (m_databaseThread) {
         ASSERT(m_databaseThread->terminationRequested());
         m_databaseThread = 0;
@@ -144,7 +145,7 @@ ScriptExecutionContext::~ScriptExecutionContext()
 #endif
 }
 
-#if ENABLE(DATABASE)
+#if ENABLE(SQL_DATABASE)
 
 DatabaseThread* ScriptExecutionContext::databaseThread()
 {
@@ -313,6 +314,11 @@ void ScriptExecutionContext::closeMessagePorts() {
 void ScriptExecutionContext::setSecurityOrigin(PassRefPtr<SecurityOrigin> securityOrigin)
 {
     m_securityOrigin = securityOrigin;
+}
+
+void ScriptExecutionContext::setContentSecurityPolicy(PassRefPtr<ContentSecurityPolicy> contentSecurityPolicy)
+{
+    m_contentSecurityPolicy = contentSecurityPolicy;
 }
 
 bool ScriptExecutionContext::sanitizeScriptError(String& errorMessage, int& lineNumber, String& sourceURL)

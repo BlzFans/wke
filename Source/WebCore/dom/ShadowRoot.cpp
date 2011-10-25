@@ -32,11 +32,12 @@
 #include "NodeRareData.h"
 #include "ShadowContentElement.h"
 #include "ShadowInclusionSelector.h"
+#include "Text.h"
 
 namespace WebCore {
 
 ShadowRoot::ShadowRoot(Document* document)
-    : TreeScope(document)
+    : TreeScope(document, CreateShadowRoot)
     , m_applyAuthorSheets(false)
 {
     ASSERT(document);
@@ -83,13 +84,17 @@ bool ShadowRoot::childTypeAllowed(NodeType type) const
     }
 }
 
-void ShadowRoot::recalcStyle(StyleChange change)
+void ShadowRoot::recalcShadowTreeStyle(StyleChange change)
 {
     if (hasContentElement())
         reattach();
     else {
-        for (Node* n = firstChild(); n; n = n->nextSibling())
-            n->recalcStyle(change);
+        for (Node* n = firstChild(); n; n = n->nextSibling()) {
+            if (n->isElementNode())
+                static_cast<Element*>(n)->recalcStyle(change);
+            else if (n->isTextNode())
+                static_cast<Text*>(n)->recalcTextStyle(change);
+        }
     }
 
     clearNeedsStyleRecalc();
@@ -112,6 +117,11 @@ void ShadowRoot::hostChildrenChanged()
         return;
     // This results in forced detaching/attaching of the shadow render tree. See ShadowRoot::recalcStyle().
     setNeedsStyleRecalc();
+}
+
+bool ShadowRoot::isInclusionSelectorActive() const
+{
+    return m_inclusions && m_inclusions->hasCandidates();
 }
 
 bool ShadowRoot::hasContentElement() const

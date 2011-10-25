@@ -24,9 +24,15 @@
 
 #include "ClassNodeList.h"
 #include "DynamicNodeList.h"
+
+#if ENABLE(MICRODATA)
+#include "MicroDataItemList.h"
+#endif
+
 #include "NameNodeList.h"
 #include "QualifiedName.h"
 #include "TagNodeList.h"
+#include "WebKitMutationObserver.h"
 #include <wtf/HashSet.h>
 #include <wtf/OwnPtr.h>
 #include <wtf/PassOwnPtr.h>
@@ -56,7 +62,12 @@ public:
 
     typedef HashMap<RefPtr<QualifiedName::QualifiedNameImpl>, TagNodeList*> TagNodeListCacheNS;
     TagNodeListCacheNS m_tagNodeListCacheNS;
- 
+
+#if ENABLE(MICRODATA)
+    typedef HashMap<String, MicroDataItemList*> MicroDataItemListCache;
+    MicroDataItemListCache m_microDataItemListCache;
+#endif
+
     LabelsNodeList* m_labelsNodeListCache;
  
     static PassOwnPtr<NodeListsNodeData> create()
@@ -66,12 +77,41 @@ public:
     
     void invalidateCaches();
     void invalidateCachesThatDependOnAttributes();
+
+#if ENABLE(MICRODATA)
+    void invalidateMicrodataItemListCaches();
+#endif
+
     bool isEmpty() const;
 
 private:
     NodeListsNodeData() : m_labelsNodeListCache(0) {}
 };
-    
+
+#if ENABLE(MUTATION_OBSERVERS)
+struct MutationObserverEntry {
+    MutationObserverEntry(PassRefPtr<WebKitMutationObserver> observer, MutationObserverOptions options)
+        : observer(observer)
+        , options(options)
+    {
+    }
+
+    bool operator==(const MutationObserverEntry& other) const
+    {
+        return observer == other.observer;
+    }
+
+    bool matches(MutationObserverOptions options) const
+    {
+        return this->options & options;
+    }
+
+    RefPtr<WebKitMutationObserver> observer;
+    MutationObserverOptions options;
+};
+
+#endif // ENABLE(MUTATION_OBSERVERS)
+
 class NodeRareData {
     WTF_MAKE_NONCOPYABLE(NodeRareData); WTF_MAKE_FAST_ALLOCATED;
 public:    
@@ -121,6 +161,16 @@ public:
         return m_eventTargetData.get();
     }
 
+#if ENABLE(MUTATION_OBSERVERS)
+    Vector<MutationObserverEntry>* mutationObserverEntries() { return m_mutationObservers.get(); }
+    Vector<MutationObserverEntry>* ensureMutationObserverEntries()
+    {
+        if (!m_mutationObservers)
+            m_mutationObservers = adoptPtr(new Vector<MutationObserverEntry>);
+        return m_mutationObservers.get();
+    }
+#endif
+
     bool isFocused() const { return m_isFocused; }
     void setFocused(bool focused) { m_isFocused = focused; }
 
@@ -137,6 +187,10 @@ private:
     bool m_tabIndexWasSetExplicitly : 1;
     bool m_isFocused : 1;
     bool m_needsFocusAppearanceUpdateSoonAfterAttach : 1;
+
+#if ENABLE(MUTATION_OBSERVERS)
+    OwnPtr<Vector<MutationObserverEntry> > m_mutationObservers;
+#endif
 };
 
 } // namespace WebCore

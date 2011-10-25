@@ -27,6 +27,7 @@
 
 #include "ExceptionCodePlaceholder.h"
 #include "FloatRect.h"
+#include "FragmentScriptingPermission.h"
 #include "IntRect.h"
 #include "Node.h"
 #include "RangeBoundaryPoint.h"
@@ -88,28 +89,27 @@ public:
     String toHTML() const;
     String text() const;
 
-    PassRefPtr<DocumentFragment> createContextualFragment(const String& html, ExceptionCode&) const;
+    PassRefPtr<DocumentFragment> createContextualFragment(const String& html, ExceptionCode&, FragmentScriptingPermission = FragmentScriptingAllowed);
+    static PassRefPtr<DocumentFragment> createDocumentFragmentForElement(const String& markup, Element*,  FragmentScriptingPermission = FragmentScriptingAllowed);
 
     void detach(ExceptionCode&);
     PassRefPtr<Range> cloneRange(ExceptionCode&) const;
 
-    void setStartAfter(Node*, ExceptionCode&);
-    void setEndBefore(Node*, ExceptionCode&);
-    void setEndAfter(Node*, ExceptionCode&);
-    void selectNode(Node*, ExceptionCode&);
+    void setStartAfter(Node*, ExceptionCode& = ASSERT_NO_EXCEPTION);
+    void setEndBefore(Node*, ExceptionCode& = ASSERT_NO_EXCEPTION);
+    void setEndAfter(Node*, ExceptionCode& = ASSERT_NO_EXCEPTION);
+    void selectNode(Node*, ExceptionCode& = ASSERT_NO_EXCEPTION);
     void selectNodeContents(Node*, ExceptionCode&);
     void surroundContents(PassRefPtr<Node>, ExceptionCode&);
     void setStartBefore(Node*, ExceptionCode&);
 
     const Position startPosition() const { return m_start.toPosition(); }
     const Position endPosition() const { return m_end.toPosition(); }
-    void setStart(const Position&, ExceptionCode&);
-    void setEnd(const Position&, ExceptionCode&);
+    void setStart(const Position&, ExceptionCode& = ASSERT_NO_EXCEPTION);
+    void setEnd(const Position&, ExceptionCode& = ASSERT_NO_EXCEPTION);
 
     Node* firstNode() const;
     Node* pastLastNode() const;
-
-    Position editingStartPosition() const;
 
     Node* shadowTreeRootNode() const;
 

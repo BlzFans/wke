@@ -30,7 +30,18 @@
 
 namespace WebCore {
 
+CustomEventInit::CustomEventInit()
+{
+}
+
+
 CustomEvent::CustomEvent()
+{
+}
+
+CustomEvent::CustomEvent(const AtomicString& type, const CustomEventInit& initializer)
+    : Event(type, initializer)
+    , m_detail(initializer.detail)
 {
 }
 
@@ -48,9 +59,9 @@ void CustomEvent::initCustomEvent(const AtomicString& type, bool canBubble, bool
     m_detail = detail;
 }
 
-bool CustomEvent::isCustomEvent() const
+const AtomicString& CustomEvent::interfaceName() const
 {
-    return true;
+    return eventNames().interfaceForCustomEvent;
 }
 
 } // namespace WebCore

@@ -29,14 +29,28 @@
  */
 
 #include "config.h"
-
 #include "ErrorEvent.h"
 
 #include "EventNames.h"
 
 namespace WebCore {
 
+ErrorEventInit::ErrorEventInit()
+    : message()
+    , filename()
+    , lineno(0)
+{
+}
+
 ErrorEvent::ErrorEvent()
+{
+}
+
+ErrorEvent::ErrorEvent(const AtomicString& type, const ErrorEventInit& initializer)
+    : Event(type, initializer)
+    , m_message(initializer.message)
+    , m_fileName(initializer.filename)
+    , m_lineNumber(initializer.lineno)
 {
 }
 
@@ -56,17 +70,22 @@ void ErrorEvent::initErrorEvent(const AtomicString& type, bool canBubble, bool c
 {
     if (dispatched())
         return;
-        
+
     initEvent(type, canBubble, cancelable);
-    
+
     m_message = message;
     m_fileName = fileName;
     m_lineNumber = lineNumber;
 }
 
-bool ErrorEvent::isErrorEvent() const 
+bool ErrorEvent::isErrorEvent() const
 {
     return true;
+}
+
+const AtomicString& ErrorEvent::interfaceName() const
+{
+    return eventNames().interfaceForErrorEvent;
 }
 
 } // namespace WebCore

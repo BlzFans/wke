@@ -40,6 +40,8 @@ public:
 
     String wholeText() const;
     PassRefPtr<Text> replaceWholeText(const String&, ExceptionCode&);
+    
+    void recalcTextStyle(StyleChange);
 
     virtual void attach();
     
@@ -51,7 +53,7 @@ protected:
     {
     }
 
-    virtual void recalcStyle(StyleChange = NoChange);
+    virtual void willRecalcTextStyle(StyleChange) { ASSERT_NOT_REACHED(); }
 
 private:
     virtual String nodeName() const;

@@ -30,16 +30,13 @@
 #include "IDBDatabaseException.h"
 #include "RangeException.h"
 #include "XMLHttpRequestException.h"
+#include "XPathException.h"
 
 #if ENABLE(SVG)
 #include "SVGException.h"
 #endif
 
-#if ENABLE(XPATH)
-#include "XPathException.h"
-#endif
-
-#if ENABLE(DATABASE)
+#if ENABLE(SQL_DATABASE)
 #include "SQLException.h"
 #endif
 
@@ -137,7 +134,6 @@ static const char* const xmlHttpRequestExceptionDescriptions[] = {
     "The user aborted a request in synchronous requests."
 };
 
-#if ENABLE(XPATH)
 static const char* const xpathExceptionNames[] = {
     "INVALID_EXPRESSION_ERR",
     "TYPE_ERR"
@@ -147,7 +143,6 @@ static const char* const xpathExceptionDescriptions[] = {
     "The expression had a syntax error or otherwise is not a legal expression according to the rules of the specific XPathEvaluator.",
     "The expression could not be converted to return the specified type."
 };
-#endif
 
 #if ENABLE(SVG)
 static const char* const svgExceptionNames[] = {
@@ -163,7 +158,7 @@ static const char* const svgExceptionDescriptions[] = {
 };
 #endif
 
-#if ENABLE(DATABASE)
+#if ENABLE(SQL_DATABASE)
 static const char* const sqlExceptionNames[] = {
     "UNKNOWN_ERR",
     "DATABASE_ERR",
@@ -298,7 +293,6 @@ void getExceptionCodeDescription(ExceptionCode ec, ExceptionCodeDescription& des
         nameTableSize = WTF_ARRAY_LENGTH(xmlHttpRequestExceptionNames);
         // XMLHttpRequest exception codes start with 101 and we don't want 100 empty elements in the name array
         nameTableOffset = XMLHttpRequestException::NETWORK_ERR;
-#if ENABLE(XPATH)
     } else if (code >= XPathException::XPathExceptionOffset && code <= XPathException::XPathExceptionMax) {
         type = XPathExceptionType;
         typeName = "DOM XPath";
@@ -308,7 +302,6 @@ void getExceptionCodeDescription(ExceptionCode ec, ExceptionCodeDescription& des
         nameTableSize = WTF_ARRAY_LENGTH(xpathExceptionNames);
         // XPath exception codes start with 51 and we don't want 51 empty elements in the name array
         nameTableOffset = XPathException::INVALID_EXPRESSION_ERR;
-#endif
 #if ENABLE(SVG)
     } else if (code >= SVGException::SVGExceptionOffset && code <= SVGException::SVGExceptionMax) {
         type = SVGExceptionType;
@@ -319,7 +312,7 @@ void getExceptionCodeDescription(ExceptionCode ec, ExceptionCodeDescription& des
         nameTableSize = WTF_ARRAY_LENGTH(svgExceptionNames);
         nameTableOffset = SVGException::SVG_WRONG_TYPE_ERR;
 #endif
-#if ENABLE(DATABASE)
+#if ENABLE(SQL_DATABASE)
     } else if (code >= SQLException::SQLExceptionOffset && code <= SQLException::SQLExceptionMax) {
         type = SQLExceptionType;
         typeName = "DOM SQL";

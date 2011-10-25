@@ -31,8 +31,9 @@
 module events {
 
     interface [
-        Conditional=WORKERS,
-        NoStaticTables
+        NoStaticTables,
+        CanBeConstructed,
+        CustomConstructor
     ] ErrorEvent : Event {
 
         readonly attribute DOMString message;

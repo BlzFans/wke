@@ -48,7 +48,8 @@ namespace WebCore {
 
         AbstractView* view() const { return m_view.get(); }
         int detail() const { return m_detail; }
-        
+
+        virtual const AtomicString& interfaceName() const;
         virtual bool isUIEvent() const;
 
         virtual int keyCode() const;
@@ -65,6 +66,9 @@ namespace WebCore {
     protected:
         UIEvent();
         UIEvent(const AtomicString& type, bool canBubble, bool cancelable, PassRefPtr<AbstractView>, int detail);
+
+        // layerX and layerY are deprecated. This reports a message to the console until we remove them.
+        void warnDeprecatedLayerXYUsage();
 
     private:
         RefPtr<AbstractView> m_view;

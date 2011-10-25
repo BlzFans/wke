@@ -64,7 +64,8 @@ NodeRenderingContext::NodeRenderingContext(Node* node)
         m_visualParentShadowRoot = toElement(parent)->shadowRoot();
 
         if (m_visualParentShadowRoot) {
-            if ((m_includer = m_visualParentShadowRoot->includerFor(m_node))) {
+            if ((m_includer = m_visualParentShadowRoot->includerFor(m_node))
+                && m_visualParentShadowRoot->isInclusionSelectorActive()) {
                 m_phase = AttachContentForwarded;
                 m_parentNodeForRenderingAndStyle = NodeRenderingContext(m_includer).parentNodeForRenderingAndStyle();
                 return;
@@ -286,27 +287,10 @@ NodeRendererFactory::NodeRendererFactory(Node* node)
 {
 }
 
-RenderObject* NodeRendererFactory::createRendererAndStyle()
+RenderObject* NodeRendererFactory::createRenderer()
 {
     Node* node = m_context.node();
-    Document* document = node->document();
-    ASSERT(!node->renderer());
-    ASSERT(document->shouldCreateRenderers());
-
-    if (!m_context.shouldCreateRenderer())
-        return 0;
-
-    m_context.setStyle(node->styleForRenderer(m_context));
-    if (!node->rendererIsNeeded(m_context)) {
-        if (node->isElementNode()) {
-            Element* element = toElement(node);
-            if (m_context.style()->affectedByEmpty())
-                element->setStyleAffectedByEmpty();
-        }
-        return 0;
-    }
-
-    RenderObject* newRenderer = node->createRenderer(document->renderArena(), m_context.style());
+    RenderObject* newRenderer = node->createRenderer(node->document()->renderArena(), m_context.style());
     if (!newRenderer)
         return 0;
 
@@ -320,22 +304,6 @@ RenderObject* NodeRendererFactory::createRendererAndStyle()
     return newRenderer;
 }
 
-#if ENABLE(FULLSCREEN_API)
-static RenderObject* wrapWithRenderFullScreen(RenderObject* object, Document* document)
-{
-    RenderFullScreen* fullscreenRenderer = new (document->renderArena()) RenderFullScreen(document);
-    fullscreenRenderer->setStyle(RenderFullScreen::createFullScreenStyle());
-    // It's possible that we failed to create the new render and end up wrapping nothing.
-    // We'll end up displaying a black screen, but Jer says this is expected.
-    if (object)
-        fullscreenRenderer->addChild(object);
-    document->setFullScreenRenderer(fullscreenRenderer);
-    if (fullscreenRenderer->placeholder())
-        return fullscreenRenderer->placeholder();
-    return fullscreenRenderer;
-}
-#endif
-
 void NodeRendererFactory::createRendererIfNeeded()
 {
     Node* node = m_context.node();
@@ -343,24 +311,37 @@ void NodeRendererFactory::createRendererIfNeeded()
     if (!document->shouldCreateRenderers())
         return;
 
-    RenderObject* parentRenderer = m_context.parentRenderer();
-    RenderObject* nextRenderer = m_context.nextRenderer();
-    RenderObject* newRenderer = createRendererAndStyle();
-
-    if (m_context.hasFlowThreadParent()) {
-        parentRenderer = m_context.parentFlowRenderer();
-        // Do not call m_context.nextRenderer() here, because it expects to have 
-        // the renderer added to its parent already.
-        nextRenderer = m_context.parentFlowRenderer()->nextRendererForNode(node);
-    }
-
-#if ENABLE(FULLSCREEN_API)
-    if (document->webkitIsFullScreen() && document->webkitCurrentFullScreenElement() == node)
-        newRenderer = wrapWithRenderFullScreen(newRenderer, document);
-#endif
+    ASSERT(!node->renderer());
+    ASSERT(document->shouldCreateRenderers());
 
     // FIXME: This side effect should be visible from attach() code.
     m_context.hostChildrenChanged();
+
+    if (!m_context.shouldCreateRenderer())
+        return;
+
+    Element* element = node->isElementNode() ? toElement(node) : 0;
+    if (element)
+        m_context.setStyle(element->styleForRenderer());
+    else if (RenderObject* parentRenderer = m_context.parentRenderer())
+        m_context.setStyle(parentRenderer->style());
+
+    if (!node->rendererIsNeeded(m_context)) {
+        if (element && m_context.style()->affectedByEmpty())
+            element->setStyleAffectedByEmpty();
+        return;
+    }
+
+    RenderObject* parentRenderer = m_context.hasFlowThreadParent() ? m_context.parentFlowRenderer() : m_context.parentRenderer();
+    // Do not call m_context.nextRenderer() here in the first clause, because it expects to have
+    // the renderer added to its parent already.
+    RenderObject* nextRenderer = m_context.hasFlowThreadParent() ? m_context.parentFlowRenderer()->nextRendererForNode(node) : m_context.nextRenderer();
+    RenderObject* newRenderer = createRenderer();
+
+#if ENABLE(FULLSCREEN_API)
+    if (document->webkitIsFullScreen() && document->webkitCurrentFullScreenElement() == node)
+        newRenderer = RenderFullScreen::wrapRenderer(newRenderer, document);
+#endif
 
     if (!newRenderer)
         return;

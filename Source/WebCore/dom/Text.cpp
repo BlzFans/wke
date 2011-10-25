@@ -234,11 +234,7 @@ RenderObject* Text::createRenderer(RenderArena* arena, RenderStyle* style)
 {
 #if ENABLE(SVG)
     Node* parentOrHost = parentOrHostNode();
-    if (parentOrHost->isSVGElement()
-#if ENABLE(SVG_FOREIGN_OBJECT)
-        && !parentOrHost->hasTagName(SVGNames::foreignObjectTag)
-#endif
-    )
+    if (parentOrHost->isSVGElement() && !parentOrHost->hasTagName(SVGNames::foreignObjectTag))
         return new (arena) RenderSVGInlineText(this, dataImpl());
 #endif
 
@@ -254,8 +250,11 @@ void Text::attach()
     CharacterData::attach();
 }
 
-void Text::recalcStyle(StyleChange change)
+void Text::recalcTextStyle(StyleChange change)
 {
+    if (hasCustomWillOrDidRecalcStyle())
+        willRecalcTextStyle(change);
+
     if (change != NoChange && parentNode() && parentNode()->renderer()) {
         if (renderer())
             renderer()->setStyle(parentNode()->renderer()->style());

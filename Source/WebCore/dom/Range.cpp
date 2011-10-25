@@ -4,6 +4,7 @@
  * (C) 2000 Frederik Holljen (frederik.holljen@hig.no)
  * (C) 2001 Peter Kelly (pmk@post.com)
  * Copyright (C) 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011 Apple Inc. All rights reserved.
+ * Copyright (C) 2011 Motorola Mobility. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -32,6 +33,8 @@
 #include "Frame.h"
 #include "FrameView.h"
 #include "HTMLElement.h"
+#include "HTMLNames.h"
+#include "Node.h"
 #include "NodeWithIndex.h"
 #include "Page.h"
 #include "ProcessingInstruction.h"
@@ -53,10 +56,9 @@
 namespace WebCore {
 
 using namespace std;
+using namespace HTMLNames;
 
-#ifndef NDEBUG
-static WTF::RefCountedLeakCounter rangeCounter("Range");
-#endif
+DEFINE_DEBUG_ONLY_GLOBAL(WTF::RefCountedLeakCounter, rangeCounter, ("Range"));
 
 inline Range::Range(PassRefPtr<Document> ownerDocument)
     : m_ownerDocument(ownerDocument)
@@ -877,6 +879,8 @@ void Range::processNodes(ActionType action, Vector<RefPtr<Node> >& nodes, PassRe
 
 PassRefPtr<Node> Range::processAncestorsAndTheirSiblings(ActionType action, Node* container, ContentsProcessDirection direction, PassRefPtr<Node> passedClonedContainer, Node* commonRoot, ExceptionCode& ec)
 {
+    typedef Vector<RefPtr<Node> > NodeVector;
+
     RefPtr<Node> clonedContainer = passedClonedContainer;
     Vector<RefPtr<Node> > ancestors;
     for (ContainerNode* n = container->parentNode(); n && n != commonRoot; n = n->parentNode())
@@ -896,9 +900,14 @@ PassRefPtr<Node> Range::processAncestorsAndTheirSiblings(ActionType action, Node
         // FIXME: This assertion may fail if DOM is modified during mutation event
         // FIXME: Share code with Range::processNodes
         ASSERT(!firstChildInAncestorToProcess || firstChildInAncestorToProcess->parentNode() == ancestor);
-        RefPtr<Node> next;
-        for (Node* child = firstChildInAncestorToProcess.get(); child; child = next.get()) {
-            next = direction == ProcessContentsForward ? child->nextSibling() : child->previousSibling();
+        
+        NodeVector nodes;
+        for (Node* child = firstChildInAncestorToProcess.get(); child;
+            child = (direction == ProcessContentsForward) ? child->nextSibling() : child->previousSibling())
+            nodes.append(child);
+
+        for (NodeVector::const_iterator it = nodes.begin(); it != nodes.end(); it++) {
+            Node* child = it->get();
             switch (action) {
             case DELETE_CONTENTS:
                 ancestor->removeChild(child, ec);
@@ -1093,7 +1102,58 @@ String Range::text() const
     return plainText(this);
 }
 
-PassRefPtr<DocumentFragment> Range::createContextualFragment(const String& markup, ExceptionCode& ec) const
+static inline void removeElementPreservingChildren(PassRefPtr<DocumentFragment> fragment, HTMLElement* element)
+{
+    ExceptionCode ignoredExceptionCode;
+
+    RefPtr<Node> nextChild;
+    for (RefPtr<Node> child = element->firstChild(); child; child = nextChild) {
+        nextChild = child->nextSibling();
+        element->removeChild(child.get(), ignoredExceptionCode);
+        ASSERT(!ignoredExceptionCode);
+        fragment->insertBefore(child, element, ignoredExceptionCode);
+        ASSERT(!ignoredExceptionCode);
+    }
+    fragment->removeChild(element, ignoredExceptionCode);
+    ASSERT(!ignoredExceptionCode);
+}
+
+PassRefPtr<DocumentFragment> Range::createDocumentFragmentForElement(const String& markup, Element* element,  FragmentScriptingPermission scriptingPermission)
+{
+    ASSERT(element);
+    HTMLElement* htmlElement = toHTMLElement(element);
+    if (htmlElement->ieForbidsInsertHTML())
+        return 0;
+
+    if (htmlElement->hasLocalName(colTag) || htmlElement->hasLocalName(colgroupTag) || htmlElement->hasLocalName(framesetTag)
+        || htmlElement->hasLocalName(headTag) || htmlElement->hasLocalName(styleTag) || htmlElement->hasLocalName(titleTag))
+        return 0;
+
+    RefPtr<DocumentFragment> fragment = element->document()->createDocumentFragment();
+
+    if (element->document()->isHTMLDocument())
+        fragment->parseHTML(markup, element, scriptingPermission);
+    else if (!fragment->parseXML(markup, element, scriptingPermission))
+        return 0; // FIXME: We should propagate a syntax error exception out here.
+
+    // We need to pop <html> and <body> elements and remove <head> to
+    // accommodate folks passing complete HTML documents to make the
+    // child of an element.
+
+    RefPtr<Node> nextNode;
+    for (RefPtr<Node> node = fragment->firstChild(); node; node = nextNode) {
+        nextNode = node->nextSibling();
+        if (node->hasTagName(htmlTag) || node->hasTagName(headTag) || node->hasTagName(bodyTag)) {
+            HTMLElement* element = toHTMLElement(node.get());
+            if (Node* firstChild = element->firstChild())
+                nextNode = firstChild;
+            removeElementPreservingChildren(fragment, element);
+        }
+    }
+    return fragment.release();
+}
+
+PassRefPtr<DocumentFragment> Range::createContextualFragment(const String& markup, ExceptionCode& ec, FragmentScriptingPermission scriptingPermission)
 {
     if (!m_start.container()) {
         ec = INVALID_STATE_ERR;
@@ -1106,10 +1166,8 @@ PassRefPtr<DocumentFragment> Range::createContextualFragment(const String& marku
         return 0;
     }
 
-    // Logic from deprecatedCreateContextualFragment should just be moved into
-    // this function.  Range::createContextualFragment semantics do not make
-    // sense for the rest of the DOM implementation to use.
-    RefPtr<DocumentFragment> fragment = toHTMLElement(element)->deprecatedCreateContextualFragment(markup);
+    RefPtr<DocumentFragment> fragment = createDocumentFragmentForElement(markup, toElement(element), scriptingPermission);
+
     if (!fragment) {
         ec = NOT_SUPPORTED_ERR;
         return 0;
@@ -1593,31 +1651,6 @@ Node* Range::firstNode() const
     return m_start.container()->traverseNextSibling();
 }
 
-Position Range::editingStartPosition() const
-{
-    // This function is used by range style computations to avoid bugs like:
-    // <rdar://problem/4017641> REGRESSION (Mail): you can only bold/unbold a selection starting from end of line once
-    // It is important to skip certain irrelevant content at the start of the selection, so we do not wind up 
-    // with a spurious "mixed" style.
-    
-    VisiblePosition visiblePosition = Position(m_start.container(), m_start.offset(), Position::PositionIsOffsetInAnchor);
-    if (visiblePosition.isNull())
-        return Position();
-
-    // if the selection is a caret, just return the position, since the style
-    // behind us is relevant
-    if (collapsed())
-        return visiblePosition.deepEquivalent();
-
-    // if the selection starts just before a paragraph break, skip over it
-    if (isEndOfParagraph(visiblePosition))
-        return visiblePosition.next().deepEquivalent().downstream();
-
-    // otherwise, make sure to be at the start of the first selected node,
-    // instead of possibly at the end of the last node before the selection
-    return visiblePosition.deepEquivalent().downstream();
-}
-
 Node* Range::shadowTreeRootNode() const
 {
     return startContainer() ? startContainer()->shadowTreeRootNode() : 0;
@@ -1968,10 +2001,8 @@ static void adjustFloatQuadsForScrollAndAbsoluteZoomAndPageScale(Vector<FloatQua
         return;
 
     float pageScale = 1;
-    if (Page* page = document->page()) {
-        if (Frame* frame = page->mainFrame())
-            pageScale = frame->pageScaleFactor();
-    }
+    if (Page* page = document->page())
+        pageScale = page->pageScaleFactor();
 
     LayoutRect visibleContentRect = view->visibleContentRect();
     for (size_t i = 0; i < quads.size(); ++i) {

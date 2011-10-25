@@ -31,6 +31,7 @@
 #include "RenderStyleConstants.h"
 #include "ScriptWrappable.h"
 #include "TreeShared.h"
+#include "WebKitMutationObserver.h"
 #include <wtf/Forward.h>
 #include <wtf/ListHashSet.h>
 
@@ -58,6 +59,7 @@ class Frame;
 class HTMLInputElement;
 class IntRect;
 class KeyboardEvent;
+class MutationObserverEntry;
 class NSResolver;
 class NamedNodeMap;
 class NameNodeList;
@@ -94,7 +96,7 @@ enum StyleChangeType {
     SyntheticStyleChange = 3 << nodeStyleChangeShift
 };
 
-class Node : public EventTarget, public TreeShared<ContainerNode>, public ScriptWrappable {
+class Node : public EventTarget, public ScriptWrappable, public TreeShared<ContainerNode> {
     friend class Document;
     friend class TreeScope;
 
@@ -198,7 +200,7 @@ public:
     bool isHTMLElement() const { return getFlag(IsHTMLFlag); }
 
     bool isSVGElement() const { return getFlag(IsSVGFlag); }
-    virtual bool isSVGShadowRoot() const { return false; }
+    bool isSVGShadowRoot() const { return getFlag(IsShadowRootOrSVGShadowRootFlag) && isSVGElement(); }
 #if ENABLE(SVG)
     SVGUseElement* svgShadowHost() const;
 #endif
@@ -211,7 +213,7 @@ public:
     bool isCommentNode() const { return getFlag(IsCommentFlag); }
     virtual bool isCharacterDataNode() const { return false; }
     bool isDocumentNode() const;
-    bool isShadowRoot() const { return getFlag(IsShadowRootFlag); }
+    bool isShadowRoot() const { return getFlag(IsShadowRootOrSVGShadowRootFlag) && !isSVGElement(); }
     virtual bool isContentElement() const { return false; }
     virtual bool canHaveLightChildRendererWithShadow() const { return false; }
 
@@ -340,6 +342,7 @@ public:
     virtual Node* focusDelegate();
 
     bool isContentEditable();
+    bool isContentRichlyEditable();
 
     bool rendererIsEditable() const { return rendererIsEditable(Editable); }
     bool rendererIsRichlyEditable() const { return rendererIsEditable(RichlyEditable); }
@@ -351,8 +354,6 @@ public:
     // This does not 100% guarantee the user can see it, but is pretty close.
     // Note: This method only works properly after layout has occurred.
     bool hasNonEmptyBoundingBox() const;
-
-    virtual void recalcStyle(StyleChange = NoChange) { }
 
     unsigned nodeIndex() const;
 
@@ -400,6 +401,9 @@ public:
 
     // Does a reverse pre-order traversal to find the node that comes before the current one in document order
     Node* traversePreviousNode(const Node* stayWithin = 0) const;
+
+    // Like traversePreviousNode, but skips children and starts with the next sibling.
+    Node* traversePreviousSibling(const Node* stayWithin = 0) const;
 
     // Like traverseNextNode, but visits parents after their children.
     Node* traverseNextNodePostOrder() const;
@@ -457,7 +461,6 @@ public:
 
     virtual void willRemove();
     void createRendererIfNeeded();
-    virtual PassRefPtr<RenderStyle> styleForRenderer(const NodeRenderingContext&);
     virtual bool rendererIsNeeded(const NodeRenderingContext&);
     virtual bool childShouldCreateRenderer(Node*) const { return true; }
     virtual RenderObject* createRenderer(RenderArena*, RenderStyle*);
@@ -516,6 +519,7 @@ public:
     void notifyLocalNodeListsAttributeChanged();
     void notifyLocalNodeListsLabelChanged();
     void removeCachedClassNodeList(ClassNodeList*, const String&);
+
     void removeCachedNameNodeList(NameNodeList*, const String&);
     void removeCachedTagNodeList(TagNodeList*, const AtomicString&);
     void removeCachedTagNodeList(TagNodeList*, const QualifiedName&);
@@ -563,7 +567,6 @@ public:
     void dispatchSimulatedClick(PassRefPtr<Event> underlyingEvent, bool sendMouseEvents = false, bool showPressedLook = true);
 
     virtual void dispatchFocusEvent(PassRefPtr<Node> oldFocusedNode);
-    virtual void willBlur();
     virtual void dispatchBlurEvent(PassRefPtr<Node> newFocusedNode);
     virtual void dispatchChangeEvent();
     virtual void dispatchInputEvent();
@@ -580,6 +583,22 @@ public:
 
     virtual EventTargetData* eventTargetData();
     virtual EventTargetData* ensureEventTargetData();
+
+#if ENABLE(MICRODATA)
+    void itemTypeAttributeChanged();
+#endif
+
+#if ENABLE(MUTATION_OBSERVERS)
+    void registeredMutationObserversOfType(Vector<WebKitMutationObserver*>&, WebKitMutationObserver::MutationType);
+
+    enum MutationRegistrationResult {
+        MutationObserverRegistered,
+        MutationRegistrationOptionsReset
+    };
+    MutationRegistrationResult registerMutationObserver(PassRefPtr<WebKitMutationObserver>, MutationObserverOptions);
+
+    void unregisterMutationObserver(PassRefPtr<WebKitMutationObserver>);
+#endif // ENABLE(MUTATION_OBSERVERS)
 
 private:
     enum NodeFlags {
@@ -601,7 +620,7 @@ private:
         InActiveChainFlag = 1 << 15,
         InDetachFlag = 1 << 16,
         HasRareDataFlag = 1 << 17,
-        IsShadowRootFlag = 1 << 18,
+        IsShadowRootOrSVGShadowRootFlag = 1 << 18,
 
         // These bits are used by derived classes, pulled up here so they can
         // be stored in the same memory word as the Node bits above.
@@ -617,6 +636,8 @@ private:
         StyleChangeMask = 1 << nodeStyleChangeShift | 1 << (nodeStyleChangeShift + 1),
 
         SelfOrAncestorHasDirAutoFlag = 1 << 27,
+        HasCustomWillOrDidRecalcStyleFlag = 1 << 28,
+        HasCustomStyleForRendererFlag = 1 << 29,
 
 #if ENABLE(SVG)
         DefaultNodeFlags = IsParsingChildrenFinishedFlag | IsStyleAttributeValidFlag | AreSVGAttributesValidFlag
@@ -625,7 +646,7 @@ private:
 #endif
     };
 
-    // 4 bits remaining
+    // 2 bits remaining
 
     bool getFlag(NodeFlags mask) const { return m_nodeFlags & mask; }
     void setFlag(bool f, NodeFlags mask) const { m_nodeFlags = (m_nodeFlags & ~mask) | (-(int32_t)f & mask); } 
@@ -639,9 +660,11 @@ protected:
         CreateComment = DefaultNodeFlags | IsCommentFlag,
         CreateContainer = DefaultNodeFlags | IsContainerFlag, 
         CreateElement = CreateContainer | IsElementFlag, 
+        CreateShadowRoot = CreateContainer | IsShadowRootOrSVGShadowRootFlag,
         CreateStyledElement = CreateElement | IsStyledElementFlag, 
         CreateHTMLElement = CreateStyledElement | IsHTMLFlag, 
-        CreateSVGElement = CreateStyledElement | IsSVGFlag, 
+        CreateSVGElement = CreateStyledElement | IsSVGFlag,
+        CreateSVGShadowRoot = CreateSVGElement | IsShadowRootOrSVGShadowRootFlag,
     };
     Node(Document*, ConstructionType);
 
@@ -657,6 +680,12 @@ protected:
     NodeRareData* rareData() const;
     NodeRareData* ensureRareData();
     void clearRareData();
+
+    bool hasCustomWillOrDidRecalcStyle() const { return getFlag(HasCustomWillOrDidRecalcStyleFlag); }
+    void setHasCustomWillOrDidRecalcStyle() { setFlag(true, HasCustomWillOrDidRecalcStyleFlag); }
+    
+    bool hasCustomStyleForRenderer() const { return getFlag(HasCustomStyleForRendererFlag); }
+    void setHasCustomStyleForRenderer() { setFlag(true, HasCustomStyleForRendererFlag); } 
 
 private:
     // Do not use this method to change the document of a node until after the node has been
@@ -694,11 +723,15 @@ private:
 
     void trackForDebugging();
 
+#if ENABLE(MUTATION_OBSERVERS)
+    Vector<MutationObserverEntry>* mutationObserverEntries();
+#endif
+
+    mutable uint32_t m_nodeFlags;
     Document* m_document;
     Node* m_previous;
     Node* m_next;
     RenderObject* m_renderer;
-    mutable uint32_t m_nodeFlags;
 
 protected:
     bool isParsingChildrenFinished() const { return getFlag(IsParsingChildrenFinishedFlag); }
@@ -735,7 +768,7 @@ inline void addSubresourceURL(ListHashSet<KURL>& urls, const KURL& url)
 
 inline ContainerNode* Node::parentNode() const
 {
-    return getFlag(IsShadowRootFlag) || isSVGShadowRoot() ? 0 : parent();
+    return getFlag(IsShadowRootOrSVGShadowRootFlag) ? 0 : parent();
 }
 
 inline ContainerNode* Node::parentOrHostNode() const
@@ -745,7 +778,7 @@ inline ContainerNode* Node::parentOrHostNode() const
 
 inline ContainerNode* Node::parentNodeGuaranteedHostFree() const
 {
-    ASSERT(!getFlag(IsShadowRootFlag) && !isSVGShadowRoot());
+    ASSERT(!getFlag(IsShadowRootOrSVGShadowRootFlag));
     return parentOrHostNode();
 }
 

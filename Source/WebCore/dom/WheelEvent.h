@@ -44,10 +44,10 @@ namespace WebCore {
         static PassRefPtr<WheelEvent> create(const FloatPoint& wheelTicks,
             const FloatPoint& rawDelta, Granularity granularity, PassRefPtr<AbstractView> view,
             const IntPoint& screenLocation, const IntPoint& pageLocation,
-            bool ctrlKey, bool altKey, bool shiftKey, bool metaKey)
+            bool ctrlKey, bool altKey, bool shiftKey, bool metaKey, bool directionInvertedFromDevice)
         {
             return adoptRef(new WheelEvent(wheelTicks, rawDelta, granularity, view,
-                screenLocation, pageLocation, ctrlKey, altKey, shiftKey, metaKey));
+                screenLocation, pageLocation, ctrlKey, altKey, shiftKey, metaKey, directionInvertedFromDevice));
         }
 
         void initWheelEvent(int rawDeltaX, int rawDeltaY, PassRefPtr<AbstractView>,
@@ -65,21 +65,25 @@ namespace WebCore {
         int rawDeltaY() const { return m_rawDelta.y(); }
         Granularity granularity() const { return m_granularity; }
 
+        bool webkitDirectionInvertedFromDevice() const { return m_directionInvertedFromDevice; }
         // Needed for Objective-C legacy support
         bool isHorizontal() const { return m_wheelDelta.x(); }
+
+        virtual const AtomicString& interfaceName() const;
 
     private:
         WheelEvent();
         WheelEvent(const FloatPoint& wheelTicks, const FloatPoint& rawDelta,
                    Granularity granularity, PassRefPtr<AbstractView>,
                    const IntPoint& screenLocation, const IntPoint& pageLocation,
-                   bool ctrlKey, bool altKey, bool shiftKey, bool metaKey);
+                   bool ctrlKey, bool altKey, bool shiftKey, bool metaKey, bool directionInvertedFromDevice);
 
         virtual bool isWheelEvent() const;
 
         IntPoint m_wheelDelta;
         IntPoint m_rawDelta;
         Granularity m_granularity;
+        bool m_directionInvertedFromDevice;
     };
 
 class WheelEventDispatchMediator : public EventDispatchMediator {
