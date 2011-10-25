@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 Google Inc. All rights reserved.
+ * Copyright (C) 2011 Google Inc. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -30,9 +30,9 @@
 
 #include "config.h"
 #include "QuotaTracker.h"
-#include "PlatformBridge.h"
+#include "PlatformSupport.h"
 
-#if ENABLE(DATABASE)
+#if ENABLE(SQL_DATABASE)
 
 #include <wtf/StdLibExtras.h>
 
@@ -40,7 +40,7 @@ namespace WebCore {
 
 QuotaTracker& QuotaTracker::instance()
 {
-    DEFINE_STATIC_LOCAL(QuotaTracker, tracker, ());
+    AtomicallyInitializedStatic(QuotaTracker&, tracker = *new QuotaTracker);
     return tracker;
 }
 
@@ -48,7 +48,7 @@ void QuotaTracker::getDatabaseSizeAndSpaceAvailableToOrigin(
     const String& originIdentifier, const String& databaseName,
     unsigned long long* databaseSize, unsigned long long* spaceAvailable)
 {
-    // Extra scope to unlock prior to potentially calling PlatformBridge.
+    // Extra scope to unlock prior to potentially calling PlatformSupport.
     {
         MutexLocker lockData(m_dataGuard);
         ASSERT(m_databaseSizes.contains(originIdentifier));
@@ -63,7 +63,7 @@ void QuotaTracker::getDatabaseSizeAndSpaceAvailableToOrigin(
     }
 
     // The embedder hasn't pushed this value to us, so we pull it as needed.
-    *spaceAvailable = PlatformBridge::databaseGetSpaceAvailableForOrigin(originIdentifier);
+    *spaceAvailable = PlatformSupport::databaseGetSpaceAvailableForOrigin(originIdentifier);
 }
 
 void QuotaTracker::updateDatabaseSize(
@@ -89,4 +89,4 @@ void QuotaTracker::resetSpaceAvailableToOrigin(const String& originIdentifier)
 
 } // namespace WebCore
 
-#endif // ENABLE(DATABASE)
+#endif // ENABLE(SQL_DATABASE)

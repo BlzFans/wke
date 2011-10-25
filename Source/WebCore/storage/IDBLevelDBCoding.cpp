@@ -27,10 +27,11 @@
 #include "IDBLevelDBCoding.h"
 
 #if ENABLE(INDEXED_DATABASE)
-#if ENABLE(LEVELDB)
+#if USE(LEVELDB)
 
 #include "IDBKey.h"
 #include "LevelDBSlice.h"
+#include <wtf/text/StringBuilder.h>
 
 // LevelDB stores key/value pairs. Keys and values are strings of bytes, normally of type Vector<char>.
 //
@@ -70,6 +71,7 @@
 //     <database id, 0, 0, 50, object store id, 3> => is evictable [ObjectStoreMetaDataKey]
 //     <database id, 0, 0, 50, object store id, 4> => last "version" number [ObjectStoreMetaDataKey]
 //     <database id, 0, 0, 50, object store id, 5> => maximum index id ever allocated [ObjectStoreMetaDataKey]
+//     <database id, 0, 0, 50, object store id, 6> => has key path (vs. null) [ObjectStoreMetaDataKey]
 //
 //
 // Index meta-data:
@@ -264,16 +266,17 @@ String decodeString(const char* p, const char* end)
     ASSERT(!((end - p) % 2));
 
     size_t len = (end - p) / 2;
-    Vector<UChar> vector(len);
+    StringBuilder result;
+    result.reserveCapacity(len);
 
     for (size_t i = 0; i < len; ++i) {
         unsigned char hi = *p++;
         unsigned char lo = *p++;
 
-        vector[i] = (hi << 8) | lo;
+        result.append(static_cast<UChar>((hi << 8) | lo));
     }
 
-    return String::adopt(vector);
+    return result.toString();
 }
 
 Vector<char> encodeStringWithLength(const String& s)
@@ -296,6 +299,29 @@ const char* decodeStringWithLength(const char* p, const char* limit, String& fou
     foundString = decodeString(p, p + len * 2);
     p += len * 2;
     return p;
+}
+
+int compareEncodedStringsWithLength(const char* p, const char* limitP, const char* q, const char* limitQ)
+{
+    ASSERT(limitP >= p);
+    ASSERT(limitQ >= q);
+    int64_t lenP, lenQ;
+    p = decodeVarInt(p, limitP, lenP);
+    q = decodeVarInt(q, limitQ, lenQ);
+    ASSERT(p && q);
+    ASSERT(lenP >= 0);
+    ASSERT(lenQ >= 0);
+    ASSERT(p + lenP * 2 <= limitP);
+    ASSERT(q + lenQ * 2 <= limitQ);
+
+    const size_t lmin = static_cast<size_t>(lenP < lenQ ? lenP : lenQ);
+    if (int x = memcmp(p, q, lmin * 2))
+        return x;
+
+    if (lenP == lenQ)
+        return 0;
+
+    return (lenP > lenQ) ? 1 : -1;
 }
 
 Vector<char> encodeDouble(double x)
@@ -439,7 +465,6 @@ int compareEncodedIDBKeys(const Vector<char>& keyA, const Vector<char>& keyB)
     unsigned char typeA = *p++;
     unsigned char typeB = *q++;
 
-    String s, t;
     double d, e;
 
     if (int x = typeB - typeA) // FIXME: Note the subtleness!
@@ -452,11 +477,7 @@ int compareEncodedIDBKeys(const Vector<char>& keyA, const Vector<char>& keyB)
         return 0;
     case kIDBKeyStringTypeByte:
         // String type.
-        p = decodeStringWithLength(p, limitA, s); // FIXME: Compare without actually decoding the String!
-        ASSERT(p);
-        q = decodeStringWithLength(q, limitB, t);
-        ASSERT(q);
-        return codePointCompare(s, t);
+        return compareEncodedStringsWithLength(p, limitA, q, limitB);
     case kIDBKeyDateTypeByte:
     case kIDBKeyNumberTypeByte:
         // Date or number.
@@ -797,6 +818,17 @@ Vector<char> DatabaseNameKey::encode(const String& origin, const String& databas
     return ret;
 }
 
+Vector<char> DatabaseNameKey::encodeMinKeyForOrigin(const String& origin)
+{
+    return encode(origin, "");
+}
+
+Vector<char> DatabaseNameKey::encodeStopKeyForOrigin(const String& origin)
+{
+    // just after origin in collation order
+    return encodeMinKeyForOrigin(origin + "\x01");
+}
+
 int DatabaseNameKey::compare(const DatabaseNameKey& other)
 {
     if (int x = codePointCompare(m_origin, other.m_origin))
@@ -855,6 +887,11 @@ Vector<char> ObjectStoreMetaDataKey::encode(int64_t databaseId, int64_t objectSt
 Vector<char> ObjectStoreMetaDataKey::encodeMaxKey(int64_t databaseId)
 {
     return encode(databaseId, INT64_MAX, INT64_MAX);
+}
+
+Vector<char> ObjectStoreMetaDataKey::encodeMaxKey(int64_t databaseId, int64_t objectStoreId)
+{
+    return encode(databaseId, objectStoreId, INT64_MAX);
 }
 
 int64_t ObjectStoreMetaDataKey::objectStoreId() const
@@ -1311,5 +1348,5 @@ PassRefPtr<IDBKey> IndexDataKey::userKey() const
 } // namespace IDBLevelDBCoding
 } // namespace WebCore
 
-#endif // ENABLE(LEVELDB)
+#endif // USE(LEVELDB)
 #endif // ENABLE(INDEXED_DATABASE)

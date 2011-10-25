@@ -26,8 +26,6 @@
 #include "config.h"
 #include "StorageAreaSync.h"
 
-#if ENABLE(DOM_STORAGE)
-
 #include "EventNames.h"
 #include "FileSystem.h"
 #include "HTMLElement.h"
@@ -431,6 +429,8 @@ void StorageAreaSync::sync(bool clearItems, const HashMap<String, String>& items
 
     HashMap<String, String>::const_iterator end = items.end();
 
+    SQLiteTransaction transaction(m_database);
+    transaction.begin();
     for (HashMap<String, String>::const_iterator it = items.begin(); it != end; ++it) {
         // Based on the null-ness of the second argument, decide whether this is an insert or a delete.
         SQLiteStatement& query = it->second.isNull() ? remove : insert;
@@ -449,6 +449,7 @@ void StorageAreaSync::sync(bool clearItems, const HashMap<String, String>& items
 
         query.reset();
     }
+    transaction.commit();
 }
 
 void StorageAreaSync::performSync()
@@ -518,7 +519,5 @@ void StorageAreaSync::scheduleSync()
 {
     syncTimerFired(&m_syncTimer);
 }
-    
-} // namespace WebCore
 
-#endif // ENABLE(DOM_STORAGE)
+} // namespace WebCore

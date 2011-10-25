@@ -27,7 +27,7 @@
 #define IDBLevelDBCoding_h
 
 #if ENABLE(INDEXED_DATABASE)
-#if ENABLE(LEVELDB)
+#if USE(LEVELDB)
 
 #include <wtf/RefPtr.h>
 #include <wtf/Vector.h>
@@ -53,6 +53,7 @@ Vector<char> encodeString(const String&);
 String decodeString(const char* p, const char* end);
 Vector<char> encodeStringWithLength(const String&);
 const char* decodeStringWithLength(const char* p, const char* limit, String& foundString);
+int compareEncodedStringsWithLength(const char* p, const char* limitP, const char* q, const char* limitQ);
 Vector<char> encodeDouble(double);
 const char* decodeDouble(const char* p, const char* limit, double*);
 Vector<char> encodeIDBKey(const IDBKey&);
@@ -116,6 +117,8 @@ class DatabaseNameKey {
 public:
     static const char* decode(const char* start, const char* limit, DatabaseNameKey* result);
     static Vector<char> encode(const String& origin, const String& databaseName);
+    static Vector<char> encodeMinKeyForOrigin(const String& origin);
+    static Vector<char> encodeStopKeyForOrigin(const String& origin);
     String origin() const { return m_origin; }
     String databaseName() const { return m_databaseName; }
     int compare(const DatabaseNameKey& other);
@@ -143,6 +146,7 @@ public:
     static const char* decode(const char* start, const char* limit, ObjectStoreMetaDataKey* result);
     static Vector<char> encode(int64_t databaseId, int64_t objectStoreId, int64_t metaDataType);
     static Vector<char> encodeMaxKey(int64_t databaseId);
+    static Vector<char> encodeMaxKey(int64_t databaseId, int64_t objectStoreId);
     int64_t objectStoreId() const;
     int64_t metaDataType() const;
     int compare(const ObjectStoreMetaDataKey& other);
@@ -277,7 +281,7 @@ private:
 
 } // namespace WebCore
 
-#endif // ENABLE(LEVELDB)
+#endif // USE(LEVELDB)
 #endif // ENABLE(INDEXED_DATABASE)
 
 #endif // IDBLevelDBCoding_h

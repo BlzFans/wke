@@ -28,7 +28,12 @@ module storage {
     interface [
         Conditional=INDEXED_DATABASE
     ] IDBFactory {
+        [CallWith=ScriptExecutionContext] IDBRequest getDatabaseNames();
+
         [CallWith=ScriptExecutionContext] IDBRequest open(in DOMString name)
+            raises (IDBDatabaseException);
+
+        short cmp(in IDBKey first, in IDBKey second)
             raises (IDBDatabaseException);
     };
 

@@ -26,8 +26,6 @@
 #include "config.h"
 #include "StorageTracker.h"
 
-#if ENABLE(DOM_STORAGE)
-
 #include "DatabaseThread.h"
 #include "FileSystem.h"
 #include "LocalStorageTask.h"
@@ -51,7 +49,7 @@ static StorageTracker* storageTracker = 0;
 void StorageTracker::initializeTracker(const String& storagePath, StorageTrackerClient* client)
 {
     ASSERT(isMainThread());
-    ASSERT(!storageTracker);
+    ASSERT(!storageTracker || !storageTracker->m_client);
     
     if (!storageTracker)
         storageTracker = new StorageTracker(storagePath);
@@ -590,5 +588,3 @@ long long StorageTracker::diskUsageForOrigin(SecurityOrigin* origin)
 }
     
 } // namespace WebCore
-
-#endif // ENABLE(DOM_STORAGE)

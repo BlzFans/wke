@@ -27,7 +27,7 @@
 #include "IDBLevelDBBackingStore.h"
 
 #if ENABLE(INDEXED_DATABASE)
-#if ENABLE(LEVELDB)
+#if USE(LEVELDB)
 
 #include "Assertions.h"
 #include "FileSystem.h"
@@ -132,24 +132,26 @@ IDBLevelDBBackingStore::~IDBLevelDBBackingStore()
     m_comparator.clear();
 }
 
-PassRefPtr<IDBBackingStore> IDBLevelDBBackingStore::open(SecurityOrigin* securityOrigin, const String& pathBaseArg, int64_t maximumSize, const String& fileIdentifier, IDBFactoryBackendImpl* factory)
+PassRefPtr<IDBBackingStore> IDBLevelDBBackingStore::open(SecurityOrigin* securityOrigin, const String& pathBaseArg, const String& fileIdentifier, IDBFactoryBackendImpl* factory)
 {
     String pathBase = pathBaseArg;
 
-    if (pathBase.isEmpty()) {
-        ASSERT_NOT_REACHED(); // FIXME: We need to handle this case for incognito and DumpRenderTree.
-        return PassRefPtr<IDBBackingStore>();
-    }
-
-    if (!makeAllDirectories(pathBase)) {
-        LOG_ERROR("Unable to create IndexedDB database path %s", pathBase.utf8().data());
-        return PassRefPtr<IDBBackingStore>();
-    }
-    // FIXME: We should eventually use the same LevelDB database for all origins.
-    String path = pathByAppendingComponent(pathBase, securityOrigin->databaseIdentifier() + ".indexeddb.leveldb");
-
     OwnPtr<LevelDBComparator> comparator = adoptPtr(new Comparator());
-    OwnPtr<LevelDBDatabase> db = LevelDBDatabase::open(path, comparator.get());
+    OwnPtr<LevelDBDatabase> db;
+
+    if (pathBase.isEmpty())
+        db = LevelDBDatabase::openInMemory(comparator.get());
+    else {
+        if (!makeAllDirectories(pathBase)) {
+            LOG_ERROR("Unable to create IndexedDB database path %s", pathBase.utf8().data());
+            return PassRefPtr<IDBBackingStore>();
+        }
+        // FIXME: We should eventually use the same LevelDB database for all origins.
+        String path = pathByAppendingComponent(pathBase, securityOrigin->databaseIdentifier() + ".indexeddb.leveldb");
+
+        db = LevelDBDatabase::open(path, comparator.get());
+    }
+
     if (!db)
         return PassRefPtr<IDBBackingStore>();
 
@@ -162,6 +164,26 @@ PassRefPtr<IDBBackingStore> IDBLevelDBBackingStore::open(SecurityOrigin* securit
         return PassRefPtr<IDBBackingStore>();
 
     return backingStore.release();
+}
+
+void IDBLevelDBBackingStore::getDatabaseNames(Vector<String>& foundNames)
+{
+    const Vector<char> startKey = DatabaseNameKey::encodeMinKeyForOrigin(m_identifier);
+    const Vector<char> stopKey = DatabaseNameKey::encodeStopKeyForOrigin(m_identifier);
+
+    ASSERT(foundNames.isEmpty());
+
+    OwnPtr<LevelDBIterator> it = m_db->createIterator();
+    for (it->seek(startKey); it->isValid() && compareKeys(it->key(), stopKey) < 0; it->next()) {
+        const char *p = it->key().begin();
+        const char *limit = it->key().end();
+
+        DatabaseNameKey databaseNameKey;
+        p = DatabaseNameKey::decode(p, limit, &databaseNameKey);
+        ASSERT(p);
+
+        foundNames.append(databaseNameKey.databaseName());
+    }
 }
 
 bool IDBLevelDBBackingStore::extractIDBDatabaseMetaData(const String& name, String& foundVersion, int64_t& foundId)
@@ -212,59 +234,96 @@ bool IDBLevelDBBackingStore::setIDBDatabaseMetaData(const String& name, const St
     return true;
 }
 
+static bool checkObjectStoreAndMetaDataType(const LevelDBIterator* it, const Vector<char>& stopKey, int64_t objectStoreId, int64_t metaDataType)
+{
+    if (!it->isValid() || compareKeys(it->key(), stopKey) >= 0)
+        return false;
+
+    ObjectStoreMetaDataKey metaDataKey;
+    const char* p = ObjectStoreMetaDataKey::decode(it->key().begin(), it->key().end(), &metaDataKey);
+    ASSERT_UNUSED(p, p);
+    if (metaDataKey.objectStoreId() != objectStoreId)
+        return false;
+    if (metaDataKey.metaDataType() != metaDataType)
+        return false;
+    return true;
+}
+
 void IDBLevelDBBackingStore::getObjectStores(int64_t databaseId, Vector<int64_t>& foundIds, Vector<String>& foundNames, Vector<String>& foundKeyPaths, Vector<bool>& foundAutoIncrementFlags)
 {
     const Vector<char> startKey = ObjectStoreMetaDataKey::encode(databaseId, 1, 0);
     const Vector<char> stopKey = ObjectStoreMetaDataKey::encodeMaxKey(databaseId);
 
+    ASSERT(foundIds.isEmpty());
+    ASSERT(foundNames.isEmpty());
+    ASSERT(foundKeyPaths.isEmpty());
+    ASSERT(foundAutoIncrementFlags.isEmpty());
+
     OwnPtr<LevelDBIterator> it = m_db->createIterator();
-    for (it->seek(startKey); it->isValid() && compareKeys(it->key(), stopKey) < 0; it->next()) {
+    it->seek(startKey);
+    while (it->isValid() && compareKeys(it->key(), stopKey) < 0) {
         const char *p = it->key().begin();
         const char *limit = it->key().end();
 
         ObjectStoreMetaDataKey metaDataKey;
         p = ObjectStoreMetaDataKey::decode(p, limit, &metaDataKey);
         ASSERT(p);
+        if (metaDataKey.metaDataType()) {
+            LOG_ERROR("Internal Indexed DB error.");
+            return;
+        }
 
         int64_t objectStoreId = metaDataKey.objectStoreId();
-
         String objectStoreName = decodeString(it->value().begin(), it->value().end());
 
         it->next();
-        if (!it->isValid()) {
+        if (!checkObjectStoreAndMetaDataType(it.get(), stopKey, objectStoreId, 1)) {
             LOG_ERROR("Internal Indexed DB error.");
             return;
         }
         String keyPath = decodeString(it->value().begin(), it->value().end());
+        bool hasKeyPath = true;
 
         it->next();
-        if (!it->isValid()) {
+        if (!checkObjectStoreAndMetaDataType(it.get(), stopKey, objectStoreId, 2)) {
             LOG_ERROR("Internal Indexed DB error.");
             return;
         }
+        // FIXME: Add encode/decode functions for bools
         bool autoIncrement = *it->value().begin();
 
         it->next(); // Is evicatble.
-        if (!it->isValid()) {
+        if (!checkObjectStoreAndMetaDataType(it.get(), stopKey, objectStoreId, 3)) {
             LOG_ERROR("Internal Indexed DB error.");
             return;
         }
 
         it->next(); // Last version.
-        if (!it->isValid()) {
+        if (!checkObjectStoreAndMetaDataType(it.get(), stopKey, objectStoreId, 4)) {
             LOG_ERROR("Internal Indexed DB error.");
             return;
         }
 
         it->next(); // Maxium index id allocated.
-        if (!it->isValid()) {
+        if (!checkObjectStoreAndMetaDataType(it.get(), stopKey, objectStoreId, 5)) {
             LOG_ERROR("Internal Indexed DB error.");
             return;
         }
 
+        it->next(); // [optional] has key path (is not null)
+        if (checkObjectStoreAndMetaDataType(it.get(), stopKey, objectStoreId, 6)) {
+            // FIXME: Add encode/decode functions for bools
+            hasKeyPath = *it->value().begin();
+            if (!hasKeyPath && !keyPath.isEmpty()) {
+                LOG_ERROR("Internal Indexed DB error.");
+                return;
+            }
+            it->next();
+        }
+
         foundIds.append(objectStoreId);
         foundNames.append(objectStoreName);
-        foundKeyPaths.append(keyPath);
+        foundKeyPaths.append(hasKeyPath ? keyPath : String());
         foundAutoIncrementFlags.append(autoIncrement);
     }
 }
@@ -298,6 +357,7 @@ bool IDBLevelDBBackingStore::createObjectStore(int64_t databaseId, const String&
     const Vector<char> evictableKey = ObjectStoreMetaDataKey::encode(databaseId, objectStoreId, 3);
     const Vector<char> lastVersionKey = ObjectStoreMetaDataKey::encode(databaseId, objectStoreId, 4);
     const Vector<char> maxIndexIdKey = ObjectStoreMetaDataKey::encode(databaseId, objectStoreId, 5);
+    const Vector<char> hasKeyPathKey  = ObjectStoreMetaDataKey::encode(databaseId, objectStoreId, 6);
     const Vector<char> namesKey = ObjectStoreNamesKey::encode(databaseId, name);
 
     bool ok = putString(m_currentTransaction.get(), nameKey, name);
@@ -336,6 +396,12 @@ bool IDBLevelDBBackingStore::createObjectStore(int64_t databaseId, const String&
         return false;
     }
 
+    ok = putInt(m_currentTransaction.get(), hasKeyPathKey, !keyPath.isNull());
+    if (!ok) {
+        LOG_ERROR("Internal Indexed DB error.");
+        return false;
+    }
+
     ok = putInt(m_currentTransaction.get(), namesKey, objectStoreId);
     if (!ok) {
         LOG_ERROR("Internal Indexed DB error.");
@@ -365,7 +431,7 @@ void IDBLevelDBBackingStore::deleteObjectStore(int64_t databaseId, int64_t objec
     String objectStoreName;
     getString(m_currentTransaction.get(), ObjectStoreMetaDataKey::encode(databaseId, objectStoreId, 0), objectStoreName);
 
-    if (!deleteRange(m_currentTransaction.get(), ObjectStoreMetaDataKey::encode(databaseId, objectStoreId, 0), ObjectStoreMetaDataKey::encode(databaseId, objectStoreId, 6)))
+    if (!deleteRange(m_currentTransaction.get(), ObjectStoreMetaDataKey::encode(databaseId, objectStoreId, 0), ObjectStoreMetaDataKey::encodeMaxKey(databaseId, objectStoreId)))
         return; // FIXME: Report error.
 
     m_currentTransaction->remove(ObjectStoreNamesKey::encode(databaseId, objectStoreName));
@@ -568,6 +634,11 @@ void IDBLevelDBBackingStore::getIndexes(int64_t databaseId, int64_t objectStoreI
 {
     const Vector<char> startKey = IndexMetaDataKey::encode(databaseId, objectStoreId, 0, 0);
     const Vector<char> stopKey = IndexMetaDataKey::encode(databaseId, objectStoreId + 1, 0, 0);
+
+    ASSERT(foundIds.isEmpty());
+    ASSERT(foundNames.isEmpty());
+    ASSERT(foundKeyPaths.isEmpty());
+    ASSERT(foundUniqueFlags.isEmpty());
 
     OwnPtr<LevelDBIterator> it = m_db->createIterator();
     for (it->seek(startKey); it->isValid() && compareKeys(it->key(), stopKey) < 0; it->next()) {
@@ -1310,5 +1381,5 @@ bool IDBLevelDBBackingStore::backingStoreExists(SecurityOrigin* securityOrigin, 
 
 } // namespace WebCore
 
-#endif // ENABLE(LEVELDB)
+#endif // USE(LEVELDB)
 #endif // ENABLE(INDEXED_DATABASE)

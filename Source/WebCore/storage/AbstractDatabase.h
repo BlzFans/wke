@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010 Google Inc. All rights reserved.
+ * Copyright (C) 2011 Google Inc. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,7 +29,7 @@
 #ifndef AbstractDatabase_h
 #define AbstractDatabase_h
 
-#if ENABLE(DATABASE)
+#if ENABLE(SQL_DATABASE)
 
 #include "ExceptionCode.h"
 #include "PlatformString.h"
@@ -104,7 +104,7 @@ protected:
     void setCachedVersion(const String&);
     bool getActualVersionForTransaction(String& version);
 
-    static const String& databaseInfoTableName();
+    static const char* databaseInfoTableName();
 
     RefPtr<ScriptExecutionContext> m_scriptExecutionContext;
     RefPtr<SecurityOrigin> m_contextThreadSecurityOrigin;
@@ -120,8 +120,6 @@ protected:
 #endif
 
 private:
-    static const String& databaseVersionKey();
-
     int m_guid;
     bool m_opened;
     bool m_new;
@@ -133,6 +131,6 @@ private:
 
 } // namespace WebCore
 
-#endif // ENABLE(DATABASE)
+#endif // ENABLE(SQL_DATABASE)
 
 #endif // AbstractDatabase_h

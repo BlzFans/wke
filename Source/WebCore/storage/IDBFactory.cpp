@@ -39,6 +39,7 @@
 #include "IDBDatabase.h"
 #include "IDBDatabaseException.h"
 #include "IDBFactoryBackendInterface.h"
+#include "IDBKey.h"
 #include "IDBKeyRange.h"
 #include "IDBRequest.h"
 #include "Page.h"
@@ -56,6 +57,23 @@ IDBFactory::IDBFactory(IDBFactoryBackendInterface* factory)
 
 IDBFactory::~IDBFactory()
 {
+}
+
+PassRefPtr<IDBRequest> IDBFactory::getDatabaseNames(ScriptExecutionContext* context)
+{
+    if (!context->isDocument()) {
+        // FIXME: make this work with workers.
+        return 0;
+    }
+
+    Document* document = static_cast<Document*>(context);
+    if (!document->frame() || !document->page())
+        return 0;
+
+    RefPtr<IDBRequest> request = IDBRequest::create(document, IDBAny::create(this), 0);
+    GroupSettings* groupSettings = document->page()->group().groupSettings();
+    m_factoryBackend->getDatabaseNames(request, document->securityOrigin(), document->frame(), groupSettings->indexedDBDatabasePath());
+    return request;
 }
 
 PassRefPtr<IDBRequest> IDBFactory::open(ScriptExecutionContext* context, const String& name, ExceptionCode& ec)
@@ -76,8 +94,21 @@ PassRefPtr<IDBRequest> IDBFactory::open(ScriptExecutionContext* context, const S
 
     RefPtr<IDBRequest> request = IDBRequest::create(document, IDBAny::create(this), 0);
     GroupSettings* groupSettings = document->page()->group().groupSettings();
-    m_factoryBackend->open(name, request, document->securityOrigin(), document->frame(), groupSettings->indexedDBDatabasePath(), groupSettings->indexedDBQuotaBytes(), IDBFactoryBackendInterface::DefaultBackingStore);
+    m_factoryBackend->open(name, request, document->securityOrigin(), document->frame(), groupSettings->indexedDBDatabasePath());
     return request;
+}
+
+short IDBFactory::cmp(PassRefPtr<IDBKey> first, PassRefPtr<IDBKey> second, ExceptionCode& ec)
+{
+    ASSERT(first);
+    ASSERT(second);
+
+    if (first->type() == IDBKey::NullType || second->type() == IDBKey::NullType) {
+        ec = IDBDatabaseException::DATA_ERR;
+        return 0;
+    }    
+    
+    return static_cast<short>(first->compare(second.get()));
 }
 
 } // namespace WebCore

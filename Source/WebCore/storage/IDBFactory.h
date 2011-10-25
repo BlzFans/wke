@@ -54,7 +54,11 @@ public:
     }
     ~IDBFactory();
 
+    PassRefPtr<IDBRequest> getDatabaseNames(ScriptExecutionContext*);
+
     PassRefPtr<IDBRequest> open(ScriptExecutionContext*, const String& name, ExceptionCode&);
+
+    short cmp(PassRefPtr<IDBKey> first, PassRefPtr<IDBKey> second, ExceptionCode&);
 
 private:
     IDBFactory(IDBFactoryBackendInterface*);

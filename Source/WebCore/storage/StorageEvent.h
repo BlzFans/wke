@@ -26,8 +26,6 @@
 #ifndef StorageEvent_h
 #define StorageEvent_h
 
-#if ENABLE(DOM_STORAGE)
-
 #include "Event.h"
 #include "PlatformString.h"
 
@@ -52,7 +50,7 @@ namespace WebCore {
         // Needed once we support init<blank>EventNS
         // void initStorageEventNS(in DOMString namespaceURI, in DOMString typeArg, in boolean canBubbleArg, in boolean cancelableArg, in DOMString keyArg, in DOMString oldValueArg, in DOMString newValueArg, in DOMString urlArg, Storage storageAreaArg);
 
-        virtual bool isStorageEvent() const { return true; }
+        virtual const AtomicString& interfaceName() const;
 
     private:
         StorageEvent();
@@ -66,7 +64,5 @@ namespace WebCore {
     };
 
 } // namespace WebCore
-
-#endif // ENABLE(DOM_STORAGE)
 
 #endif // StorageEvent_h

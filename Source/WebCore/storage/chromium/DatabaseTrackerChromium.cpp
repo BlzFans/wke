@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010 Google Inc. All rights reserved.
+ * Copyright (C) 2011 Google Inc. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -31,7 +31,7 @@
 #include "config.h"
 #include "DatabaseTracker.h"
 
-#if ENABLE(DATABASE)
+#if ENABLE(SQL_DATABASE)
 
 #include "AbstractDatabase.h"
 #include "DatabaseObserver.h"
@@ -47,7 +47,7 @@ namespace WebCore {
 
 DatabaseTracker& DatabaseTracker::tracker()
 {
-    DEFINE_STATIC_LOCAL(DatabaseTracker, tracker, (""));
+    AtomicallyInitializedStatic(DatabaseTracker&, tracker = *new DatabaseTracker(""));
     return tracker;
 }
 
@@ -129,12 +129,19 @@ void DatabaseTracker::removeOpenDatabase(AbstractDatabase* database)
     MutexLocker openDatabaseMapLock(m_openDatabaseMapGuard);
     ASSERT(m_openDatabaseMap);
     DatabaseNameMap* nameMap = m_openDatabaseMap->get(originIdentifier);
-    ASSERT(nameMap);
+    if (!nameMap)
+        return;
+
     String name(database->stringIdentifier());
     DatabaseSet* databaseSet = nameMap->get(name);
-    ASSERT(databaseSet);
-    databaseSet->remove(database);
+    if (!databaseSet)
+        return;
 
+    DatabaseSet::iterator found = databaseSet->find(database);
+    if (found == databaseSet->end())
+        return;
+
+    databaseSet->remove(found);
     if (databaseSet->isEmpty()) {
         nameMap->remove(name);
         delete databaseSet;
@@ -182,33 +189,26 @@ unsigned long long DatabaseTracker::getMaxSizeForDatabase(const AbstractDatabase
 
 void DatabaseTracker::interruptAllDatabasesForContext(const ScriptExecutionContext* context)
 {
-    Vector<RefPtr<AbstractDatabase> > openDatabases;
-    {
-        MutexLocker openDatabaseMapLock(m_openDatabaseMapGuard);
+    MutexLocker openDatabaseMapLock(m_openDatabaseMapGuard);
 
-        if (!m_openDatabaseMap)
-            return;
+    if (!m_openDatabaseMap)
+        return;
 
-        DatabaseNameMap* nameMap = m_openDatabaseMap->get(context->securityOrigin()->databaseIdentifier());
-        if (!nameMap)
-            return;
+    DatabaseNameMap* nameMap = m_openDatabaseMap->get(context->securityOrigin()->databaseIdentifier());
+    if (!nameMap)
+        return;
 
-        DatabaseNameMap::const_iterator dbNameMapEndIt = nameMap->end();
-        for (DatabaseNameMap::const_iterator dbNameMapIt = nameMap->begin(); dbNameMapIt != dbNameMapEndIt; ++dbNameMapIt) {
-            DatabaseSet* databaseSet = dbNameMapIt->second;
-            DatabaseSet::const_iterator dbSetEndIt = databaseSet->end();
-            for (DatabaseSet::const_iterator dbSetIt = databaseSet->begin(); dbSetIt != dbSetEndIt; ++dbSetIt) {
-                if ((*dbSetIt)->scriptExecutionContext() == context)
-                    openDatabases.append(*dbSetIt);
-            }
+    DatabaseNameMap::const_iterator dbNameMapEndIt = nameMap->end();
+    for (DatabaseNameMap::const_iterator dbNameMapIt = nameMap->begin(); dbNameMapIt != dbNameMapEndIt; ++dbNameMapIt) {
+        DatabaseSet* databaseSet = dbNameMapIt->second;
+        DatabaseSet::const_iterator end = databaseSet->end();
+        for (DatabaseSet::const_iterator it = databaseSet->begin(); it != end; ++it) {
+            if ((*it)->scriptExecutionContext() == context)
+                (*it)->interrupt();
         }
     }
-
-    Vector<RefPtr<AbstractDatabase> >::const_iterator openDatabasesEndIt = openDatabases.end();
-    for (Vector<RefPtr<AbstractDatabase> >::const_iterator openDatabasesIt = openDatabases.begin(); openDatabasesIt != openDatabasesEndIt; ++openDatabasesIt)
-        (*openDatabasesIt)->interrupt();
 }
 
 }
 
-#endif // ENABLE(DATABASE)
+#endif // ENABLE(SQL_DATABASE)
