@@ -51,6 +51,10 @@ namespace WebCore {
 
         virtual bool isDocumentThreadableLoaderClient() { return false; }
 
+#if PLATFORM(CHROMIUM)
+        virtual void didDownloadData(int /*dataLength*/) { }
+#endif
+
     protected:
         ThreadableLoaderClient() { }
         virtual ~ThreadableLoaderClient() { }

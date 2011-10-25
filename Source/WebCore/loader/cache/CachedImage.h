@@ -24,6 +24,8 @@
 #define CachedImage_h
 
 #include "CachedResource.h"
+#include "CachedResourceClient.h"
+#include "ImageBySizeCache.h"
 #include "ImageObserver.h"
 #include "IntRect.h"
 #include "Timer.h"
@@ -32,7 +34,10 @@
 namespace WebCore {
 
 class CachedResourceLoader;
+class FloatSize;
 class MemoryCache;
+class RenderObject;
+struct Length;
 
 class CachedImage : public CachedResource, public ImageObserver {
     friend class MemoryCache;
@@ -42,23 +47,26 @@ public:
     CachedImage(Image*);
     virtual ~CachedImage();
     
-    virtual void load(CachedResourceLoader* cachedResourceLoader);
+    virtual void load(CachedResourceLoader*, const ResourceLoaderOptions&);
 
-    Image* image() const; // Returns the nullImage() if the image is not available yet.
+    Image* image(); // Returns the nullImage() if the image is not available yet.
+    Image* imageForRenderer(const RenderObject*); // Returns the nullImage() if the image is not available yet.
     bool hasImage() const { return m_image.get(); }
 
-    bool canRender(float multiplier) const { return !errorOccurred() && !imageSize(multiplier).isEmpty(); }
+    std::pair<Image*, float> brokenImage(float deviceScaleFactor) const; // Returns an image and the image's resolution scale factor.
+    bool willPaintBrokenImage() const; 
+
+    bool canRender(const RenderObject* renderer, float multiplier) { return !errorOccurred() && !imageSizeForRenderer(renderer, multiplier).isEmpty(); }
 
     // These are only used for SVGImage right now
-    void setImageContainerSize(const IntSize&);
+    void setContainerSizeForRenderer(const RenderObject*, const IntSize&);
     bool usesImageContainerSize() const;
     bool imageHasRelativeWidth() const;
     bool imageHasRelativeHeight() const;
     
-    // Both of these methods take a zoom multiplier that can be used to increase the natural size of the image by the
-    // zoom.
-    IntSize imageSize(float multiplier) const;  // returns the size of the complete image.
-    IntRect imageRect(float multiplier) const;  // The size of the currently decoded portion of the image.
+    // This method takes a zoom multiplier that can be used to increase the natural size of the image by the zoom.
+    IntSize imageSizeForRenderer(const RenderObject*, float multiplier); // returns the size of the complete image.
+    void computeIntrinsicDimensions(const RenderObject*, Length& intrinsicWidth, Length& intrinsicHeight, FloatSize& intrinsicRatio);
 
     virtual void didAddClient(CachedResourceClient*);
     
@@ -87,6 +95,10 @@ public:
     virtual void changedInRect(const Image*, const IntRect&);
 
 private:
+    Image* lookupImageForSize(const IntSize&) const;
+    Image* lookupImageForRenderer(const RenderObject*) const;
+    PassRefPtr<Image> lookupOrCreateImageForRenderer(const RenderObject*);
+
     void createImage();
     size_t maximumDecodedImageSize();
     // If not null, changeRect is the changed part of the image.
@@ -96,8 +108,26 @@ private:
     void checkShouldPaintBrokenImage();
 
     RefPtr<Image> m_image;
+    mutable ImageBySizeCache m_svgImageCache;
     Timer<CachedImage> m_decodedDataDeletionTimer;
     bool m_shouldPaintBrokenImage;
+};
+
+class CachedImageClient : public CachedResourceClient {
+public:
+    virtual ~CachedImageClient() { }
+    static CachedResourceClientType expectedType() { return ImageType; }
+    virtual CachedResourceClientType resourceClientType() { return expectedType(); }
+
+    // Called whenever a frame of an image changes, either because we got more data from the network or
+    // because we are animating. If not null, the IntRect is the changed rect of the image.
+    virtual void imageChanged(CachedImage*, const IntRect* = 0) { }
+
+    // Called to find out if this client wants to actually display the image. Used to tell when we
+    // can halt animation. Content nodes that hold image refs for example would not render the image,
+    // but RenderImages would (assuming they have visibility: visible and their render tree isn't hidden
+    // e.g., in the b/f cache or in a background tab).
+    virtual bool willRenderImage(CachedImage*) { return false; }
 };
 
 }

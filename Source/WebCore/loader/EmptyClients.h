@@ -47,7 +47,7 @@
 #include "SearchPopupMenu.h"
 
 #if USE(V8)
-#include "V8IsolatedContext.h"
+#include <v8.h>
 #endif
 
 /*
@@ -161,10 +161,10 @@ public:
     virtual void invalidateContentsAndWindow(const IntRect&, bool) { }
     virtual void invalidateContentsForSlowScroll(const IntRect&, bool) {};
     virtual void scroll(const IntSize&, const IntRect&, const IntRect&) { }
-#if ENABLE(TILED_BACKING_STORE)
+#if USE(TILED_BACKING_STORE)
     virtual void delegatedScrollRequested(const IntPoint&) { }
 #endif
-#if ENABLE(REQUEST_ANIMATION_FRAME)
+#if ENABLE(REQUEST_ANIMATION_FRAME) && !USE(REQUEST_ANIMATION_FRAME_TIMER)
     virtual void scheduleAnimation() { }
 #endif
 
@@ -180,14 +180,12 @@ public:
 
     virtual void print(Frame*) { }
 
-#if ENABLE(DATABASE)
+#if ENABLE(SQL_DATABASE)
     virtual void exceededDatabaseQuota(Frame*, const String&) { }
 #endif
 
-#if ENABLE(OFFLINE_WEB_APPLICATIONS)
     virtual void reachedMaxAppCacheSize(int64_t) { }
     virtual void reachedApplicationCacheOriginQuota(SecurityOrigin*, int64_t) { }
-#endif
 
 #if ENABLE(NOTIFICATIONS)
     virtual NotificationPresenter* notificationPresenter() const { return 0; }
@@ -199,7 +197,7 @@ public:
 
 #if ENABLE(INPUT_COLOR)
     void openColorChooser(ColorChooser*, const Color&) { }
-    void closeColorChooser() { }
+    void cleanupColorChooser() { }
     void setSelectedColorInColorChooser(const Color&) { }
 #endif
 
@@ -214,7 +212,7 @@ public:
     virtual void setCursor(const Cursor&) { }
     virtual void setCursorHiddenUntilMouseMoves(bool) { }
 
-    virtual void scrollRectIntoView(const IntRect&, const ScrollView*) const {}
+    virtual void scrollRectIntoView(const IntRect&) const { }
 
     virtual void requestGeolocationPermissionForFrame(Frame*, Geolocation*) {}
     virtual void cancelGeolocationPermissionRequestForFrame(Frame*, Geolocation*) {}
@@ -367,9 +365,6 @@ public:
     virtual void updateGlobalHistoryRedirectLinks() { }
     virtual bool shouldGoToHistoryItem(HistoryItem*) const { return false; }
     virtual bool shouldStopLoadingForHistoryItem(HistoryItem*) const { return false; }
-    virtual void dispatchDidAddBackForwardItem(HistoryItem*) const { }
-    virtual void dispatchDidRemoveBackForwardItem(HistoryItem*) const { }
-    virtual void dispatchDidChangeBackForwardIndex() const { }
     virtual void updateGlobalHistoryItemForPage() { }
     virtual void saveViewStateToItem(HistoryItem*) { }
     virtual bool canCachePage() const { return false; }
@@ -397,9 +392,8 @@ public:
     virtual void registerForIconNotification(bool) { }
 
 #if USE(V8)
-    virtual void didCreateScriptContextForFrame() { }
-    virtual void didDestroyScriptContextForFrame() { }
-    virtual void didCreateIsolatedScriptContext(V8IsolatedContext*) { }
+    virtual void didCreateScriptContext(v8::Handle<v8::Context>, int worldId) { }
+    virtual void willReleaseScriptContext(v8::Handle<v8::Context>, int worldId) { }
     virtual bool allowScriptExtension(const String& extensionName, int extensionGroup) { return false; }
 #endif
 

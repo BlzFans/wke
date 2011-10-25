@@ -5,6 +5,7 @@
  * Copyright (C) 2008 Alp Toker <alp@atoker.com>
  * Copyright (C) Research In Motion Limited 2009. All rights reserved.
  * Copyright (C) 2011 Kris Jordan <krisjordan@gmail.com>
+ * Copyright (C) 2011 Google Inc. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -132,12 +133,7 @@ using namespace HTMLNames;
 using namespace SVGNames;
 #endif
 
-#if ENABLE(XHTMLMP)
-static const char defaultAcceptHeader[] = "application/vnd.wap.xhtml+xml,application/xhtml+xml;profile='http://www.wapforum.org/xhtml',text/html,application/xml;q=0.9,*/*;q=0.8";
-#else
 static const char defaultAcceptHeader[] = "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8";
-#endif
-
 static double storedTimeOfLastCompletedLoad;
 
 bool isBackForwardLoadType(FrameLoadType type)
@@ -426,7 +422,7 @@ void FrameLoader::stopLoading(UnloadEventPolicy unloadEventPolicy)
         // http://www.w3.org/Bugs/Public/show_bug.cgi?id=10537
         doc->setReadyState(Document::Complete);
 
-#if ENABLE(DATABASE)
+#if ENABLE(SQL_DATABASE)
         doc->stopDatabases(0);
 #endif
     }
@@ -848,7 +844,8 @@ void FrameLoader::loadArchive(PassRefPtr<Archive> archive)
 ObjectContentType FrameLoader::defaultObjectContentType(const KURL& url, const String& mimeTypeIn, bool shouldPreferPlugInsForImages)
 {
     String mimeType = mimeTypeIn;
-    String extension = url.path().substring(url.path().reverseFind('.') + 1);
+    String decodedPath = decodeURLEscapeSequences(url.path());
+    String extension = decodedPath.substring(decodedPath.reverseFind('.') + 1);
 
     // We don't use MIMETypeRegistry::getMIMETypeForPath() because it returns "application/octet-stream" upon failure
     if (mimeType.isEmpty())
@@ -1124,21 +1121,6 @@ void FrameLoader::setupForReplace()
     detachChildren();
 }
 
-// This is a hack to allow keep navigation to http/https feeds working. To remove this
-// we need to introduce new API akin to registerURLSchemeAsLocal, that registers a
-// protocols navigation policy.
-static bool isFeedWithNestedProtocolInHTTPFamily(const KURL& url)
-{
-    const String& urlString = url.string();
-    if (!urlString.startsWith("feed", false))
-        return false;
-
-    return urlString.startsWith("feed://", false) 
-        || urlString.startsWith("feed:http:", false) || urlString.startsWith("feed:https:", false)
-        || urlString.startsWith("feeds:http:", false) || urlString.startsWith("feeds:https:", false)
-        || urlString.startsWith("feedsearch:http:", false) || urlString.startsWith("feedsearch:https:", false);
-}
-
 void FrameLoader::loadFrameRequest(const FrameLoadRequest& request, bool lockHistory, bool lockBackForwardList,
     PassRefPtr<Event> event, PassRefPtr<FormState> formState, ReferrerPolicy referrerPolicy)
 {    
@@ -1148,8 +1130,7 @@ void FrameLoader::loadFrameRequest(const FrameLoadRequest& request, bool lockHis
     KURL url = request.resourceRequest().url();
 
     ASSERT(m_frame->document());
-    // FIXME: Should we move the isFeedWithNestedProtocolInHTTPFamily logic inside SecurityOrigin::canDisplay?
-    if (!isFeedWithNestedProtocolInHTTPFamily(url) && !request.requester()->canDisplay(url)) {
+    if (!request.requester()->canDisplay(url)) {
         reportLocalLoadFailed(m_frame, url.string());
         return;
     }
@@ -1218,7 +1199,7 @@ void FrameLoader::loadURL(const KURL& newURL, const String& referrer, const Stri
     if (m_pageDismissalEventBeingDispatched != NoDismissal)
         return;
 
-    NavigationAction action(newURL, newLoadType, isFormSubmission, event);
+    NavigationAction action(request, newLoadType, isFormSubmission, event);
 
     if (!targetFrame && !frameName.isEmpty()) {
         policyChecker()->checkNewWindowPolicy(action, FrameLoader::callContinueLoadAfterNewWindowPolicy,
@@ -1287,7 +1268,7 @@ void FrameLoader::load(const ResourceRequest& request, const String& frameName, 
         return;
     }
 
-    policyChecker()->checkNewWindowPolicy(NavigationAction(request.url(), NavigationTypeOther), FrameLoader::callContinueLoadAfterNewWindowPolicy, request, 0, frameName, this);
+    policyChecker()->checkNewWindowPolicy(NavigationAction(request, NavigationTypeOther), FrameLoader::callContinueLoadAfterNewWindowPolicy, request, 0, frameName, this);
 }
 
 void FrameLoader::loadWithNavigationAction(const ResourceRequest& request, const NavigationAction& action, bool lockHistory, FrameLoadType type, PassRefPtr<FormState> formState)
@@ -1365,7 +1346,7 @@ void FrameLoader::loadWithDocumentLoader(DocumentLoader* loader, FrameLoadType t
 
     if (shouldScrollToAnchor(isFormSubmission,  httpMethod, policyChecker()->loadType(), newURL)) {
         RefPtr<DocumentLoader> oldDocumentLoader = m_documentLoader;
-        NavigationAction action(newURL, policyChecker()->loadType(), isFormSubmission);
+        NavigationAction action(loader->request(), policyChecker()->loadType(), isFormSubmission);
 
         oldDocumentLoader->setTriggeringAction(action);
         policyChecker()->stopCheck();
@@ -1378,7 +1359,7 @@ void FrameLoader::loadWithDocumentLoader(DocumentLoader* loader, FrameLoadType t
         policyChecker()->stopCheck();
         setPolicyDocumentLoader(loader);
         if (loader->triggeringAction().isEmpty())
-            loader->setTriggeringAction(NavigationAction(newURL, policyChecker()->loadType(), isFormSubmission));
+            loader->setTriggeringAction(NavigationAction(loader->request(), policyChecker()->loadType(), isFormSubmission));
 
         if (Element* ownerElement = m_frame->ownerElement()) {
             // We skip dispatching the beforeload event if we've already
@@ -1498,7 +1479,7 @@ void FrameLoader::reload(bool endToEndReload)
 
     // If we're about to re-post, set up action so the application can warn the user.
     if (request.httpMethod() == "POST")
-        loader->setTriggeringAction(NavigationAction(request.url(), NavigationTypeFormResubmitted));
+        loader->setTriggeringAction(NavigationAction(request, NavigationTypeFormResubmitted));
 
     loader->setOverrideEncoding(m_documentLoader->overrideEncoding());
     
@@ -1854,12 +1835,6 @@ void FrameLoader::transitionToCommitted(PassRefPtr<CachedPage> cachedPage)
     if (m_frame->view())
         m_frame->view()->scrollAnimator()->cancelAnimations();
 
-#if ENABLE(INPUT_COLOR)
-    ColorChooserClient* colorChooserClient = ColorChooser::chooser()->client();
-    if (colorChooserClient && colorChooserClient->isColorInputType())
-        static_cast<ColorInputType*>(colorChooserClient)->closeColorChooserIfCurrentClient();
-#endif
-
     m_client->setCopiesOnScroll();
     history()->updateForCommit();
 
@@ -2066,11 +2041,8 @@ void FrameLoader::open(CachedFrameBase& cachedFrame)
     view->setWasScrolledByUser(false);
 
     // Use the current ScrollView's frame rect.
-    if (m_frame->view()) {
-        IntRect rect = m_frame->view()->frameRect();
-        view->setFrameRect(rect);
-        view->setBoundsSize(rect.size());
-    }
+    if (m_frame->view())
+        view->setFrameRect(m_frame->view()->frameRect());
     m_frame->setView(view);
     
     m_frame->setDocument(document);
@@ -2292,14 +2264,15 @@ void FrameLoader::checkLoadCompleteForThisFrame()
             if (m_stateMachine.creatingInitialEmptyDocument() || !m_stateMachine.committedFirstRealDocumentLoad())
                 return;
 
+            if (Page* page = m_frame->page())
+                page->progress()->progressCompleted(m_frame);
+
             const ResourceError& error = dl->mainDocumentError();
             if (!error.isNull())
                 m_client->dispatchDidFailLoad(error);
             else
                 m_client->dispatchDidFinishLoad();
 
-            if (Page* page = m_frame->page())
-                page->progress()->progressCompleted(m_frame);
             return;
         }
         
@@ -2545,10 +2518,13 @@ void FrameLoader::addExtraFieldsToRequest(ResourceRequest& request, FrameLoadTyp
     // Make sure we send the Origin header.
     addHTTPOriginIfNeeded(request, String());
 
-    // Always try UTF-8. If that fails, try frame encoding (if any) and then the default.
-    // For a newly opened frame with an empty URL, encoding() should not be used, because this methods asks decoder, which uses ISO-8859-1.
+#if PLATFORM(MAC) || PLATFORM(WIN)
+    // The Apple Mac and Windows ports have decided not to behave like other
+    // browsers and instead use a quirky fallback array.
+    // FIXME: We should remove this code once CFNetwork implements RFC 6266.
     Settings* settings = m_frame->settings();
     request.setResponseContentDispositionEncodingFallbackArray("UTF-8", activeDocumentLoader()->writer()->deprecatedFrameEncoding(), settings ? settings->defaultTextEncodingName() : String());
+#endif
 }
 
 void FrameLoader::addHTTPOriginIfNeeded(ResourceRequest& request, const String& origin)
@@ -2601,7 +2577,7 @@ void FrameLoader::loadPostRequest(const ResourceRequest& inRequest, const String
     workingResourceRequest.setHTTPContentType(contentType);
     addExtraFieldsToRequest(workingResourceRequest, loadType, true);
 
-    NavigationAction action(url, loadType, true, event);
+    NavigationAction action(workingResourceRequest, loadType, true, event);
 
     if (!frameName.isEmpty()) {
         // The search for a target frame is done earlier in the case of form submission.
@@ -2638,14 +2614,10 @@ unsigned long FrameLoader::loadResourceSynchronously(const ResourceRequest& requ
     if (error.isNull()) {
         ASSERT(!newRequest.isNull());
         
-#if ENABLE(OFFLINE_WEB_APPLICATIONS)
         if (!documentLoader()->applicationCacheHost()->maybeLoadSynchronously(newRequest, error, response, data)) {
-#endif
             ResourceHandle::loadResourceSynchronously(networkingContext(), newRequest, storedCredentials, error, response, data);
-#if ENABLE(OFFLINE_WEB_APPLICATIONS)
             documentLoader()->applicationCacheHost()->maybeLoadFallbackSynchronously(newRequest, error, response, data);
         }
-#endif
     }
     int encodedDataLength = response.resourceLoadInfo() ? static_cast<int>(response.resourceLoadInfo()->encodedDataLength) : -1;
     notifier()->sendRemainingDelegateMessages(m_documentLoader.get(), identifier, response, data.data(), data.size(), encodedDataLength, error);
@@ -2706,6 +2678,12 @@ void FrameLoader::continueFragmentScrollAfterNavigationPolicy(const ResourceRequ
 
     if (!shouldContinue)
         return;
+
+    // If we have a provisional request for a different document, a fragment scroll should cancel it.
+    if (m_provisionalDocumentLoader && !equalIgnoringFragmentIdentifier(m_provisionalDocumentLoader->request().url(), request.url())) {
+        m_provisionalDocumentLoader->stopLoading();
+        setProvisionalDocumentLoader(0);
+    }
 
     bool isRedirect = m_quickRedirectComing || policyChecker()->loadType() == FrameLoadTypeRedirectWithLockedBackForwardList;    
     loadInSameDocument(request.url(), 0, !isRedirect);
@@ -2893,7 +2871,7 @@ void FrameLoader::continueLoadAfterNewWindowPolicy(const ResourceRequest& reques
     mainFrame->loader()->m_client->dispatchShow();
     if (!m_suppressOpenerInNewFrame)
         mainFrame->loader()->setOpener(frame.get());
-    mainFrame->loader()->loadWithNavigationAction(request, NavigationAction(), false, FrameLoadTypeStandard, formState);
+    mainFrame->loader()->loadWithNavigationAction(request, NavigationAction(request), false, FrameLoadTypeStandard, formState);
 }
 
 void FrameLoader::requestFromDelegate(ResourceRequest& request, unsigned long& identifier, ResourceError& error)
@@ -3056,7 +3034,6 @@ void FrameLoader::loadDifferentDocumentItem(HistoryItem* item, FrameLoadType loa
         currentURL = documentLoader()->url();
     RefPtr<FormData> formData = item->formData();
 
-    bool addedExtraFields = false;
     ResourceRequest request(itemURL);
 
     if (!item->referrer().isNull())
@@ -3076,7 +3053,6 @@ void FrameLoader::loadDifferentDocumentItem(HistoryItem* item, FrameLoadType loa
         // Make sure to add extra fields to the request after the Origin header is added for the FormData case.
         // See https://bugs.webkit.org/show_bug.cgi?id=22194 for more discussion.
         addExtraFieldsToRequest(request, m_loadType, true);
-        addedExtraFields = true;
         
         // FIXME: Slight hack to test if the NSURL cache contains the page we're going to.
         // We want to know this before talking to the policy delegate, since it affects whether 
@@ -3087,10 +3063,10 @@ void FrameLoader::loadDifferentDocumentItem(HistoryItem* item, FrameLoadType loa
         // extremely rare, but in that case the user will get an error on the navigation.
         
         if (ResourceHandle::willLoadFromCache(request, m_frame))
-            action = NavigationAction(itemURL, loadType, false);
+            action = NavigationAction(request, loadType, false);
         else {
             request.setCachePolicy(ReloadIgnoringCacheData);
-            action = NavigationAction(itemURL, NavigationTypeFormResubmitted);
+            action = NavigationAction(request, NavigationTypeFormResubmitted);
         }
     } else {
         switch (loadType) {
@@ -3114,11 +3090,12 @@ void FrameLoader::loadDifferentDocumentItem(HistoryItem* item, FrameLoadType loa
                 ASSERT_NOT_REACHED();
         }
 
-        action = NavigationAction(itemOriginalURL, loadType, false);
-    }
-    
-    if (!addedExtraFields)
         addExtraFieldsToRequest(request, m_loadType, true);
+
+        ResourceRequest requestForOriginalURL(request);
+        requestForOriginalURL.setURL(itemOriginalURL);
+        action = NavigationAction(requestForOriginalURL, loadType, false);
+    }
 
     loadWithNavigationAction(request, action, false, loadType, 0);
 }
@@ -3224,10 +3201,9 @@ void FrameLoader::didChangeTitle(DocumentLoader* loader)
     }
 }
 
-void FrameLoader::didChangeIcons(DocumentLoader* loader, IconType type)
+void FrameLoader::didChangeIcons(IconType type)
 {
-    if (loader == m_documentLoader)
-        m_client->dispatchDidChangeIcons(type);
+    m_client->dispatchDidChangeIcons(type);
 }
 
 void FrameLoader::dispatchDidCommitLoad()
@@ -3304,7 +3280,7 @@ Frame* createWindow(Frame* openerFrame, Frame* lookupFrame, const FrameLoadReque
     if (!oldPage)
         return 0;
 
-    NavigationAction action;
+    NavigationAction action(requestWithReferrer.resourceRequest());
     Page* page = oldPage->chrome()->createWindow(openerFrame, requestWithReferrer, features, action);
     if (!page)
         return 0;

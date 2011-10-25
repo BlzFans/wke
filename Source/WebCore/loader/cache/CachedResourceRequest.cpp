@@ -3,7 +3,7 @@
     Copyright (C) 2001 Dirk Mueller (mueller@kde.org)
     Copyright (C) 2002 Waldo Bastian (bastian@kde.org)
     Copyright (C) 2006 Samuel Weinig (sam.weinig@gmail.com)
-    Copyright (C) 2004, 2005, 2006, 2007, 2008 Apple Inc. All rights reserved.
+    Copyright (C) 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011 Apple Inc. All rights reserved.
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -60,6 +60,8 @@ static ResourceRequest::TargetType cachedResourceTypeToTargetType(CachedResource
         return ResourceRequest::TargetIsFontResource;
     case CachedResource::ImageResource:
         return ResourceRequest::TargetIsImage;
+    case CachedResource::RawResource:
+        return ResourceRequest::TargetIsSubresource;    
 #if ENABLE(LINK_PREFETCH)
     case CachedResource::LinkPrefetch:
         return ResourceRequest::TargetIsPrefetch;
@@ -68,16 +70,19 @@ static ResourceRequest::TargetType cachedResourceTypeToTargetType(CachedResource
     case CachedResource::LinkSubresource:
         return ResourceRequest::TargetIsSubresource;
 #endif
+#if ENABLE(VIDEO_TRACK)
+    case CachedResource::CueResource:
+        return ResourceRequest::TargetIsCue;
+#endif
     }
     ASSERT_NOT_REACHED();
     return ResourceRequest::TargetIsSubresource;
 }
 #endif
 
-CachedResourceRequest::CachedResourceRequest(CachedResourceLoader* cachedResourceLoader, CachedResource* resource, bool incremental)
+CachedResourceRequest::CachedResourceRequest(CachedResourceLoader* cachedResourceLoader, CachedResource* resource)
     : m_cachedResourceLoader(cachedResourceLoader)
     , m_resource(resource)
-    , m_incremental(incremental)
     , m_multipart(false)
     , m_finishing(false)
 {
@@ -87,9 +92,9 @@ CachedResourceRequest::~CachedResourceRequest()
 {
 }
 
-PassOwnPtr<CachedResourceRequest> CachedResourceRequest::load(CachedResourceLoader* cachedResourceLoader, CachedResource* resource, bool incremental, SecurityCheckPolicy securityCheck, bool sendResourceLoadCallbacks)
+PassOwnPtr<CachedResourceRequest> CachedResourceRequest::load(CachedResourceLoader* cachedResourceLoader, CachedResource* resource, const ResourceLoaderOptions& options)
 {
-    OwnPtr<CachedResourceRequest> request = adoptPtr(new CachedResourceRequest(cachedResourceLoader, resource, incremental));
+    OwnPtr<CachedResourceRequest> request = adoptPtr(new CachedResourceRequest(cachedResourceLoader, resource));
 
     ResourceRequest resourceRequest = resource->resourceRequest();
 #if PLATFORM(CHROMIUM)
@@ -124,8 +129,7 @@ PassOwnPtr<CachedResourceRequest> CachedResourceRequest::load(CachedResourceLoad
     ResourceLoadPriority priority = resource->loadPriority();
     resourceRequest.setPriority(priority);
 
-    RefPtr<SubresourceLoader> loader = resourceLoadScheduler()->scheduleSubresourceLoad(cachedResourceLoader->document()->frame(), request.get(), resourceRequest, priority, securityCheck,
-                                                                                        ResourceLoaderOptions(sendResourceLoadCallbacks ? SendCallbacks : DoNotSendCallbacks, SniffContent, BufferData, AllowStoredCredentials));
+    RefPtr<SubresourceLoader> loader = resourceLoadScheduler()->scheduleSubresourceLoad(cachedResourceLoader->document()->frame(), request.get(), resourceRequest, priority, options);
     if (!loader || loader->reachedTerminalState()) {
         // FIXME: What if resources in other frames were waiting for this revalidation?
         LOG(ResourceLoading, "Cannot start loading '%s'", resource->url().string().latin1().data());
@@ -140,11 +144,18 @@ PassOwnPtr<CachedResourceRequest> CachedResourceRequest::load(CachedResourceLoad
 
 void CachedResourceRequest::willSendRequest(SubresourceLoader* loader, ResourceRequest& req, const ResourceResponse&)
 {
-    if (!m_cachedResourceLoader->checkInsecureContent(m_resource->type(), req.url())) {
+    if (!m_cachedResourceLoader->canRequest(m_resource->type(), req.url())) {
         loader->cancel();
         return;
     }
     m_resource->setRequestedFromNetworkingLayer();
+}
+
+void CachedResourceRequest::cancel()
+{
+    if (m_finishing)
+        return;
+    m_loader->cancel();
 }
 
 void CachedResourceRequest::didFinishLoading(SubresourceLoader* loader, double)
@@ -272,7 +283,7 @@ void CachedResourceRequest::didReceiveData(SubresourceLoader* loader, const char
         // The resource data will change as the next part is loaded, so we need to make a copy.
         RefPtr<SharedBuffer> copiedData = SharedBuffer::create(data, size);
         m_resource->data(copiedData.release(), true);
-    } else if (m_incremental)
+    } else
         m_resource->data(loader->resourceData(), false);
 }
 

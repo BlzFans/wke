@@ -82,7 +82,9 @@ namespace WebCore {
         virtual void didFinishLoading(SubresourceLoader*, double);
         virtual void didFail(SubresourceLoader*, const ResourceError&);
 
-        virtual void didReceiveAuthenticationChallenge(SubresourceLoader*, const AuthenticationChallenge&);
+#if PLATFORM(CHROMIUM)
+        virtual void didDownloadData(SubresourceLoader*, int dataLength);
+#endif
 
         void didReceiveResponse(unsigned long identifier, const ResourceResponse&);
         void didFinishLoading(unsigned long identifier, double finishTime);

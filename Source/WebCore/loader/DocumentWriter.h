@@ -47,28 +47,26 @@ public:
 
     // This is only called by ScriptController::executeIfJavaScriptURL
     // and always contains the result of evaluating a javascript: url.
-    void replaceDocument(const String&);
+    void replaceDocument(const String&, Document* ownerDocument);
 
     void begin();
-    void begin(const KURL&, bool dispatchWindowObjectAvailable = true, SecurityOrigin* forcedSecurityOrigin = 0);
+    void begin(const KURL&, bool dispatchWindowObjectAvailable = true, Document* ownerDocument = 0);
     void addData(const char* bytes, size_t length);
     void end();
     void endIfNotLoadingMainResource();
     
     void setFrame(Frame* frame) { m_frame = frame; }
 
-    String encoding() const;
     void setEncoding(const String& encoding, bool userChosen);
 
-    // FIXME: It's really unforunate to need to expose this piece of state.
-    // I suspect a better design is to disentangle user-provided encodings,
-    // default encodings, and the decoding we're currently using.
+#if PLATFORM(MAC) || PLATFORM(WIN)
+    // This code exists only to service a quirk in the Apple Mac and Windows ports.
+    // FIXME: We should remove this code once CFNetwork implements RFC 6266.
     String deprecatedFrameEncoding() const;
+#endif
 
     const String& mimeType() const { return m_mimeType; }
     void setMIMEType(const String& type) { m_mimeType = type; }
-
-    void setDecoder(TextResourceDecoder*);
 
     // Exposed for DocumentParser::appendBytes.
     TextResourceDecoder* createDecoderIfNeeded();

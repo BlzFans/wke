@@ -31,7 +31,6 @@
 
 #include "FrameLoaderTypes.h"
 #include "IconURL.h"
-#include "ScrollTypes.h"
 #include <wtf/Forward.h>
 #include <wtf/Vector.h>
 
@@ -49,6 +48,13 @@ typedef class _jobject* jobject;
 #if PLATFORM(MAC) && !defined(__OBJC__)
 class NSCachedURLResponse;
 class NSView;
+#endif
+
+#if USE(V8)
+namespace v8 {
+class Context;
+template<class T> class Handle;
+}
 #endif
 
 namespace WebCore {
@@ -87,9 +93,6 @@ namespace WebCore {
     class SharedBuffer;
     class StringWithDirection;
     class SubstituteData;
-#if USE(V8)
-    class V8IsolatedContext;
-#endif
     class Widget;
 
     typedef void (PolicyChecker::*FramePolicyFunction)(PolicyAction);
@@ -195,9 +198,6 @@ namespace WebCore {
 
         virtual bool shouldGoToHistoryItem(HistoryItem*) const = 0;
         virtual bool shouldStopLoadingForHistoryItem(HistoryItem*) const = 0;
-        virtual void dispatchDidAddBackForwardItem(HistoryItem*) const = 0;
-        virtual void dispatchDidRemoveBackForwardItem(HistoryItem*) const = 0;
-        virtual void dispatchDidChangeBackForwardIndex() const = 0;
         virtual void updateGlobalHistoryItemForPage() { }
 
         // This frame has displayed inactive content (such as an image) from an
@@ -274,9 +274,8 @@ namespace WebCore {
         virtual void didPerformFirstNavigation() const = 0; // "Navigation" here means a transition from one page to another that ends up in the back/forward list.
 
 #if USE(V8)
-        virtual void didCreateScriptContextForFrame() = 0;
-        virtual void didDestroyScriptContextForFrame() = 0;
-        virtual void didCreateIsolatedScriptContext(V8IsolatedContext*) = 0;
+        virtual void didCreateScriptContext(v8::Handle<v8::Context>, int worldId) = 0;
+        virtual void willReleaseScriptContext(v8::Handle<v8::Context>, int worldId) = 0;
         virtual bool allowScriptExtension(const String& extensionName, int extensionGroup) = 0;
 #endif
 
@@ -302,7 +301,7 @@ namespace WebCore {
 
         virtual bool allowJavaScript(bool enabledPerSettings) { return enabledPerSettings; }
         virtual bool allowPlugins(bool enabledPerSettings) { return enabledPerSettings; }
-        virtual bool allowImages(bool enabledPerSettings) { return enabledPerSettings; }
+        virtual bool allowImage(bool enabledPerSettings, const KURL&) { return enabledPerSettings; }
         virtual bool allowDisplayingInsecureContent(bool enabledPerSettings, SecurityOrigin*, const KURL&) { return enabledPerSettings; }
         virtual bool allowRunningInsecureContent(bool enabledPerSettings, SecurityOrigin*, const KURL&) { return enabledPerSettings; }
         

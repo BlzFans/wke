@@ -86,7 +86,7 @@ void HistoryController::saveScrollPositionAndViewStateToItem(HistoryItem* item)
     else
         item->setScrollPoint(m_frame->view()->scrollPosition());
 
-    item->setPageScaleFactor(m_frame->pageScaleFactor());
+    item->setPageScaleFactor(m_frame->frameScaleFactor());
     
     // FIXME: It would be great to work out a way to put this code in WebCore instead of calling through to the client.
     m_frame->loader()->client()->saveViewStateToItem(item);
@@ -125,7 +125,8 @@ void HistoryController::restoreScrollPositionAndViewState()
     if (FrameView* view = m_frame->view()) {
         if (!view->wasScrolledByUser()) {
             view->setScrollPosition(m_currentItem->scrollPoint());
-            m_frame->scalePage(m_currentItem->pageScaleFactor(), m_currentItem->scrollPoint());
+            if (Page* page = m_frame->page())
+                page->setPageScaleFactor(m_currentItem->pageScaleFactor(), m_currentItem->scrollPoint());
         }
     }
 }
@@ -471,24 +472,26 @@ void HistoryController::recursiveUpdateForCommit()
     // For each frame that already had the content the item requested (based on
     // (a matching URL and frame tree snapshot), just restore the scroll position.
     // Save form state (works from currentItem, since m_frameLoadComplete is true)
-    ASSERT(m_frameLoadComplete);
-    saveDocumentState();
-    saveScrollPositionAndViewStateToItem(m_currentItem.get());
+    if (itemsAreClones(m_currentItem.get(), m_provisionalItem.get())) {
+        ASSERT(m_frameLoadComplete);
+        saveDocumentState();
+        saveScrollPositionAndViewStateToItem(m_currentItem.get());
 
-    if (FrameView* view = m_frame->view())
-        view->setWasScrolledByUser(false);
+        if (FrameView* view = m_frame->view())
+            view->setWasScrolledByUser(false);
 
-    // Now commit the provisional item
-    m_frameLoadComplete = false;
-    m_previousItem = m_currentItem;
-    m_currentItem = m_provisionalItem;
-    m_provisionalItem = 0;
+        // Now commit the provisional item
+        m_frameLoadComplete = false;
+        m_previousItem = m_currentItem;
+        m_currentItem = m_provisionalItem;
+        m_provisionalItem = 0;
 
-    // Restore form state (works from currentItem)
-    restoreDocumentState();
+        // Restore form state (works from currentItem)
+        restoreDocumentState();
 
-    // Restore the scroll position (we choose to do this rather than going back to the anchor point)
-    restoreScrollPositionAndViewState();
+        // Restore the scroll position (we choose to do this rather than going back to the anchor point)
+        restoreScrollPositionAndViewState();
+    }
 
     // Iterate over the rest of the tree
     for (Frame* child = m_frame->tree()->firstChild(); child; child = child->tree()->nextSibling())
@@ -522,6 +525,11 @@ void HistoryController::recursiveUpdateForSameDocumentNavigation()
     // The frame that navigated will now have a null provisional item.
     // Ignore it and its children.
     if (!m_provisionalItem)
+        return;
+
+    // The provisional item may represent a different pending navigation.
+    // Don't commit it if it isn't a same document navigation.
+    if (m_currentItem && !m_currentItem->shouldDoSameDocumentNavigationTo(m_provisionalItem.get()))
         return;
 
     // Commit the provisional item.
@@ -824,6 +832,10 @@ void HistoryController::pushState(PassRefPtr<SerializedScriptValue> stateObject,
 
     page->backForward()->addItem(topItem.release());
 
+    Settings* settings = m_frame->settings();
+    if (!settings || settings->privateBrowsingEnabled())
+        return;
+
     addVisitedLink(page, KURL(ParsedURLString, urlString));
     m_frame->loader()->client()->updateGlobalHistory();
 
@@ -838,6 +850,10 @@ void HistoryController::replaceState(PassRefPtr<SerializedScriptValue> stateObje
         m_currentItem->setURLString(urlString);
     m_currentItem->setTitle(title);
     m_currentItem->setStateObject(stateObject);
+
+    Settings* settings = m_frame->settings();
+    if (!settings || settings->privateBrowsingEnabled())
+        return;
 
     ASSERT(m_frame->page());
     addVisitedLink(m_frame->page(), KURL(ParsedURLString, urlString));

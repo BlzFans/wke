@@ -1,7 +1,7 @@
 /*
     Copyright (C) 1998 Lars Knoll (knoll@mpi-hd.mpg.de)
     Copyright (C) 2001 Dirk Mueller <mueller@kde.org>
-    Copyright (C) 2004, 2005, 2006 Apple Computer, Inc.
+    Copyright (C) 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011 Apple Inc. All rights reserved.
     Copyright (C) 2009 Torch Mobile Inc. http://www.torchmobile.com/
 
     This library is free software; you can redistribute it and/or
@@ -42,7 +42,9 @@ namespace WebCore {
 class CachedCSSStyleSheet;
 class CachedFont;
 class CachedImage;
+class CachedRawResource;
 class CachedScript;
+class CachedTextTrack;
 class CachedXSLStyleSheet;
 class Document;
 class Frame;
@@ -64,12 +66,16 @@ public:
     CachedCSSStyleSheet* requestUserCSSStyleSheet(ResourceRequest&, const String& charset);
     CachedScript* requestScript(ResourceRequest&, const String& charset);
     CachedFont* requestFont(ResourceRequest&);
+    CachedRawResource* requestRawResource(ResourceRequest&, const ResourceLoaderOptions&);
 
 #if ENABLE(XSLT)
     CachedXSLStyleSheet* requestXSLStyleSheet(ResourceRequest&);
 #endif
 #if ENABLE(LINK_PREFETCH)
     CachedResource* requestLinkResource(CachedResource::Type, ResourceRequest&, ResourceLoadPriority = ResourceLoadPriorityUnresolved);
+#endif
+#if ENABLE(VIDEO_TRACK)
+    CachedTextTrack* requestCues(ResourceRequest&);
 #endif
 
     // Logs an access denied message to the console for the specified URL.
@@ -104,19 +110,19 @@ public:
     void preload(CachedResource::Type, ResourceRequest&, const String& charset, bool referencedFromBody);
     void checkForPendingPreloads();
     void printPreloadStats();
-    bool checkInsecureContent(CachedResource::Type, const KURL&) const;
+    bool canRequest(CachedResource::Type, const KURL&, bool forPreload = false);
     
 private:
-    CachedResource* requestResource(CachedResource::Type, ResourceRequest&, const String& charset, ResourceLoadPriority = ResourceLoadPriorityUnresolved, bool isPreload = false);
-    CachedResource* revalidateResource(CachedResource*, ResourceLoadPriority priority);
-    CachedResource* loadResource(CachedResource::Type, ResourceRequest&, const String& charset, ResourceLoadPriority);
-    void requestPreload(CachedResource::Type, ResourceRequest& url, const String& charset);
+    CachedResource* requestResource(CachedResource::Type, ResourceRequest&, const String& charset, const ResourceLoaderOptions&, ResourceLoadPriority = ResourceLoadPriorityUnresolved, bool isPreload = false);
+    CachedResource* revalidateResource(CachedResource*, ResourceLoadPriority, const ResourceLoaderOptions&);
+    CachedResource* loadResource(CachedResource::Type, ResourceRequest&, const String& charset, ResourceLoadPriority, const ResourceLoaderOptions&);
+    void requestPreload(CachedResource::Type, ResourceRequest&, const String& charset);
 
     enum RevalidationPolicy { Use, Revalidate, Reload, Load };
     RevalidationPolicy determineRevalidationPolicy(CachedResource::Type, ResourceRequest&, bool forPreload, CachedResource* existingResource) const;
     
     void notifyLoadedFromMemoryCache(CachedResource*);
-    bool canRequest(CachedResource::Type, const KURL&, bool forPreload = false);
+    bool checkInsecureContent(CachedResource::Type, const KURL&) const;
 
     void garbageCollectDocumentResourcesTimerFired(Timer<CachedResourceLoader>*);
     void performPostLoadActions();

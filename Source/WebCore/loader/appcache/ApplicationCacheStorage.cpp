@@ -26,8 +26,6 @@
 #include "config.h"
 #include "ApplicationCacheStorage.h"
 
-#if ENABLE(OFFLINE_WEB_APPLICATIONS)
-
 #include "ApplicationCache.h"
 #include "ApplicationCacheGroup.h"
 #include "ApplicationCacheHost.h"
@@ -42,6 +40,7 @@
 #include <wtf/text/CString.h>
 #include <wtf/StdLibExtras.h>
 #include <wtf/StringExtras.h>
+#include <wtf/text/StringBuilder.h>
 
 using namespace std;
 
@@ -836,17 +835,17 @@ bool ApplicationCacheStorage::store(ApplicationCacheResource* resource, unsigned
     // Then, insert the resource
     
     // Serialize the headers
-    Vector<UChar> stringBuilder;
+    StringBuilder stringBuilder;
     
     HTTPHeaderMap::const_iterator end = resource->response().httpHeaderFields().end();
     for (HTTPHeaderMap::const_iterator it = resource->response().httpHeaderFields().begin(); it!= end; ++it) {
-        stringBuilder.append(it->first.characters(), it->first.length());
+        stringBuilder.append(it->first);
         stringBuilder.append((UChar)':');
-        stringBuilder.append(it->second.characters(), it->second.length());
+        stringBuilder.append(it->second);
         stringBuilder.append((UChar)'\n');
     }
     
-    String headers = String::adopt(stringBuilder);
+    String headers = stringBuilder.toString();
     
     SQLiteStatement resourceStatement(m_database, "INSERT INTO CacheResources (url, statusCode, responseURL, headers, data, mimeType, textEncodingName) VALUES (?, ?, ?, ?, ?, ?, ?)");
     if (resourceStatement.prepare() != SQLResultOk)
@@ -1538,5 +1537,3 @@ ApplicationCacheStorage& cacheStorage()
 }
 
 } // namespace WebCore
-
-#endif // ENABLE(OFFLINE_WEB_APPLICATIONS)

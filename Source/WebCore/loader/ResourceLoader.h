@@ -84,7 +84,7 @@ namespace WebCore {
         void willStopBufferingData(const char*, int);
         virtual void didFinishLoading(double finishTime);
         virtual void didFail(const ResourceError&);
-#if HAVE(CFNETWORK_DATA_ARRAY_CALLBACK)
+#if HAVE(NETWORK_CFDATA_ARRAY_CALLBACK)
         virtual void didReceiveDataArray(CFArrayRef dataArray);
 #endif
 
@@ -110,7 +110,7 @@ namespace WebCore {
         virtual bool shouldUseCredentialStorage(ResourceHandle*) { return shouldUseCredentialStorage(); }
         virtual void didReceiveAuthenticationChallenge(ResourceHandle*, const AuthenticationChallenge& challenge) { didReceiveAuthenticationChallenge(challenge); } 
         virtual void didCancelAuthenticationChallenge(ResourceHandle*, const AuthenticationChallenge& challenge) { didCancelAuthenticationChallenge(challenge); } 
-#if HAVE(CFNETWORK_DATA_ARRAY_CALLBACK)
+#if HAVE(NETWORK_CFDATA_ARRAY_CALLBACK)
         virtual void didReceiveDataArray(ResourceHandle*, CFArrayRef dataArray);
 #endif
 #if USE(PROTECTION_SPACE_AUTH_CALLBACK)
@@ -129,6 +129,10 @@ namespace WebCore {
         // FIXME: Windows should use willCacheResponse - <https://bugs.webkit.org/show_bug.cgi?id=57257>.
         virtual bool shouldCacheResponse(ResourceHandle*, CFCachedURLResponseRef);
 #endif
+#if PLATFORM(CHROMIUM)
+        virtual void didDownloadData(ResourceHandle*, int);
+        virtual void didDownloadData(int);
+#endif
 #if ENABLE(BLOB)
         virtual AsyncFileStream* createAsyncFileStream(FileStreamClient*);
 #endif
@@ -144,9 +148,7 @@ namespace WebCore {
     protected:
         ResourceLoader(Frame*, ResourceLoaderOptions);
 
-#if ENABLE(OFFLINE_WEB_APPLICATIONS)
         friend class ApplicationCacheHost;  // for access to request()
-#endif
         friend class ResourceLoadScheduler; // for access to start()
         // start() actually sends the load to the network (unless the load is being 
         // deferred) and should only be called by ResourceLoadScheduler or setDefersLoading().

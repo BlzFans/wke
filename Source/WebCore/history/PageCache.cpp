@@ -119,7 +119,7 @@ static bool logCanCacheFrameDecision(Frame* frame, int indentLevel)
             PCLOG("   -Frame has an unload event listener");
             cannotCache = true;
         }
-#if ENABLE(DATABASE)
+#if ENABLE(SQL_DATABASE)
         if (frame->document()->hasOpenDatabases()) {
             PCLOG("   -Frame has open database handles");
             cannotCache = true;
@@ -155,12 +155,10 @@ static bool logCanCacheFrameDecision(Frame* frame, int indentLevel)
             PCLOG("   -The document cannot suspect its active DOM Objects");
             cannotCache = true;
         }
-#if ENABLE(OFFLINE_WEB_APPLICATIONS)
         if (!frame->loader()->documentLoader()->applicationCacheHost()->canCacheInPageCache()) {
             PCLOG("   -The DocumentLoader uses an application cache");
             cannotCache = true;
         }
-#endif
         if (!frame->loader()->client()->canCachePage()) {
             PCLOG("   -The client says this frame cannot be cached");
             cannotCache = true; 
@@ -265,7 +263,7 @@ bool PageCache::canCachePageContainingThisFrame(Frame* frame)
         && !frame->loader()->subframeLoader()->containsPlugins()
         && !frame->document()->url().protocolIs("https")
         && (!frame->domWindow() || !frame->domWindow()->hasEventListeners(eventNames().unloadEvent))
-#if ENABLE(DATABASE)
+#if ENABLE(SQL_DATABASE)
         && !frame->document()->hasOpenDatabases()
 #endif
 #if ENABLE(SHARED_WORKERS)
@@ -277,11 +275,9 @@ bool PageCache::canCachePageContainingThisFrame(Frame* frame)
         && !frame->loader()->documentLoader()->isLoadingInAPISense()
         && !frame->loader()->documentLoader()->isStopping()
         && frame->document()->canSuspendActiveDOMObjects()
-#if ENABLE(OFFLINE_WEB_APPLICATIONS)
         // FIXME: We should investigating caching frames that have an associated
         // application cache. <rdar://problem/5917899> tracks that work.
         && frame->loader()->documentLoader()->applicationCacheHost()->canCacheInPageCache()
-#endif
         && frame->loader()->client()->canCachePage();
 }
     

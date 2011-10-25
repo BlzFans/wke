@@ -3,7 +3,7 @@
     Copyright (C) 2001 Dirk Mueller (mueller@kde.org)
     Copyright (C) 2002 Waldo Bastian (bastian@kde.org)
     Copyright (C) 2006 Samuel Weinig (sam.weinig@gmail.com)
-    Copyright (C) 2004, 2005, 2006, 2007, 2008 Apple Inc. All rights reserved.
+    Copyright (C) 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011 Apple Inc. All rights reserved.
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -61,6 +61,7 @@ static ResourceLoadPriority defaultPriorityForResourceType(CachedResource::Type 
         case CachedResource::FontResource:
             return ResourceLoadPriorityMedium;
         case CachedResource::ImageResource:
+        case CachedResource::RawResource:
             return ResourceLoadPriorityLow;
 #if ENABLE(LINK_PREFETCH)
         case CachedResource::LinkPrefetch:
@@ -70,14 +71,16 @@ static ResourceLoadPriority defaultPriorityForResourceType(CachedResource::Type 
         case CachedResource::LinkSubresource:
             return ResourceLoadPriorityVeryLow;
 #endif
+#if ENABLE(VIDEO_TRACK)
+        case CachedResource::CueResource:
+            return ResourceLoadPriorityLow;
+#endif
     }
     ASSERT_NOT_REACHED();
     return ResourceLoadPriorityLow;
 }
 
-#ifndef NDEBUG
-static RefCountedLeakCounter cachedResourceLeakCounter("CachedResource");
-#endif
+DEFINE_DEBUG_ONLY_GLOBAL(RefCountedLeakCounter, cachedResourceLeakCounter, ("CachedResource"));
 
 CachedResource::CachedResource(const ResourceRequest& request, Type type)
     : m_resourceRequest(request)
@@ -92,7 +95,6 @@ CachedResource::CachedResource(const ResourceRequest& request, Type type)
     , m_preloadResult(PreloadNotReferenced)
     , m_inLiveDecodedResourcesList(false)
     , m_requestedFromNetworkingLayer(false)
-    , m_sendResourceLoadCallbacks(true)
     , m_inCache(false)
     , m_loading(false)
     , m_type(type)
@@ -131,11 +133,11 @@ CachedResource::~CachedResource()
         m_owningCachedResourceLoader->removeCachedResource(this);
 }
 
-void CachedResource::load(CachedResourceLoader* cachedResourceLoader, bool incremental, SecurityCheckPolicy securityCheck, bool sendResourceLoadCallbacks)
+void CachedResource::load(CachedResourceLoader* cachedResourceLoader, const ResourceLoaderOptions& options)
 {
-    m_sendResourceLoadCallbacks = sendResourceLoadCallbacks;
+    m_options = options;
     m_loading = true;
-    m_request = CachedResourceRequest::load(cachedResourceLoader, this, incremental, securityCheck, sendResourceLoadCallbacks);
+    m_request = CachedResourceRequest::load(cachedResourceLoader, this, options);
     if (m_request) {
         m_status = Pending;
         cachedResourceLoader->incrementRequestCount(this);
@@ -147,7 +149,7 @@ void CachedResource::checkNotify()
     if (isLoading())
         return;
 
-    CachedResourceClientWalker w(m_clients);
+    CachedResourceClientWalker<CachedResourceClient> w(m_clients);
     while (CachedResourceClient* c = w.next())
         c->notifyFinished(this);
 }

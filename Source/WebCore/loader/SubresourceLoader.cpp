@@ -37,12 +37,11 @@
 #include "SecurityOrigin.h"
 #include "SubresourceLoaderClient.h"
 #include <wtf/RefCountedLeakCounter.h>
+#include <wtf/StdLibExtras.h>
 
 namespace WebCore {
 
-#ifndef NDEBUG    
-static WTF::RefCountedLeakCounter subresourceLoaderCounter("SubresourceLoader");
-#endif
+DEFINE_DEBUG_ONLY_GLOBAL(WTF::RefCountedLeakCounter, subresourceLoaderCounter, ("SubresourceLoader"));
 
 SubresourceLoader::SubresourceLoader(Frame* frame, SubresourceLoaderClient* client, const ResourceLoaderOptions& options)
     : ResourceLoader(frame, options)
@@ -61,21 +60,16 @@ SubresourceLoader::~SubresourceLoader()
 #endif
 }
 
-PassRefPtr<SubresourceLoader> SubresourceLoader::create(Frame* frame, SubresourceLoaderClient* client, const ResourceRequest& request, SecurityCheckPolicy securityCheck, const ResourceLoaderOptions& options)
+PassRefPtr<SubresourceLoader> SubresourceLoader::create(Frame* frame, SubresourceLoaderClient* client, const ResourceRequest& request, const ResourceLoaderOptions& options)
 {
     if (!frame)
         return 0;
 
-    FrameLoader* fl = frame->loader();
-    if (securityCheck == DoSecurityCheck && (fl->state() == FrameStateProvisional || !fl->activeDocumentLoader() || fl->activeDocumentLoader()->isStopping()))
+    FrameLoader* frameLoader = frame->loader();
+    if (options.securityCheck == DoSecurityCheck && (frameLoader->state() == FrameStateProvisional || !frameLoader->activeDocumentLoader() || frameLoader->activeDocumentLoader()->isStopping()))
         return 0;
 
     ResourceRequest newRequest = request;
-
-    if (securityCheck == DoSecurityCheck && !frame->document()->securityOrigin()->canDisplay(request.url())) {
-        FrameLoader::reportLocalLoadFailed(frame, request.url().string());
-        return 0;
-    }
 
     // Note: We skip the Content-Security-Policy check here because we check
     // the Content-Security-Policy at the CachedResourceLoader layer so we can
@@ -84,8 +78,8 @@ PassRefPtr<SubresourceLoader> SubresourceLoader::create(Frame* frame, Subresourc
     String outgoingReferrer;
     String outgoingOrigin;
     if (request.httpReferrer().isNull()) {
-        outgoingReferrer = fl->outgoingReferrer();
-        outgoingOrigin = fl->outgoingOrigin();
+        outgoingReferrer = frameLoader->outgoingReferrer();
+        outgoingOrigin = frameLoader->outgoingOrigin();
     } else {
         outgoingReferrer = request.httpReferrer();
         outgoingOrigin = SecurityOrigin::createFromString(outgoingReferrer)->toString();
@@ -97,12 +91,12 @@ PassRefPtr<SubresourceLoader> SubresourceLoader::create(Frame* frame, Subresourc
         newRequest.setHTTPReferrer(outgoingReferrer);
     FrameLoader::addHTTPOriginIfNeeded(newRequest, outgoingOrigin);
 
-    fl->addExtraFieldsToSubresourceRequest(newRequest);
+    frameLoader->addExtraFieldsToSubresourceRequest(newRequest);
 
     RefPtr<SubresourceLoader> subloader(adoptRef(new SubresourceLoader(frame, client, options)));
-    subloader->documentLoader()->addSubresourceLoader(subloader.get());
     if (!subloader->init(newRequest))
         return 0;
+    subloader->documentLoader()->addSubresourceLoader(subloader.get());
 
     return subloader.release();
 }
@@ -232,27 +226,6 @@ void SubresourceLoader::willCancel(const ResourceError& error)
 void SubresourceLoader::didCancel(const ResourceError&)
 {
     m_documentLoader->removeSubresourceLoader(this);
-}
-
-void SubresourceLoader::didReceiveAuthenticationChallenge(const AuthenticationChallenge& challenge)
-{
-    RefPtr<SubresourceLoader> protect(this);
-
-    ASSERT(handle()->hasAuthenticationChallenge());
-
-    if (m_client)
-        m_client->didReceiveAuthenticationChallenge(this, challenge);
-    
-    // The SubResourceLoaderClient may have cancelled this ResourceLoader in response to the challenge.  
-    // If that's the case, don't call didReceiveAuthenticationChallenge.
-    if (reachedTerminalState())
-        return;
-
-    // It may have also handled authentication on its own.
-    if (!handle()->hasAuthenticationChallenge())
-        return;
-
-    ResourceLoader::didReceiveAuthenticationChallenge(challenge);
 }
 
 }

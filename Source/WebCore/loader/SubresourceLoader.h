@@ -41,7 +41,7 @@ namespace WebCore {
     
     class SubresourceLoader : public ResourceLoader {
     public:
-        static PassRefPtr<SubresourceLoader> create(Frame*, SubresourceLoaderClient*, const ResourceRequest&, SecurityCheckPolicy, const ResourceLoaderOptions&);
+        static PassRefPtr<SubresourceLoader> create(Frame*, SubresourceLoaderClient*, const ResourceRequest&, const ResourceLoaderOptions&);
 
         void clearClient() { m_client = 0; }
 
@@ -56,13 +56,15 @@ namespace WebCore {
         virtual void didReceiveCachedMetadata(const char*, int);
         virtual void didFinishLoading(double finishTime);
         virtual void didFail(const ResourceError&);
-        virtual void didReceiveAuthenticationChallenge(const AuthenticationChallenge&);
         virtual void willCancel(const ResourceError&);
         virtual void didCancel(const ResourceError&);
 
-#if HAVE(CFNETWORK_DATA_ARRAY_CALLBACK)
+#if HAVE(NETWORK_CFDATA_ARRAY_CALLBACK)
         virtual bool supportsDataArray() { return true; }
         virtual void didReceiveDataArray(CFArrayRef);
+#endif
+#if PLATFORM(CHROMIUM)
+        virtual void didDownloadData(int);
 #endif
 
         SubresourceLoaderClient* m_client;

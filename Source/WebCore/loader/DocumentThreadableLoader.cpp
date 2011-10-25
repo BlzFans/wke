@@ -288,23 +288,6 @@ void DocumentThreadableLoader::didFail(SubresourceLoader* loader, const Resource
     m_client->didFail(error);
 }
 
-void DocumentThreadableLoader::didReceiveAuthenticationChallenge(SubresourceLoader* loader, const AuthenticationChallenge& challenge)
-{
-    ASSERT(loader == m_loader);
-    // Users are not prompted for credentials for cross-origin requests.
-    if (!m_sameOriginRequest) {
-#if PLATFORM(MAC) || USE(CFNETWORK) || USE(CURL)
-        loader->handle()->receivedRequestToContinueWithoutCredential(challenge);
-#else
-        // These platforms don't provide a way to continue without credentials, cancel the load altogether.
-        UNUSED_PARAM(challenge);
-        RefPtr<DocumentThreadableLoader> protect(this);
-        m_client->didFail(loader->blockedError());
-        cancel();
-#endif
-    }
-}
-
 void DocumentThreadableLoader::preflightSuccess()
 {
     OwnPtr<ResourceRequest> actualRequest;
@@ -326,11 +309,13 @@ void DocumentThreadableLoader::loadRequest(const ResourceRequest& request, Secur
 {
     // Any credential should have been removed from the cross-site requests.
     const KURL& requestURL = request.url();
+    m_options.securityCheck = securityCheck;
     ASSERT(m_sameOriginRequest || requestURL.user().isEmpty());
     ASSERT(m_sameOriginRequest || requestURL.pass().isEmpty());
 
     if (m_async) {
         ThreadableLoaderOptions options = m_options;
+        options.crossOriginCredentialPolicy = DoNotAskClientForCrossOriginCredentials;
         if (m_actualRequest) {
             // Don't sniff content or send load callbacks for the preflight request.
             options.sendLoadCallbacks = DoNotSendCallbacks;
@@ -351,7 +336,7 @@ void DocumentThreadableLoader::loadRequest(const ResourceRequest& request, Secur
 
         // Clear the loader so that any callbacks from SubresourceLoader::create will not have the old loader.
         m_loader = 0;
-        m_loader = resourceLoadScheduler()->scheduleSubresourceLoad(m_document->frame(), this, request, ResourceLoadPriorityMedium, securityCheck, options);
+        m_loader = resourceLoadScheduler()->scheduleSubresourceLoad(m_document->frame(), this, request, ResourceLoadPriorityMedium, options);
         return;
     }
     
