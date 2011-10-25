@@ -134,7 +134,6 @@ public:
     bool selectionStartHasStyle(int propertyID, const String& value) const;
     TriState selectionHasStyle(int propertyID, const String& value) const;
     String selectionStartCSSPropertyValue(int propertyID);
-    const SimpleFontData* fontForSelection(bool&) const;
     WritingDirection textDirectionForSelection(bool&) const;
     
     TriState selectionUnorderedListState() const;
@@ -280,7 +279,7 @@ public:
     void setComposition(const String&, const Vector<CompositionUnderline>&, unsigned selectionStart, unsigned selectionEnd);
     void confirmComposition();
     void confirmComposition(const String&); // if no existing composition, replaces selection
-    void confirmCompositionWithoutDisturbingSelection();
+    void cancelComposition();
     PassRefPtr<Range> compositionRange() const;
     bool getCompositionSelection(unsigned& selectionStart, unsigned& selectionEnd) const;
 
@@ -335,6 +334,8 @@ public:
     // FIXME: Switch callers over to the FindOptions version and retire this one.
     bool findString(const String&, bool forward, bool caseFlag, bool wrapFlag, bool startInSelection);
 
+    PassRefPtr<Range> rangeOfString(const String&, Range*, FindOptions);
+
     const VisibleSelection& mark() const; // Mark, to be used as emacs uses it.
     void setMark(const VisibleSelection&);
 
@@ -346,15 +347,10 @@ public:
 
     void respondToChangedSelection(const VisibleSelection& oldSelection, FrameSelection::SetSelectionOptions);
     bool shouldChangeSelection(const VisibleSelection& oldSelection, const VisibleSelection& newSelection, EAffinity, bool stillSelecting) const;
-
-    RenderStyle* styleForSelectionStart(Node*& nodeToRemove) const;
-
     unsigned countMatchesForText(const String&, FindOptions, unsigned limit, bool markMatches);
     unsigned countMatchesForText(const String&, Range*, FindOptions, unsigned limit, bool markMatches);
     bool markedTextMatchesAreHighlighted() const;
     void setMarkedTextMatchesAreHighlighted(bool);
-
-    PassRefPtr<EditingStyle> selectionStartStyle() const;
 
     void textFieldDidBeginEditing(Element*);
     void textFieldDidEndEditing(Element*);
@@ -364,6 +360,7 @@ public:
     void textDidChangeInTextArea(Element*);
 
 #if PLATFORM(MAC)
+    const SimpleFontData* fontForSelection(bool&) const;
     NSDictionary* fontAttributesForSelectionStart() const;
     NSWritingDirection baseWritingDirectionForSelectionStart() const;
     bool canCopyExcludingStandaloneImages();
@@ -375,6 +372,8 @@ public:
     bool selectionStartHasMarkerFor(DocumentMarker::MarkerType, int from, int length) const;
     void updateMarkersForWordsAffectedByEditing(bool onlyHandleWordsContainingSelection);
     void deletedAutocorrectionAtPosition(const Position&, const String& originalString);
+
+    void deviceScaleFactorChanged();
 
 private:
     Frame* m_frame;
@@ -407,7 +406,8 @@ private:
     TextCheckingTypeMask resolveTextCheckingTypeMask(TextCheckingTypeMask);
 
     void selectComposition();
-    void confirmComposition(const String&, bool preserveSelection);
+    enum SetCompositionMode { ConfirmComposition, CancelComposition };
+    void setComposition(const String&, SetCompositionMode);
     void setIgnoreCompositionSelectionChange(bool ignore);
 
     PassRefPtr<Range> firstVisibleRange(const String&, FindOptions);
@@ -417,6 +417,8 @@ private:
     void changeSelectionAfterCommand(const VisibleSelection& newSelection, bool closeTyping, bool clearTypingStyle);
 
     Node* findEventTargetFromSelection() const;
+
+    bool unifiedTextCheckerEnabled() const;
 };
 
 inline void Editor::setStartNewKillRingSequence(bool flag)

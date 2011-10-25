@@ -247,31 +247,10 @@ HTMLElement* CompositeEditCommand::replaceElementWithSpanPreservingChildrenAndAt
     return command->spanElement();
 }
 
-static bool hasARenderedDescendant(Node* node)
+void CompositeEditCommand::prune(PassRefPtr<Node> node)
 {
-    Node* n = node->firstChild();
-    while (n) {
-        if (n->renderer())
-            return true;
-        n = n->traverseNextNode(node);
-    }
-    return false;
-}
-
-void CompositeEditCommand::prune(PassRefPtr<Node> prpNode)
-{
-    RefPtr<Node> node = prpNode;
-
-    while (node) {
-        // If you change this rule you may have to add an updateLayout() here.
-        RenderObject* renderer = node->renderer();
-        if (renderer && (!renderer->canHaveChildren() || hasARenderedDescendant(node.get()) || node->rootEditableElement() == node))
-            return;
-            
-        RefPtr<ContainerNode> next = node->parentNode();
-        removeNode(node);
-        node = next;
-    }
+    if (RefPtr<Node> highestNodeToRemove = highestNodeToRemoveInPruning(node.get()))
+        removeNode(highestNodeToRemove.release());
 }
 
 void CompositeEditCommand::splitTextNode(PassRefPtr<Text> node, unsigned offset)
@@ -808,7 +787,7 @@ void CompositeEditCommand::cloneParagraphUnderNewElement(Position& start, Positi
     appendNode(topNode, blockElement);
     RefPtr<Node> lastNode = topNode;
 
-    if (start.deprecatedNode() != outerNode) {
+    if (start.deprecatedNode() != outerNode && lastNode->isElementNode()) {
         Vector<RefPtr<Node> > ancestors;
         
         // Insert each node from innerNode to outerNode (excluded) in a list.
@@ -1165,11 +1144,9 @@ bool CompositeEditCommand::breakOutOfEmptyMailBlockquotedParagraph()
     // A line break is either a br or a preserved newline.
     ASSERT(caretPos.deprecatedNode()->hasTagName(brTag) || (caretPos.deprecatedNode()->isTextNode() && caretPos.deprecatedNode()->renderer()->style()->preserveNewline()));
     
-    if (caretPos.deprecatedNode()->hasTagName(brTag)) {
-        Position beforeBR(positionInParentBeforeNode(caretPos.deprecatedNode()));
-        removeNode(caretPos.deprecatedNode());
-        prune(beforeBR.deprecatedNode());
-    } else if (caretPos.deprecatedNode()->isTextNode()) {
+    if (caretPos.deprecatedNode()->hasTagName(brTag))
+        removeNodeAndPruneAncestors(caretPos.deprecatedNode());
+    else if (caretPos.deprecatedNode()->isTextNode()) {
         ASSERT(caretPos.deprecatedEditingOffset() == 0);
         Text* textNode = static_cast<Text*>(caretPos.deprecatedNode());
         ContainerNode* parentNode = textNode->parentNode();

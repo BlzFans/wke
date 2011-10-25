@@ -134,7 +134,7 @@ static bool executeApplyStyle(Frame* frame, EditorCommandSource source, EditActi
 static bool executeToggleStyleInList(Frame* frame, EditorCommandSource source, EditAction action, int propertyID, CSSValue* value)
 {
     ExceptionCode ec = 0;
-    RefPtr<EditingStyle> selectionStyle = frame->editor()->selectionStartStyle();
+    RefPtr<EditingStyle> selectionStyle = EditingStyle::styleAtSelectionStart(frame->selection()->selection());
     if (!selectionStyle || !selectionStyle->style())
         return false;
 
@@ -1017,10 +1017,13 @@ static bool executeStrikethrough(Frame* frame, Event*, EditorCommandSource sourc
 
 static bool executeStyleWithCSS(Frame* frame, Event*, EditorCommandSource, const String& value)
 {
-    if (value != "false" && value != "true")
-        return false;
-    
-    frame->editor()->setShouldStyleWithCSS(value == "true" ? true : false);
+    frame->editor()->setShouldStyleWithCSS(!equalIgnoringCase(value, "false"));
+    return true;
+}
+
+static bool executeUseCSS(Frame* frame, Event*, EditorCommandSource, const String& value)
+{
+    frame->editor()->setShouldStyleWithCSS(equalIgnoringCase(value, "false"));
     return true;
 }
 
@@ -1534,6 +1537,7 @@ static const CommandMap& createCommandMap()
         { "Unlink", { executeUnlink, supported, enabledRangeInRichlyEditableText, stateNone, valueNull, notTextInsertion, doNotAllowExecutionWhenDisabled } },
         { "Unscript", { executeUnscript, supportedFromMenuOrKeyBinding, enabledInRichlyEditableText, stateNone, valueNull, notTextInsertion, doNotAllowExecutionWhenDisabled } },
         { "Unselect", { executeUnselect, supported, enabledVisibleSelection, stateNone, valueNull, notTextInsertion, doNotAllowExecutionWhenDisabled } },
+        { "UseCSS", { executeUseCSS, supported, enabled, stateNone, valueNull, notTextInsertion, doNotAllowExecutionWhenDisabled } },
         { "Yank", { executeYank, supportedFromMenuOrKeyBinding, enabledInEditableText, stateNone, valueNull, notTextInsertion, doNotAllowExecutionWhenDisabled } },
         { "YankAndSelect", { executeYankAndSelect, supportedFromMenuOrKeyBinding, enabledInEditableText, stateNone, valueNull, notTextInsertion, doNotAllowExecutionWhenDisabled } },
 

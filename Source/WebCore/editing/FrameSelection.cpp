@@ -56,6 +56,7 @@
 #include "RenderTheme.h"
 #include "RenderView.h"
 #include "RenderWidget.h"
+#include "RenderedPosition.h"
 #include "SecureTextInput.h"
 #include "Settings.h"
 #include "SpatialNavigation.h"
@@ -113,6 +114,12 @@ FrameSelection::FrameSelection(Frame* frame)
         m_selection.setIsDirectional(true);
 }
 
+Element* FrameSelection::rootEditableElementOrDocumentElement() const
+{
+    Element* selectionRoot = m_selection.rootEditableElement();
+    return selectionRoot ? selectionRoot : m_frame->document()->documentElement();
+}
+
 void FrameSelection::moveTo(const VisiblePosition &pos, EUserTriggered userTriggered, CursorAlignOnScroll align)
 {
     SetSelectionOptions options = CloseTyping | ClearTypingStyle | userTriggered;
@@ -163,13 +170,66 @@ void DragCaretController::setCaretPosition(const VisiblePosition& position)
         updateCaretRect(document, m_position);
 }
 
-void FrameSelection::setNonDirectionalSelectionIfNeeded(const VisibleSelection& passedNewSelection, TextGranularity granularity)
+static void adjustEndpointsAtBidiBoundary(VisiblePosition& visibleBase, VisiblePosition& visibleExtent)
+{
+    RenderedPosition base(visibleBase);
+    RenderedPosition extent(visibleExtent);
+
+    if (base.isNull() || extent.isNull() || base.isEquivalent(extent))
+        return;
+
+    if (base.atLeftBoundaryOfBidiRun()) {
+        if (!extent.atRightBoundaryOfBidiRun(base.bidiLevelOnRight())
+            && base.isEquivalent(extent.leftBoundaryOfBidiRun(base.bidiLevelOnRight()))) {
+            visibleBase = base.positionAtLeftBoundaryOfBiDiRun();
+            return;
+        }
+        return;
+    }
+
+    if (base.atRightBoundaryOfBidiRun()) {
+        if (!extent.atLeftBoundaryOfBidiRun(base.bidiLevelOnLeft())
+            && base.isEquivalent(extent.rightBoundaryOfBidiRun(base.bidiLevelOnLeft()))) {
+            visibleBase = base.positionAtRightBoundaryOfBiDiRun();
+            return;
+        }
+        return;
+    }
+
+    if (extent.atLeftBoundaryOfBidiRun() && extent.isEquivalent(base.leftBoundaryOfBidiRun(extent.bidiLevelOnRight()))) {
+        visibleExtent = extent.positionAtLeftBoundaryOfBiDiRun();
+        return;
+    }
+
+    if (extent.atRightBoundaryOfBidiRun() && extent.isEquivalent(base.rightBoundaryOfBidiRun(extent.bidiLevelOnLeft()))) {
+        visibleExtent = extent.positionAtRightBoundaryOfBiDiRun();
+        return;
+    }
+}
+
+void FrameSelection::setNonDirectionalSelectionIfNeeded(const VisibleSelection& passedNewSelection, TextGranularity granularity,
+    EndPointsAdjustmentMode endpointsAdjustmentMode)
 {
     VisibleSelection newSelection = passedNewSelection;
+    bool isDirectional = shouldAlwaysUseDirectionalSelection(m_frame) || newSelection.isDirectional();
 
-    if (shouldAlwaysUseDirectionalSelection(m_frame))
-        newSelection.setIsDirectional(true);
+    VisiblePosition base = m_originalBase.isNotNull() ? m_originalBase : newSelection.visibleBase();
+    VisiblePosition newBase = base;
+    VisiblePosition newExtent = newSelection.visibleExtent();
+    if (endpointsAdjustmentMode == AdjustEndpointsAtBidiBoundary)
+        adjustEndpointsAtBidiBoundary(newBase, newExtent);
 
+    if (newBase != base || newExtent != newSelection.visibleExtent()) {
+        m_originalBase = base;
+        newSelection.setBase(newBase);
+        newSelection.setExtent(newExtent);
+    } else if (m_originalBase.isNotNull()) {
+        if (m_selection.base() == newSelection.base())
+            newSelection.setBase(m_originalBase);
+        m_originalBase.clear();
+    }
+
+    newSelection.setIsDirectional(isDirectional); // Adjusting base and extent will make newSelection always directional
     if (m_selection == newSelection || !shouldChangeSelection(newSelection))
         return;
 
@@ -220,7 +280,7 @@ void FrameSelection::setSelection(const VisibleSelection& newSelection, SetSelec
     m_selection = s;
     setCaretRectNeedsUpdate();
     
-    if (!s.isNone())
+    if (!s.isNone() && !(options & DoNotSetFocus))
         setFocusedNodeIfNeeded();
     
     updateAppearance();
@@ -298,9 +358,22 @@ void FrameSelection::respondToNodeModification(Node* node, bool baseRemoved, boo
     bool clearDOMTreeSelection = false;
 
     if (startRemoved || endRemoved) {
-        // FIXME: When endpoints are removed, we should just alter the selection, instead of blowing it away.
+        Position start = m_selection.start();
+        Position end = m_selection.end();
+        if (startRemoved)
+            updatePositionForNodeRemoval(start, node);
+        if (endRemoved)
+            updatePositionForNodeRemoval(end, node);
+
+        if (start.isNotNull() && end.isNotNull()) {
+            if (m_selection.isBaseFirst())
+                m_selection.setWithoutValidation(start, end);
+            else
+                m_selection.setWithoutValidation(end, start);
+        } else
+            clearDOMTreeSelection = true;
+
         clearRenderTreeSelection = true;
-        clearDOMTreeSelection = true;
     } else if (baseRemoved || extentRemoved) {
         // The base and/or extent are about to be removed, but the start and end aren't.
         // Change the base and extent to the start and end, but don't re-validate the
@@ -326,28 +399,25 @@ void FrameSelection::respondToNodeModification(Node* node, bool baseRemoved, boo
         clearRenderViewSelection(m_selection.start());
 
     if (clearDOMTreeSelection)
-        setSelection(VisibleSelection(), 0);
+        setSelection(VisibleSelection(), DoNotSetFocus);
 }
 
-enum EndPointType { EndPointIsStart, EndPointIsEnd };
-
-static bool shouldRemovePositionAfterAdoptingTextReplacement(Position& position, EndPointType type, CharacterData* node, unsigned offset, unsigned oldLength, unsigned newLength)
+static void updatePositionAfterAdoptingTextReplacement(Position& position, CharacterData* node, unsigned offset, unsigned oldLength, unsigned newLength)
 {
     if (!position.anchorNode() || position.anchorNode() != node || position.anchorType() != Position::PositionIsOffsetInAnchor)
-        return false;
+        return;
 
+    // See: http://www.w3.org/TR/DOM-Level-2-Traversal-Range/ranges.html#Level-2-Range-Mutation
     ASSERT(position.offsetInContainerNode() >= 0);
     unsigned positionOffset = static_cast<unsigned>(position.offsetInContainerNode());
-    if (positionOffset > offset && positionOffset < offset + oldLength)
-        return true;
+    // Replacing text can be viewed as a deletion followed by insertion.
+    if (positionOffset >= offset && positionOffset <= offset + oldLength)
+        position.moveToOffset(offset);
 
-    // Adjust the offset if the position is after or at the end of the deleted contents (positionOffset >= offset + oldLength)
-    // to avoid having a stale offset except when the position is the end of selection and nothing is deleted, in which case,
-    // adjusting offset results in incorrectly extending the selection until the end of newly inserted contents.
-    if ((positionOffset > offset + oldLength) || (positionOffset == offset + oldLength && (type == EndPointIsStart || oldLength)))
+    // Adjust the offset if the position is after the end of the deleted contents
+    // (positionOffset > offset + oldLength) to avoid having a stale offset.
+    if (positionOffset > offset + oldLength)
         position.moveToOffset(positionOffset - oldLength + newLength);
-
-    return false;
 }
 
 void FrameSelection::textWillBeReplaced(CharacterData* node, unsigned offset, unsigned oldLength, unsigned newLength)
@@ -360,28 +430,17 @@ void FrameSelection::textWillBeReplaced(CharacterData* node, unsigned offset, un
     Position extent = m_selection.extent();
     Position start = m_selection.start();
     Position end = m_selection.end();
-    bool shouldRemoveBase = shouldRemovePositionAfterAdoptingTextReplacement(base, m_selection.isBaseFirst() ? EndPointIsStart : EndPointIsEnd, node, offset, oldLength, newLength);
-    bool shouldRemoveExtent = shouldRemovePositionAfterAdoptingTextReplacement(extent, m_selection.isBaseFirst() ? EndPointIsEnd : EndPointIsStart, node, offset, oldLength, newLength);
-    bool shouldRemoveStart = shouldRemovePositionAfterAdoptingTextReplacement(start, EndPointIsStart, node, offset, oldLength, newLength);
-    bool shouldRemoveEnd = shouldRemovePositionAfterAdoptingTextReplacement(end, EndPointIsEnd, node, offset, oldLength, newLength);
+    updatePositionAfterAdoptingTextReplacement(base, node, offset, oldLength, newLength);
+    updatePositionAfterAdoptingTextReplacement(extent, node, offset, oldLength, newLength);
+    updatePositionAfterAdoptingTextReplacement(start, node, offset, oldLength, newLength);
+    updatePositionAfterAdoptingTextReplacement(end, node, offset, oldLength, newLength);
 
-    if ((base != m_selection.base() || extent != m_selection.extent() || start != m_selection.start() || end != m_selection.end())
-        && !shouldRemoveStart && !shouldRemoveEnd) {
+    if (base != m_selection.base() || extent != m_selection.extent() || start != m_selection.start() || end != m_selection.end()) {
         VisibleSelection newSelection;
-        if (!shouldRemoveBase && !shouldRemoveExtent)
-            newSelection.setWithoutValidation(base, extent);
-        else {
-            if (newSelection.isBaseFirst())
-                newSelection.setWithoutValidation(start, end);
-            else
-                newSelection.setWithoutValidation(end, start);
-        }
+        newSelection.setWithoutValidation(base, extent);
         m_frame->document()->updateLayout();
-        setSelection(newSelection, 0);
-        return;
+        setSelection(newSelection, DoNotSetFocus);
     }
-
-    respondToNodeModification(node, shouldRemoveBase, shouldRemoveExtent, shouldRemoveStart, shouldRemoveEnd);
 }
 
 TextDirection FrameSelection::directionOfEnclosingBlock()
@@ -823,6 +882,9 @@ bool FrameSelection::modify(EAlteration alter, SelectionDirection direction, Tex
 
         bool change = shouldChangeSelection(trialFrameSelection.selection());
         if (!change)
+            return false;
+
+        if (trialFrameSelection.selection().isRange() && m_selection.isCaret() && !dispatchSelectStart())
             return false;
     }
 
@@ -1458,7 +1520,7 @@ void FrameSelection::selectAll()
     Document* document = m_frame->document();
 
     if (document->focusedNode() && document->focusedNode()->hasTagName(selectTag)) {
-        HTMLSelectElement* selectElement = static_cast<HTMLSelectElement*>(document->focusedNode());
+        HTMLSelectElement* selectElement = toHTMLSelectElement(document->focusedNode());
         if (selectElement->canSelectAll()) {
             selectElement->selectAll();
             return;
@@ -1624,7 +1686,9 @@ void FrameSelection::updateAppearance()
     if (!view)
         return;
 
-    VisibleSelection selection = this->selection();
+    // Construct a new VisibleSolution, since m_selection is not necessarily valid, and the following steps
+    // assume a valid selection. See <https://bugs.webkit.org/show_bug.cgi?id=69563> and <rdar://problem/10232866>.
+    VisibleSelection selection(m_selection.visibleStart(), m_selection.visibleEnd());
 
     if (!selection.isRange()) {
         view->clearSelection();
@@ -1882,6 +1946,15 @@ void FrameSelection::setSelectionFromNone()
 bool FrameSelection::shouldChangeSelection(const VisibleSelection& newSelection) const
 {
     return m_frame->editor()->shouldChangeSelection(selection(), newSelection, newSelection.affinity(), false);
+}
+
+bool FrameSelection::dispatchSelectStart()
+{
+    Node* selectStartTarget = m_selection.extent().containerNode();
+    if (!selectStartTarget)
+        return true;
+
+    return selectStartTarget->dispatchEvent(Event::create(eventNames().selectstartEvent, true, true));
 }
 
 #ifndef NDEBUG

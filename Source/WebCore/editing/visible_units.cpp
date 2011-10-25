@@ -533,7 +533,7 @@ VisiblePosition previousLinePosition(const VisiblePosition &visiblePosition, int
         while (n) {
             if (highestEditableRoot(firstPositionInOrBeforeNode(n)) != highestRoot)
                 break;
-            Position pos = createLegacyEditingPosition(n, caretMinOffset(n));
+            Position pos = n->hasTagName(brTag) ? positionBeforeNode(n) : createLegacyEditingPosition(n, caretMaxOffset(n));
             if (pos.isCandidate()) {
                 pos.getInlineBoxAndOffset(DOWNSTREAM, box, ignoredCaretOffset);
                 if (box) {
@@ -764,7 +764,7 @@ VisiblePosition startOfParagraph(const VisiblePosition& c, EditingBoundaryCrossi
         if (r->isBR() || isBlock(n))
             break;
 
-        if (r->isText() && r->caretMaxRenderedOffset() > 0) {
+        if (r->isText() && toRenderText(r)->renderedTextLength()) {
             ASSERT(n->isTextNode());
             type = Position::PositionIsOffsetInAnchor;
             if (style->preserveNewline()) {
@@ -842,7 +842,7 @@ VisiblePosition endOfParagraph(const VisiblePosition &c, EditingBoundaryCrossing
             break;
 
         // FIXME: We avoid returning a position where the renderer can't accept the caret.
-        if (r->isText() && r->caretMaxRenderedOffset() > 0) {
+        if (r->isText() && toRenderText(r)->renderedTextLength()) {
             ASSERT(n->isTextNode());
             int length = toRenderText(r)->textLength();
             type = Position::PositionIsOffsetInAnchor;

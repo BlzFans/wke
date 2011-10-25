@@ -58,13 +58,23 @@ private:
 
     virtual void doApply();
     virtual EditAction editingAction() const;
+    
+    class InsertedNodes {
+    public:
+        void respondToNodeInsertion(Node*);
+        void willRemoveNodePreservingChildren(Node*);
+        void willRemoveNode(Node*);
 
-    void completeHTMLReplacement(const Position& lastPositionToSelect);
+        Node* firstNodeInserted() const { return m_firstNodeInserted.get(); }
+        Node* lastLeafInserted() const { return m_lastNodeInserted->lastDescendant(); }
+        Node* pastLastLeaf() const { return m_firstNodeInserted ? lastLeafInserted()->traverseNextNode() : 0; }
 
-    void insertNodeAfterAndUpdateNodesInserted(PassRefPtr<Node> insertChild, Node* refChild);
-    void insertNodeAtAndUpdateNodesInserted(PassRefPtr<Node>, const Position&);
-    void insertNodeBeforeAndUpdateNodesInserted(PassRefPtr<Node> insertChild, Node* refChild);
-    Node* insertAsListItems(PassRefPtr<Node>, Node* insertionNode, const Position&);
+    private:
+        RefPtr<Node> m_firstNodeInserted;
+        RefPtr<Node> m_lastNodeInserted;
+    };
+
+    Node* insertAsListItems(PassRefPtr<Node>, Node* insertionNode, const Position&, InsertedNodes&);
 
     void updateNodesInserted(Node*);
     bool shouldRemoveEndBR(Node*, const VisiblePosition&);
@@ -75,23 +85,23 @@ private:
     
     void mergeEndIfNeeded();
     
-    void removeUnrenderedTextNodesAtEnds();
+    void removeUnrenderedTextNodesAtEnds(InsertedNodes&);
     
-    void removeRedundantStylesAndKeepStyleSpanInline();
-    void handleStyleSpans();
-    void copyStyleToChildren(Node* parentNode, const CSSMutableStyleDeclaration* parentStyle);
+    void removeRedundantStylesAndKeepStyleSpanInline(InsertedNodes&);
+    void handleStyleSpans(InsertedNodes&);
     void handlePasteAsQuotationNode();
     
-    virtual void removeNodePreservingChildren(Node*);
-    virtual void removeNodeAndPruneAncestors(Node*);
-    
-    VisiblePosition positionAtStartOfInsertedContent();
-    VisiblePosition positionAtEndOfInsertedContent();
-    
+    VisiblePosition positionAtStartOfInsertedContent() const;
+    VisiblePosition positionAtEndOfInsertedContent() const;
+
+    bool shouldPerformSmartReplace() const;
+    void addSpacesForSmartReplace();
+    void completeHTMLReplacement(const Position& lastPositionToSelect);
+
     bool performTrivialReplace(const ReplacementFragment&);
 
-    RefPtr<Node> m_firstNodeInserted;
-    RefPtr<Node> m_lastLeafInserted;
+    Position m_startOfInsertedContent;
+    Position m_endOfInsertedContent;
     RefPtr<EditingStyle> m_insertionStyle;
     bool m_selectReplacement;
     bool m_smartReplace;

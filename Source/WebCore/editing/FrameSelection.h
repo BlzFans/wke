@@ -115,6 +115,7 @@ public:
         CloseTyping = 1 << 1,
         ClearTypingStyle = 1 << 2,
         SpellCorrectionTriggered = 1 << 3,
+        DoNotSetFocus = 1 << 4,
     };
     typedef unsigned SetSelectionOptions; // Union of values in SetSelectionOption and EUserTriggered
     static inline EUserTriggered selectionOptionsToUserTriggered(SetSelectionOptions options)
@@ -125,6 +126,7 @@ public:
     FrameSelection(Frame* = 0);
 
     Element* rootEditableElement() const { return m_selection.rootEditableElement(); }
+    Element* rootEditableElementOrDocumentElement() const;
     bool isContentEditable() const { return m_selection.isContentEditable(); }
     bool isContentRichlyEditable() const { return m_selection.isContentRichlyEditable(); }
      
@@ -223,7 +225,8 @@ public:
 
     bool shouldChangeSelection(const VisibleSelection&) const;
     bool shouldDeleteSelection(const VisibleSelection&) const;
-    void setNonDirectionalSelectionIfNeeded(const VisibleSelection&, TextGranularity);
+    enum EndPointsAdjustmentMode { AdjustEndpointsAtBidiBoundary, DoNotAdjsutEndpoints };
+    void setNonDirectionalSelectionIfNeeded(const VisibleSelection&, TextGranularity, EndPointsAdjustmentMode = DoNotAdjsutEndpoints);
     void setFocusedNodeIfNeeded();
     void notifyRendererOfSelectionChange(EUserTriggered);
 
@@ -275,11 +278,14 @@ private:
 
     void setCaretVisibility(CaretVisibility);
 
+    bool dispatchSelectStart();
+
     Frame* m_frame;
 
     LayoutUnit m_xPosForVerticalArrowNavigation;
 
     VisibleSelection m_selection;
+    VisiblePosition m_originalBase; // Used to store base before the adjustment at bidi boundary
     TextGranularity m_granularity;
 
     RefPtr<EditingStyle> m_typingStyle;

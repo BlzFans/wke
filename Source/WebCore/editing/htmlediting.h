@@ -57,7 +57,8 @@ Node* highestAncestor(Node*);
 Node* highestEditableRoot(const Position&);
 Node* highestEnclosingNodeOfType(const Position&, bool (*nodeIsOfType)(const Node*),
     EditingBoundaryCrossingRule = CannotCrossEditingBoundary, Node* stayWithin = 0);
-Node* lowestEditableAncestor(Node*);   
+Node* highestNodeToRemoveInPruning(Node*);
+Node* lowestEditableAncestor(Node*);
 
 Node* enclosingBlock(Node*, EditingBoundaryCrossingRule = CannotCrossEditingBoundary);
 Node* enclosingTableCell(const Position&);
@@ -159,6 +160,7 @@ bool isAtUnsplittableElement(const Position&);
 // miscellaneous functions on Position
 
 unsigned numEnclosingMailBlockquotes(const Position&);
+void updatePositionForNodeRemoval(Position&, Node*);
 
 // -------------------------------------------------------------------------
 // VisiblePosition
@@ -231,6 +233,8 @@ bool canMergeLists(Element* firstList, Element* secondList);
 // Functions returning VisibleSelection
 VisibleSelection avoidIntersectionWithNode(const VisibleSelection&, Node*);
 VisibleSelection selectionForParagraphIteration(const VisibleSelection&);
+
+Position adjustedSelectionStartForStyleComputation(const VisibleSelection&);
     
 
 // Miscellaneous functions on Text
