@@ -68,11 +68,17 @@ WebInspector.MIMETypes = {
 /**
  * @constructor
  * @extends {WebInspector.Object}
+ *
+ * @param {?NetworkAgent.RequestId} requestId
+ * @param {string} url
+ * @param {?string} frameId
+ * @param {?NetworkAgent.LoaderId} loaderId
  */
-WebInspector.Resource = function(requestId, url, loaderId)
+WebInspector.Resource = function(requestId, url, frameId, loaderId)
 {
     this.requestId = requestId;
     this.url = url;
+    this.frameId = frameId;
     this.loaderId = loaderId;
     this._startTime = -1;
     this._endTime = -1;
@@ -81,9 +87,15 @@ WebInspector.Resource = function(requestId, url, loaderId)
     this.history = [];
     /** @type {number} */
     this.statusCode = 0;
+    this.statusText = "";
     this.requestMethod = "";
     this.requestTime = 0;
     this.receiveHeadersEnd = 0;
+}
+
+WebInspector.Resource.displayName = function(url)
+{
+    return new WebInspector.Resource(null, url, null, null).displayName;
 }
 
 // Keep these in sync with WebCore::InspectorResource::Type
@@ -157,7 +169,6 @@ WebInspector.Resource.registerDomainModelBinding = function(type, binding)
 {
     WebInspector.Resource._domainModelBindings[type] = binding;
 }
-
 
 WebInspector.Resource._resourceRevisionRegistry = function()
 {
@@ -542,6 +553,18 @@ WebInspector.Resource.prototype = {
         }
     },
 
+    get redirectSource()
+    {
+        if (this.redirects && this.redirects.length > 0)
+            return this.redirects[this.redirects.length - 1];
+        return this._redirectSource;
+    },
+
+    set redirectSource(x)
+    {
+        this._redirectSource = x;
+    },
+
     get requestHeaders()
     {
         return this._requestHeaders || {};
@@ -746,7 +769,7 @@ WebInspector.Resource.prototype = {
 
     addMessage: function(msg)
     {
-        if (!msg.isErrorOrWarning() || !msg.message) 
+        if (!msg.isErrorOrWarning() || !msg.message)
             return;
 
         if (!this._messages)
@@ -808,7 +831,7 @@ WebInspector.Resource.prototype = {
 
     setContent: function(newContent, majorChange, callback)
     {
-        if (!this.isEditable(this)) {
+        if (!this.isEditable()) {
             if (callback)
                 callback("Resource is not editable");
             return;
@@ -817,6 +840,11 @@ WebInspector.Resource.prototype = {
         binding.setContent(this, newContent, majorChange, callback);
     },
 
+    /**
+     * @param {string} newContent
+     * @param {Date=} timestamp
+     * @param {boolean=} restoringHistory
+     */
     addRevision: function(newContent, timestamp, restoringHistory)
     {
         var revision = new WebInspector.ResourceRevision(this, this._content, this._contentTimestamp);
@@ -853,6 +881,19 @@ WebInspector.Resource.prototype = {
         this._pendingContentCallbacks.push(callback);
         if (this.finished)
             this._innerRequestContent();
+    },
+
+    searchInContent: function(query, caseSensitive, isRegex, callback)
+    {
+        function callbackWrapper(error, searchMatches)
+        {
+            callback(searchMatches || []);
+        }
+
+        if (this.frameId)
+            PageAgent.searchInResource(this.frameId, this.url, query, caseSensitive, isRegex, callbackWrapper);
+        else
+            callback([]);
     },
 
     populateImageSource: function(image)

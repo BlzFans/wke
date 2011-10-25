@@ -28,6 +28,7 @@
 #define InspectorClient_h
 
 #include "InspectorFrontendChannel.h"
+#include "InspectorStateClient.h"
 #include <wtf/Forward.h>
 
 namespace WebCore {
@@ -36,7 +37,7 @@ class InspectorController;
 class Node;
 class Page;
 
-class InspectorClient : public InspectorFrontendChannel {
+class InspectorClient : public InspectorFrontendChannel, public InspectorStateClient {
 public:
     virtual ~InspectorClient() { }
 
@@ -46,11 +47,6 @@ public:
 
     virtual void highlight() = 0;
     virtual void hideHighlight() = 0;
-
-    // Navigation can cause some WebKit implementations to change the view / page / inspector controller instance.
-    // However, there are some inspector controller states that should survive navigation (such as tracking resources
-    // or recording timeline). Following callbacks allow embedders to track these states.
-    virtual void updateInspectorStateCookie(const String&) { };
 
     virtual void clearBrowserCache() { }
     virtual void clearBrowserCookies() { }

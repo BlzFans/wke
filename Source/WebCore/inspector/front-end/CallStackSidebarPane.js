@@ -23,6 +23,10 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @constructor
+ * @extends {WebInspector.SidebarPane}
+ */
 WebInspector.CallStackSidebarPane = function(model)
 {
     WebInspector.SidebarPane.call(this, WebInspector.UIString("Call Stack"));
@@ -32,7 +36,7 @@ WebInspector.CallStackSidebarPane = function(model)
 }
 
 WebInspector.CallStackSidebarPane.prototype = {
-    update: function(callFrames, details)
+    update: function(callFrames)
     {
         this.bodyElement.removeChildren();
 
@@ -48,28 +52,9 @@ WebInspector.CallStackSidebarPane.prototype = {
 
         for (var i = 0; i < callFrames.length; ++i) {
             var callFrame = callFrames[i];
-            var title = callFrame.functionName || WebInspector.UIString("(anonymous function)");
-
-            var subtitle;
-            if (!callFrame.isInternalScript)
-                subtitle = WebInspector.displayNameForURL(callFrame.url);
-            else
-                subtitle = WebInspector.UIString("(internal script)");
-
-            var placard = new WebInspector.Placard(title, subtitle);
+            var placard = this._model.createPlacard(callFrame);
             placard.callFrame = callFrame;
             placard.element.addEventListener("click", this._placardSelected.bind(this, placard), false);
-
-            function didGetSourceLine(placard, sourceFileId, lineNumber)
-            {
-                if (placard.subtitle)
-                    placard.subtitle += ":" + (lineNumber + 1);
-                else
-                    placard.subtitle = WebInspector.UIString("line %d", lineNumber + 1);
-                placard._text = WebInspector.UIString("%s() at %s", placard.title, placard.subtitle);
-            }
-            callFrame.sourceLine(didGetSourceLine.bind(this, placard));
-
             this.placards.push(placard);
             this.bodyElement.appendChild(placard.element);
         }
@@ -118,7 +103,7 @@ WebInspector.CallStackSidebarPane.prototype = {
         return -1;
     },
 
-    _placardSelected: function(placard, event)
+    _placardSelected: function(placard)
     {
         this._model.selectedCallFrame = placard.callFrame;
     },
@@ -137,7 +122,7 @@ WebInspector.CallStackSidebarPane.prototype = {
     {
         var text = "";
         for (var i = 0; i < this.placards.length; ++i)
-            text += this.placards[i]._text;
+            text += this.placards[i]._text + "\n";
         InspectorFrontendHost.copyText(text);
     },
 

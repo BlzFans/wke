@@ -78,10 +78,7 @@
 #include "ScriptEventListener.h"
 #include "StyleSheetList.h"
 #include "Text.h"
-
-#if ENABLE(XPATH)
 #include "XPathResult.h"
-#endif
 
 #include "markup.h"
 
@@ -232,7 +229,6 @@ public:
 
     virtual void match(ListHashSet<Node*>& resultCollector)
     {
-#if ENABLE(XPATH)
         if (m_query.isEmpty())
             return;
 
@@ -251,9 +247,6 @@ public:
                 node = static_cast<Attr*>(node)->ownerElement();
             resultCollector.add(node);
         }
-#else
-        UNUSED_PARAM(resultCollector);
-#endif
     }
 };
 
@@ -624,7 +617,7 @@ void InspectorDOMAgent::setAttributeValue(ErrorString* errorString, int elementI
         *errorString = "Internal error: could not set attribute value.";
 }
 
-void InspectorDOMAgent::setAttributesText(ErrorString* errorString, int elementId, const String& text, const String* const name)
+void InspectorDOMAgent::setAttributesAsText(ErrorString* errorString, int elementId, const String& text, const String* const name)
 {
     Element* element = assertElement(errorString, elementId);
     if (!element)
@@ -815,11 +808,7 @@ void InspectorDOMAgent::getEventListenersForNode(ErrorString*, int nodeId, RefPt
         return;
 
     // Get the list of event types this Node is concerned with
-    Vector<AtomicString> eventTypes;
-    const EventListenerMap& listenerMap = d->eventListenerMap;
-    EventListenerMap::const_iterator end = listenerMap.end();
-    for (EventListenerMap::const_iterator iter = listenerMap.begin(); iter != end; ++iter)
-        eventTypes.append(iter->first);
+    Vector<AtomicString> eventTypes = d->eventListenerMap.eventTypes();
 
     // Quick break if no useful listeners
     size_t eventTypesLength = eventTypes.size();
@@ -1061,11 +1050,8 @@ bool InspectorDOMAgent::setHighlightDataFromConfig(InspectorObject* highlightCon
     m_highlightData->content = parseConfigColor("contentColor", highlightConfig);
     m_highlightData->contentOutline = parseConfigColor("contentOutlineColor", highlightConfig);
     m_highlightData->padding = parseConfigColor("paddingColor", highlightConfig);
-    m_highlightData->paddingOutline = parseConfigColor("paddingOutlineColor", highlightConfig);
     m_highlightData->border = parseConfigColor("borderColor", highlightConfig);
-    m_highlightData->borderOutline = parseConfigColor("borderOutlineColor", highlightConfig);
     m_highlightData->margin = parseConfigColor("marginColor", highlightConfig);
-    m_highlightData->marginOutline = parseConfigColor("marginOutlineColor", highlightConfig);
     return true;
 }
 
@@ -1454,7 +1440,7 @@ void InspectorDOMAgent::didRemoveDOMNode(Node* node)
     unbind(node, &m_documentNodeToIdMap);
 }
 
-void InspectorDOMAgent::didModifyDOMAttr(Element* element)
+void InspectorDOMAgent::didModifyDOMAttr(Element* element, const AtomicString& name, const AtomicString& value)
 {
     int id = boundNodeId(element);
     // If node is not mapped yet -> ignore the event.
@@ -1464,7 +1450,20 @@ void InspectorDOMAgent::didModifyDOMAttr(Element* element)
     if (m_domListener)
         m_domListener->didModifyDOMAttr(element);
 
-    m_frontend->attributesUpdated(id);
+    m_frontend->attributeModified(id, name, value);
+}
+
+void InspectorDOMAgent::didRemoveDOMAttr(Element* element, const AtomicString& name)
+{
+    int id = boundNodeId(element);
+    // If node is not mapped yet -> ignore the event.
+    if (!id)
+        return;
+
+    if (m_domListener)
+        m_domListener->didModifyDOMAttr(element);
+
+    m_frontend->attributeRemoved(id, name);
 }
 
 void InspectorDOMAgent::styleAttributeInvalidated(const Vector<Element*>& elements)

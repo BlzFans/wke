@@ -41,11 +41,15 @@
 // | sed 's|unsigned\ int|var|' \
 // | sed 's|var\ yych|case 1: case 1: var yych|'
 
+/**
+ * @constructor
+ * @extends {WebInspector.SourceTokenizer}
+ */
 WebInspector.SourceCSSTokenizer = function()
 {
     WebInspector.SourceTokenizer.call(this);
 
-    this._propertyKeywords = WebInspector.cssNameCompletions.keySet();
+    this._propertyKeywords = WebInspector.CSSCompletions.cssNameCompletions.keySet();
 
     this._valueKeywords = [
         "above", "absolute", "activeborder", "activecaption", "afar", "after-white-space", "ahead", "alias", "all", "all-scroll",
@@ -127,6 +131,9 @@ WebInspector.SourceCSSTokenizer.prototype = {
         return { lexCondition: this._lexConditions.INITIAL, parseCondition: this._parseConditions.INITIAL };
     },
 
+    /**
+     * @param {boolean=} stringEnds
+     */
     _stringToken: function(cursor, stringEnds)
     {
         if (this._isPropertyValue())
@@ -145,10 +152,11 @@ WebInspector.SourceCSSTokenizer.prototype = {
     {
         var cursorOnEnter = cursor;
         var gotoCase = 1;
+        var YYMARKER;
         while (1) {
             switch (gotoCase)
             // Following comment is replaced with generated state machine.
-            
+
         {
             case 1: var yych;
             var yyaccept = 0;

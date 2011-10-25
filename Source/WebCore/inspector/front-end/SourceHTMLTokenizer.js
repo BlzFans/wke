@@ -41,6 +41,10 @@
 // | sed 's|unsigned\ int|var|' \
 // | sed 's|var\ yych|case 1: case 1: var yych|'
 
+/**
+ * @constructor
+ * @extends {WebInspector.SourceTokenizer}
+ */
 WebInspector.SourceHTMLTokenizer = function()
 {
     WebInspector.SourceTokenizer.call(this);
@@ -121,6 +125,9 @@ WebInspector.SourceHTMLTokenizer.prototype = {
         this._condition.parseCondition |= this._parseConditions.ATTRIBUTE_VALUE;
     },
 
+    /**
+     * @param {boolean=} stringEnds
+     */
     _stringToken: function(cursor, stringEnds)
     {
         if (!this._isExpectingAttributeValue()) {
@@ -201,10 +208,11 @@ WebInspector.SourceHTMLTokenizer.prototype = {
 
         var cursorOnEnter = cursor;
         var gotoCase = 1;
+        var YYMARKER;
         while (1) {
             switch (gotoCase)
             // Following comment is replaced with generated state machine.
-            
+
         {
             case 1: var yych;
             var yyaccept = 0;

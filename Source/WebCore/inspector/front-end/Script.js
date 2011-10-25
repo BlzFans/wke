@@ -25,8 +25,15 @@
 
 /**
  * @constructor
+ * @param {?string} scriptId
+ * @param {string} sourceURL
+ * @param {number} startLine
+ * @param {number} startColumn
+ * @param {number} endLine
+ * @param {number} endColumn
+ * @param {boolean} isContentScript
  */
-WebInspector.Script = function(scriptId, sourceURL, startLine, startColumn, endLine, endColumn, errorLine, errorMessage, isContentScript)
+WebInspector.Script = function(scriptId, sourceURL, startLine, startColumn, endLine, endColumn, isContentScript)
 {
     this.scriptId = scriptId;
     this.sourceURL = sourceURL;
@@ -34,12 +41,13 @@ WebInspector.Script = function(scriptId, sourceURL, startLine, startColumn, endL
     this.columnOffset = startColumn;
     this.endLine = endLine;
     this.endColumn = endColumn;
-    this.errorLine = errorLine;
-    this.errorMessage = errorMessage;
     this.isContentScript = isContentScript;
 }
 
 WebInspector.Script.prototype = {
+    /**
+     * @param {function(string)} callback
+     */
     requestSource: function(callback)
     {
         if (this._source) {
@@ -47,22 +55,76 @@ WebInspector.Script.prototype = {
             return;
         }
 
+        /**
+         * @this {WebInspector.Script}
+         * @param {?Protocol.Error} error
+         * @param {string} source
+         */
         function didGetScriptSource(error, source)
         {
-            this._source = source;
+            this._source = error ? "" : source;
             callback(this._source);
         }
-        DebuggerAgent.getScriptSource(this.scriptId, didGetScriptSource.bind(this));
+        if (this.scriptId) {
+            // Script failed to parse.
+            DebuggerAgent.getScriptSource(this.scriptId, didGetScriptSource.bind(this));
+        } else
+            callback("");
     },
 
+    /**
+     * @param {string} query
+     * @param {boolean} caseSensitive
+     * @param {boolean} isRegex
+     * @param {function(Array.<PageAgent.SearchMatch>)} callback
+     */
+    searchInContent: function(query, caseSensitive, isRegex, callback)
+    {
+        /**
+         * @this {WebInspector.Script}
+         * @param {?Protocol.Error} error
+         * @param {Array.<PageAgent.SearchMatch>} searchMatches
+         */
+        function innerCallback(error, searchMatches)
+        {
+            if (error)
+                console.error(error);
+            var result = [];
+            for (var i = 0; i < searchMatches.length; ++i) {
+                var searchMatch = new WebInspector.ContentProvider.SearchMatch(searchMatches[i].lineNumber, searchMatches[i].lineContent);
+                result.push(searchMatch);
+            }
+            callback(result || []);
+        }
+        
+        if (this.scriptId) {
+            // Script failed to parse.
+            DebuggerAgent.searchInContent(this.scriptId, query, caseSensitive, isRegex, innerCallback.bind(this));
+        } else
+            callback([]);
+    },
+    
+    /**
+     * @param {string} newSource
+     * @param {function(?Protocol.Error, Array.<DebuggerAgent.CallFrame>=)} callback
+     */
     editSource: function(newSource, callback)
     {
+        /**
+         * @this {WebInspector.Script}
+         * @param {?Protocol.Error} error
+         * @param {Array.<DebuggerAgent.CallFrame>|undefined} callFrames
+         */
         function didEditScriptSource(error, callFrames)
         {
             if (!error)
                 this._source = newSource;
             callback(error, callFrames);
         }
-        DebuggerAgent.setScriptSource(this.scriptId, newSource, undefined, didEditScriptSource.bind(this));
+        if (this.scriptId) {
+            // Script failed to parse.
+            DebuggerAgent.setScriptSource(this.scriptId, newSource, undefined, didEditScriptSource.bind(this));
+        } else
+            callback("Script failed to parse");
     }
 }

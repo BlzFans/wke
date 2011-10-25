@@ -118,7 +118,7 @@ public:
     void getDocument(ErrorString*, RefPtr<InspectorObject>* root);
     void requestChildNodes(ErrorString*, int nodeId);
     void setAttributeValue(ErrorString*, int elementId, const String& name, const String& value);
-    void setAttributesText(ErrorString*, int elementId, const String& text, const String* const name);
+    void setAttributesAsText(ErrorString*, int elementId, const String& text, const String* const name);
     void removeAttribute(ErrorString*, int elementId, const String& name);
     void removeNode(ErrorString*, int nodeId);
     void setNodeName(ErrorString*, int nodeId, const String& name, int* newId);
@@ -150,7 +150,8 @@ public:
 
     void didInsertDOMNode(Node*);
     void didRemoveDOMNode(Node*);
-    void didModifyDOMAttr(Element*);
+    void didModifyDOMAttr(Element*, const AtomicString& name, const AtomicString& value);
+    void didRemoveDOMAttr(Element*, const AtomicString& name);
     void styleAttributeInvalidated(const Vector<Element*>& elements);
     void characterDataModified(CharacterData*);
     void didInvalidateStyleAttr(Node*);
@@ -180,6 +181,8 @@ public:
     static Node* innerParentNode(Node*);
     static bool isWhitespace(Node*);
 
+    Node* assertNode(ErrorString*, int nodeId);
+
 private:
     InspectorDOMAgent(InstrumentingAgents*, InspectorPageAgent*, InspectorClient*, InspectorState*, InjectedScriptManager*);
 
@@ -191,7 +194,6 @@ private:
     typedef HashMap<RefPtr<Node>, int> NodeToIdMap;
     int bind(Node*, NodeToIdMap*);
     void unbind(Node*, NodeToIdMap*);
-    Node* assertNode(ErrorString*, int nodeId);
     Element* assertElement(ErrorString*, int nodeId);
     HTMLElement* assertHTMLElement(ErrorString*, int nodeId);
 

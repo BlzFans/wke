@@ -23,6 +23,10 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @constructor
+ * @extends {WebInspector.View}
+ */
 WebInspector.DOMStorageItemsView = function(domStorage)
 {
     WebInspector.View.call(this);
@@ -34,10 +38,10 @@ WebInspector.DOMStorageItemsView = function(domStorage)
 
     this.deleteButton = new WebInspector.StatusBarButton(WebInspector.UIString("Delete"), "delete-storage-status-bar-item");
     this.deleteButton.visible = false;
-    this.deleteButton.addEventListener("click", this._deleteButtonClicked.bind(this), false);
+    this.deleteButton.addEventListener("click", this._deleteButtonClicked, this);
 
     this.refreshButton = new WebInspector.StatusBarButton(WebInspector.UIString("Refresh"), "refresh-storage-status-bar-item");
-    this.refreshButton.addEventListener("click", this._refreshButtonClicked.bind(this), false);
+    this.refreshButton.addEventListener("click", this._refreshButtonClicked, this);
 }
 
 WebInspector.DOMStorageItemsView.prototype = {
@@ -107,7 +111,7 @@ WebInspector.DOMStorageItemsView.prototype = {
         }
 
         var dataGrid = new WebInspector.DataGrid(columns, this._editingCallback.bind(this), this._deleteCallback.bind(this));
-        var length = nodes.length;
+        length = nodes.length;
         for (var i = 0; i < length; ++i)
             dataGrid.appendChild(nodes[i]);
         dataGrid.addCreationNode(false);
@@ -128,7 +132,7 @@ WebInspector.DOMStorageItemsView.prototype = {
     {
         this.update();
     },
-    
+
     _editingCallback: function(editingNode, columnIdentifier, oldText, newText)
     {
         var domStorage = this.domStorage;
@@ -140,10 +144,10 @@ WebInspector.DOMStorageItemsView.prototype = {
         } else {
             domStorage.setItem(editingNode.data[0], newText);
         }
-        
+
         this.update();
     },
-    
+
     _deleteCallback: function(node)
     {
         if (!node || node.isCreationNode)
@@ -151,7 +155,7 @@ WebInspector.DOMStorageItemsView.prototype = {
 
         if (this.domStorage)
             this.domStorage.removeItem(node.data[0]);
-            
+
         this.update();
     }
 }

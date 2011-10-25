@@ -28,6 +28,9 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @constructor
+ */
 WebInspector.GoToLineDialog = function(view)
 {
     this._element = document.createElement("div");
@@ -47,7 +50,7 @@ WebInspector.GoToLineDialog = function(view)
     this._input.setAttribute("size", 6);
     var blurHandler = this._onBlur.bind(this);
     this._input.addEventListener("blur", blurHandler, false);
-    
+
 
     var go = dialogWindow.createChild("button");
     go.textContent = WebInspector.UIString("Go");
@@ -66,13 +69,26 @@ WebInspector.GoToLineDialog = function(view)
     this._input.select();
 }
 
-WebInspector.GoToLineDialog.show = function(sourceView)
+WebInspector.GoToLineDialog.install = function(panel, viewGetter)
 {
-    if (!sourceView || typeof sourceView.highlightLine !== "function")
+    function showGoToLineDialog()
+    {
+         var view = viewGetter();
+         if (view)
+             WebInspector.GoToLineDialog._show(view);
+    }
+
+    var goToLineShortcut = WebInspector.GoToLineDialog.createShortcut();
+    panel.registerShortcut(goToLineShortcut.key, showGoToLineDialog);
+}
+
+WebInspector.GoToLineDialog._show = function(sourceView)
+{
+    if (!sourceView || !sourceView.canHighlightLine())
         return;
-    if (this._instance)
+    if (WebInspector.GoToLineDialog._instance)
         return;
-    this._instance = new WebInspector.GoToLineDialog(sourceView);
+    WebInspector.GoToLineDialog._instance = new WebInspector.GoToLineDialog(sourceView);
 }
 
 WebInspector.GoToLineDialog.createShortcut = function()
@@ -131,4 +147,4 @@ WebInspector.GoToLineDialog.prototype = {
         if (!isNaN(lineNumber) && lineNumber >= 0)
             this._view.highlightLine(lineNumber);
     }
-};
+}

@@ -28,6 +28,10 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @constructor
+ * @extends {WebInspector.ResourceView}
+ */
 WebInspector.ResourceHTMLView = function(resource)
 {
     WebInspector.ResourceView.call(this, resource);
@@ -48,13 +52,13 @@ WebInspector.ResourceHTMLView.prototype = {
 
     hide: function(parentElement)
     {
-        WebInspector.ResourceView.prototype.hide.call(this, parentElement);
+        WebInspector.ResourceView.prototype.hide.call(this);
         this.element.removeChildren();
     },
 
     _createIFrame: function()
     {
-        // We need to create iframe again each time because contentDocument 
+        // We need to create iframe again each time because contentDocument
         // is deleted when iframe is removed from its parent.
         this.element.removeChildren();
         var iframe = document.createElement("iframe");

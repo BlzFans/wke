@@ -26,6 +26,10 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @extends {WebInspector.View}
+ * @constructor
+ */
 WebInspector.Panel = function(name)
 {
     WebInspector.View.call(this);
@@ -37,6 +41,7 @@ WebInspector.Panel = function(name)
     this._shortcuts = {};
 
     WebInspector.settings[this._sidebarWidthSettingName()] = WebInspector.settings.createSetting(this._sidebarWidthSettingName(), undefined);
+    this._hideOnDetach = false;
 }
 
 // Should by in sync with style declarations.
@@ -57,9 +62,17 @@ WebInspector.Panel.prototype = {
         return this._panelName;
     },
 
+    setHideOnDetach: function()
+    {
+        this._hideOnDetach = true;
+    },
+
     show: function()
     {
-        WebInspector.View.prototype.show.call(this);
+        if (!WebInspector.Panel._mainPanelsElement)
+            WebInspector.Panel._mainPanelsElement = document.getElementById("main-panels");
+    
+        WebInspector.View.prototype.show.call(this, WebInspector.Panel._mainPanelsElement);
 
         var statusBarItems = this.statusBarItems;
         if (statusBarItems) {
@@ -78,9 +91,12 @@ WebInspector.Panel.prototype = {
         WebInspector.extensionServer.notifyPanelShown(this.name);
     },
 
-    hide: function()
+    detach: function()
     {
-        WebInspector.View.prototype.hide.call(this);
+        if (this._hideOnDetach)
+            this.hide();
+        else
+            WebInspector.View.prototype.detach.call(this);
 
         if (this._statusBarItemContainer && this._statusBarItemContainer.parentNode)
             this._statusBarItemContainer.parentNode.removeChild(this._statusBarItemContainer);
@@ -100,181 +116,29 @@ WebInspector.Panel.prototype = {
         return this.sidebarTreeElement || this.element;
     },
 
-    attach: function()
-    {
-        if (!this.element.parentNode)
-            document.getElementById("main-panels").appendChild(this.element);
-    },
-
     searchCanceled: function()
     {
-        if (this._searchResults) {
-            for (var i = 0; i < this._searchResults.length; ++i) {
-                var view = this._searchResults[i];
-                if (view.searchCanceled)
-                    view.searchCanceled();
-                delete view.currentQuery;
-            }
-        }
-
         WebInspector.searchController.updateSearchMatchesCount(0, this);
-
-        if (this._currentSearchChunkIntervalIdentifier) {
-            clearInterval(this._currentSearchChunkIntervalIdentifier);
-            delete this._currentSearchChunkIntervalIdentifier;
-        }
-
-        this._totalSearchMatches = 0;
-        this._currentSearchResultIndex = 0;
-        this._searchResults = [];
     },
 
     performSearch: function(query)
     {
         // Call searchCanceled since it will reset everything we need before doing a new search.
-        this.searchCanceled(true);
-
-        var searchableViews = this.searchableViews;
-        if (!searchableViews || !searchableViews.length)
-            return;
-
-        var parentElement = this.viewsContainerElement;
-        var visibleView = this.visibleView;
-        var sortFuction = this.searchResultsSortFunction;
-
-        var matchesCountUpdateTimeout = null;
-
-        function updateMatchesCount()
-        {
-            WebInspector.searchController.updateSearchMatchesCount(this._totalSearchMatches, this);
-            matchesCountUpdateTimeout = null;
-        }
-
-        function updateMatchesCountSoon()
-        {
-            if (matchesCountUpdateTimeout)
-                return;
-            // Update the matches count every half-second so it doesn't feel twitchy.
-            matchesCountUpdateTimeout = setTimeout(updateMatchesCount.bind(this), 500);
-        }
-
-        function finishedCallback(view, searchMatches)
-        {
-            if (!searchMatches)
-                return;
-
-            this._totalSearchMatches += searchMatches;
-            this._searchResults.push(view);
-
-            if (sortFuction)
-                this._searchResults.sort(sortFuction);
-
-            if (this.searchMatchFound)
-                this.searchMatchFound(view, searchMatches);
-
-            updateMatchesCountSoon.call(this);
-
-            if (view === visibleView)
-                view.jumpToFirstSearchResult();
-        }
-
-        var i = 0;
-        var panel = this;
-        var boundFinishedCallback = finishedCallback.bind(this);
-        var chunkIntervalIdentifier = null;
-
-        // Split up the work into chunks so we don't block the
-        // UI thread while processing.
-
-        function processChunk()
-        {
-            var view = searchableViews[i];
-
-            if (++i >= searchableViews.length) {
-                if (panel._currentSearchChunkIntervalIdentifier === chunkIntervalIdentifier)
-                    delete panel._currentSearchChunkIntervalIdentifier;
-                clearInterval(chunkIntervalIdentifier);
-            }
-
-            if (!view)
-                return;
-
-            view.currentQuery = query;
-            view.performSearch(query, boundFinishedCallback);
-        }
-
-        processChunk();
-
-        chunkIntervalIdentifier = setInterval(processChunk, 25);
-        this._currentSearchChunkIntervalIdentifier = chunkIntervalIdentifier;
+        this.searchCanceled();
     },
 
     jumpToNextSearchResult: function()
     {
-        if (!this.showView || !this._searchResults || !this._searchResults.length)
-            return;
-
-        var showFirstResult = false;
-
-        this._currentSearchResultIndex = this._searchResults.indexOf(this.visibleView);
-        if (this._currentSearchResultIndex === -1) {
-            this._currentSearchResultIndex = 0;
-            showFirstResult = true;
-        }
-
-        var currentView = this._searchResults[this._currentSearchResultIndex];
-
-        if (currentView.showingLastSearchResult()) {
-            if (++this._currentSearchResultIndex >= this._searchResults.length)
-                this._currentSearchResultIndex = 0;
-            currentView = this._searchResults[this._currentSearchResultIndex];
-            showFirstResult = true;
-        }
-
-        if (currentView !== this.visibleView) {
-            this.showView(currentView);
-            WebInspector.searchController.focusSearchField();
-        }
-
-        if (showFirstResult)
-            currentView.jumpToFirstSearchResult();
-        else
-            currentView.jumpToNextSearchResult();
     },
 
     jumpToPreviousSearchResult: function()
     {
-        if (!this.showView || !this._searchResults || !this._searchResults.length)
-            return;
-
-        var showLastResult = false;
-
-        this._currentSearchResultIndex = this._searchResults.indexOf(this.visibleView);
-        if (this._currentSearchResultIndex === -1) {
-            this._currentSearchResultIndex = 0;
-            showLastResult = true;
-        }
-
-        var currentView = this._searchResults[this._currentSearchResultIndex];
-
-        if (currentView.showingFirstSearchResult()) {
-            if (--this._currentSearchResultIndex < 0)
-                this._currentSearchResultIndex = (this._searchResults.length - 1);
-            currentView = this._searchResults[this._currentSearchResultIndex];
-            showLastResult = true;
-        }
-
-        if (currentView !== this.visibleView) {
-            this.showView(currentView);
-            WebInspector.searchController.focusSearchField();
-        }
-
-        if (showLastResult)
-            currentView.jumpToLastSearchResult();
-        else
-            currentView.jumpToPreviousSearchResult();
     },
 
+    /**
+     * @param {Element=} parentElement
+     * @param {Element=} resizerParentElement
+     */
     createSidebar: function(parentElement, resizerParentElement)
     {
         if (this.sidebarElement)
@@ -377,9 +241,22 @@ WebInspector.Panel.prototype = {
         WebInspector.settings[this._sidebarWidthSettingName()].set(this.sidebarElement.offsetWidth);
     },
 
+    // Should be implemented by ancestors.
+
+    get toolbarItemLabel()
+    {
+    },
+
+    get statusBarItems()
+    {
+    },
+
     updateMainViewWidth: function(width)
     {
-        // Should be implemented by ancestors.
+    },
+
+    statusBarResized: function()
+    {
     },
 
     canShowAnchorLocation: function(anchor)
@@ -407,24 +284,9 @@ WebInspector.Panel.prototype = {
         }
     },
 
-    registerShortcuts: function(shortcuts)
-    {
-        this._shortcuts = shortcuts || {};
-        var goToLineShortcut = WebInspector.GoToLineDialog.createShortcut();
-        this._shortcuts[goToLineShortcut.key] = this._showGoToLineDialog.bind(this);
-    },
-
     registerShortcut: function(key, handler)
     {
         this._shortcuts[key] = handler;
-    },
-
-    _showGoToLineDialog: function(e)
-    {
-         var view = this.visibleView;
-         WebInspector.GoToLineDialog.show(view);
-         if (view)
-             WebInspector.GoToLineDialog.show(view);
     }
 }
 

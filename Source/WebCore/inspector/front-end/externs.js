@@ -29,9 +29,12 @@
  */
 
 var console = {}
-console.warn = function(message) {}
-/** @param {string=} message */
-console.assert = function(expr, message) {}
+/** @param {...*} vararg */
+console.warn = function(vararg) {}
+/** @param {...*} vararg */
+console.assert = function(vararg) {}
+/** @param {...*} vararg */
+console.error = function(vararg) {}
 
 var WebInspector = {}
 
@@ -44,14 +47,42 @@ var WebInspector = {}
  */
 WebInspector.linkifyURLAsNode = function(url, linkText, classes, isExternal, tooltipText) {}
 
+/**
+ * @param {string} url
+ * @param {string=} linkText
+ * @param {string=} classes
+ * @param {boolean=} isExternal
+ * @param {string=} tooltipText
+ */
+WebInspector.linkifyURL = function(url, linkText, classes, isExternal, tooltipText) {}
+
 /** @param {string} url */
 WebInspector.linkifyStringAsFragment = function(url) {}
+/** @param {string} url */
+WebInspector.linkifyStringAsFragmentWithCustomLinkifier = function(url, linkifier) {}
+
+/**
+ * @param {string=} classes
+ * @param {string=} tooltipText
+ */
+WebInspector.linkifyResourceAsNode = function(url, lineNumber, classes, tooltipText) {}
 
 /**
  * @param {string} url
- * @param {number} lineNumber
+ * @param {number=} lineNumber
  */
 WebInspector.formatLinkText = function(url, lineNumber) {}
+
+/**
+ * @param {string} url
+ */
+WebInspector.displayNameForURL = function(url) {}
+
+/**
+ * @param {string} url
+ * @param {string} href
+ */
+WebInspector.completeURL = function(url, href) {}
 
 /**
  * @param {string} str
@@ -59,6 +90,7 @@ WebInspector.formatLinkText = function(url, lineNumber) {}
  */
 WebInspector.UIString = function(str, varArgs) {}
 var InspectorBackend = {}
+InspectorBackend.runAfterPendingDispatches = function(message) {}
 
 var JSON = {}
 /** @param {string} str */
@@ -68,4 +100,181 @@ JSON.parse = function(str) {}
 /** @return {string} */
 JSON.stringify = function(str) {}
 
-Element.prototype.scrollIntoViewIfNeeded = function() {}
+/**
+ * @param {boolean=} param
+ */
+Element.prototype.scrollIntoViewIfNeeded = function(param) {}
+
+/**
+ * @return {number}
+ */
+Element.prototype.selectionLeftOffset = function() {}
+
+
+/**
+ * @param {boolean=} onlyFirst
+ */
+Array.prototype.remove = function(obj, onlyFirst) {}
+
+Array.prototype.keySet = function() {}
+
+WebInspector.extensionServer = {}
+WebInspector.extensionServer.notifyResourceContentCommitted = function(resource, content) {}
+WebInspector.extensionServer.notifyPanelShown = function(panel) {}
+WebInspector.extensionServer.notifyPanelHidden = function(panel) {}
+WebInspector.extensionServer.notifyObjectSelected = function(object) {}
+
+/**
+ * @param {string} url
+ * @return {?WebInspector.Resource}
+ */
+WebInspector.resourceForURL = function(url) {}
+
+WebInspector.debuggerPresentationModel = {
+    linkifyLocation: function(url, lineNumber, columnNumber, className) {}
+}
+
+/**
+ * @param {NetworkAgent.RequestId} requestId
+ * @return {?WebInspector.Resource}
+ */
+WebInspector.networkResourceById = function(requestId)
+{
+}
+
+/**
+ * @param {WebInspector.ContextMenu} contextMenu
+ * @param {Node} contextNode
+ * @param {Event} event
+ */
+WebInspector.populateHrefContextMenu = function(contextMenu, contextNode, event)
+{
+}
+
+/**
+ * @return {boolean}
+ */
+WebInspector.useLowerCaseMenuTitles = function()
+{
+}
+
+WebInspector.panels = {};
+
+/**
+ * @type {WebInspector.ScriptsPanel}
+ */
+WebInspector.panels.scripts = null;
+
+/**
+ * @return {WebInspector.Panel} 
+ */
+WebInspector.currentPanel = function() {}
+
+/**
+ * @param {WebInspector.Panel} panel
+ */
+WebInspector.setCurrentPanel = function(panel) {}
+
+/**
+ * @type {?Element}
+ */
+WebInspector.currentFocusElement = null;
+
+/**
+ * @type {?Element}
+ */
+WebInspector.previousFocusElement = null;
+
+/**
+ * @param {WebInspector.View} view
+ */
+WebInspector.showViewInDrawer = function(view) {}
+
+/**
+ * @type {WebInspector.AdvancedSearchController}
+ */
+WebInspector.advancedSearchController = null;
+
+/**
+ * @type {string}
+ */
+WebInspector.platformFlavor = "";
+
+/** @param {Element} element */
+window.getComputedStyle = function(element) {}
+
+/**
+ * @type {boolean}
+ */
+Event.prototype.isMetaOrCtrlForTest = false;
+
+/**
+ * @param {...*} vararg
+ */
+Event.prototype.initWebKitWheelEvent = function(vararg) {}
+
+/**
+ * @param {string=} messageLevel
+ * @param {boolean=} showConsole
+ */
+WebInspector.log = function(message, messageLevel, showConsole) {}
+
+WebInspector.resourceURLForRelatedNode = function(node, url) {}
+
+WebInspector.addMainEventListeners = function(doc) {}
+
+WebInspector.openResource = function(url, external) {}
+
+DOMApplicationCache.prototype.UNCACHED = 0;
+DOMApplicationCache.prototype.IDLE = 1;
+DOMApplicationCache.prototype.CHECKING = 2;
+DOMApplicationCache.prototype.DOWNLOADING = 3;
+DOMApplicationCache.prototype.UPDATEREADY = 4;
+DOMApplicationCache.prototype.OBSOLETE = 5;
+
+WebInspector.openRequestInNetworkPanel = function(request) {}
+
+var InjectedFakeWorker = function() {}
+
+WebInspector.queryParamsObject = {}
+
+WebInspector.Events = {
+    InspectorClosing: "InspectorClosing"
+}
+
+/** Extensions API */
+
+/** @constructor */
+function AuditCategory() {}
+/** @constructor */
+function AuditResult() {}
+/** @constructor */
+function EventSink() {}
+/** @constructor */
+function ExtensionSidebarPane() {}
+/** @constructor */
+function Panel() {}
+/** @constructor */
+function PanelWithSidebar() {}
+/** @constructor */
+function Request() {}
+/** @constructor */
+function Resource() {}
+/** @constructor */
+function Timeline() {}
+
+/** @type {string} */
+Location.prototype.origin = "";
+
+/**
+ * @constructor
+ */
+function ExtensionDescriptor() {
+    this.startPage = "";
+    this.name = "";
+}
+
+/**
+ * @type {WebInspector.HandlerRegistry}
+ */
+WebInspector.openAnchorLocationRegistry = null;

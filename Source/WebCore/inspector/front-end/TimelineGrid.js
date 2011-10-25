@@ -28,6 +28,9 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @constructor
+ */
 WebInspector.TimelineGrid = function()
 {
     this.element = document.createElement("div");
@@ -55,7 +58,9 @@ WebInspector.TimelineGrid.prototype = {
         return this._itemsGraphsElement;
     },
 
-    
+    /**
+     * @param {number=} paddingLeft
+     */
     updateDividers: function(force, calculator, paddingLeft)
     {
         var dividerCount = Math.round(this._dividersElement.offsetWidth / 64);

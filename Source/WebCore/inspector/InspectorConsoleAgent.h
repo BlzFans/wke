@@ -61,7 +61,7 @@ public:
 
     void enable(ErrorString*, int* consoleMessageExpireCount);
     void disable(ErrorString*);
-    void clearConsoleMessages(ErrorString* error);
+    void clearMessages(ErrorString*);
     void reset();
     void restore();
     void setFrontend(InspectorFrontend*);
@@ -76,7 +76,7 @@ public:
 
     void frameWindowDiscarded(DOMWindow*);
 
-    void resourceRetrievedByXMLHttpRequest(const String& url, const String& sendURL, unsigned sendLineNumber);
+    void resourceRetrievedByXMLHttpRequest(unsigned long identifier, const String& url, const String& sendURL, unsigned sendLineNumber);
     void didReceiveResponse(unsigned long identifier, const ResourceResponse&);
     void didFailLoading(unsigned long identifier, const ResourceError&);
 #if ENABLE(JAVASCRIPT_DEBUGGER)

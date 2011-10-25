@@ -26,13 +26,17 @@
 
 /**
  * @constructor
- * @param {Element=} element
+ * @extends {WebInspector.Object}
  */
-WebInspector.View = function(element)
+WebInspector.View = function()
 {
-    this.element = element || document.createElement("div");
+    this.element = document.createElement("div");
+    this.element.addEventListener("DOMNodeInsertedIntoDocument", this._handleInsertedIntoDocument.bind(this), false);
+    this.element.addEventListener("DOMNodeRemovedFromDocument", this._handleRemovedFromDocument.bind(this), false);
+    this.element.__view = this;
     this._visible = false;
     this._children = [];
+    this._inDetach = false;
 }
 
 WebInspector.View.prototype = {
@@ -47,7 +51,7 @@ WebInspector.View.prototype = {
             return;
 
         if (x)
-            this.show();
+            this.show(this.element.parentElement);
         else
             this.hide();
     },
@@ -63,44 +67,50 @@ WebInspector.View.prototype = {
         this.storeScrollPositions();
     },
 
-    _innerShow: function()
+    willDetach: function()
     {
-        this.element.addStyleClass("visible");
     },
 
+    /**
+     * @param {Element} parentElement
+     */
     show: function(parentElement)
     {
         this._visible = true;
-        if (parentElement && parentElement !== this.element.parentNode) {
-            this._detach();
-            parentElement.appendChild(this.element);
-        }
-        if (!this.element.parentNode) {
-            if (this.attach)
-                this.attach();
-            else if (this._parentView)
-                this._parentView.element.appendChild(this.element);
-        }
-        this._innerShow();
-        this.dispatchToSelfAndVisibleChildren("wasShown");
-    },
-
-    _innerHide: function()
-    {
-        this.element.removeStyleClass("visible");
+        this.element.addStyleClass("visible");
+        if (parentElement && this.element.parentElement != parentElement)
+            this.attach(parentElement);
+        this.dispatchToSelfAndChildren("wasShown", true);
     },
 
     hide: function()
     {
-        this.dispatchToSelfAndVisibleChildren("willHide");
-        this._innerHide();
+        this.dispatchToSelfAndChildren("willHide", true);
+        if (!this._inDetach)
+            this.element.removeStyleClass("visible");
         this._visible = false;
     },
 
-    _detach: function()
+    /**
+     * @param {Element} parentElement
+     */
+    attach: function(parentElement)
     {
-        if (this.element.parentNode)
-            this.element.parentNode.removeChild(this.element);
+        parentElement.appendChild(this.element);
+    },
+
+    detach: function()
+    {
+        if (this._visible) {
+            this._inDetach = true;
+            this.hide();
+            this._inDetach = false;
+        }
+
+        this.dispatchToSelfAndChildren("willDetach", false);
+
+        if (this.element.parentElement)
+            this.element.parentElement.removeChild(this.element);
     },
 
     elementsToRestoreScrollPositionsFor: function()
@@ -130,52 +140,99 @@ WebInspector.View.prototype = {
         }
     },
 
-    addChildView: function(view)
+    _addChildView: function(view)
     {
-        if (view._parentView === this)
-            return;
-        if (view._parentView)
-            view._parentView.removeChildView(view);
         this._children.push(view);
         view._parentView = this;
     },
 
-    removeChildView: function(view)
+    _removeChildView: function(view)
     {
         var childIndex = this._children.indexOf(view);
-        if (childIndex < 0) 
+        if (childIndex < 0) {
+            console.error("Attempt to remove non-child view");
             return;
+        }
 
         this._children.splice(childIndex, 1);
         view._parentView = null;
-        view._detach();
     },
 
     onResize: function()
     {
     },
 
-    doResize: function()
+    canHighlightLine: function()
     {
-        this.dispatchToSelfAndVisibleChildren("onResize");
+        return false;
     },
 
-    dispatchToSelfAndVisibleChildren: function(methodName)
+    highlightLine: function(line)
     {
-        if (!this.visible)
+    },
+
+    doResize: function()
+    {
+        this.dispatchToSelfAndChildren("onResize", true);
+    },
+
+    dispatchToSelfAndChildren: function(methodName, visibleOnly)
+    {
+        if (visibleOnly && !this.visible)
             return;
         if (typeof this[methodName] === "function")
             this[methodName].call(this);
-        this.dispatchToVisibleChildren(methodName);
+        this.dispatchToChildren(methodName, visibleOnly);
     },
 
-    dispatchToVisibleChildren: function(methodName)
+    dispatchToChildren: function(methodName, visibleOnly)
     {
-        if (!this.visible)
+        if (visibleOnly && !this.visible)
             return;
         for (var i = 0; i < this._children.length; ++i)
-            this._children[i].dispatchToSelfAndVisibleChildren(methodName);
+            this._children[i].dispatchToSelfAndChildren(methodName, visibleOnly);
+    },
+
+    _handleInsertedIntoDocument: function(event)
+    {
+        var parentElement = this.element.parentElement;
+        while (parentElement && !parentElement.__view)
+            parentElement = parentElement.parentElement;
+
+        var parentView = parentElement ? parentElement.__view : WebInspector._rootView;
+        parentView._addChildView(this);
+        this.onInsertedIntoDocument();
+    },
+
+    onInsertedIntoDocument: function()
+    {
+    },
+
+    _handleRemovedFromDocument: function(event)
+    {
+        if (this._parentView)
+            this._parentView._removeChildView(this);
+    },
+
+    printViewHierarchy: function()
+    {
+        var lines = [];
+        this._collectViewHierarchy("", lines);
+        console.log(lines.join("\n"));
+    },
+
+    _collectViewHierarchy: function(prefix, lines)
+    {
+        lines.push(prefix + "[" + this.element.className + "]" + (this._children.length ? " {" : ""));
+
+        for (var i = 0; i < this._children.length; ++i)
+            this._children[i]._collectViewHierarchy(prefix + "    ", lines);
+
+        if (this._children.length)
+            lines.push(prefix + "}");
     }
 }
 
 WebInspector.View.prototype.__proto__ = WebInspector.Object.prototype;
+
+WebInspector._rootView = new WebInspector.View();

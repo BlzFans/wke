@@ -145,7 +145,7 @@ body.inactive .heap-snapshot-sidebar-tree-item.wait.selected .icon {
     bottom: 0;
 }
 
-.detailed-heapshot-view .views-container { 
+.detailed-heapshot-view .views-container {
     position: absolute;
     top: 0;
     left: 0;
@@ -192,6 +192,10 @@ body.inactive .heap-snapshot-sidebar-tree-item.wait.selected .icon {
     vertical-align: middle;
     margin-left: 4px;
     margin-right: 8px;
+}
+
+.detailed-heapshot-view tr:not(.selected) td.object-column span.highlight {
+    background-color: rgb(255, 255, 200);
 }
 
 .heapshot-help-status-bar-item .glyph {

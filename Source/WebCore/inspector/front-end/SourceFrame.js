@@ -28,6 +28,10 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @extends {WebInspector.View}
+ * @constructor
+ */
 WebInspector.SourceFrame = function(delegate, url)
 {
     WebInspector.View.call(this);
@@ -40,8 +44,14 @@ WebInspector.SourceFrame = function(delegate, url)
 
     var textViewerDelegate = new WebInspector.TextViewerDelegateForSourceFrame(this);
     this._textViewer = new WebInspector.TextViewer(this._textModel, WebInspector.platform, this._url, textViewerDelegate);
-    this.addChildView(this._textViewer);
     this.element.appendChild(this._textViewer.element);
+
+    this.popoverHelper = new WebInspector.ObjectPopoverHelper(this._textViewer.element,
+            this._getPopoverAnchor.bind(this), this.onShowPopover.bind(this), this.onHidePopover.bind(this), true);
+    this._textViewer.element.addEventListener("mousedown", this._mouseDown.bind(this), true);
+
+    this._editButton = new WebInspector.StatusBarButton(WebInspector.UIString("Edit"), "edit-source-status-bar-item");
+    this._editButton.addEventListener("click", this._editButtonClicked.bind(this), this);
 
     this._currentSearchResultIndex = -1;
     this._searchResults = [];
@@ -71,7 +81,7 @@ WebInspector.SourceFrame.createSearchRegex = function(query)
 
     // Otherwise just do case-insensitive search.
     if (!regex)
-        regex = createSearchRegex(query);
+        regex = createPlainTextSearchRegex(query, "i");
 
     return regex;
 }
@@ -82,7 +92,7 @@ WebInspector.SourceFrame.prototype = {
     {
         WebInspector.View.prototype.show.call(this, parentElement);
         this._ensureContentLoaded();
-        this._textViewer.show();
+        this._textViewer.show(this.element);
     },
 
     willHide: function()
@@ -91,14 +101,20 @@ WebInspector.SourceFrame.prototype = {
         if (this.loaded)
             this._textViewer.freeCachedElements();
 
-        if (this._popoverHelper)
-            this._popoverHelper.hidePopover();
+        if (this.popoverHelper)
+            this.popoverHelper.hidePopover();
         this._clearLineHighlight();
+        this._textViewer.readOnly = true;
+    },
+
+    get statusBarItems()
+    {
+        return [this._editButton.element];
     },
 
     get loaded()
     {
-        return !!this._content;
+        return this._loaded;
     },
 
     hasContent: function()
@@ -119,6 +135,9 @@ WebInspector.SourceFrame.prototype = {
         this._delegate.requestContent(callback);
     },
 
+    /**
+     * @param {TextDiff} diffData
+     */
     markDiff: function(diffData)
     {
         if (this._diffLines && this.loaded)
@@ -153,6 +172,11 @@ WebInspector.SourceFrame.prototype = {
     get textModel()
     {
         return this._textModel;
+    },
+
+    canHighlightLine: function(line)
+    {
+        return true;
     },
 
     highlightLine: function(line)
@@ -276,16 +300,8 @@ WebInspector.SourceFrame.prototype = {
     {
         this._textViewer.mimeType = mimeType;
 
-        this._content = content;
+        this._loaded = true;
         this._textModel.setText(null, content);
-
-        var element = this._textViewer.element;
-        if (this._delegate.debuggingSupported()) {
-            this._popoverHelper = new WebInspector.PopoverHelper(element,
-                this._getPopoverAnchor.bind(this), this._onShowPopover.bind(this), this._onHidePopover.bind(this));
-            element.addEventListener("mousedown", this._mouseDown.bind(this), true);
-            element.addEventListener("scroll", this._scroll.bind(this), true);
-        }
 
         this._textViewer.beginUpdates();
 
@@ -307,6 +323,9 @@ WebInspector.SourceFrame.prototype = {
         this.dispatchEventToListeners(WebInspector.SourceFrame.Events.Loaded);
 
         this._textViewer.endUpdates();
+
+        if (!this.canEditSource())
+            this._editButton.disabled = true;
     },
 
     _setTextViewerDecorations: function()
@@ -426,6 +445,9 @@ WebInspector.SourceFrame.prototype = {
         return ranges;
     },
 
+    /**
+     * @param {boolean=} skipRevealLine
+     */
     setExecutionLine: function(lineNumber, skipRevealLine)
     {
         this._executionLineNumber = lineNumber;
@@ -631,16 +653,8 @@ WebInspector.SourceFrame.prototype = {
         return this._delegate.suggestedFileName();
     },
 
-    _scroll: function(event)
-    {
-        if (this._popoverHelper)
-            this._popoverHelper.hidePopover();
-    },
-
     _mouseDown: function(event)
     {
-        if (this._popoverHelper)
-            this._popoverHelper.hidePopover();
         if (event.button != 0 || event.altKey || event.ctrlKey || event.metaKey)
             return;
         var target = event.target.enclosingNodeOrSelfWithClass("webkit-line-number");
@@ -659,106 +673,11 @@ WebInspector.SourceFrame.prototype = {
         event.preventDefault();
     },
 
-    _onHidePopover: function()
-    {
-        // Replace higlight element with its contents inplace.
-        var highlightElement = this._highlightElement;
-        var parentElement = highlightElement.parentElement;
-        var child = highlightElement.firstChild;
-        while (child) {
-            var nextSibling = child.nextSibling;
-            parentElement.insertBefore(child, highlightElement);
-            child = nextSibling;
-        }
-        parentElement.removeChild(highlightElement);
-        this._delegate.releaseEvaluationResult();
-    },
-
-    _shouldShowPopover: function(element)
-    {
-        if (!this._delegate.debuggerPaused())
-            return false;
-        if (!element.enclosingNodeOrSelfWithClass("webkit-line-content"))
-            return false;
-
-        // We are interested in identifiers and "this" keyword.
-        if (element.hasStyleClass("webkit-javascript-keyword"))
-            return element.textContent === "this";
-
-        return element.hasStyleClass("webkit-javascript-ident");
-    },
-
     _getPopoverAnchor: function(element)
     {
-        if (!this._shouldShowPopover(element))
+        if (!this.shouldShowPopover(element))
             return;
         return element;
-    },
-
-    _highlightExpression: function(element)
-    {
-        // Collect tokens belonging to evaluated exression.
-        var tokens = [ element ];
-        var token = element.previousSibling;
-        while (token && (token.className === "webkit-javascript-ident" || token.className === "webkit-javascript-keyword" || token.textContent.trim() === ".")) {
-            tokens.push(token);
-            token = token.previousSibling;
-        }
-        tokens.reverse();
-
-        // Wrap them with highlight element.
-        var parentElement = element.parentElement;
-        var nextElement = element.nextSibling;
-        var container = document.createElement("span");
-        for (var i = 0; i < tokens.length; ++i)
-            container.appendChild(tokens[i]);
-        parentElement.insertBefore(container, nextElement);
-        return container;
-    },
-
-    _onShowPopover: function(element, popover)
-    {
-        this._highlightElement = this._highlightExpression(element);
-
-        function showObjectPopover(result, wasThrown)
-        {
-            if (popover.disposed)
-                return;
-            if (wasThrown || !this._delegate.debuggerPaused()) {
-                this._popoverHelper.hidePopover();
-                return;
-            }
-            var popoverContentElement = null;
-            if (result.type !== "object") {
-                popoverContentElement = document.createElement("span");
-                popoverContentElement.className = "monospace console-formatted-" + result.type;
-                popoverContentElement.style.whiteSpace = "pre";
-                popoverContentElement.textContent = result.description;
-                if (result.type === "string")
-                    popoverContentElement.textContent = "\"" + popoverContentElement.textContent + "\"";
-                popover.show(popoverContentElement, element);
-            } else {
-                var popoverContentElement = document.createElement("div");
-
-                var titleElement = document.createElement("div");
-                titleElement.className = "source-frame-popover-title monospace";
-                titleElement.textContent = result.description;
-                popoverContentElement.appendChild(titleElement);
-
-                var section = new WebInspector.ObjectPropertiesSection(result);
-                section.expanded = true;
-                section.element.addStyleClass("source-frame-popover-tree");
-                section.headerElement.addStyleClass("hidden");
-                popoverContentElement.appendChild(section.element);
-
-                const popoverWidth = 300;
-                const popoverHeight = 250;
-                popover.show(popoverContentElement, element, popoverWidth, popoverHeight);
-            }
-            this._highlightElement.addStyleClass("source-frame-eval-expression");
-        }
-
-        this._delegate.evaluateInSelectedCallFrame(this._highlightElement.textContent, showObjectPopover.bind(this));
     },
 
     _editBreakpointCondition: function(lineNumber, condition, callback)
@@ -774,11 +693,8 @@ WebInspector.SourceFrame.prototype = {
             callback(committed, newText);
         }
 
-        WebInspector.startEditing(this._conditionEditorElement, {
-            context: null,
-            commitHandler: finishEditing.bind(this, true),
-            cancelHandler: finishEditing.bind(this, false)
-        });
+        var config = new WebInspector.EditingConfig(finishEditing.bind(this, true), finishEditing.bind(this, false));
+        WebInspector.startEditing(this._conditionEditorElement, config);
         this._conditionEditorElement.value = condition;
         this._conditionEditorElement.select();
     },
@@ -809,15 +725,33 @@ WebInspector.SourceFrame.prototype = {
         this._textViewer.inheritScrollPositions(sourceFrame._textViewer);
     },
 
-    doubleClick: function(lineNumber)
+    _editButtonClicked: function()
     {
-        if (!this._delegate.canEditScriptSource())
+        if (!this.canEditSource())
             return;
+
+        const shouldStartEditing = !this._editButton.toggled;
+        if (shouldStartEditing)
+            this.startEditing();
+        else
+            this.commitEditing();
+    },
+
+    canEditSource: function()
+    {
+        return this._delegate.canEditScriptSource();
+    },
+
+    startEditing: function()
+    {
+        if (!this.canEditSource())
+            return false;
 
         if (this._commitEditingInProgress)
-            return;
+            return false;
 
         this._setReadOnly(false);
+        return true;
     },
 
     commitEditing: function()
@@ -834,10 +768,8 @@ WebInspector.SourceFrame.prototype = {
             this._textViewer.readOnly = false;
 
             if (error) {
-                if (error.message) {
-                    WebInspector.log(error.message, WebInspector.ConsoleMessage.MessageLevel.Error);
-                    WebInspector.showConsole();
-                }
+                if (error.message)
+                    WebInspector.log(error.message, WebInspector.ConsoleMessage.MessageLevel.Error, true);
                 return;
             }
 
@@ -860,6 +792,7 @@ WebInspector.SourceFrame.prototype = {
         }
         this._commitEditingInProgress = true;
         this._textViewer.readOnly = true;
+        this._editButton.toggled = false;
         this.editContent(this._textModel.text, didEditContent.bind(this));
     },
 
@@ -874,18 +807,45 @@ WebInspector.SourceFrame.prototype = {
         this._setReadOnly(true);
     },
 
+    get readOnly()
+    {
+        return this._textViewer.readOnly;
+    },
+
     _setReadOnly: function(readOnly)
     {
+        if (!readOnly && this.popoverHelper)
+            this.popoverHelper.hidePopover();
+
         this._textViewer.readOnly = readOnly;
+        this._editButton.toggled = !readOnly;
         WebInspector.markBeingEdited(this._textViewer.element, !readOnly);
         if (readOnly)
             this._delegate.setScriptSourceIsBeingEdited(false);
-    }
+    },
+
+    contentChanged: function()
+    {
+        if (!this._contentRequested || !this._textViewer.readOnly)
+            return;
+        this._delegate.requestContent(this._initializeTextViewer.bind(this));
+    },
+
+
+    shouldShowPopover: function(element) { },
+
+    onShowPopover: function(element, showCallback) { },
+
+    onHidePopover: function() { },
 }
 
 WebInspector.SourceFrame.prototype.__proto__ = WebInspector.View.prototype;
 
 
+/**
+ * @implements {WebInspector.TextViewerDelegate}
+ * @constructor
+ */
 WebInspector.TextViewerDelegateForSourceFrame = function(sourceFrame)
 {
     this._sourceFrame = sourceFrame;
@@ -894,7 +854,7 @@ WebInspector.TextViewerDelegateForSourceFrame = function(sourceFrame)
 WebInspector.TextViewerDelegateForSourceFrame.prototype = {
     doubleClick: function(lineNumber)
     {
-        this._sourceFrame.doubleClick(lineNumber);
+        this._sourceFrame.startEditing(lineNumber);
     },
 
     beforeTextChanged: function()
@@ -931,83 +891,41 @@ WebInspector.TextViewerDelegateForSourceFrame.prototype = {
     {
         return this._sourceFrame.suggestedFileName();
     }
-};
+}
 
 WebInspector.TextViewerDelegateForSourceFrame.prototype.__proto__ = WebInspector.TextViewerDelegate.prototype;
 
 
+/**
+ * @interface
+ */
 WebInspector.SourceFrameDelegate = function()
 {
 }
 
 WebInspector.SourceFrameDelegate.prototype = {
-    requestContent: function(callback)
-    {
-        // Should be implemented by subclasses.
-    },
+    requestContent: function(callback) { },
 
-    debuggingSupported: function()
-    {
-        return false;
-    },
+    setBreakpoint: function(lineNumber, condition, enabled) { },
 
-    setBreakpoint: function(lineNumber, condition, enabled)
-    {
-        // Should be implemented by subclasses.
-    },
+    removeBreakpoint: function(lineNumber) { },
 
-    removeBreakpoint: function(lineNumber)
-    {
-        // Should be implemented by subclasses.
-    },
+    updateBreakpoint: function(lineNumber, condition, enabled) { },
 
-    updateBreakpoint: function(lineNumber, condition, enabled)
-    {
-        // Should be implemented by subclasses.
-    },
+    findBreakpoint: function(lineNumber) { },
 
-    findBreakpoint: function(lineNumber)
-    {
-        // Should be implemented by subclasses.
-    },
+    continueToLine: function(lineNumber) { },
 
-    continueToLine: function(lineNumber)
-    {
-        // Should be implemented by subclasses.
-    },
+    canEditScriptSource: function() { return false; },
 
-    canEditScriptSource: function()
-    {
-        return false;
-    },
+    setScriptSource: function(text, callback) { },
 
-    setScriptSource: function(text, callback)
-    {
-        // Should be implemented by subclasses.
-    },
+    setScriptSourceIsBeingEdited: function(inEditMode) { },
 
-    setScriptSourceIsBeingEdited: function(inEditMode)
-    {
-        // Should be implemented by subclasses.
-    },
-
-    debuggerPaused: function()
-    {
-        // Should be implemented by subclasses.
-    },
-
-    evaluateInSelectedCallFrame: function(string)
-    {
-        // Should be implemented by subclasses.
-    },
-
-    releaseEvaluationResult: function()
-    {
-        // Should be implemented by subclasses.
-    },
-
-    suggestedFileName: function()
-    {
-        // Should be implemented by subclasses.
-    }
+    suggestedFileName: function() { }
 }
+
+/**
+ * Default implementation.
+ */
+WebInspector.SourceFrameDelegate.stub = Object.create(WebInspector.SourceFrameDelegate.prototype);

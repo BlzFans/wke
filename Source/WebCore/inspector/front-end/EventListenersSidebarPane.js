@@ -27,6 +27,10 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @constructor
+ * @extends {WebInspector.SidebarPane}
+ */
 WebInspector.EventListenersSidebarPane = function()
 {
     WebInspector.SidebarPane.call(this, WebInspector.UIString("Event Listeners"));
@@ -56,6 +60,8 @@ WebInspector.EventListenersSidebarPane = function()
     this.settingsSelectElement.addEventListener("change", this._changeSetting.bind(this), false);
 
     this.titleElement.appendChild(this.settingsSelectElement);
+
+    this._linkifier = WebInspector.debuggerPresentationModel.createLinkifier();
 }
 
 WebInspector.EventListenersSidebarPane._objectGroupName = "event-listeners-sidebar-pane";
@@ -64,6 +70,8 @@ WebInspector.EventListenersSidebarPane.prototype = {
     update: function(node)
     {
         RuntimeAgent.releaseObjectGroup(WebInspector.EventListenersSidebarPane._objectGroupName);
+        this._linkifier.reset();
+
         var body = this.bodyElement;
         body.removeChildren();
         this.sections = [];
@@ -84,14 +92,14 @@ WebInspector.EventListenersSidebarPane.prototype = {
                 var type = eventListener.type;
                 var section = sectionMap[type];
                 if (!section) {
-                    section = new WebInspector.EventListenersSection(type, node.id);
+                    section = new WebInspector.EventListenersSection(type, node.id, self._linkifier);
                     sectionMap[type] = section;
                     sectionNames.push(type);
                     self.sections.push(section);
                 }
                 section.addListener(eventListener);
             }
-            
+
             if (sectionNames.length === 0) {
                 var div = document.createElement("div");
                 div.className = "info";
@@ -124,10 +132,15 @@ WebInspector.EventListenersSidebarPane.prototype = {
 
 WebInspector.EventListenersSidebarPane.prototype.__proto__ = WebInspector.SidebarPane.prototype;
 
-WebInspector.EventListenersSection = function(title, nodeId)
+/**
+ * @constructor
+ * @extends {WebInspector.PropertiesSection}
+ */
+WebInspector.EventListenersSection = function(title, nodeId, linkifier)
 {
     this.eventListeners = [];
     this._nodeId = nodeId;
+    this._linkifier = linkifier;
     WebInspector.PropertiesSection.call(this, title);
 
     // Changed from a Properties List
@@ -158,7 +171,7 @@ WebInspector.EventListenersSection.prototype = {
         var length = filteredEventListeners.length;
         for (var i = 0; i < length; ++i) {
             var eventListener = filteredEventListeners[i];
-            var eventListenerBar = new WebInspector.EventListenerBar(eventListener, this._nodeId);
+            var eventListenerBar = new WebInspector.EventListenerBar(eventListener, this._nodeId, this._linkifier);
             this.eventBars.appendChild(eventListenerBar.element);
         }
     },
@@ -171,13 +184,18 @@ WebInspector.EventListenersSection.prototype = {
 
 WebInspector.EventListenersSection.prototype.__proto__ = WebInspector.PropertiesSection.prototype;
 
-WebInspector.EventListenerBar = function(eventListener, nodeId)
+/**
+ * @constructor
+ * @extends {WebInspector.ObjectPropertiesSection}
+ */
+WebInspector.EventListenerBar = function(eventListener, nodeId, linkifier)
 {
+    WebInspector.ObjectPropertiesSection.call(this);
+
     this.eventListener = eventListener;
     this._nodeId = nodeId;
-    WebInspector.ObjectPropertiesSection.call(this);
     this._setNodeTitle();
-    this._setFunctionSubtitle();
+    this._setFunctionSubtitle(linkifier);
     this.editable = false;
     this.element.className = "event-bar"; /* Changed from "section" */
     this.headerElement.addStyleClass("source-code");
@@ -228,10 +246,10 @@ WebInspector.EventListenerBar.prototype = {
         }
 
         this.titleElement.removeChildren();
-        this.titleElement.appendChild(WebInspector.panels.elements.linkifyNodeReference(this.eventListener.node));
+        this.titleElement.appendChild(WebInspector.DOMPresentationUtils.linkifyNodeReference(this.eventListener.node));
     },
 
-    _setFunctionSubtitle: function()
+    _setFunctionSubtitle: function(linkifier)
     {
         // Requires that Function.toString() return at least the function's signature.
         if (this.eventListener.location) {
@@ -240,7 +258,7 @@ WebInspector.EventListenerBar.prototype = {
             var url = this.eventListener.location.scriptId;
             var lineNumber = this.eventListener.location.lineNumber - 1;
             var columnNumber = 0;
-            var urlElement = WebInspector.debuggerPresentationModel.linkifyLocation(url, lineNumber, columnNumber);
+            var urlElement = linkifier.linkifyLocation(url, lineNumber, columnNumber);
             this.subtitleElement.appendChild(urlElement);
         } else {
             var match = this.eventListener.handlerBody.match(/function ([^\(]+?)\(/);

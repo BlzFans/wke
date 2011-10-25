@@ -58,17 +58,17 @@ WebInspector.ProfileDataGridNode.prototype = {
         data["function"] = this.functionName;
         data["calls"] = this.numberOfCalls;
 
-        if (this.profileView.showSelfTimeAsPercent)
+        if (this.profileView.showSelfTimeAsPercent.get())
             data["self"] = WebInspector.UIString("%.2f%%", this.selfPercent);
         else
             data["self"] = formatMilliseconds(this.selfTime);
 
-        if (this.profileView.showTotalTimeAsPercent)
+        if (this.profileView.showTotalTimeAsPercent.get())
             data["total"] = WebInspector.UIString("%.2f%%", this.totalPercent);
         else
             data["total"] = formatMilliseconds(this.totalTime);
 
-        if (this.profileView.showAverageTimeAsPercent)
+        if (this.profileView.showAverageTimeAsPercent.get())
             data["average"] = WebInspector.UIString("%.2f%%", this.averagePercent);
         else
             data["average"] = formatMilliseconds(this.averageTime);
@@ -98,7 +98,8 @@ WebInspector.ProfileDataGridNode.prototype = {
         if (this.profileNode.url) {
             // FIXME(62725): profileNode should reference a debugger location.
             var lineNumber = this.profileNode.lineNumber ? this.profileNode.lineNumber - 1 : 0;
-            var urlElement = WebInspector.debuggerPresentationModel.linkifyLocation(this.profileNode.url, lineNumber, 0, "profile-node-file");
+            var urlElement = this.profileView._linkifier.linkifyLocation(this.profileNode.url, lineNumber, 0, "profile-node-file");
+            urlElement.style.maxWidth = "75%";
             cell.insertBefore(urlElement, cell.firstChild);
         }
 

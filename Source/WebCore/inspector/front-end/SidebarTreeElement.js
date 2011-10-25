@@ -23,6 +23,10 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @constructor
+ * @extends {TreeElement}
+ */
 WebInspector.SidebarSectionTreeElement = function(title, representedObject, hasChildren)
 {
     TreeElement.call(this, title.escapeHTML(), representedObject || {}, hasChildren);
@@ -63,9 +67,16 @@ WebInspector.SidebarSectionTreeElement.prototype = {
 
 WebInspector.SidebarSectionTreeElement.prototype.__proto__ = TreeElement.prototype;
 
+/**
+ * @constructor
+ * @extends {TreeElement}
+ * @param {string=} subtitle
+ * @param {Object=} representedObject
+ * @param {boolean=} hasChildren
+ */
 WebInspector.SidebarTreeElement = function(className, title, subtitle, representedObject, hasChildren)
 {
-    TreeElement.call(this, "", representedObject || {}, hasChildren);
+    TreeElement.call(this, "", representedObject, hasChildren);
 
     if (hasChildren) {
         this.disclosureButton = document.createElement("button");

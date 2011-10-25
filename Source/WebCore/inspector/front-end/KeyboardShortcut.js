@@ -32,7 +32,7 @@
  */
 WebInspector.KeyboardShortcut = function()
 {
-};
+}
 
 /**
  * Constants for encoding modifier key set as a bit mask.
@@ -93,17 +93,15 @@ WebInspector.KeyboardShortcut.Keys = {
  * Creates a number encoding keyCode in the lower 8 bits and modifiers mask in the higher 8 bits.
  * It is useful for matching pressed keys.
  * keyCode is the Code of the key, or a character "a-z" which is converted to a keyCode value.
- * optModifiers is an Optional list of modifiers passed as additional paramerters.
+ * @param {number=} modifiers Optional list of modifiers passed as additional paramerters.
  */
-WebInspector.KeyboardShortcut.makeKey = function(keyCode, optModifiers)
+WebInspector.KeyboardShortcut.makeKey = function(keyCode, modifiers)
 {
     if (typeof keyCode === "string")
         keyCode = keyCode.charCodeAt(0) - 32;
-    var modifiers = WebInspector.KeyboardShortcut.Modifiers.None;
-    for (var i = 1; i < arguments.length; i++)
-        modifiers |= arguments[i];
+    modifiers = modifiers || WebInspector.KeyboardShortcut.Modifiers.None;
     return WebInspector.KeyboardShortcut._makeKeyFromCodeAndModifiers(keyCode, modifiers);
-};
+}
 
 WebInspector.KeyboardShortcut.makeKeyFromEvent = function(keyboardEvent)
 {
@@ -117,20 +115,22 @@ WebInspector.KeyboardShortcut.makeKeyFromEvent = function(keyboardEvent)
     if (keyboardEvent.metaKey)
         modifiers |= WebInspector.KeyboardShortcut.Modifiers.Meta;
     return WebInspector.KeyboardShortcut._makeKeyFromCodeAndModifiers(keyboardEvent.keyCode, modifiers);
-};
+}
 
-WebInspector.KeyboardShortcut.makeDescriptor = function(key, optModifiers)
+/**
+ * @param {number=} modifiers
+ */
+WebInspector.KeyboardShortcut.makeDescriptor = function(key, modifiers)
 {
-    var modifiers = 0;
-    for (var i = 1; i < arguments.length; i++)
-        modifiers |= arguments[i];
-
     return {
         key: WebInspector.KeyboardShortcut.makeKey(typeof key === "string" ? key : key.code, modifiers),
         name: WebInspector.KeyboardShortcut.shortcutToString(key, modifiers)
     };
 }
 
+/**
+ * @param {number=} modifiers
+ */
 WebInspector.KeyboardShortcut.shortcutToString = function(key, modifiers)
 {
     return WebInspector.KeyboardShortcut._modifiersToString(modifiers) + WebInspector.KeyboardShortcut._keyName(key);

@@ -1,6 +1,7 @@
 <!DOCTYPE RCC><RCC version="1.0">
 <qresource prefix="/webkit/inspector">
     <file>inspector.html</file>
+    <file>AdvancedSearchController.js</file>
     <file>ApplicationCacheItemsView.js</file>
     <file>AuditCategories.js</file>
     <file>AuditFormatters.js</file>
@@ -15,10 +16,13 @@
     <file>CallStackSidebarPane.js</file>
     <file>Checkbox.js</file>
     <file>Color.js</file>
+    <file>CompilerSourceMapping.js</file>
+    <file>CompilerSourceMappingProvider.js</file>
     <file>ConsoleMessage.js</file>
     <file>ConsoleModel.js</file>
     <file>ConsolePanel.js</file>
     <file>ConsoleView.js</file>
+    <file>ContentProviders.js</file>
     <file>ContextMenu.js</file>
     <file>CookieItemsView.js</file>
     <file>CookieParser.js</file>
@@ -34,9 +38,9 @@
     <file>DataGrid.js</file>
     <file>DebuggerModel.js</file>
     <file>DebuggerPresentationModel.js</file>
-    <file>SourceFile.js</file>
     <file>DOMAgent.js</file>
     <file>DOMBreakpointsSidebarPane.js</file>
+    <file>DOMPresentationUtils.js</file>
     <file>DOMStorage.js</file>
     <file>DOMStorageItemsView.js</file>
     <file>DOMSyntaxHighlighter.js</file>
@@ -47,13 +51,13 @@
     <file>EventListenersSidebarPane.js</file>
     <file>ExtensionAPI.js</file>
     <file>ExtensionAuditCategory.js</file>
-    <file>ExtensionCommon.js</file>
     <file>ExtensionPanel.js</file>
     <file>ExtensionRegistryStub.js</file>
     <file>ExtensionServer.js</file>
     <file>FontView.js</file>
     <file>GoToLineDialog.js</file>
     <file>HAREntry.js</file>
+    <file>HandlerRegistry.js</file>
     <file>HeapSnapshot.js</file>
     <file>HeapSnapshotProxy.js</file>
     <file>HeapSnapshotWorker.js</file>
@@ -66,6 +70,7 @@
     <file>InspectorFrontendHostStub.js</file>
     <file>JavaScriptContextManager.js</file>
     <file>JavaScriptFormatter.js</file>
+    <file>JavaScriptSourceFrame.js</file>
     <file>KeyboardShortcut.js</file>
     <file>MetricsSidebarPane.js</file>
     <file>NetworkItemView.js</file>
@@ -73,6 +78,7 @@
     <file>NetworkManager.js</file>
     <file>NetworkPanel.js</file>
     <file>Object.js</file>
+    <file>ObjectPopoverHelper.js</file>
     <file>ObjectPropertiesSection.js</file>
     <file>Panel.js</file>
     <file>PanelEnablerView.js</file>
@@ -84,6 +90,7 @@
     <file>ProfileView.js</file>
     <file>PropertiesSection.js</file>
     <file>PropertiesSidebarPane.js</file>
+    <file>RawSourceCode.js</file>
     <file>RemoteObject.js</file>
     <file>Resource.js</file>
     <file>ResourceCategory.js</file>
@@ -101,6 +108,7 @@
     <file>ScriptFormatter.js</file>
     <file>ScriptFormatterWorker.js</file>
     <file>ScriptsPanel.js</file>
+    <file>ScriptsSearchScope.js</file>
     <file>SearchController.js</file>
     <file>Section.js</file>
     <file>Settings.js</file>
@@ -132,6 +140,7 @@
     <file>TopDownProfileDataGridTree.js</file>
     <file>treeoutline.js</file>
     <file>UISourceCode.js</file>
+    <file>UIUtils.js</file>
     <file>UserMetrics.js</file>
     <file>utilities.js</file>
     <file>View.js</file>

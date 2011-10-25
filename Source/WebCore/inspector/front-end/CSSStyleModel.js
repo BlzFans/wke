@@ -46,12 +46,22 @@ WebInspector.CSSStyleModel.parseRuleArrayPayload = function(ruleArray)
 }
 
 WebInspector.CSSStyleModel.Events = {
-    StyleSheetChanged: 0
+    StyleSheetChanged: "StyleSheetChanged"
 }
 
 WebInspector.CSSStyleModel.prototype = {
+    /**
+     * @param {DOMAgent.NodeId} nodeId
+     * @param {?Array.<string>|undefined} forcedPseudoClasses
+     * @param {function(?*)} userCallback
+     */
     getStylesAsync: function(nodeId, forcedPseudoClasses, userCallback)
     {
+        /**
+         * @param {function(?*)} userCallback
+         * @param {?Protocol.Error} error
+         * @param {?CSSAgent.CSSNodeStyles} payload
+         */
         function callback(userCallback, error, payload)
         {
             if (error) {
@@ -98,8 +108,17 @@ WebInspector.CSSStyleModel.prototype = {
         CSSAgent.getStylesForNode(nodeId, forcedPseudoClasses || [], callback.bind(null, userCallback));
     },
 
+    /**
+     * @param {DOMAgent.NodeId} nodeId
+     * @param {function(?WebInspector.CSSStyleDeclaration)} userCallback
+     */
     getComputedStyleAsync: function(nodeId, userCallback)
     {
+        /**
+         * @param {function(?WebInspector.CSSStyleDeclaration)} userCallback
+         * @param {?Protocol.Error} error
+         * @param {?CSSAgent.CSSStyle} stylePayload
+         */
         function callback(userCallback, error, stylePayload)
         {
             if (error)
@@ -111,8 +130,17 @@ WebInspector.CSSStyleModel.prototype = {
         CSSAgent.getComputedStyleForNode(nodeId, callback.bind(null, userCallback));
     },
 
+    /**
+     * @param {DOMAgent.NodeId} nodeId
+     * @param {function(?WebInspector.CSSStyleDeclaration)} userCallback
+     */
     getInlineStyleAsync: function(nodeId, userCallback)
     {
+        /**
+         * @param {function(?WebInspector.CSSStyleDeclaration)} userCallback
+         * @param {?Protocol.Error} error
+         * @param {?CSSAgent.CSSStyle} stylePayload
+         */
         function callback(userCallback, error, stylePayload)
         {
             if (error)
@@ -124,8 +152,21 @@ WebInspector.CSSStyleModel.prototype = {
         CSSAgent.getInlineStyleForNode(nodeId, callback.bind(null, userCallback));
     },
 
+    /**
+     * @param {CSSAgent.CSSRuleId} ruleId
+     * @param {DOMAgent.NodeId} nodeId
+     * @param {string} newSelector
+     * @param {function(WebInspector.CSSRule, boolean)} successCallback
+     * @param {function()} failureCallback
+     */
     setRuleSelector: function(ruleId, nodeId, newSelector, successCallback, failureCallback)
     {
+        /**
+         * @param {DOMAgent.NodeId} nodeId
+         * @param {function(WebInspector.CSSRule, boolean)} successCallback
+         * @param {*} rulePayload
+         * @param {?Array.<DOMAgent.NodeId>} selectedNodeIds
+         */
         function checkAffectsCallback(nodeId, successCallback, rulePayload, selectedNodeIds)
         {
             if (!selectedNodeIds)
@@ -136,9 +177,16 @@ WebInspector.CSSStyleModel.prototype = {
             this._fireStyleSheetChanged(rule.id.styleSheetId, true);
         }
 
-        function callback(nodeId, successCallback, failureCallback, error, newSelector, rulePayload)
+        /**
+         * @param {DOMAgent.NodeId} nodeId
+         * @param {function(WebInspector.CSSRule, boolean)} successCallback
+         * @param {function()} failureCallback
+         * @param {?Protocol.Error} error
+         * @param {string} newSelector
+         * @param {*=} rulePayload
+         */
+        function callback(nodeId, successCallback, failureCallback, newSelector, error, rulePayload)
         {
-            // FIXME: looks like rulePayload is always null.
             if (error)
                 failureCallback();
             else {
@@ -153,6 +201,12 @@ WebInspector.CSSStyleModel.prototype = {
         CSSAgent.setRuleSelector(ruleId, newSelector, callback.bind(this, nodeId, successCallback, failureCallback, newSelector));
     },
 
+    /**
+     * @param {DOMAgent.NodeId} nodeId
+     * @param {string} selector
+     * @param {function(WebInspector.CSSRule, boolean)} successCallback
+     * @param {function()} failureCallback
+     */
     addRule: function(nodeId, selector, successCallback, failureCallback)
     {
         function checkAffectsCallback(nodeId, successCallback, rulePayload, selectedNodeIds)
@@ -166,6 +220,13 @@ WebInspector.CSSStyleModel.prototype = {
             this._fireStyleSheetChanged(rule.id.styleSheetId, true);
         }
 
+        /**
+         * @param {function(WebInspector.CSSRule, boolean)} successCallback
+         * @param {function()} failureCallback
+         * @param {string} selector
+         * @param {?Protocol.Error} error
+         * @param {?CSSAgent.CSSRule} rulePayload
+         */
         function callback(successCallback, failureCallback, selector, error, rulePayload)
         {
             if (error) {
@@ -191,6 +252,9 @@ WebInspector.CSSStyleModel.prototype = {
         return node.ownerDocumentElement().id;
     },
 
+    /**
+     * @param {function()=} callback
+     */
     _fireStyleSheetChanged: function(styleSheetId, majorChange, callback)
     {
         callback = callback || function() {};
@@ -242,7 +306,7 @@ WebInspector.CSSStyleDeclaration = function(payload)
 
     var propertyIndex = 0;
     for (var i = 0; i < payloadPropertyCount; ++i) {
-        var property = new WebInspector.CSSProperty.parsePayload(this, i, payload.cssProperties[i]);
+        var property = WebInspector.CSSProperty.parsePayload(this, i, payload.cssProperties[i]);
         this._allProperties.push(property);
         if (property.disabled)
             this.__disabledProperties[i] = property;
@@ -404,7 +468,7 @@ WebInspector.CSSStyleDeclaration.prototype = {
             }
         }
 
-        CSSAgent.setPropertyText(this.id, index, name + ": " + value + ";", false, callback.bind(null, userCallback));
+        CSSAgent.setPropertyText(this.id, index, name + ": " + value + ";", false, callback.bind(this, userCallback));
     },
 
     appendProperty: function(name, value, userCallback)
@@ -657,10 +721,15 @@ WebInspector.CSSStyleModelResourceBinding.prototype = {
     setContent: function(resource, content, majorChange, userCallback)
     {
         if (this._urlToStyleSheetId[resource.url]) {
-            this._innerSetContent(resource.url, content, majorChange, userCallback);
+            this._innerSetContent(resource.url, content, majorChange, userCallback, null);
             return;
         }
         this._loadStyleSheetHeaders(this._innerSetContent.bind(this, resource.url, content, majorChange, userCallback));
+    },
+
+    canSetContent: function()
+    {
+        return true;
     },
 
     _inspectedURLChanged: function(event)
@@ -713,7 +782,7 @@ WebInspector.CSSStyleModelResourceBinding.prototype = {
             var url = this._styleSheetIdToURL[styleSheetId];
             if (!url)
                 return;
-    
+
             var resource = WebInspector.resourceForURL(url);
             if (!resource)
                 return;
@@ -732,3 +801,8 @@ WebInspector.CSSStyleModelResourceBinding.prototype = {
 }
 
 WebInspector.CSSStyleModelResourceBinding.prototype.__proto__ = WebInspector.ResourceDomainModelBinding.prototype;
+
+/**
+ * @type {WebInspector.CSSStyleModel}
+ */
+WebInspector.cssModel = null;

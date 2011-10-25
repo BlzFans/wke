@@ -27,6 +27,10 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @extends {WebInspector.View}
+ * @constructor
+ */
 WebInspector.ResourceView = function(resource)
 {
     WebInspector.View.call(this);
@@ -70,9 +74,13 @@ WebInspector.ResourceView.nonSourceViewForResource = function(resource)
     }
 }
 
+/**
+ * @extends {WebInspector.SourceFrame}
+ * @constructor
+ */
 WebInspector.ResourceSourceFrame = function(resource)
 {
-    WebInspector.SourceFrame.call(this, new WebInspector.SourceFrameDelegate(resource), resource.url);
+    WebInspector.SourceFrame.call(this, WebInspector.SourceFrameDelegate.stub, resource.url);
     this._resource = resource;
 }
 
@@ -101,7 +109,7 @@ WebInspector.ResourceSourceFrame.prototype = {
             var mimeType = WebInspector.ResourceSourceFrame.mimeTypeForResource(this.resource);
             callback(mimeType, text);
         }
-        
+
         this.resource.requestContent(contentLoaded.bind(this));
     },
 
@@ -113,22 +121,19 @@ WebInspector.ResourceSourceFrame.prototype = {
 
 WebInspector.ResourceSourceFrame.prototype.__proto__ = WebInspector.SourceFrame.prototype;
 
+/**
+ * @constructor
+ * @extends {WebInspector.ResourceSourceFrame}
+ */
 WebInspector.EditableResourceSourceFrame = function(resource)
 {
     WebInspector.ResourceSourceFrame.call(this, resource);
 }
 
 WebInspector.EditableResourceSourceFrame.prototype = {
-    doubleClick: function(lineNumber)
+    canEditSource: function()
     {
-        if (!this.resource.isEditable())
-            return;
-
-        if (this._commitEditingInProgress)
-            return;
-
-        this._textViewer.readOnly = false;
-        WebInspector.markBeingEdited(this._textViewer.element, true);
+        return this.resource.isEditable() && !this._commitEditingInProgress;
     },
 
     editContent: function(newText, callback)
@@ -168,6 +173,10 @@ WebInspector.EditableResourceSourceFrame.prototype = {
 
 WebInspector.EditableResourceSourceFrame.prototype.__proto__ = WebInspector.ResourceSourceFrame.prototype;
 
+/**
+ * @extends {WebInspector.ResourceSourceFrame}
+ * @constructor
+ */
 WebInspector.ResourceRevisionSourceFrame = function(revision)
 {
     WebInspector.ResourceSourceFrame.call(this, revision.resource);

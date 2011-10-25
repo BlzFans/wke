@@ -39,6 +39,9 @@ WebInspector.NetworkLog = function()
 }
 
 WebInspector.NetworkLog.prototype = {
+    /**
+     * @return {Array.<WebInspector.Resource>}
+     */
     get resources()
     {
         return this._resources;
@@ -56,8 +59,17 @@ WebInspector.NetworkLog.prototype = {
         }
     },
 
+    /**
+     * @param {WebInspector.Event} event
+     */
     _onResourceStarted: function(event)
     {
-        this._resources.push(event.data);
+        var resource = /** @type {WebInspector.Resource} */ event.data;
+        this._resources.push(resource);
     }
 }
+
+/**
+ * @type {WebInspector.NetworkLog}
+ */
+WebInspector.networkLog = null;

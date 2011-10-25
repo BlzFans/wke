@@ -168,12 +168,12 @@ static unsigned computePseudoClassMask(InspectorArray* pseudoClassArray)
 }
 
 // static
-CSSStyleSheet* InspectorCSSAgent::parentStyleSheet(StyleBase* styleBase)
+CSSStyleSheet* InspectorCSSAgent::parentStyleSheet(CSSRule* rule)
 {
-    if (!styleBase)
+    if (!rule)
         return 0;
 
-    StyleSheet* styleSheet = styleBase->stylesheet();
+    StyleSheet* styleSheet = rule->stylesheet();
     if (styleSheet && styleSheet->isCSSStyleSheet())
         return static_cast<CSSStyleSheet*>(styleSheet);
 
@@ -181,11 +181,9 @@ CSSStyleSheet* InspectorCSSAgent::parentStyleSheet(StyleBase* styleBase)
 }
 
 // static
-CSSStyleRule* InspectorCSSAgent::asCSSStyleRule(StyleBase* styleBase)
+CSSStyleRule* InspectorCSSAgent::asCSSStyleRule(CSSRule* rule)
 {
-    if (!styleBase->isStyleRule())
-        return 0;
-    CSSRule* rule = static_cast<CSSRule*>(styleBase);
+    // NOTE: CSSPageRule inherits from CSSStyleRule, so isStyleRule() is not enough.
     if (rule->type() != CSSRule::STYLE_RULE)
         return 0;
     return static_cast<CSSStyleRule*>(rule);
@@ -490,11 +488,11 @@ void InspectorCSSAgent::collectStyleSheets(CSSStyleSheet* styleSheet, InspectorA
     InspectorStyleSheet* inspectorStyleSheet = bindStyleSheet(static_cast<CSSStyleSheet*>(styleSheet));
     result->pushObject(inspectorStyleSheet->buildObjectForStyleSheetInfo());
     for (unsigned i = 0, size = styleSheet->length(); i < size; ++i) {
-        StyleBase* styleBase = styleSheet->item(i);
-        if (styleBase->isImportRule()) {
-            StyleBase* importedStyleSheet = static_cast<CSSImportRule*>(styleBase)->styleSheet();
-            if (importedStyleSheet && importedStyleSheet->isCSSStyleSheet())
-                collectStyleSheets(static_cast<CSSStyleSheet*>(importedStyleSheet), result);
+        CSSRule* rule = styleSheet->item(i);
+        if (rule->isImportRule()) {
+            CSSStyleSheet* importedStyleSheet = static_cast<CSSImportRule*>(rule)->styleSheet();
+            if (importedStyleSheet)
+                collectStyleSheets(importedStyleSheet, result);
         }
     }
 }

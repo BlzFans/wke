@@ -30,7 +30,7 @@
 
 #include "config.h"
 
-#if ENABLE(DOM_STORAGE) && ENABLE(INSPECTOR)
+#if ENABLE(INSPECTOR)
 
 #include "InspectorDOMStorageResource.h"
 
@@ -102,7 +102,7 @@ void InspectorDOMStorageResource::startReportingChangesToFrontend()
 void InspectorDOMStorageResource::handleEvent(ScriptExecutionContext*, Event* event)
 {
     ASSERT(m_frontend);
-    if (event->type() != eventNames().storageEvent || !event->isStorageEvent())
+    if (event->type() != eventNames().storageEvent || event->interfaceName() != eventNames().interfaceForStorageEvent)
         return;
 
     StorageEvent* storageEvent = static_cast<StorageEvent*>(event);
@@ -120,5 +120,5 @@ bool InspectorDOMStorageResource::operator==(const EventListener& listener)
 
 } // namespace WebCore
 
-#endif // ENABLE(DOM_STORAGE) && ENABLE(INSPECTOR)
+#endif // ENABLE(INSPECTOR)
 

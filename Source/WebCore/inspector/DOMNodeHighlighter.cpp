@@ -41,10 +41,13 @@
 #include "Node.h"
 #include "Page.h"
 #include "Range.h"
+#include "RenderBoxModelObject.h"
 #include "RenderInline.h"
+#include "RenderObject.h"
 #include "Settings.h"
 #include "StyledElement.h"
 #include "TextRun.h"
+#include <wtf/text/StringBuilder.h>
 
 namespace WebCore {
 
@@ -99,51 +102,44 @@ void drawOutlinedQuad(GraphicsContext& context, const FloatQuad& quad, const Col
     context.fillPath(quadPath);
 }
 
-void drawOutlinedQuadWithClip(GraphicsContext& context, const FloatQuad& quad, const FloatQuad& clipQuad, const Color& fillColor, const Color& outlineColor)
+void drawOutlinedQuadWithClip(GraphicsContext& context, const FloatQuad& quad, const FloatQuad& clipQuad, const Color& fillColor)
 {
     context.save();
     Path clipQuadPath = quadToPath(clipQuad);
     context.clipOut(clipQuadPath);
-    drawOutlinedQuad(context, quad, fillColor, outlineColor);
+    drawOutlinedQuad(context, quad, fillColor, Color::transparent);
     context.restore();
 }
 
 void drawHighlightForBox(GraphicsContext& context, const FloatQuad& contentQuad, const FloatQuad& paddingQuad, const FloatQuad& borderQuad, const FloatQuad& marginQuad, HighlightData* highlightData)
 {
-    bool hasMargin = highlightData->margin != Color::transparent || highlightData->marginOutline != Color::transparent;
-    bool hasBorder = highlightData->border != Color::transparent || highlightData->borderOutline != Color::transparent;
-    bool hasPadding = highlightData->padding != Color::transparent || highlightData->paddingOutline != Color::transparent;
+    bool hasMargin = highlightData->margin != Color::transparent;
+    bool hasBorder = highlightData->border != Color::transparent;
+    bool hasPadding = highlightData->padding != Color::transparent;
     bool hasContent = highlightData->content != Color::transparent || highlightData->contentOutline != Color::transparent;
 
     FloatQuad clipQuad;
     Color clipColor;
     if (hasMargin && (!hasBorder || marginQuad != borderQuad)) {
-        drawOutlinedQuadWithClip(context, marginQuad, borderQuad, highlightData->margin, highlightData->marginOutline);
+        drawOutlinedQuadWithClip(context, marginQuad, borderQuad, highlightData->margin);
         clipQuad = borderQuad;
-        clipColor = highlightData->marginOutline;
     }
     if (hasBorder && (!hasPadding || borderQuad != paddingQuad)) {
-        drawOutlinedQuadWithClip(context, borderQuad, paddingQuad, highlightData->border, highlightData->borderOutline);
+        drawOutlinedQuadWithClip(context, borderQuad, paddingQuad, highlightData->border);
         clipQuad = paddingQuad;
-        clipColor = highlightData->borderOutline;
     }
     if (hasPadding && (!hasContent || paddingQuad != contentQuad)) {
-        drawOutlinedQuadWithClip(context, paddingQuad, contentQuad, highlightData->padding, highlightData->paddingOutline);
+        drawOutlinedQuadWithClip(context, paddingQuad, contentQuad, highlightData->padding);
         clipQuad = contentQuad;
-        clipColor = highlightData->paddingOutline;
     }
     if (hasContent)
         drawOutlinedQuad(context, contentQuad, highlightData->content, highlightData->contentOutline);
-    else {
-        if (clipColor.isValid())
-            drawOutlinedQuadWithClip(context, clipQuad, clipQuad, clipColor, clipColor);
-    }
 }
 
-void drawHighlightForLineBoxesOrSVGRenderer(GraphicsContext& context, const Vector<FloatQuad>& lineBoxQuads, HighlightData* highlightData)
+void drawHighlightForSVGRenderer(GraphicsContext& context, const Vector<FloatQuad>& absoluteQuads, HighlightData* highlightData)
 {
-    for (size_t i = 0; i < lineBoxQuads.size(); ++i)
-        drawOutlinedQuad(context, lineBoxQuads[i], highlightData->content, highlightData->contentOutline);
+    for (size_t i = 0; i < absoluteQuads.size(); ++i)
+        drawOutlinedQuad(context, absoluteQuads[i], highlightData->content, Color::transparent);
 }
 
 inline LayoutSize frameToMainFrameOffset(Frame* frame)
@@ -225,7 +221,7 @@ TOOLTIP_FONT_FAMILIES(1, new AtomicString("dejavu sans mono"))
     }
 }
 
-void drawElementTitle(GraphicsContext& context, Node* node, const LayoutRect& boundingBox, const LayoutRect& anchorBox, const FloatRect& overlayRect, WebCore::Settings* settings)
+void drawElementTitle(GraphicsContext& context, Node* node, RenderObject* renderer, const LayoutRect& boundingBox, const LayoutRect& anchorBox, const FloatRect& overlayRect, WebCore::Settings* settings)
 {
 
     DEFINE_STATIC_LOCAL(Color, backgroundColor, (255, 255, 194));
@@ -235,22 +231,23 @@ void drawElementTitle(GraphicsContext& context, Node* node, const LayoutRect& bo
     DEFINE_STATIC_LOCAL(Color, pxAndBorderColor, (128, 128, 128));
 
     DEFINE_STATIC_LOCAL(String, pxString, ("px"));
-    const static UChar timesUChar[] = { 0x00D7, 0 };
+    const static UChar timesUChar[] = { 0x0020, 0x00D7, 0x0020, 0 };
     DEFINE_STATIC_LOCAL(String, timesString, (timesUChar)); // &times; string
 
     FontCachePurgePreventer fontCachePurgePreventer;
 
     Element* element = static_cast<Element*>(node);
     bool isXHTML = element->document()->isXHTMLDocument();
-    String nodeTitle(isXHTML ? element->nodeName() : element->nodeName().lower());
+    StringBuilder nodeTitle;
+    nodeTitle.append(isXHTML ? element->nodeName() : element->nodeName().lower());
     unsigned tagNameLength = nodeTitle.length();
 
     const AtomicString& idValue = element->getIdAttribute();
     unsigned idStringLength = 0;
     String idString;
     if (!idValue.isNull() && !idValue.isEmpty()) {
-        nodeTitle += "#";
-        nodeTitle += idValue;
+        nodeTitle.append("#");
+        nodeTitle.append(idValue);
         idStringLength = 1 + idValue.length();
     }
 
@@ -264,24 +261,28 @@ void drawElementTitle(GraphicsContext& context, Node* node, const LayoutRect& bo
             if (usedClassNames.contains(className))
                 continue;
             usedClassNames.add(className);
-            nodeTitle += ".";
-            nodeTitle += className;
+            nodeTitle.append(".");
+            nodeTitle.append(className);
             classesStringLength += 1 + className.length();
         }
     }
 
-    String widthNumberPart = " " + String::number(boundingBox.width());
-    nodeTitle += widthNumberPart + pxString;
-    nodeTitle += timesString;
-    String heightNumberPart = String::number(boundingBox.height());
-    nodeTitle += heightNumberPart + pxString;
+    RenderBoxModelObject* modelObject = renderer->isBoxModelObject() ? toRenderBoxModelObject(renderer) : 0;
+
+    String widthNumberPart = " " + String::number(modelObject ? adjustForAbsoluteZoom(modelObject->offsetWidth(), modelObject) : boundingBox.width());
+    nodeTitle.append(widthNumberPart);
+    nodeTitle.append(pxString);
+    nodeTitle.append(timesString);
+    String heightNumberPart = String::number(modelObject ? adjustForAbsoluteZoom(modelObject->offsetHeight(), modelObject) : boundingBox.height());
+    nodeTitle.append(heightNumberPart);
+    nodeTitle.append(pxString);
 
     FontDescription desc;
     setUpFontDescription(desc, settings);
     Font font = Font(desc, 0, 0);
     font.update(0);
 
-    TextRun nodeTitleRun(nodeTitle);
+    TextRun nodeTitleRun(nodeTitle.toString());
     LayoutPoint titleBasePoint = LayoutPoint(anchorBox.x(), anchorBox.maxY() - 1);
     titleBasePoint.move(rectInflatePx, rectInflatePx);
     LayoutRect titleRect = enclosingLayoutRect(font.selectionRectForText(nodeTitleRun, titleBasePoint, fontHeightPx));
@@ -368,7 +369,7 @@ void drawNodeHighlight(GraphicsContext& context, HighlightData* highlightData)
         return;
 
     LayoutSize mainFrameOffset = frameToMainFrameOffset(containingFrame);
-    LayoutRect boundingBox = renderer->absoluteBoundingBoxRect(true);
+    LayoutRect boundingBox = renderer->absoluteBoundingBoxRect();
 
     boundingBox.move(mainFrameOffset);
 
@@ -387,25 +388,51 @@ void drawNodeHighlight(GraphicsContext& context, HighlightData* highlightData)
     bool isSVGRenderer = false;
 #endif
 
-    if (renderer->isBox() && !isSVGRenderer) {
-        RenderBox* renderBox = toRenderBox(renderer);
+    if (isSVGRenderer) {
+        Vector<FloatQuad> absoluteQuads;
+        renderer->absoluteQuads(absoluteQuads);
+        for (unsigned i = 0; i < absoluteQuads.size(); ++i)
+            absoluteQuads[i] += mainFrameOffset;
 
-        // RenderBox returns the "pure" content area box, exclusive of the scrollbars (if present), which also count towards the content area in CSS.
-        LayoutRect contentBox = renderBox->contentBoxRect();
-        contentBox.setWidth(contentBox.width() + renderBox->verticalScrollbarWidth());
-        contentBox.setHeight(contentBox.height() + renderBox->horizontalScrollbarHeight());
+        drawHighlightForSVGRenderer(context, absoluteQuads, highlightData);
+    } else if (renderer->isBox() || renderer->isRenderInline()) {
+        LayoutRect contentBox;
+        LayoutRect paddingBox;
+        LayoutRect borderBox;
+        LayoutRect marginBox;
 
-        LayoutRect paddingBox(contentBox.x() - renderBox->paddingLeft(), contentBox.y() - renderBox->paddingTop(),
-                           contentBox.width() + renderBox->paddingLeft() + renderBox->paddingRight(), contentBox.height() + renderBox->paddingTop() + renderBox->paddingBottom());
-        LayoutRect borderBox(paddingBox.x() - renderBox->borderLeft(), paddingBox.y() - renderBox->borderTop(),
-                          paddingBox.width() + renderBox->borderLeft() + renderBox->borderRight(), paddingBox.height() + renderBox->borderTop() + renderBox->borderBottom());
-        LayoutRect marginBox(borderBox.x() - renderBox->marginLeft(), borderBox.y() - renderBox->marginTop(),
-                          borderBox.width() + renderBox->marginLeft() + renderBox->marginRight(), borderBox.height() + renderBox->marginTop() + renderBox->marginBottom());
+        if (renderer->isBox()) {
+            RenderBox* renderBox = toRenderBox(renderer);
 
-        FloatQuad absContentQuad = renderBox->localToAbsoluteQuad(FloatRect(contentBox));
-        FloatQuad absPaddingQuad = renderBox->localToAbsoluteQuad(FloatRect(paddingBox));
-        FloatQuad absBorderQuad = renderBox->localToAbsoluteQuad(FloatRect(borderBox));
-        FloatQuad absMarginQuad = renderBox->localToAbsoluteQuad(FloatRect(marginBox));
+            // RenderBox returns the "pure" content area box, exclusive of the scrollbars (if present), which also count towards the content area in CSS.
+            contentBox = renderBox->contentBoxRect();
+            contentBox.setWidth(contentBox.width() + renderBox->verticalScrollbarWidth());
+            contentBox.setHeight(contentBox.height() + renderBox->horizontalScrollbarHeight());
+
+            paddingBox = LayoutRect(contentBox.x() - renderBox->paddingLeft(), contentBox.y() - renderBox->paddingTop(),
+                    contentBox.width() + renderBox->paddingLeft() + renderBox->paddingRight(), contentBox.height() + renderBox->paddingTop() + renderBox->paddingBottom());
+            borderBox = LayoutRect(paddingBox.x() - renderBox->borderLeft(), paddingBox.y() - renderBox->borderTop(),
+                    paddingBox.width() + renderBox->borderLeft() + renderBox->borderRight(), paddingBox.height() + renderBox->borderTop() + renderBox->borderBottom());
+            marginBox = LayoutRect(borderBox.x() - renderBox->marginLeft(), borderBox.y() - renderBox->marginTop(),
+                    borderBox.width() + renderBox->marginLeft() + renderBox->marginRight(), borderBox.height() + renderBox->marginTop() + renderBox->marginBottom());
+        } else {
+            RenderInline* renderInline = toRenderInline(renderer);
+
+            // RenderInline's bounding box includes paddings and borders, excludes margins.
+            borderBox = renderInline->linesBoundingBox();
+            paddingBox = LayoutRect(borderBox.x() + renderInline->borderLeft(), borderBox.y() + renderInline->borderTop(),
+                    borderBox.width() - renderInline->borderLeft() - renderInline->borderRight(), borderBox.height() - renderInline->borderTop() - renderInline->borderBottom());
+            contentBox = LayoutRect(paddingBox.x() + renderInline->paddingLeft(), paddingBox.y() + renderInline->paddingTop(),
+                    paddingBox.width() - renderInline->paddingLeft() - renderInline->paddingRight(), paddingBox.height() - renderInline->paddingTop() - renderInline->paddingBottom());
+            // Ignore marginTop and marginBottom for inlines.
+            marginBox = LayoutRect(borderBox.x() - renderInline->marginLeft(), borderBox.y(),
+                    borderBox.width() + renderInline->marginLeft() + renderInline->marginRight(), borderBox.height());
+        }
+
+        FloatQuad absContentQuad = renderer->localToAbsoluteQuad(FloatRect(contentBox));
+        FloatQuad absPaddingQuad = renderer->localToAbsoluteQuad(FloatRect(paddingBox));
+        FloatQuad absBorderQuad = renderer->localToAbsoluteQuad(FloatRect(borderBox));
+        FloatQuad absMarginQuad = renderer->localToAbsoluteQuad(FloatRect(marginBox));
 
         absContentQuad.move(mainFrameOffset);
         absPaddingQuad.move(mainFrameOffset);
@@ -415,14 +442,6 @@ void drawNodeHighlight(GraphicsContext& context, HighlightData* highlightData)
         titleAnchorBox = absMarginQuad.enclosingBoundingBox();
 
         drawHighlightForBox(context, absContentQuad, absPaddingQuad, absBorderQuad, absMarginQuad, highlightData);
-    } else if (renderer->isRenderInline() || isSVGRenderer) {
-        // FIXME: We should show margins/padding/border for inlines.
-        Vector<FloatQuad> lineBoxQuads;
-        renderer->absoluteQuads(lineBoxQuads);
-        for (unsigned i = 0; i < lineBoxQuads.size(); ++i)
-            lineBoxQuads[i] += mainFrameOffset;
-
-        drawHighlightForLineBoxesOrSVGRenderer(context, lineBoxQuads, highlightData);
     }
 
     // Draw node title if necessary.
@@ -431,7 +450,7 @@ void drawNodeHighlight(GraphicsContext& context, HighlightData* highlightData)
         return;
 
     if (highlightData->showInfo)
-        drawElementTitle(context, node, boundingBox, titleAnchorBox, overlayRect, containingFrame->settings());
+        drawElementTitle(context, node, renderer, boundingBox, titleAnchorBox, overlayRect, containingFrame->settings());
 }
 
 void drawRectHighlight(GraphicsContext& context, Document* document, HighlightData* highlightData)

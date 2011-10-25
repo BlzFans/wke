@@ -42,6 +42,10 @@
 // | sed 's|unsigned\ int|var|' \
 // | sed 's|var\ yych|case 1: case 1: var yych|'
 
+/**
+ * @constructor
+ * @extends {WebInspector.SourceTokenizer}
+ */
 WebInspector.SourceJavaScriptTokenizer = function()
 {
     WebInspector.SourceTokenizer.call(this);
@@ -82,10 +86,11 @@ WebInspector.SourceJavaScriptTokenizer.prototype = {
     {
         var cursorOnEnter = cursor;
         var gotoCase = 1;
+        var YYMARKER;
         while (1) {
             switch (gotoCase)
             // Following comment is replaced with generated state machine.
-            
+
         {
             case 1: var yych;
             var yyaccept = 0;

@@ -197,7 +197,7 @@ WebInspector.HeapSnapshotWorker.prototype = {
 
     _postMessage: function(message)
     {
-        this._worker.postMessage(message);      
+        this._worker.postMessage(message);
     }
 };
 
@@ -310,9 +310,9 @@ WebInspector.HeapSnapshotProxy = function(worker, objectId)
 }
 
 WebInspector.HeapSnapshotProxy.prototype = {
-    aggregates: function(sortedIndexes, callback)
+    aggregates: function(sortedIndexes, key, filter, callback)
     {
-        this.callMethod(callback, "aggregates", sortedIndexes);
+        this.callMethod(callback, "aggregates", sortedIndexes, key, filter);
     },
 
     createDiff: function(className)
@@ -330,9 +330,9 @@ WebInspector.HeapSnapshotProxy.prototype = {
         return this.callFactoryMethod(null, "createNodesProvider", "WebInspector.HeapSnapshotProviderProxy", filter);
     },
 
-    createNodesProviderForClass: function(className)
+    createNodesProviderForClass: function(className, aggregatesKey)
     {
-        return this.callFactoryMethod(null, "createNodesProviderForClass", "WebInspector.HeapSnapshotProviderProxy", className);
+        return this.callFactoryMethod(null, "createNodesProviderForClass", "WebInspector.HeapSnapshotProviderProxy", className, aggregatesKey);
     },
 
     createNodesProviderForDominator: function(nodeIndex, filter)
@@ -360,6 +360,11 @@ WebInspector.HeapSnapshotProxy.prototype = {
         return !!this._objectId;
     },
 
+    get maxNodeId()
+    {
+        return this._staticData.maxNodeId;
+    },
+
     get nodeCount()
     {
         return this._staticData.nodeCount;
@@ -368,6 +373,11 @@ WebInspector.HeapSnapshotProxy.prototype = {
     nodeFieldValuesByIndex: function(fieldName, indexes, callback)
     {
         this.callMethod(callback, "nodeFieldValuesByIndex", fieldName, indexes);
+    },
+
+    get nodeFlags()
+    {
+        return this._staticData.nodeFlags;
     },
 
     pushBaseIds: function(snapshotId, className, nodeIds)
@@ -392,7 +402,7 @@ WebInspector.HeapSnapshotProxy.prototype = {
 
     startLoading: function(callback)
     {
-        setTimeout(callback, 0);
+        setTimeout(callback.bind(null, this), 0);
         return false;
     },
 

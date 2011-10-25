@@ -60,6 +60,7 @@ class ScriptCallStack;
 class ScriptExecutionContext;
 class ScriptProfile;
 class StorageArea;
+class WorkerContext;
 class WorkerContextProxy;
 class XMLHttpRequest;
 
@@ -81,7 +82,8 @@ public:
     static void didInsertDOMNode(Document*, Node*);
     static void willRemoveDOMNode(Document*, Node*);
     static void willModifyDOMAttr(Document*, Element*);
-    static void didModifyDOMAttr(Document*, Element*);
+    static void didModifyDOMAttr(Document*, Element*, const AtomicString& name, const AtomicString& value);
+    static void didRemoveDOMAttr(Document*, Element*, const AtomicString& name);
     static void characterDataModified(Document*, CharacterData*);
     static void didInvalidateStyleAttr(Document*, Node*);
     static void frameWindowDiscarded(Frame*, DOMWindow*);
@@ -95,7 +97,7 @@ public:
     static void didInstallTimer(ScriptExecutionContext*, int timerId, int timeout, bool singleShot);
     static void didRemoveTimer(ScriptExecutionContext*, int timerId);
 
-    static InspectorInstrumentationCookie willCallFunction(Frame*, const String& scriptName, int scriptLine);
+    static InspectorInstrumentationCookie willCallFunction(Page*, const String& scriptName, int scriptLine);
     static void didCallFunction(const InspectorInstrumentationCookie&);
     static InspectorInstrumentationCookie willChangeXHRReadyState(ScriptExecutionContext*, XMLHttpRequest* request);
     static void didChangeXHRReadyState(const InspectorInstrumentationCookie&);
@@ -138,11 +140,10 @@ public:
     static void didLoadXHRSynchronously(ScriptExecutionContext*);
     static void scriptImported(ScriptExecutionContext*, unsigned long identifier, const String& sourceString);
     static void didReceiveScriptResponse(ScriptExecutionContext*, unsigned long identifier);
-    static void domContentLoadedEventFired(Frame*, const KURL&);
-    static void loadEventFired(Frame*, const KURL&);
+    static void domContentLoadedEventFired(Frame*);
+    static void loadEventFired(Frame*);
     static void frameDetachedFromParent(Frame*);
     static void didCommitLoad(Frame*, DocumentLoader*);
-    static void frameDestroyed(Frame*);
     static void loaderDetachedFromFrame(Frame*, DocumentLoader*);
 
     static InspectorInstrumentationCookie willWriteHTML(Document*, unsigned int length, unsigned int startLine);
@@ -155,6 +156,11 @@ public:
     static void stopConsoleTiming(Page*, const String& title, PassRefPtr<ScriptCallStack>);
     static void consoleTimeStamp(Page*, PassRefPtr<ScriptArguments>);
 
+    static void didRegisterAnimationFrameCallback(Document*, int callbackId);
+    static void didCancelAnimationFrameCallback(Document*, int callbackId);
+    static InspectorInstrumentationCookie willFireAnimationFrameEvent(Document*, int callbackId);
+    static void didFireAnimationFrameEvent(const InspectorInstrumentationCookie&);
+
 #if ENABLE(JAVASCRIPT_DEBUGGER)
     static void addStartProfilingMessageToConsole(Page*, const String& title, unsigned lineNumber, const String& sourceURL);
     static void addProfile(Page*, RefPtr<ScriptProfile>, PassRefPtr<ScriptCallStack>);
@@ -162,19 +168,18 @@ public:
     static bool profilerEnabled(Page*);
 #endif
 
-#if ENABLE(DATABASE)
+#if ENABLE(SQL_DATABASE)
     static void didOpenDatabase(ScriptExecutionContext*, PassRefPtr<Database>, const String& domain, const String& name, const String& version);
 #endif
 
-#if ENABLE(DOM_STORAGE)
     static void didUseDOMStorage(Page*, StorageArea*, bool isLocalStorage, Frame*);
-#endif
 
 #if ENABLE(WORKERS)
     static void didStartWorkerContext(ScriptExecutionContext*, WorkerContextProxy*, const KURL&);
     static void didCreateWorker(ScriptExecutionContext*, intptr_t id, const String& url, bool isSharedWorker);
     static void didDestroyWorker(ScriptExecutionContext*, intptr_t id);
     static void workerContextTerminated(ScriptExecutionContext*, WorkerContextProxy*);
+    static void willEvaluateWorkerScript(WorkerContext*, int workerThreadStartMode);
 #endif
 
 #if ENABLE(WEB_SOCKETS)
@@ -185,10 +190,7 @@ public:
 #endif
 
     static void networkStateChanged(Page*);
-
-#if ENABLE(OFFLINE_WEB_APPLICATIONS)
     static void updateApplicationCacheStatus(Frame*);
-#endif
 
 #if ENABLE(INSPECTOR)
     static void frontendCreated() { s_frontendCounter += 1; }
@@ -210,7 +212,8 @@ private:
     static void willRemoveDOMNodeImpl(InstrumentingAgents*, Node*);
     static void didRemoveDOMNodeImpl(InstrumentingAgents*, Node*);
     static void willModifyDOMAttrImpl(InstrumentingAgents*, Element*);
-    static void didModifyDOMAttrImpl(InstrumentingAgents*, Element*);
+    static void didModifyDOMAttrImpl(InstrumentingAgents*, Element*, const AtomicString& name, const AtomicString& value);
+    static void didRemoveDOMAttrImpl(InstrumentingAgents*, Element*, const AtomicString& name);
     static void characterDataModifiedImpl(InstrumentingAgents*, CharacterData*);
     static void didInvalidateStyleAttrImpl(InstrumentingAgents*, Node*);
     static void frameWindowDiscardedImpl(InstrumentingAgents*, DOMWindow*);
@@ -268,11 +271,10 @@ private:
     static void didLoadXHRSynchronouslyImpl(InstrumentingAgents*);
     static void scriptImportedImpl(InstrumentingAgents*, unsigned long identifier, const String& sourceString);
     static void didReceiveScriptResponseImpl(InstrumentingAgents*, unsigned long identifier);
-    static void domContentLoadedEventFiredImpl(InstrumentingAgents*, Frame*, const KURL&);
-    static void loadEventFiredImpl(InstrumentingAgents*, Frame*, const KURL&);
+    static void domContentLoadedEventFiredImpl(InstrumentingAgents*, Frame*);
+    static void loadEventFiredImpl(InstrumentingAgents*, Frame*);
     static void frameDetachedFromParentImpl(InstrumentingAgents*, Frame*);
     static void didCommitLoadImpl(InstrumentingAgents*, Page*, DocumentLoader*);
-    static void frameDestroyedImpl(InstrumentingAgents*, Frame*);
     static void loaderDetachedFromFrameImpl(InstrumentingAgents*, DocumentLoader*);
 
     static InspectorInstrumentationCookie willWriteHTMLImpl(InstrumentingAgents*, unsigned int length, unsigned int startLine);
@@ -285,6 +287,11 @@ private:
     static void stopConsoleTimingImpl(InstrumentingAgents*, const String& title, PassRefPtr<ScriptCallStack>);
     static void consoleTimeStampImpl(InstrumentingAgents*, PassRefPtr<ScriptArguments>);
 
+    static void didRegisterAnimationFrameCallbackImpl(InstrumentingAgents*, int callbackId);
+    static void didCancelAnimationFrameCallbackImpl(InstrumentingAgents*, int callbackId);
+    static InspectorInstrumentationCookie willFireAnimationFrameEventImpl(InstrumentingAgents*, int callbackId);
+    static void didFireAnimationFrameEventImpl(const InspectorInstrumentationCookie&);
+
 #if ENABLE(JAVASCRIPT_DEBUGGER)
     static void addStartProfilingMessageToConsoleImpl(InstrumentingAgents*, const String& title, unsigned lineNumber, const String& sourceURL);
     static void addProfileImpl(InstrumentingAgents*, RefPtr<ScriptProfile>, PassRefPtr<ScriptCallStack>);
@@ -292,13 +299,11 @@ private:
     static bool profilerEnabledImpl(InstrumentingAgents*);
 #endif
 
-#if ENABLE(DATABASE)
+#if ENABLE(SQL_DATABASE)
     static void didOpenDatabaseImpl(InstrumentingAgents*, PassRefPtr<Database>, const String& domain, const String& name, const String& version);
 #endif
 
-#if ENABLE(DOM_STORAGE)
     static void didUseDOMStorageImpl(InstrumentingAgents*, StorageArea*, bool isLocalStorage, Frame*);
-#endif
 
 #if ENABLE(WORKERS)
     static void didStartWorkerContextImpl(InstrumentingAgents*, WorkerContextProxy*, const KURL&);
@@ -314,10 +319,8 @@ private:
     static void didCloseWebSocketImpl(InstrumentingAgents*, unsigned long identifier);
 #endif
 
-#if ENABLE(OFFLINE_WEB_APPLICATIONS)
     static void networkStateChangedImpl(InstrumentingAgents*);
     static void updateApplicationCacheStatusImpl(InstrumentingAgents*, Frame*);
-#endif
 
     static InstrumentingAgents* instrumentingAgentsForPage(Page*);
     static InstrumentingAgents* instrumentingAgentsForFrame(Frame*);
@@ -387,12 +390,21 @@ inline void InspectorInstrumentation::willModifyDOMAttr(Document* document, Elem
 #endif
 }
 
-inline void InspectorInstrumentation::didModifyDOMAttr(Document* document, Element* element)
+inline void InspectorInstrumentation::didModifyDOMAttr(Document* document, Element* element, const AtomicString& name, const AtomicString& value)
 {
 #if ENABLE(INSPECTOR)
     FAST_RETURN_IF_NO_FRONTENDS(void());
     if (InstrumentingAgents* instrumentingAgents = instrumentingAgentsForDocument(document))
-        didModifyDOMAttrImpl(instrumentingAgents, element);
+        didModifyDOMAttrImpl(instrumentingAgents, element, name, value);
+#endif
+}
+
+inline void InspectorInstrumentation::didRemoveDOMAttr(Document* document, Element* element, const AtomicString& name)
+{
+#if ENABLE(INSPECTOR)
+    FAST_RETURN_IF_NO_FRONTENDS(void());
+    if (InstrumentingAgents* instrumentingAgents = instrumentingAgentsForDocument(document))
+        didRemoveDOMAttrImpl(instrumentingAgents, element, name);
 #endif
 }
 
@@ -487,12 +499,11 @@ inline void InspectorInstrumentation::didRemoveTimer(ScriptExecutionContext* con
 #endif
 }
 
-
-inline InspectorInstrumentationCookie InspectorInstrumentation::willCallFunction(Frame* frame, const String& scriptName, int scriptLine)
+inline InspectorInstrumentationCookie InspectorInstrumentation::willCallFunction(Page* page, const String& scriptName, int scriptLine)
 {
 #if ENABLE(INSPECTOR)
     FAST_RETURN_IF_NO_FRONTENDS(InspectorInstrumentationCookie());
-    if (InstrumentingAgents* instrumentingAgents = instrumentingAgentsForFrame(frame))
+    if (InstrumentingAgents* instrumentingAgents = instrumentingAgentsForPage(page))
         return willCallFunctionImpl(instrumentingAgents, scriptName, scriptLine);
 #endif
     return InspectorInstrumentationCookie();
@@ -860,19 +871,19 @@ inline void InspectorInstrumentation::didReceiveScriptResponse(ScriptExecutionCo
 #endif
 }
 
-inline void InspectorInstrumentation::domContentLoadedEventFired(Frame* frame, const KURL& url)
+inline void InspectorInstrumentation::domContentLoadedEventFired(Frame* frame)
 {
 #if ENABLE(INSPECTOR)
     if (InstrumentingAgents* instrumentingAgents = instrumentingAgentsForFrame(frame))
-        domContentLoadedEventFiredImpl(instrumentingAgents, frame, url);
+        domContentLoadedEventFiredImpl(instrumentingAgents, frame);
 #endif
 }
 
-inline void InspectorInstrumentation::loadEventFired(Frame* frame, const KURL& url)
+inline void InspectorInstrumentation::loadEventFired(Frame* frame)
 {
 #if ENABLE(INSPECTOR)
     if (InstrumentingAgents* instrumentingAgents = instrumentingAgentsForFrame(frame))
-        loadEventFiredImpl(instrumentingAgents, frame, url);
+        loadEventFiredImpl(instrumentingAgents, frame);
 #endif
 }
 
@@ -894,14 +905,6 @@ inline void InspectorInstrumentation::didCommitLoad(Frame* frame, DocumentLoader
         return;
     if (InstrumentingAgents* instrumentingAgents = instrumentingAgentsForPage(page))
         didCommitLoadImpl(instrumentingAgents, page, loader);
-#endif
-}
-
-inline void InspectorInstrumentation::frameDestroyed(Frame* frame)
-{
-#if ENABLE(INSPECTOR)
-    if (InstrumentingAgents* instrumentingAgents = instrumentingAgentsForFrame(frame))
-        frameDestroyedImpl(instrumentingAgents, frame);
 #endif
 }
 
@@ -932,7 +935,6 @@ inline void InspectorInstrumentation::didWriteHTML(const InspectorInstrumentatio
 #endif
 }
 
-#if ENABLE(DOM_STORAGE)
 inline void InspectorInstrumentation::didUseDOMStorage(Page* page, StorageArea* storageArea, bool isLocalStorage, Frame* frame)
 {
 #if ENABLE(INSPECTOR)
@@ -940,7 +942,6 @@ inline void InspectorInstrumentation::didUseDOMStorage(Page* page, StorageArea* 
         didUseDOMStorageImpl(instrumentingAgents, storageArea, isLocalStorage, frame);
 #endif
 }
-#endif
 
 #if ENABLE(WORKERS)
 inline void InspectorInstrumentation::didStartWorkerContext(ScriptExecutionContext* context, WorkerContextProxy* proxy, const KURL& url)
@@ -1017,14 +1018,13 @@ inline void InspectorInstrumentation::didCloseWebSocket(ScriptExecutionContext* 
 
 inline void InspectorInstrumentation::networkStateChanged(Page* page)
 {
-#if ENABLE(INSPECTOR) && ENABLE(OFFLINE_WEB_APPLICATIONS)
+#if ENABLE(INSPECTOR)
     FAST_RETURN_IF_NO_FRONTENDS(void());
     if (InstrumentingAgents* instrumentingAgents = instrumentingAgentsForPage(page))
         networkStateChangedImpl(instrumentingAgents);
 #endif
 }
 
-#if ENABLE(OFFLINE_WEB_APPLICATIONS)
 inline void InspectorInstrumentation::updateApplicationCacheStatus(Frame* frame)
 {
 #if ENABLE(INSPECTOR)
@@ -1033,7 +1033,40 @@ inline void InspectorInstrumentation::updateApplicationCacheStatus(Frame* frame)
         updateApplicationCacheStatusImpl(instrumentingAgents, frame);
 #endif
 }
+
+inline void InspectorInstrumentation::didRegisterAnimationFrameCallback(Document* document, int callbackId)
+{
+#if ENABLE(INSPECTOR)
+    if (InstrumentingAgents* instrumentingAgents = instrumentingAgentsForDocument(document))
+        didRegisterAnimationFrameCallbackImpl(instrumentingAgents, callbackId);
 #endif
+}
+
+inline void InspectorInstrumentation::didCancelAnimationFrameCallback(Document* document, int callbackId)
+{
+#if ENABLE(INSPECTOR)
+    if (InstrumentingAgents* instrumentingAgents = instrumentingAgentsForDocument(document))
+        didCancelAnimationFrameCallbackImpl(instrumentingAgents, callbackId);
+#endif
+}
+
+inline InspectorInstrumentationCookie InspectorInstrumentation::willFireAnimationFrameEvent(Document* document, int callbackId)
+{
+#if ENABLE(INSPECTOR)
+    if (InstrumentingAgents* instrumentingAgents = instrumentingAgentsForDocument(document))
+        return willFireAnimationFrameEventImpl(instrumentingAgents, callbackId);
+#endif
+    return InspectorInstrumentationCookie();
+}
+
+inline void InspectorInstrumentation::didFireAnimationFrameEvent(const InspectorInstrumentationCookie& cookie)
+{
+#if ENABLE(INSPECTOR)
+    FAST_RETURN_IF_NO_FRONTENDS(void());
+    if (cookie.first)
+        didFireAnimationFrameEventImpl(cookie);
+#endif
+}
 
 #if ENABLE(INSPECTOR)
 inline bool InspectorInstrumentation::collectingHTMLParseErrors(Page* page)

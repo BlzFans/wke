@@ -28,6 +28,10 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @constructor
+ * @extends {WebInspector.Object}
+ */
 WebInspector.WorkerManager = function()
 {
     this._workerIdToWindow = {};
@@ -43,11 +47,17 @@ WebInspector.WorkerManager.isWorkerFrontend = function()
 WebInspector.WorkerManager.loaded = function()
 {
     var workerId = WebInspector.queryParamsObject["dedicatedWorkerId"];
-    if (!workerId) {
+    if (workerId)
+        WebInspector.WorkerManager._initializeDedicatedWorkerFrontend(workerId);
+    else
         WebInspector.workerManager = new WebInspector.WorkerManager();
-        return;
-    }
 
+    if (WebInspector.WorkerManager.isWorkerFrontend())
+        WebInspector.WorkerManager._calculateWorkerInspectorTitle();
+}
+
+WebInspector.WorkerManager._initializeDedicatedWorkerFrontend = function(workerId)
+{
     function receiveMessage(event)
     {
         var message = event.data;
@@ -64,6 +74,22 @@ WebInspector.WorkerManager.loaded = function()
     InspectorFrontendHost.loaded = function()
     {
         window.opener.postMessage({workerId: workerId, command: "loaded"}, "*");
+    }
+}
+
+WebInspector.WorkerManager._calculateWorkerInspectorTitle = function()
+{
+    var expression = "location.href";
+    if (WebInspector.queryParamsObject["isSharedWorker"])
+        expression += " + (this.name ? ' (' + this.name + ')' : '')";
+    RuntimeAgent.evaluate.invoke({expression:expression, doNotPauseOnExceptions:true, returnByValue: true}, evalCallback.bind(this));
+    function evalCallback(error, result, wasThrown)
+    {
+        if (error || wasThrown) {
+            console.error(error);
+            return;
+        }
+        InspectorFrontendHost.inspectedURLChanged(result.value);
     }
 }
 
@@ -103,12 +129,16 @@ WebInspector.WorkerManager.prototype = {
 
     _openInspectorWindow: function(workerId)
     {
-        var url = location.href + "&dedicatedWorkerId=" + workerId;
+        var url = window.location.href + "&dedicatedWorkerId=" + workerId;
         url = url.replace("docked=true&", "");
         // Set location=0 just to make sure the front-end will be opened in a separate window, not in new tab.
         var workerInspectorWindow = window.open(url, undefined, "location=0");
         this._workerIdToWindow[workerId] = workerInspectorWindow;
         workerInspectorWindow.addEventListener("beforeunload", this._workerInspectorClosing.bind(this, workerId), true);
+
+        // Listen to beforeunload in detached state and to the InspectorClosing event in case of attached inspector.
+        window.addEventListener("beforeunload", this._pageInspectorClosing.bind(this), true);
+        WebInspector.notifications.addEventListener(WebInspector.Events.InspectorClosing, this._pageInspectorClosing, this);
     },
 
     closeWorkerInspector: function(workerId)
@@ -125,8 +155,19 @@ WebInspector.WorkerManager.prototype = {
         this.dispatchEventToListeners(WebInspector.WorkerManager.Events.WorkersCleared);
     },
 
+    _pageInspectorClosing: function()
+    {
+        this._ignoreWorkerInspectorClosing = true;
+        for (var workerId in this._workerIdToWindow) {
+            this._workerIdToWindow[workerId].close();
+            WorkerAgent.disconnectFromWorker(parseInt(workerId, 10));
+        }
+    },
+
     _workerInspectorClosing: function(workerId, event)
     {
+        if (this._ignoreWorkerInspectorClosing)
+            return;
         delete this._workerIdToWindow[workerId];
         WorkerAgent.disconnectFromWorker(workerId);
         this.dispatchEventToListeners(WebInspector.WorkerManager.Events.WorkerInspectorClosed, workerId);
@@ -135,6 +176,10 @@ WebInspector.WorkerManager.prototype = {
 
 WebInspector.WorkerManager.prototype.__proto__ = WebInspector.Object.prototype;
 
+/**
+ * @constructor
+ * @implements {WorkerAgent.Dispatcher}
+ */
 WebInspector.DedicatedWorkerMessageForwarder = function(workerManager)
 {
     this._workerManager = workerManager;
@@ -144,8 +189,8 @@ WebInspector.DedicatedWorkerMessageForwarder = function(workerManager)
 WebInspector.DedicatedWorkerMessageForwarder.prototype = {
     _receiveMessage: function(event)
     {
-        var workerId = event.data.workerId;
-        workerId = parseInt(workerId);
+        var workerId = event.data["workerId"];
+        workerId = parseInt(workerId, 10);
         var command = event.data.command;
         var message = event.data.message;
 

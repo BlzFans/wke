@@ -27,6 +27,10 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @constructor
+ * @param {string=} subtitle
+ */
 WebInspector.Section = function(title, subtitle)
 {
     this.element = document.createElement("div");
@@ -118,10 +122,47 @@ WebInspector.Section.prototype = {
     set populated(x)
     {
         this._populated = x;
-        if (!x && this.onpopulate && this._expanded) {
-            this.onpopulate(this);
+        if (!x && this._expanded) {
+            this.onpopulate();
             this._populated = true;
         }
+    },
+
+    onpopulate: function()
+    {
+        // Overriden by subclasses.
+    },
+
+    get firstSibling()
+    {
+        var parent = this.element.parentElement;
+        if (!parent)
+            return null;
+
+        var childElement = parent.firstChild;
+        while (childElement) {
+            if (childElement._section)
+                return childElement._section;
+            childElement = childElement.nextSibling;
+        }
+
+        return null;
+    },
+
+    get lastSibling()
+    {
+        var parent = this.element.parentElement;
+        if (!parent)
+            return null;
+
+        var childElement = parent.lastChild;
+        while (childElement) {
+            if (childElement._section)
+                return childElement._section;
+            childElement = childElement.previousSibling;
+        }
+
+        return null;
     },
 
     get nextSibling()
@@ -151,8 +192,8 @@ WebInspector.Section.prototype = {
         this._expanded = true;
         this.element.addStyleClass("expanded");
 
-        if (!this._populated && this.onpopulate) {
-            this.onpopulate(this);
+        if (!this._populated) {
+            this.onpopulate();
             this._populated = true;
         }
     },

@@ -29,6 +29,9 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @constructor
+ */
 WebInspector.SearchController = function()
 {
     this.element = document.getElementById("search");
@@ -44,23 +47,23 @@ WebInspector.SearchController.prototype = {
     updateSearchMatchesCount: function(matches, panel)
     {
         if (!panel)
-            panel = WebInspector.currentPanel;
+            panel = WebInspector.currentPanel();
 
         panel.currentSearchMatches = matches;
 
-        if (panel === WebInspector.currentPanel)
-            this._updateSearchMatchesCountAndCurrentMatchIndex(WebInspector.currentPanel.currentQuery && matches);
+        if (panel === WebInspector.currentPanel())
+            this._updateSearchMatchesCountAndCurrentMatchIndex(WebInspector.currentPanel().currentQuery && matches);
     },
 
     updateCurrentMatchIndex: function(currentMatchIndex, panel)
     {
-        if (panel === WebInspector.currentPanel)
+        if (panel === WebInspector.currentPanel())
             this._updateSearchMatchesCountAndCurrentMatchIndex(panel.currentSearchMatches, currentMatchIndex);
     },
 
     updateSearchLabel: function()
     {
-        var panelName = WebInspector.currentPanel && WebInspector.currentPanel.toolbarItemLabel;
+        var panelName = WebInspector.currentPanel() && WebInspector.currentPanel().toolbarItemLabel;
         if (!panelName)
             return;
         var newLabel = WebInspector.UIString("Search %s", panelName);
@@ -75,6 +78,11 @@ WebInspector.SearchController.prototype = {
     cancelSearch: function()
     {
         this.element.value = "";
+        this._performSearch("");
+    },
+
+    disableSearchUntilExplicitAction: function(event)
+    {
         this._performSearch("");
     },
 
@@ -104,7 +112,7 @@ WebInspector.SearchController.prototype = {
                 break;
 
             case "U+0047": // G key
-                var currentPanel = WebInspector.currentPanel;
+                var currentPanel = WebInspector.currentPanel();
 
                 if (isMac && event.metaKey && !event.ctrlKey && !event.altKey) {
                     if (event.shiftKey) {
@@ -124,8 +132,8 @@ WebInspector.SearchController.prototype = {
 
         if (!this._currentQuery)
             return;
-         
-        panel = WebInspector.currentPanel;
+
+        var panel = WebInspector.currentPanel();
         if (panel.performSearch) {
             function performPanelSearch()
             {
@@ -143,6 +151,10 @@ WebInspector.SearchController.prototype = {
         }
     },
 
+    /**
+     * @param {?number=} matches
+     * @param {number=} currentMatchIndex
+     */
     _updateSearchMatchesCountAndCurrentMatchIndex: function(matches, currentMatchIndex)
     {
         if (matches == null) {
@@ -188,12 +200,12 @@ WebInspector.SearchController.prototype = {
             // If focus belongs here and text is empty - nothing to do, return unhandled.
             // When search was selected manually and is currently blank, we'd like Esc stay unhandled
             // and hit console drawer handler.
-            if (event.target.value === "" && this.currentFocusElement === this.previousFocusElement)
+            if (event.target.value === "" && WebInspector.currentFocusElement === WebInspector.previousFocusElement)
                 return;
             event.preventDefault();
             event.stopPropagation();
 
-            this.cancelSearch(event);
+            this.cancelSearch();
             WebInspector.currentFocusElement = WebInspector.previousFocusElement;
             if (WebInspector.currentFocusElement === event.target)
                 WebInspector.currentFocusElement.currentFocusElement.select();
@@ -222,6 +234,11 @@ WebInspector.SearchController.prototype = {
         this._performSearch(event.target.value, forceSearch, event.shiftKey, false);
     },
 
+    /**
+     * @param {boolean=} forceSearch
+     * @param {boolean=} isBackwardSearch
+     * @param {boolean=} repeatSearch
+     */
     _performSearch: function(query, forceSearch, isBackwardSearch, repeatSearch)
     {
         var isShortSearch = (query.length < 3);
@@ -256,7 +273,7 @@ WebInspector.SearchController.prototype = {
             return;
         }
 
-        var currentPanel = WebInspector.currentPanel;
+        var currentPanel = WebInspector.currentPanel();
         if (!repeatSearch && query === currentPanel.currentQuery && currentPanel.currentQuery === this._currentQuery) {
             // When this is the same query and a forced search, jump to the next
             // search result for a good user experience.
@@ -280,3 +297,8 @@ WebInspector.SearchController.prototype = {
         currentPanel.performSearch(query);
     }
 }
+
+/**
+ * @type {?WebInspector.SearchController}
+ */
+WebInspector.searchController = null;

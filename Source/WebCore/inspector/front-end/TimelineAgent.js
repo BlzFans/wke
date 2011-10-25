@@ -28,6 +28,9 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @constructor
+ */
 WebInspector.TimelineAgent = function() {
     // Not implemented.
 }
@@ -61,5 +64,9 @@ WebInspector.TimelineAgent.RecordType = {
     ResourceFinish: "ResourceFinish",
 
     FunctionCall: "FunctionCall",
-    GCEvent: "GCEvent"
-};
+    GCEvent: "GCEvent",
+
+    RegisterAnimationFrameCallback: "RegisterAnimationFrameCallback",
+    CancelAnimationFrameCallback: "CancelAnimationFrameCallback",
+    FireAnimationFrameEvent: "FireAnimationFrameEvent"
+}

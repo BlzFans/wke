@@ -30,11 +30,30 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @constructor
+ */
 WebInspector.CSSCompletions = function(values, acceptEmptyPrefix)
 {
     this._values = values.slice();
     this._values.sort();
     this._acceptEmptyPrefix = acceptEmptyPrefix;
+}
+
+
+/**
+ * @type {WebInspector.CSSCompletions}
+ */
+WebInspector.CSSCompletions.cssNameCompletions = null;
+
+WebInspector.CSSCompletions.requestCSSNameCompletions = function()
+{
+    function propertyNamesCallback(error, names)
+    {
+        if (!error)
+            WebInspector.CSSCompletions.cssNameCompletions = new WebInspector.CSSCompletions(names, false);
+    }
+    CSSAgent.getSupportedCSSProperties(propertyNamesCallback);
 }
 
 WebInspector.CSSCompletions.prototype = {

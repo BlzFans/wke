@@ -8,13 +8,13 @@
  * are met:
  *
  * 1.  Redistributions of source code must retain the above copyright
- *     notice, this list of conditions and the following disclaimer. 
+ *     notice, this list of conditions and the following disclaimer.
  * 2.  Redistributions in binary form must reproduce the above copyright
  *     notice, this list of conditions and the following disclaimer in the
- *     documentation and/or other materials provided with the distribution. 
+ *     documentation and/or other materials provided with the distribution.
  * 3.  Neither the name of Apple Computer, Inc. ("Apple") nor the names of
  *     its contributors may be used to endorse or promote products derived
- *     from this software without specific prior written permission. 
+ *     from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY APPLE AND ITS CONTRIBUTORS "AS IS" AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -28,6 +28,10 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @extends {WebInspector.View}
+ * @constructor
+ */
 WebInspector.ResourceHeadersView = function(resource)
 {
     WebInspector.View.call(this);
@@ -53,7 +57,7 @@ WebInspector.ResourceHeadersView = function(resource)
     this._statusCodeTreeElement = new TreeElement("", null, false);
     this._statusCodeTreeElement.selectable = false;
     this._headersTreeOutline.appendChild(this._statusCodeTreeElement);
-     
+
     this._requestHeadersTreeElement = new TreeElement("", null, true);
     this._requestHeadersTreeElement.expanded = true;
     this._requestHeadersTreeElement.selectable = false;
@@ -129,12 +133,12 @@ WebInspector.ResourceHeadersView.prototype = {
         if (!urlFragment)
             return;
 
-        var sectionTitle = WebInspector.UIString("URL fragment"); 
+        var sectionTitle = WebInspector.UIString("URL fragment");
 
         this._urlFragmentTreeElement.removeChildren();
         this._urlFragmentTreeElement.listItemElement.removeChildren();
         this._urlFragmentTreeElement.listItemElement.appendChild(document.createTextNode(sectionTitle));
-        
+
         var title = "<div class=\"header-name\">#:</div>";
         title += "<div class=\"header-value source-code\">" + urlFragment.escapeHTML() + "</div>";
 
@@ -143,7 +147,7 @@ WebInspector.ResourceHeadersView.prototype = {
         fragmentTreeElement.selectable = false;
         this._urlFragmentTreeElement.appendChild(fragmentTreeElement);
     },
-    
+
     _refreshFormData: function()
     {
         this._formDataTreeElement.hidden = true;
@@ -174,13 +178,33 @@ WebInspector.ResourceHeadersView.prototype = {
         this._requestPayloadTreeElement.appendChild(parmTreeElement);
     },
 
+    _decodeURIComponent: function(value)
+    {
+        var errorDecoding = false;
+
+        if (value.indexOf("%") >= 0) {
+            try {
+                value = decodeURIComponent(value);
+            } catch(e) {
+                errorDecoding = true;
+            }
+        }
+        value = value.replace(/\+/g, " ");
+
+        var valueEscaped = value.escapeHTML();
+        if (errorDecoding)
+            valueEscaped += " <span class=\"error-message\">" + WebInspector.UIString("(unable to decode value)").escapeHTML() + "</span>";
+
+        return valueEscaped;
+    },
+
     _refreshParms: function(title, parms, parmsTreeElement)
     {
         parmsTreeElement.removeChildren();
 
         parmsTreeElement.listItemElement.removeChildren();
         parmsTreeElement.listItemElement.appendChild(document.createTextNode(title));
-        
+
         var headerCount = document.createElement("span");
         headerCount.addStyleClass("header-count");
         headerCount.textContent = WebInspector.UIString(" (%d)", parms.length);
@@ -196,24 +220,10 @@ WebInspector.ResourceHeadersView.prototype = {
             var name = parms[i].name;
             var value = parms[i].value;
 
-            var errorDecoding = false;
-            if (this._decodeRequestParameters) {
-                if (value.indexOf("%") >= 0) {
-                    try {
-                        value = decodeURIComponent(value);
-                    } catch(e) {
-                        errorDecoding = true;
-                    }
-                }
-                    
-                value = value.replace(/\+/g, " ");
-            }
+            var valueEscaped = this._decodeRequestParameters ? this._decodeURIComponent(value) : value.escapeHTML();
+            var nameEscaped = this._decodeRequestParameters ? this._decodeURIComponent(name) : name.escapeHTML();
 
-            valueEscaped = value.escapeHTML();
-            if (errorDecoding)
-                valueEscaped += " <span class=\"error-message\">" + WebInspector.UIString("(unable to decode value)").escapeHTML() + "</span>";
-
-            var title = "<div class=\"header-name\">" + name.escapeHTML() + ":</div>";
+            title = "<div class=\"header-name\">" + nameEscaped + ":</div>";
             title += "<div class=\"header-value source-code\">" + valueEscaped + "</div>";
 
             var parmTreeElement = new TreeElement(null, null, false);
@@ -245,11 +255,11 @@ WebInspector.ResourceHeadersView.prototype = {
         if (typeof this._resource.webSocketRequestKey3 !== "undefined")
             additionalRow = {header: "(Key3)", value: this._resource.webSocketRequestKey3};
         if (this._showRequestHeadersText)
-            this._refreshHeadersText(WebInspector.UIString("Request Headers"), this._resource.requestHeadersText, this._requestHeadersTreeElement);
-        else 
+            this._refreshHeadersText(WebInspector.UIString("Request Headers"), this._resource.sortedRequestHeaders, this._resource.requestHeadersText, this._requestHeadersTreeElement);
+        else
             this._refreshHeaders(WebInspector.UIString("Request Headers"), this._resource.sortedRequestHeaders, additionalRow, this._requestHeadersTreeElement);
 
-        if (this._resource.requestHeadersText) { 
+        if (this._resource.requestHeadersText) {
             var toggleButton = this._createHeadersToggleButton(this._showRequestHeadersText);
             toggleButton.addEventListener("click", this._toggleRequestHeadersText.bind(this));
             this._requestHeadersTreeElement.listItemElement.appendChild(toggleButton);
@@ -264,10 +274,10 @@ WebInspector.ResourceHeadersView.prototype = {
         if (typeof this._resource.webSocketChallengeResponse !== "undefined")
             additionalRow = {header: "(Challenge Response)", value: this._resource.webSocketChallengeResponse};
         if (this._showResponseHeadersText)
-            this._refreshHeadersText(WebInspector.UIString("Response Headers"), this._resource.responseHeadersText, this._responseHeadersTreeElement);
+            this._refreshHeadersText(WebInspector.UIString("Response Headers"), this._resource.sortedResponseHeaders, this._resource.responseHeadersText, this._responseHeadersTreeElement);
         else
             this._refreshHeaders(WebInspector.UIString("Response Headers"), this._resource.sortedResponseHeaders, additionalRow, this._responseHeadersTreeElement);
-        
+
         if (this._resource.responseHeadersText) {
             var toggleButton = this._createHeadersToggleButton(this._showResponseHeadersText);
             toggleButton.addEventListener("click", this._toggleResponseHeadersText.bind(this));
@@ -294,37 +304,39 @@ WebInspector.ResourceHeadersView.prototype = {
 
             var statusTextEscaped = this._resource.statusCode + " " + this._resource.statusText.escapeHTML();
             statusCodeImage = "<img class=\"resource-status-image\" src=\"" + statusImageSource + "\" title=\"" + statusTextEscaped + "\">";
-    
+
             requestMethodElement.titleHTML = "<div class=\"header-name\">" + WebInspector.UIString("Request Method") + ":</div>" +
                 "<div class=\"header-value source-code\">" + this._resource.requestMethod + "</div>";
 
+            var fromCacheSpan = "";
+            if (this._resource.cached)
+                fromCacheSpan = " " + "<span class=\"status-from-cache\">" + WebInspector.UIString("(from cache)").escapeHTML() + "</span>";
+
             statusCodeElement.titleHTML = "<div class=\"header-name\">" + WebInspector.UIString("Status Code") + ":</div>" +
-                statusCodeImage + "<div class=\"header-value source-code\">" + statusTextEscaped + "</div>";
+                statusCodeImage + "<div class=\"header-value source-code\">" + statusTextEscaped + fromCacheSpan + "</div>";
         }
     },
-    
-    _refreshHeadersTitle: function(title, headersTreeElement, isHeadersTextShown, headersLength)
+
+    _refreshHeadersTitle: function(title, headersTreeElement, headersLength)
     {
         headersTreeElement.listItemElement.removeChildren();
         headersTreeElement.listItemElement.appendChild(document.createTextNode(title));
-        
-        if (!isHeadersTextShown) {
-            var headerCount = document.createElement("span");
-            headerCount.addStyleClass("header-count");
-            headerCount.textContent = WebInspector.UIString(" (%d)", headersLength);
-            headersTreeElement.listItemElement.appendChild(headerCount);
-        }
+
+        var headerCount = document.createElement("span");
+        headerCount.addStyleClass("header-count");
+        headerCount.textContent = WebInspector.UIString(" (%d)", headersLength);
+        headersTreeElement.listItemElement.appendChild(headerCount);
     },
-    
+
     _refreshHeaders: function(title, headers, additionalRow, headersTreeElement)
     {
         headersTreeElement.removeChildren();
-        
+
         var length = headers.length;
-        this._refreshHeadersTitle(title, headersTreeElement, false, length);
+        this._refreshHeadersTitle(title, headersTreeElement, length);
         headersTreeElement.hidden = !length;
         for (var i = 0; i < length; ++i) {
-            var title = "<div class=\"header-name\">" + headers[i].header.escapeHTML() + ":</div>";
+            title = "<div class=\"header-name\">" + headers[i].header.escapeHTML() + ":</div>";
             title += "<div class=\"header-value source-code\">" + headers[i].value.escapeHTML() + "</div>"
 
             var headerTreeElement = new TreeElement(null, null, false);
@@ -334,7 +346,7 @@ WebInspector.ResourceHeadersView.prototype = {
         }
 
         if (additionalRow) {
-            var title = "<div class=\"header-name\">" + additionalRow.header.escapeHTML() + ":</div>";
+            title = "<div class=\"header-name\">" + additionalRow.header.escapeHTML() + ":</div>";
             title += "<div class=\"header-value source-code\">" + additionalRow.value.escapeHTML() + "</div>"
 
             var headerTreeElement = new TreeElement(null, null, false);
@@ -343,17 +355,17 @@ WebInspector.ResourceHeadersView.prototype = {
             headersTreeElement.appendChild(headerTreeElement);
         }
     },
-    
-    _refreshHeadersText: function(title, headersText, headersTreeElement)
+
+    _refreshHeadersText: function(title, headers, headersText, headersTreeElement)
     {
         headersTreeElement.removeChildren();
-        
-        this._refreshHeadersTitle(title, headersTreeElement, true);
+
+        this._refreshHeadersTitle(title, headersTreeElement, headers.length);
         var headerTreeElement = new TreeElement(null, null, false);
         headerTreeElement.selectable = false;
         headersTreeElement.appendChild(headerTreeElement);
         headerTreeElement.listItemElement.addStyleClass("headers-text");
-        
+
         var headersTextElement = document.createElement("span");
         headersTextElement.addStyleClass("header-value");
         headersTextElement.addStyleClass("source-code");
@@ -380,7 +392,7 @@ WebInspector.ResourceHeadersView.prototype = {
         button.textContent = title;
         return button;
     },
-    
+
     _createHeadersToggleButton: function(isHeadersTextShown)
     {
         var toggleTitle = isHeadersTextShown ? WebInspector.UIString("view parsed") : WebInspector.UIString("view source");

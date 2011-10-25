@@ -24,6 +24,17 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @constructor
+ * @extends {WebInspector.PropertiesSection}
+ * @param {*=} object
+ * @param {string=} title
+ * @param {string=} subtitle
+ * @param {string=} emptyPlaceholder
+ * @param {boolean=} ignoreHasOwnProperty
+ * @param {Array.<WebInspector.RemoteObjectProperty>=} extraProperties
+ * @param {function()=} treeElementConstructor
+ */
 WebInspector.ObjectPropertiesSection = function(object, title, subtitle, emptyPlaceholder, ignoreHasOwnProperty, extraProperties, treeElementConstructor)
 {
     this.emptyPlaceholder = (emptyPlaceholder || WebInspector.UIString("No Properties"));
@@ -61,14 +72,14 @@ WebInspector.ObjectPropertiesSection.prototype = {
     {
         if (!rootTreeElementConstructor)
             rootTreeElementConstructor = this.treeElementConstructor;
-            
+
         if (!rootPropertyComparer)
             rootPropertyComparer = WebInspector.ObjectPropertiesSection.CompareProperties;
-            
+
         if (this.extraProperties)
             for (var i = 0; i < this.extraProperties.length; ++i)
                 properties.push(this.extraProperties[i]);
-                
+
         properties.sort(rootPropertyComparer);
 
         this.propertiesTreeOutline.removeChildren();
@@ -90,7 +101,7 @@ WebInspector.ObjectPropertiesSection.prototype = {
 
 WebInspector.ObjectPropertiesSection.prototype.__proto__ = WebInspector.PropertiesSection.prototype;
 
-WebInspector.ObjectPropertiesSection.CompareProperties = function(propertyA, propertyB) 
+WebInspector.ObjectPropertiesSection.CompareProperties = function(propertyA, propertyB)
 {
     var a = propertyA.name;
     var b = propertyB.name;
@@ -135,6 +146,10 @@ WebInspector.ObjectPropertiesSection.CompareProperties = function(propertyA, pro
     return diff;
 }
 
+/**
+ * @constructor
+ * @extends {TreeElement}
+ */
 WebInspector.ObjectPropertyTreeElement = function(property)
 {
     this.property = property;
@@ -186,7 +201,7 @@ WebInspector.ObjectPropertyTreeElement.prototype = {
         var separatorElement = document.createElement("span");
         separatorElement.className = "separator";
         separatorElement.textContent = ": ";
-        
+
         this.valueElement = document.createElement("span");
         this.valueElement.className = "value";
 
@@ -220,13 +235,12 @@ WebInspector.ObjectPropertyTreeElement.prototype = {
         this.hasChildren = this.property.value.hasChildren && !this.property.wasThrown;
     },
 
-    _contextMenuEventFired: function()
+    _contextMenuEventFired: function(event)
     {
         function selectNode(nodeId)
         {
-            if (nodeId) {
-                WebInspector.panels.elements.switchToAndFocus(WebInspector.domAgent.nodeForId(nodeId));
-            }
+            if (nodeId)
+                WebInspector.domAgent.inspectElement(nodeId);
         }
 
         function revealElement()
@@ -263,11 +277,8 @@ WebInspector.ObjectPropertyTreeElement.prototype = {
         if (typeof this.valueElement._originalTextContent === "string")
             this.valueElement.textContent = this.valueElement._originalTextContent;
 
-        WebInspector.startEditing(this.valueElement, {
-            context: context,
-            commitHandler: this.editingCommitted.bind(this),
-            cancelHandler: this.editingCancelled.bind(this)
-        });
+        var config = new WebInspector.EditingConfig(this.editingCommitted.bind(this), this.editingCancelled.bind(this), context);
+        WebInspector.startEditing(this.valueElement, config);
     },
 
     editingEnded: function(context)

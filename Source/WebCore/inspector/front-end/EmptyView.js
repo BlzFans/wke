@@ -28,6 +28,10 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @constructor
+ * @extends {WebInspector.View}
+ */
 WebInspector.EmptyView = function(text)
 {
     WebInspector.View.call(this);
@@ -35,6 +39,9 @@ WebInspector.EmptyView = function(text)
 }
 
 WebInspector.EmptyView.prototype = {
+    /**
+     * @param {Element} parentElement
+     */
     show: function(parentElement)
     {
         WebInspector.View.prototype.show.call(this, parentElement);
@@ -42,7 +49,7 @@ WebInspector.EmptyView.prototype = {
         this.element.className = "storage-empty-view";
         this.element.textContent = this._text;
     },
-    
+
     set text(text)
     {
         this._text = text;

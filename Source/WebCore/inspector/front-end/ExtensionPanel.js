@@ -28,15 +28,31 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-WebInspector.ExtensionPanel = function(id, label, iconURL, options)
+/**
+ * @constructor
+ * @extends {WebInspector.Panel}
+ * @param {string} id
+ * @param {string} label
+ * @param {string} iconURL
+ */
+WebInspector.ExtensionPanel = function(id, label, iconURL)
 {
-    this.toolbarItemLabel = label;
-    if (iconURL)
-        this._addStyleRule(".toolbar-item." + id + " .toolbar-icon", "background-image: url(" + iconURL + ");");
     WebInspector.Panel.call(this, id);
+    this.setHideOnDetach();
+
+    this._toolbarItemLabel = label;
+    if (iconURL) {
+        this._addStyleRule(".toolbar-item." + id + " .toolbar-icon", "background-image: url(" + iconURL + ");");
+        this._addStyleRule(".toolbar-small .toolbar-item." + id + " .toolbar-icon", "background-position-x: -32px;");
+    }
 }
 
 WebInspector.ExtensionPanel.prototype = {
+    get toolbarItemLabel()
+    {
+        return this._toolbarItemLabel;
+    },
+
     get defaultFocusedElement()
     {
         return this.sidebarTreeElement || this.element;
@@ -76,6 +92,12 @@ WebInspector.ExtensionPanel.prototype = {
 
 WebInspector.ExtensionPanel.prototype.__proto__ = WebInspector.Panel.prototype;
 
+/**
+ * @constructor
+ * @extends {WebInspector.SidebarPane}
+ * @param {string} title
+ * @param {string} id
+ */
 WebInspector.ExtensionSidebarPane = function(title, id)
 {
     WebInspector.SidebarPane.call(this, title);
@@ -90,7 +112,7 @@ WebInspector.ExtensionSidebarPane.prototype = {
 
     setExpression: function(expression, title)
     {
-        RuntimeAgent.evaluate(expression, "extension-watch", true, this._onEvaluate.bind(this, title));
+        RuntimeAgent.evaluate(expression, "extension-watch", true, undefined, undefined, undefined, this._onEvaluate.bind(this, title));
     },
 
     setPage: function(url)

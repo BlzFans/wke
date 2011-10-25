@@ -28,6 +28,10 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @extends {WebInspector.TabbedPane}
+ * @constructor
+ */
 WebInspector.NetworkItemView = function(resource)
 {
     WebInspector.TabbedPane.call(this);
@@ -63,6 +67,9 @@ WebInspector.NetworkItemView.prototype = {
         this._selectTab();
     },
 
+    /**
+     * @param {string=} tabId
+     */
     _selectTab: function(tabId)
     {
         if (!tabId)
@@ -79,20 +86,15 @@ WebInspector.NetworkItemView.prototype = {
     {
         if (event.data.isUserGesture)
             WebInspector.settings.resourceViewTab.set(event.data.tabId);
-        this._installHighlightSupport(event.data.view);
-    },
-
-    _installHighlightSupport: function(view)
-    {
-        if (typeof view.highlightLine === "function")
-            this.highlightLine = view.highlightLine.bind(view);
-        else
-            delete this.highlightLine;
     }
 }
 
 WebInspector.NetworkItemView.prototype.__proto__ = WebInspector.TabbedPane.prototype;
 
+/**
+ * @extends {WebInspector.ResourceView}
+ * @constructor
+ */
 WebInspector.ResourceContentView = function(resource)
 {
     WebInspector.ResourceView.call(this, resource);
@@ -145,6 +147,17 @@ WebInspector.ResourceContentView.prototype = {
     contentLoaded: function()
     {
         // Should be implemented by subclasses.
+    },
+
+    canHighlightLine: function()
+    {
+        return this._innerView && this._innerView.canHighlightLine();
+    },
+
+    highlightLine: function(line)
+    {
+        if (this.canHighlightLine())
+            this._innerView.highlightLine(line);
     }
 }
 

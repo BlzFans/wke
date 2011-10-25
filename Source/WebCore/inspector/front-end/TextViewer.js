@@ -29,6 +29,10 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @extends {WebInspector.View}
+ * @constructor
+ */
 WebInspector.TextViewer = function(textModel, platform, url, delegate)
 {
     WebInspector.View.call(this);
@@ -51,9 +55,17 @@ WebInspector.TextViewer = function(textModel, platform, url, delegate)
     this.element.appendChild(this._gutterPanel.element);
 
     // Forward mouse wheel events from the unscrollable gutter to the main panel.
-    this._gutterPanel.element.addEventListener("mousewheel", function(e) {
-        this._mainPanel.element.dispatchEvent(e);
-    }.bind(this), false);
+    function forwardWheelEvent(event)
+    {
+        var clone = document.createEvent("WheelEvent");
+        clone.initWebKitWheelEvent(event.wheelDeltaX, event.wheelDeltaY,
+                                   event.view,
+                                   event.screenX, event.screenY,
+                                   event.clientX, event.clientY,
+                                   event.ctrlKey, event.altKey, event.shiftKey, event.metaKey);
+        this._mainPanel.element.dispatchEvent(clone);
+    }
+    this._gutterPanel.element.addEventListener("mousewheel", forwardWheelEvent.bind(this), false);
 
     this.element.addEventListener("dblclick", this._doubleClick.bind(this), true);
     this.element.addEventListener("keydown", this._handleKeyDown.bind(this), false);
@@ -315,54 +327,34 @@ WebInspector.TextViewer.prototype = {
 
 WebInspector.TextViewer.prototype.__proto__ = WebInspector.View.prototype;
 
+/**
+ * @interface
+ */
 WebInspector.TextViewerDelegate = function()
 {
 }
 
 WebInspector.TextViewerDelegate.prototype = {
-    doubleClick: function(lineNumber)
-    {
-        // Should be implemented by subclasses.
-    },
+    doubleClick: function(lineNumber) { },
 
-    beforeTextChanged: function()
-    {
-        // Should be implemented by subclasses.
-    },
+    beforeTextChanged: function() { },
 
-    afterTextChanged: function(oldRange, newRange)
-    {
-        // Should be implemented by subclasses.
-    },
+    afterTextChanged: function(oldRange, newRange) { },
 
-    commitEditing: function()
-    {
-        // Should be implemented by subclasses.
-    },
+    commitEditing: function() { },
 
-    cancelEditing: function()
-    {
-        // Should be implemented by subclasses.
-    },
+    cancelEditing: function() { },
 
-    populateLineGutterContextMenu: function(lineNumber, contextMenu)
-    {
-        // Should be implemented by subclasses.
-    },
+    populateLineGutterContextMenu: function(lineNumber, contextMenu) { },
 
-    populateTextAreaContextMenu: function(contextMenu)
-    {
-        // Should be implemented by subclasses.
-    },
+    populateTextAreaContextMenu: function(contextMenu) { },
 
-    suggestedFileName: function()
-    {
-        // Should be implemented by subclasses.
-    }
+    suggestedFileName: function() { }
 }
 
-WebInspector.TextViewerDelegate.prototype.__proto__ = WebInspector.Object.prototype;
-
+/**
+ * @constructor
+ */
 WebInspector.TextEditorChunkedPanel = function(textModel)
 {
     this._textModel = textModel;
@@ -635,6 +627,10 @@ WebInspector.TextEditorChunkedPanel.prototype = {
     }
 }
 
+/**
+ * @constructor
+ * @extends {WebInspector.TextEditorChunkedPanel}
+ */
 WebInspector.TextEditorGutterPanel = function(textModel, syncDecorationsForLineListener, syncLineHeightListener)
 {
     WebInspector.TextEditorChunkedPanel.call(this, textModel);
@@ -719,6 +715,9 @@ WebInspector.TextEditorGutterPanel.prototype = {
 
 WebInspector.TextEditorGutterPanel.prototype.__proto__ = WebInspector.TextEditorChunkedPanel.prototype;
 
+/**
+ * @constructor
+ */
 WebInspector.TextEditorGutterChunk = function(textViewer, startLine, endLine)
 {
     this._textViewer = textViewer;
@@ -841,6 +840,10 @@ WebInspector.TextEditorGutterChunk.prototype = {
     }
 }
 
+/**
+ * @constructor
+ * @extends {WebInspector.TextEditorChunkedPanel}
+ */
 WebInspector.TextEditorMainPanel = function(textModel, url, syncScrollListener, syncDecorationsForLineListener, enterTextChangeMode, exitTextChangeMode)
 {
     WebInspector.TextEditorChunkedPanel.call(this, textModel);
@@ -897,14 +900,37 @@ WebInspector.TextEditorMainPanel.prototype = {
         this._readOnly = readOnly;
         if (this._readOnly)
             this._container.removeStyleClass("text-editor-editable");
-        else
+        else {
             this._container.addStyleClass("text-editor-editable");
+            this._updateSelectionOnStartEditing();
+        }
         this.endDomUpdates();
     },
 
     get readOnly()
     {
         return this._readOnly;
+    },
+
+    _updateSelectionOnStartEditing: function()
+    {
+        // focus() needs to go first for the case when the last selection was inside the editor and
+        // the "Edit" button was clicked. In this case we bail at the check below, but the
+        // editor does not receive the focus, thus "Esc" does not cancel editing until at least
+        // one change has been made to the editor contents.
+        this._container.focus();
+        var selection = window.getSelection();
+        if (selection.rangeCount) {
+            var commonAncestorContainer = selection.getRangeAt(0).commonAncestorContainer;
+            if (this._container === commonAncestorContainer || this._container.isAncestor(commonAncestorContainer))
+                return;
+        }
+
+        selection.removeAllRanges();
+        var range = document.createRange();
+        range.setStart(this._container, 0);
+        range.setEnd(this._container, 0);
+        selection.addRange(range);
     },
 
     setEditableRange: function(startLine, endLine)
@@ -1191,6 +1217,9 @@ WebInspector.TextEditorMainPanel.prototype = {
         this._paintLinesOperationsRefreshValue = Number.constrain(value, 150, 1500);
     },
 
+    /**
+     * @param {boolean=} restoreSelection
+     */
     _paintLines: function(fromLine, toLine, restoreSelection)
     {
         this._paintLineChunks([ { startLine: fromLine, endLine: toLine } ], restoreSelection);
@@ -1339,6 +1368,9 @@ WebInspector.TextEditorMainPanel.prototype = {
             return new WebInspector.TextRange(end.line, end.column, start.line, start.column);
     },
 
+    /**
+     * @param {boolean=} scrollIntoView
+     */
     _restoreSelection: function(range, scrollIntoView)
     {
         if (!range)
@@ -1428,7 +1460,8 @@ WebInspector.TextEditorMainPanel.prototype = {
         var lineRow = element.enclosingNodeOrSelfWithClass("webkit-line-content");
         if (lineRow)
             return lineRow;
-        for (var lineRow = element; lineRow; lineRow = lineRow.parentElement) {
+
+        for (lineRow = element; lineRow; lineRow = lineRow.parentElement) {
             if (lineRow.parentElement === this._container)
                 return lineRow;
         }
@@ -1472,7 +1505,7 @@ WebInspector.TextEditorMainPanel.prototype = {
         else
             quote = null;
 
-        var a = WebInspector.linkifyURLAsNode(this._rewriteHref(content), content, null, isExternal);
+        var a = WebInspector.linkifyURLAsNode(this._rewriteHref(content), content, undefined, isExternal);
         var span = document.createElement("span");
         span.className = "webkit-html-attribute-value";
         if (quote)
@@ -1483,6 +1516,9 @@ WebInspector.TextEditorMainPanel.prototype = {
         return span;
     },
 
+    /**
+     * @param {boolean=} isExternal
+     */
     _rewriteHref: function(hrefValue, isExternal)
     {
         if (!this._url || !hrefValue || hrefValue.indexOf("://") > 0)
@@ -1619,8 +1655,8 @@ WebInspector.TextEditorMainPanel.prototype = {
                 ++startColumn;
             lines[0] = line2.substring(startColumn);
 
-            var line1 = this._textModel.line(endLine - 1);
-            var line2 = lines[lines.length - 1];
+            line1 = this._textModel.line(endLine - 1);
+            line2 = lines[lines.length - 1];
             for (var i = 0; i < endColumn && i < line2.length; ++i) {
                 if (startLine === endLine - 1 && endColumn - i <= startColumn)
                     break;
@@ -1746,10 +1782,10 @@ WebInspector.TextEditorMainPanel.prototype = {
 
         // Delete all DOM elements that were either controlled by the old chunks, or have just been inserted.
         var firstUnmodifiedLineRow = null;
-        var chunk = this._textChunks[lastChunkNumber + 1];
-        if (chunk) {
+        chunk = this._textChunks[lastChunkNumber + 1];
+        if (chunk)
             firstUnmodifiedLineRow = chunk.expanded ? chunk.getExpandedLineRow(chunk.startLine) : chunk.element;
-        }
+
         while (firstLineRow && firstLineRow !== firstUnmodifiedLineRow) {
             var lineRow = firstLineRow;
             firstLineRow = firstLineRow.nextSibling;
@@ -1826,6 +1862,9 @@ WebInspector.TextEditorMainPanel.prototype = {
 
 WebInspector.TextEditorMainPanel.prototype.__proto__ = WebInspector.TextEditorChunkedPanel.prototype;
 
+/**
+ * @constructor
+ */
 WebInspector.TextEditorMainChunk = function(textViewer, startLine, endLine)
 {
     this._textViewer = textViewer;

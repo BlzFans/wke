@@ -28,6 +28,10 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @constructor
+ * @extends {WebInspector.NativeBreakpointsSidebarPane}
+ */
 WebInspector.DOMBreakpointsSidebarPane = function()
 {
     WebInspector.NativeBreakpointsSidebarPane.call(this, WebInspector.UIString("DOM Breakpoints"));
@@ -86,34 +90,34 @@ WebInspector.DOMBreakpointsSidebarPane.prototype = {
         }
     },
 
-    createBreakpointHitStatusMessage: function(eventData, callback)
+    createBreakpointHitStatusMessage: function(auxData, callback)
     {
-        if (eventData.type === this._breakpointTypes.SubtreeModified) {
-            var targetNodeObject = WebInspector.RemoteObject.fromPayload(eventData.targetNode);
+        if (auxData.type === this._breakpointTypes.SubtreeModified) {
+            var targetNodeObject = WebInspector.RemoteObject.fromPayload(auxData["targetNode"]);
             function didPushNodeToFrontend(targetNodeId)
             {
                 if (targetNodeId)
                     targetNodeObject.release();
-                this._doCreateBreakpointHitStatusMessage(eventData, targetNodeId, callback);
+                this._doCreateBreakpointHitStatusMessage(auxData, targetNodeId, callback);
             }
             targetNodeObject.pushNodeToFrontend(didPushNodeToFrontend.bind(this));
         } else
-            this._doCreateBreakpointHitStatusMessage(eventData, null, callback);
+            this._doCreateBreakpointHitStatusMessage(auxData, null, callback);
     },
 
-    _doCreateBreakpointHitStatusMessage: function (eventData, targetNodeId, callback)
+    _doCreateBreakpointHitStatusMessage: function (auxData, targetNodeId, callback)
     {
         var message;
-        var typeLabel = this._breakpointTypeLabels[eventData.type];
-        var linkifiedNode = WebInspector.panels.elements.linkifyNodeById(eventData.nodeId);
+        var typeLabel = this._breakpointTypeLabels[auxData.type];
+        var linkifiedNode = WebInspector.DOMPresentationUtils.linkifyNodeById(auxData.nodeId);
         var substitutions = [typeLabel, linkifiedNode];
         var targetNode = "";
         if (targetNodeId)
-            targetNode = WebInspector.panels.elements.linkifyNodeById(targetNodeId);
+            targetNode = WebInspector.DOMPresentationUtils.linkifyNodeById(targetNodeId);
 
-        if (eventData.type === this._breakpointTypes.SubtreeModified) {
-            if (eventData.insertion) {
-                if (targetNodeId !== eventData.nodeId) {
+        if (auxData.type === this._breakpointTypes.SubtreeModified) {
+            if (auxData.insertion) {
+                if (targetNodeId !== auxData.nodeId) {
                     message = "Paused on a \"%s\" breakpoint set on %s, because a new child was added to its descendant %s.";
                     substitutions.push(targetNode);
                 } else
@@ -185,7 +189,7 @@ WebInspector.DOMBreakpointsSidebarPane.prototype = {
         var labelElement = document.createElement("span");
         element.appendChild(labelElement);
 
-        var linkifiedNode = WebInspector.panels.elements.linkifyNodeById(node.id);
+        var linkifiedNode = WebInspector.DOMPresentationUtils.linkifyNodeById(node.id);
         linkifiedNode.addStyleClass("monospace");
         labelElement.appendChild(linkifiedNode);
 
@@ -240,9 +244,9 @@ WebInspector.DOMBreakpointsSidebarPane.prototype = {
         this._saveBreakpoints();
     },
 
-    highlightBreakpoint: function(eventData)
+    highlightBreakpoint: function(auxData)
     {
-        var breakpointId = this._createBreakpointId(eventData.nodeId, eventData.type);
+        var breakpointId = this._createBreakpointId(auxData.nodeId, auxData.type);
         var element = this._breakpointElements[breakpointId];
         if (!element)
             return;

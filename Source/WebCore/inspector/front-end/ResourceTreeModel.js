@@ -42,9 +42,11 @@ WebInspector.ResourceTreeModel = function(networkManager)
     WebInspector.console.addEventListener(WebInspector.ConsoleModel.Events.RepeatCountUpdated, this._consoleMessageAdded, this);
     WebInspector.console.addEventListener(WebInspector.ConsoleModel.Events.ConsoleCleared, this._consoleCleared, this);
 
+    PageAgent.enable();
+
     this.frontendReused();
     InspectorBackend.registerPageDispatcher(new WebInspector.PageDispatcher(this));
-    
+
     this._pendingConsoleMessages = {};
 }
 
@@ -142,10 +144,10 @@ WebInspector.ResourceTreeModel.prototype = {
             frame.parentId = frame.parentId || "";
             this._frameIds[frame.id] = frame;
         }
-        // Dispatch frame navigated event to clients prior to filling it with the resources. 
+        // Dispatch frame navigated event to clients prior to filling it with the resources.
         this.dispatchEventToListeners(WebInspector.ResourceTreeModel.EventTypes.FrameNavigated, { frame: frame, loaderId: loaderId, isMainFrame: isMainFrame });
 
-        // Fill frame with retained resources (the ones loaded using new loader). 
+        // Fill frame with retained resources (the ones loaded using new loader).
         var resourcesForFrame = this._resourcesByFrameId[frame.id];
         if (resourcesForFrame) {
             for (var url in resourcesForFrame)
@@ -204,7 +206,7 @@ WebInspector.ResourceTreeModel.prototype = {
             this._unbindResourceURL(resource);
             return;
         }
-                
+
         if (resource.finished)
             this._addResourceToFrame(resource);
     },
@@ -280,7 +282,7 @@ WebInspector.ResourceTreeModel.prototype = {
         {
             resource.clearErrorsAndWarnings();
         }
-        
+
         this._pendingConsoleMessages = {};
         this.forAllResources(callback);
     },
@@ -293,7 +295,7 @@ WebInspector.ResourceTreeModel.prototype = {
     _bindResourceURL: function(resource)
     {
         this._resourcesByURL[resource.url] = resource;
-        
+
         this._addPendingConsoleMessagesToResource(resource);
     },
 
@@ -385,10 +387,13 @@ WebInspector.ResourceTreeModel.prototype = {
         }
     },
 
+    /**
+     * @param {PageAgent.Frame} frame
+     * @param {string} url
+     */
     _createResource: function(frame, url)
     {
-        var resource = new WebInspector.Resource(null, url, frame.loaderId);
-        resource.frameId = frame.id;
+        var resource = new WebInspector.Resource(null, url, frame.id, frame.loaderId);
         resource.documentURL = frame.url;
         resource.mimeType = frame.mimeType;
         return resource;
@@ -410,7 +415,7 @@ WebInspector.PageDispatcher.prototype = {
     domContentEventFired: function(time)
     {
         this._resourceTreeModel.dispatchEventToListeners(WebInspector.ResourceTreeModel.EventTypes.DOMContentLoaded, time);
-      
+
         // FIXME: the only client is HAR, fix it there.
         WebInspector.mainResourceDOMContentTime = time;
     },
@@ -433,3 +438,8 @@ WebInspector.PageDispatcher.prototype = {
         this._resourceTreeModel._frameDetached(frameId);
     }
 }
+
+/**
+ * @type {WebInspector.ResourceTreeModel}
+ */
+WebInspector.resourceTreeModel = null;
