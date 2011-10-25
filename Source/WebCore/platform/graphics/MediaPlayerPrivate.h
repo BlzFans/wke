@@ -56,6 +56,7 @@ public:
 
     virtual bool supportsFullscreen() const { return false; }
     virtual bool supportsSave() const { return false; }
+    virtual bool supportsScanning() const { return false; }
 
     virtual IntSize naturalSize() const = 0;
 
@@ -71,6 +72,8 @@ public:
     virtual bool seeking() const = 0;
 
     virtual float startTime() const { return 0; }
+
+    virtual double initialTime() const { return 0; }
 
     virtual void setRate(float) = 0;
     virtual void setPreservesPitch(bool) { }
@@ -147,8 +150,14 @@ public:
 
     virtual void setPrivateBrowsingMode(bool) { }
 
+
 #if ENABLE(WEB_AUDIO)
     virtual AudioSourceProvider* audioSourceProvider() { return 0; }
+#endif
+
+#if ENABLE(MEDIA_SOURCE)
+    virtual bool sourceAppend(const unsigned char*, unsigned) { return false; }
+    virtual void sourceEndOfStream(MediaPlayer::EndOfStreamStatus) { };
 #endif
 };
 

@@ -26,12 +26,14 @@
 #include "config.h"
 #include "KURL.h"
 
+#include "DecodeEscapeSequences.h"
 #include "TextEncoding.h"
 #include <stdio.h>
 #include <wtf/HashMap.h>
 #include <wtf/HexNumber.h>
 #include <wtf/StdLibExtras.h>
 #include <wtf/text/CString.h>
+#include <wtf/text/StringBuilder.h>
 #include <wtf/text/StringHash.h>
 
 #if USE(ICU_UNICODE)
@@ -248,14 +250,6 @@ static inline bool isSchemeCharacterMatchIgnoringCase(char character, char schem
     ASSERT(schemeCharacter & 0x20);
     ASSERT(isASCIILower(schemeCharacter) || (!isASCIIUpper(schemeCharacter) && isSchemeChar(schemeCharacter)));
     return (character | 0x20) == schemeCharacter;
-}
-
-static inline int hexDigitValue(UChar c)
-{
-    ASSERT(isASCIIHexDigit(c));
-    if (c < 'A')
-        return c - '0';
-    return (c - 'A' + 10) & 0xF; // handle both upper and lower case without a branch
 }
 
 // Copies the source to the destination, assuming all the source characters are
@@ -726,7 +720,7 @@ String KURL::query() const
 
 String KURL::path() const
 {
-    return decodeURLEscapeSequences(m_string.substring(m_portEnd, m_pathEnd - m_portEnd)); 
+    return m_string.substring(m_portEnd, m_pathEnd - m_portEnd);
 }
 
 bool KURL::setProtocol(const String& s)
@@ -889,102 +883,57 @@ String KURL::deprecatedString() const
     if (!m_isValid)
         return m_string;
 
-    Vector<UChar> result;
+    StringBuilder result;
 
-    append(result, protocol());
+    result.append(protocol());
     result.append(':');
 
-    Vector<UChar> authority;
+    StringBuilder authority;
 
     if (m_hostEnd != m_passwordEnd) {
         if (m_userEnd != m_userStart) {
-            append(authority, user());
+            authority.append(user());
             authority.append('@');
         }
-        append(authority, host());
+        authority.append(host());
         if (hasPort()) {
             authority.append(':');
-            append(authority, String::number(port()));
+            authority.append(String::number(port()));
         }
     }
 
     if (!authority.isEmpty()) {
         result.append('/');
         result.append('/');
-        result.append(authority);
+        result.append(authority.characters(), authority.length());
     } else if (protocolIs("file")) {
         result.append('/');
         result.append('/');
     }
 
-    append(result, path());
+    result.append(path());
 
     if (m_pathEnd != m_queryEnd) {
         result.append('?');
-        append(result, query());
+        result.append(query());
     }
 
     if (m_fragmentEnd != m_queryEnd) {
         result.append('#');
-        append(result, fragmentIdentifier());
+        result.append(fragmentIdentifier());
     }
 
-    return String::adopt(result);
+    return result.toString();
 }
 
-String decodeURLEscapeSequences(const String& str)
+String decodeURLEscapeSequences(const String& string)
 {
-    return decodeURLEscapeSequences(str, UTF8Encoding());
+    return decodeEscapeSequences<URLEscapeSequence>(string, UTF8Encoding());
 }
 
-String decodeURLEscapeSequences(const String& str, const TextEncoding& encoding)
+String decodeURLEscapeSequences(const String& string, const TextEncoding& encoding)
 {
-    Vector<UChar> result;
-
-    CharBuffer buffer;
-
-    unsigned length = str.length();
-    unsigned decodedPosition = 0;
-    unsigned searchPosition = 0;
-    size_t encodedRunPosition;
-    while ((encodedRunPosition = str.find('%', searchPosition)) != notFound) {
-        // Find the sequence of %-escape codes.
-        unsigned encodedRunEnd = encodedRunPosition;
-        while (length - encodedRunEnd >= 3
-                && str[encodedRunEnd] == '%'
-                && isASCIIHexDigit(str[encodedRunEnd + 1])
-                && isASCIIHexDigit(str[encodedRunEnd + 2]))
-            encodedRunEnd += 3;
-        searchPosition = encodedRunEnd;
-        if (encodedRunEnd == encodedRunPosition) {
-            ++searchPosition;
-            continue;
-        }
-
-        // Decode the %-escapes into bytes.
-        unsigned runLength = (encodedRunEnd - encodedRunPosition) / 3;
-        buffer.resize(runLength);
-        char* p = buffer.data();
-        const UChar* q = str.characters() + encodedRunPosition;
-        for (unsigned i = 0; i < runLength; ++i) {
-            *p++ = (hexDigitValue(q[1]) << 4) | hexDigitValue(q[2]);
-            q += 3;
-        }
-
-        // Decode the bytes into Unicode characters.
-        String decoded = (encoding.isValid() ? encoding : UTF8Encoding()).decode(buffer.data(), p - buffer.data());
-        if (decoded.isEmpty())
-            continue;
-
-        // Build up the string with what we just skipped and what we just decoded.
-        result.append(str.characters() + decodedPosition, encodedRunPosition - decodedPosition);
-        result.append(decoded.characters(), decoded.length());
-        decodedPosition = encodedRunEnd;
-    }
-
-    result.append(str.characters() + decodedPosition, length - decodedPosition);
-
-    return String::adopt(result);
+    return decodeEscapeSequences<URLEscapeSequence>(string, encoding);
 }
 
 // Caution: This function does not bounds check.
@@ -1014,7 +963,7 @@ static void appendEscapingBadChars(char*& buffer, const char* strStart, size_t l
     buffer = p;
 }
 
-static void escapeAndAppendFragment(char*& buffer, const char* strStart, size_t length)
+static void escapeAndAppendNonHierarchicalPart(char*& buffer, const char* strStart, size_t length)
 {
     char* p = buffer;
 
@@ -1433,7 +1382,9 @@ void KURL::parse(const char* url, const String* originalString)
         *p++ = '/';
 
     // add path, escaping bad characters
-    if (!hierarchical || !hasSlashDotOrDotDot(url))
+    if (!hierarchical)
+        escapeAndAppendNonHierarchicalPart(p, url + pathStart, pathEnd - pathStart);
+    else if (!hasSlashDotOrDotDot(url))
         appendEscapingBadChars(p, url + pathStart, pathEnd - pathStart);
     else {
         CharBuffer pathBuffer(pathEnd - pathStart + 1);
@@ -1459,7 +1410,7 @@ void KURL::parse(const char* url, const String* originalString)
     // add fragment, escaping bad characters
     if (fragmentEnd != queryEnd) {
         *p++ = '#';
-        escapeAndAppendFragment(p, url + fragmentStart, fragmentEnd - fragmentStart);
+        escapeAndAppendNonHierarchicalPart(p, url + fragmentStart, fragmentEnd - fragmentStart);
     }
     m_fragmentEnd = p - buffer.data();
 

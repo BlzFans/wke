@@ -44,18 +44,16 @@ namespace WebCore {
 class VideoLayerChromium : public LayerChromium {
 public:
 
-    static PassRefPtr<VideoLayerChromium> create(GraphicsLayerChromium* owner = 0,
+    static PassRefPtr<VideoLayerChromium> create(CCLayerDelegate* = 0,
                                                  VideoFrameProvider* = 0);
     virtual ~VideoLayerChromium();
 
     virtual PassRefPtr<CCLayerImpl> createCCLayerImpl();
 
-    virtual void updateCompositorResources(GraphicsContext3D*);
+    virtual void updateCompositorResources(GraphicsContext3D*, TextureAllocator*);
     virtual bool drawsContent() const { return true; }
 
-    // This function is called by VideoFrameProvider. When this method is called
-    // putCurrentFrame() must be called to return the frame currently held.
-    void releaseCurrentFrame();
+    void releaseProvider();
 
     virtual void pushPropertiesTo(CCLayerImpl*);
 
@@ -63,7 +61,6 @@ public:
 
 protected:
     virtual void cleanupResources();
-    virtual const char* layerTypeAsString() const { return "VideoLayer"; }
 
 private:
     struct Texture {
@@ -71,25 +68,23 @@ private:
         OwnPtr<ManagedTexture> m_texture;
     };
 
-    VideoLayerChromium(GraphicsLayerChromium* owner, VideoFrameProvider*);
+    VideoLayerChromium(CCLayerDelegate*, VideoFrameProvider*);
 
     static GC3Denum determineTextureFormat(const VideoFrameChromium*);
     static IntSize computeVisibleSize(const VideoFrameChromium*, unsigned plane);
+    bool texturesValid();
     bool reserveTextures(const VideoFrameChromium*, GC3Denum textureFormat);
-    void updateTexture(GraphicsContext3D*, Texture&, const void*) const;
+    void updateTexture(GraphicsContext3D*, TextureAllocator*, Texture&, const void*) const;
 
     void resetFrameParameters();
 
     bool m_skipsDraw;
     VideoFrameChromium::Format m_frameFormat;
     VideoFrameProvider* m_provider;
-    CCLayerTreeHost* m_layerTreeHost;
 
-    Texture m_textures[3];
-
-    // This will be null for the entire duration of video playback if hardware
-    // decoding is not being used.
-    VideoFrameChromium* m_currentFrame;
+    enum { MaxPlanes = 3 };
+    Texture m_textures[MaxPlanes];
+    unsigned m_planes;
 };
 
 }

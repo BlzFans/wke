@@ -31,7 +31,6 @@
 #import "Chrome.h"
 #import "Cursor.h"
 #import "Document.h"
-#import "FloatConversion.h"
 #import "Font.h"
 #import "Frame.h"
 #import "GraphicsContext.h"
@@ -66,8 +65,6 @@ public:
     {
     }
 
-    bool mustStayInWindow;
-    bool removeFromSuperviewSoon;
     NSRect previousVisibleRect;
 };
 
@@ -91,8 +88,6 @@ Widget::Widget(NSView *view)
     : m_data(new WidgetPrivate)
 {
     init(view);
-    m_data->mustStayInWindow = false;
-    m_data->removeFromSuperviewSoon = false;
 }
 
 Widget::~Widget()
@@ -189,25 +184,6 @@ void Widget::setFrameRect(const IntRect& rect)
     END_BLOCK_OBJC_EXCEPTIONS;
 }
 
-void Widget::setBoundsSize(const IntSize& size)
-{
-    NSSize nsSize = size;
-
-    BEGIN_BLOCK_OBJC_EXCEPTIONS;
-    NSView *outerView = getOuterView();
-    if (!outerView)
-        return;
-
-    // Take a reference to this Widget, because sending messages to outerView can invoke arbitrary
-    // code, which can deref it.
-    RefPtr<Widget> protectedThis(this);
-    if (!NSEqualSizes(nsSize, [outerView bounds].size)) {
-        [outerView setBoundsSize:nsSize];
-        [outerView setNeedsDisplay:NO];
-    }
-    END_BLOCK_OBJC_EXCEPTIONS;
-}
-
 NSView *Widget::getOuterView() const
 {
     NSView *view = platformWidget();
@@ -232,30 +208,11 @@ void Widget::paint(GraphicsContext* p, const IntRect& r)
     // code, which can deref it.
     RefPtr<Widget> protectedThis(this);
 
-    IntPoint transformOrigin = frameRect().location();
-    AffineTransform widgetToViewTranform = makeMapBetweenRects(IntRect(IntPoint(), frameRect().size()), [view bounds]);
-
     NSGraphicsContext *currentContext = [NSGraphicsContext currentContext];
     if (currentContext == [[view window] graphicsContext] || ![currentContext isDrawingToScreen]) {
         // This is the common case of drawing into a window or printing.
         BEGIN_BLOCK_OBJC_EXCEPTIONS;
-        
-        CGContextRef context = (CGContextRef)[currentContext graphicsPort];
-
-        CGContextSaveGState(context);
-        CGContextTranslateCTM(context, transformOrigin.x(), transformOrigin.y());
-        CGContextScaleCTM(context, narrowPrecisionToFloat(widgetToViewTranform.xScale()), narrowPrecisionToFloat(widgetToViewTranform.yScale()));
-        CGContextTranslateCTM(context, -transformOrigin.x(), -transformOrigin.y());
-
-        IntRect dirtyRect = r;
-        dirtyRect.moveBy(-transformOrigin);
-        if (![view isFlipped])
-            dirtyRect.setY([view bounds].size.height - dirtyRect.maxY());
-
-        [view displayRectIgnoringOpacity:dirtyRect];
-
-        CGContextRestoreGState(context);
-
+        [view displayRectIgnoringOpacity:[view convertRect:r fromView:[view superview]]];
         END_BLOCK_OBJC_EXCEPTIONS;
     } else {
         // This is the case of drawing into a bitmap context other than a window backing store. It gets hit beneath
@@ -280,10 +237,6 @@ void Widget::paint(GraphicsContext* p, const IntRect& r)
         ASSERT(cgContext == [currentContext graphicsPort]);
         CGContextSaveGState(cgContext);
 
-        CGContextTranslateCTM(cgContext, transformOrigin.x(), transformOrigin.y());
-        CGContextScaleCTM(cgContext, narrowPrecisionToFloat(widgetToViewTranform.xScale()), narrowPrecisionToFloat(widgetToViewTranform.yScale()));
-        CGContextTranslateCTM(cgContext, -transformOrigin.x(), -transformOrigin.y());
-
         NSRect viewFrame = [view frame];
         NSRect viewBounds = [view bounds];
         // Set up the translation and (flipped) orientation of the graphics context. In normal drawing, AppKit does it as it descends down
@@ -291,15 +244,10 @@ void Widget::paint(GraphicsContext* p, const IntRect& r)
         CGContextTranslateCTM(cgContext, viewFrame.origin.x - viewBounds.origin.x, viewFrame.origin.y + viewFrame.size.height + viewBounds.origin.y);
         CGContextScaleCTM(cgContext, 1, -1);
 
-        IntRect dirtyRect = r;
-        dirtyRect.moveBy(-transformOrigin);
-        if (![view isFlipped])
-            dirtyRect.setY([view bounds].size.height - dirtyRect.maxY());
-
         BEGIN_BLOCK_OBJC_EXCEPTIONS;
         {
             NSGraphicsContext *nsContext = [NSGraphicsContext graphicsContextWithGraphicsPort:cgContext flipped:YES];
-            [view displayRectIgnoringOpacity:dirtyRect inContext:nsContext];
+            [view displayRectIgnoringOpacity:[view convertRect:r fromView:[view superview]] inContext:nsContext];
         }
         END_BLOCK_OBJC_EXCEPTIONS;
 
@@ -324,37 +272,9 @@ void Widget::setIsSelected(bool isSelected)
 
 void Widget::removeFromSuperview()
 {
-    if (m_data->mustStayInWindow)
-        m_data->removeFromSuperviewSoon = true;
-    else {
-        m_data->removeFromSuperviewSoon = false;
-        BEGIN_BLOCK_OBJC_EXCEPTIONS;
-        safeRemoveFromSuperview(getOuterView());
-        END_BLOCK_OBJC_EXCEPTIONS;
-    }
-}
-
-void Widget::beforeMouseDown(NSView *unusedView, Widget* widget)
-{
-    if (widget) {
-        ASSERT_UNUSED(unusedView, unusedView == widget->getOuterView());
-        ASSERT(!widget->m_data->mustStayInWindow);
-        widget->m_data->mustStayInWindow = true;
-    }
-}
-
-void Widget::afterMouseDown(NSView *view, Widget* widget)
-{
-    if (!widget) {
-        BEGIN_BLOCK_OBJC_EXCEPTIONS;
-        safeRemoveFromSuperview(view);
-        END_BLOCK_OBJC_EXCEPTIONS;
-    } else {
-        ASSERT(widget->m_data->mustStayInWindow);
-        widget->m_data->mustStayInWindow = false;
-        if (widget->m_data->removeFromSuperviewSoon)
-            widget->removeFromSuperview();
-    }
+    BEGIN_BLOCK_OBJC_EXCEPTIONS;
+    safeRemoveFromSuperview(getOuterView());
+    END_BLOCK_OBJC_EXCEPTIONS;
 }
 
 // These are here to deal with flipped coords on Mac.

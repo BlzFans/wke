@@ -176,7 +176,7 @@ static HGLOBAL createGlobalHDropContent(const KURL& url, String& fileName, Share
     WCHAR filePath[MAX_PATH];
 
     if (url.isLocalFile()) {
-        String localPath = url.path();
+        String localPath = decodeURLEscapeSequences(url.path());
         // windows does not enjoy a leading slash on paths
         if (localPath[0] == '/')
             localPath = localPath.substring(1);
@@ -635,10 +635,10 @@ static void writeImageToDataObject(IDataObject* dataObject, Element* element, co
 {
     // Shove image data into a DataObject for use as a file
     CachedImage* cachedImage = getCachedImage(element);
-    if (!cachedImage || !cachedImage->image() || !cachedImage->isLoaded())
+    if (!cachedImage || !cachedImage->imageForRenderer(element->renderer()) || !cachedImage->isLoaded())
         return;
 
-    SharedBuffer* imageBuffer = cachedImage->image()->data();
+    SharedBuffer* imageBuffer = cachedImage->imageForRenderer(element->renderer())->data();
     if (!imageBuffer || !imageBuffer->size())
         return;
 

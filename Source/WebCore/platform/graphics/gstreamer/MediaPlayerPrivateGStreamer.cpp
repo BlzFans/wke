@@ -24,7 +24,7 @@
 #include "config.h"
 #include "MediaPlayerPrivateGStreamer.h"
 
-#if USE(GSTREAMER)
+#if ENABLE(VIDEO) && USE(GSTREAMER)
 
 #include "ColorSpace.h"
 #include "Document.h"
@@ -354,6 +354,8 @@ bool MediaPlayerPrivateGStreamer::changePipelineState(GstState newState)
 
 void MediaPlayerPrivateGStreamer::prepareToPlay()
 {
+    m_isEndReached = false;
+
     if (m_delayingLoad) {
         m_delayingLoad = false;
         commitLoad();
@@ -412,6 +414,14 @@ float MediaPlayerPrivateGStreamer::currentTime() const
     if (m_seeking)
         return m_seekTime;
 
+    // Workaround for
+    // https://bugzilla.gnome.org/show_bug.cgi?id=639941 In GStreamer
+    // 0.10.35 basesink reports wrong duration in case of EOS and
+    // negative playback rate. There's no upstream accepted patch for
+    // this bug yet, hence this temporary workaround.
+    if (m_isEndReached && m_playbackRate < 0)
+        return 0.0f;
+
     return playbackPosition();
 
 }
@@ -455,7 +465,9 @@ void MediaPlayerPrivateGStreamer::seek(float time)
 
 bool MediaPlayerPrivateGStreamer::paused() const
 {
-    return m_paused;
+    GstState state;
+    gst_element_get_state(m_playBin, &state, 0, 0);
+    return state == GST_STATE_PAUSED;
 }
 
 bool MediaPlayerPrivateGStreamer::seeking() const
@@ -711,9 +723,10 @@ gboolean MediaPlayerPrivateGStreamer::handleMessage(GstMessage* message)
     MediaPlayer::NetworkState error;
     bool issueError = true;
     bool attemptNextLocation = false;
+    const GstStructure* structure = gst_message_get_structure(message);
 
-    if (message->structure) {
-        const gchar* messageTypeName = gst_structure_get_name(message->structure);
+    if (structure) {
+        const gchar* messageTypeName = gst_structure_get_name(structure);
 
         // Redirect messages are sent from elements, like qtdemux, to
         // notify of the new location(s) of the media.
@@ -1201,11 +1214,12 @@ void MediaPlayerPrivateGStreamer::mediaLocationChanged(GstMessage* message)
     if (m_mediaLocations)
         gst_structure_free(m_mediaLocations);
 
-    if (message->structure) {
+    const GstStructure* structure = gst_message_get_structure(message);
+    if (structure) {
         // This structure can contain:
         // - both a new-location string and embedded locations structure
         // - or only a new-location string.
-        m_mediaLocations = gst_structure_copy(message->structure);
+        m_mediaLocations = gst_structure_copy(structure);
         const GValue* locations = gst_structure_get_value(m_mediaLocations, "locations");
 
         if (locations)
@@ -1322,6 +1336,8 @@ void MediaPlayerPrivateGStreamer::didEnd()
         m_mediaDurationKnown = true;
         m_player->durationChanged();
     }
+
+    m_isEndReached = true;
 
     gst_element_set_state(m_playBin, GST_STATE_PAUSED);
 
@@ -1667,14 +1683,13 @@ void MediaPlayerPrivateGStreamer::createGSTPlayBin()
     g_signal_connect(m_playBin, "video-changed", G_CALLBACK(mediaPlayerPrivateVideoChangedCallback), this);
     g_signal_connect(m_playBin, "audio-changed", G_CALLBACK(mediaPlayerPrivateAudioChangedCallback), this);
 
-    m_webkitVideoSink = webkit_video_sink_new();
+    m_webkitVideoSink = webkit_video_sink_new(m_gstGWorld.get());
 
     g_signal_connect(m_webkitVideoSink, "repaint-requested", G_CALLBACK(mediaPlayerPrivateRepaintCallback), this);
 
     m_videoSinkBin = gst_bin_new("sink");
     GstElement* videoTee = gst_element_factory_make("tee", "videoTee");
     GstElement* queue = gst_element_factory_make("queue", 0);
-    GstElement* identity = gst_element_factory_make("identity", "videoValve");
 
     // Take ownership.
     gst_object_ref_sink(m_videoSinkBin);
@@ -1684,7 +1699,7 @@ void MediaPlayerPrivateGStreamer::createGSTPlayBin()
     // internal video sink. For fullscreen we create an autovideosink
     // and initially block the data flow towards it and configure it
 
-    gst_bin_add_many(GST_BIN(m_videoSinkBin), videoTee, queue, identity, NULL);
+    gst_bin_add_many(GST_BIN(m_videoSinkBin), videoTee, queue, NULL);
 
     // Link a new src pad from tee to queue1.
     GstPad* srcPad = gst_element_get_request_pad(videoTee, "src%d");
@@ -1726,8 +1741,7 @@ void MediaPlayerPrivateGStreamer::createGSTPlayBin()
     ASSERT(actualVideoSink);
 
     // Faster elements linking.
-    gst_element_link_pads_full(queue, "src", identity, "sink", GST_PAD_LINK_CHECK_NOTHING);
-    gst_element_link_pads_full(identity, "src", actualVideoSink, "sink", GST_PAD_LINK_CHECK_NOTHING);
+    gst_element_link_pads_full(queue, "src", actualVideoSink, "sink", GST_PAD_LINK_CHECK_NOTHING);
 
     // Add a ghostpad to the bin so it can proxy to tee.
     GstPad* pad = gst_element_get_static_pad(videoTee, "sink");

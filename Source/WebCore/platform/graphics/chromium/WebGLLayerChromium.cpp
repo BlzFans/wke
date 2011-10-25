@@ -41,15 +41,14 @@
 
 namespace WebCore {
 
-PassRefPtr<WebGLLayerChromium> WebGLLayerChromium::create(GraphicsLayerChromium* owner)
+PassRefPtr<WebGLLayerChromium> WebGLLayerChromium::create(CCLayerDelegate* delegate)
 {
-    return adoptRef(new WebGLLayerChromium(owner));
+    return adoptRef(new WebGLLayerChromium(delegate));
 }
 
-WebGLLayerChromium::WebGLLayerChromium(GraphicsLayerChromium* owner)
-    : CanvasLayerChromium(owner)
+WebGLLayerChromium::WebGLLayerChromium(CCLayerDelegate* delegate)
+    : CanvasLayerChromium(delegate)
     , m_context(0)
-    , m_textureId(0)
     , m_textureChanged(true)
     , m_contextSupportsRateLimitingExtension(false)
     , m_rateLimitingTimer(this, &WebGLLayerChromium::rateLimitContext)
@@ -66,12 +65,12 @@ bool WebGLLayerChromium::drawsContent() const
     return (m_context && m_context->getExtensions()->getGraphicsResetStatusARB() == GraphicsContext3D::NO_ERROR);
 }
 
-void WebGLLayerChromium::updateCompositorResources(GraphicsContext3D* rendererContext)
+void WebGLLayerChromium::updateCompositorResources(GraphicsContext3D* rendererContext, TextureAllocator*)
 {
     if (!drawsContent())
         return;
 
-    if (!m_contentsDirty)
+    if (m_dirtyRect.isEmpty())
         return;
 
     if (m_textureChanged) {
@@ -85,20 +84,21 @@ void WebGLLayerChromium::updateCompositorResources(GraphicsContext3D* rendererCo
         m_textureChanged = false;
     }
     // Update the contents of the texture used by the compositor.
-    if (m_contentsDirty && m_textureUpdated) {
+    if (!m_dirtyRect.isEmpty() && m_textureUpdated) {
         // prepareTexture copies the contents of the off-screen render target into the texture
         // used by the compositor.
         //
         m_context->prepareTexture();
         m_context->markLayerComposited();
-        m_contentsDirty = false;
+        m_updateRect = FloatRect(FloatPoint(), bounds());
+        resetNeedsDisplay();
         m_textureUpdated = false;
     }
 }
 
 bool WebGLLayerChromium::paintRenderedResultsToCanvas(ImageBuffer* imageBuffer)
 {
-    if (m_textureUpdated || !layerRenderer() || !drawsContent())
+    if (m_textureUpdated || !layerRendererContext() || !drawsContent())
         return false;
 
     IntSize framebufferSize = m_context->getInternalFramebufferSize();
@@ -120,7 +120,7 @@ void WebGLLayerChromium::setTextureUpdated()
     m_textureUpdated = true;
     // If WebGL commands are issued outside of a the animation callbacks, then use
     // call rateLimitOffscreenContextCHROMIUM() to keep the context from getting too far ahead.
-    if (layerRenderer() && !layerRenderer()->owner()->animating() && m_contextSupportsRateLimitingExtension && !m_rateLimitingTimer.isActive())
+    if (layerTreeHost() && !layerTreeHost()->animating() && m_contextSupportsRateLimitingExtension && !m_rateLimitingTimer.isActive())
         m_rateLimitingTimer.startOneShot(0);
 }
 
@@ -143,6 +143,15 @@ void WebGLLayerChromium::setContext(const GraphicsContext3D* context)
     m_hasAlpha = attributes.alpha;
     m_premultipliedAlpha = attributes.premultipliedAlpha;
     m_contextSupportsRateLimitingExtension = m_context->getExtensions()->supports("GL_CHROMIUM_rate_limit_offscreen_context");
+}
+
+GraphicsContext3D* WebGLLayerChromium::layerRendererContext()
+{
+    // FIXME: In the threaded case, paintRenderedResultsToCanvas must be
+    // refactored to be asynchronous. Currently this is unimplemented.
+    if (!layerTreeHost() || layerTreeHost()->settings().enableCompositorThread)
+        return 0;
+    return layerTreeHost()->context();
 }
 
 void WebGLLayerChromium::rateLimitContext(Timer<WebGLLayerChromium>*)

@@ -43,12 +43,11 @@ public:
     }
     virtual ~CCTiledLayerImpl();
 
-    virtual void draw();
-    virtual void bindContentsTexture();
+    virtual void draw(LayerRendererChromium*);
+    virtual void bindContentsTexture(LayerRendererChromium*);
 
     virtual void dumpLayerProperties(TextStream&, int indent) const;
 
-    void setTilingTransform(const TransformationMatrix& tilingTransform) { m_tilingTransform = tilingTransform; }
     void setSkipsDraw(bool skipsDraw) { m_skipsDraw = skipsDraw; }
     void setTextureOrientation(LayerTextureUpdater::Orientation textureOrientation) { m_textureOrientation = textureOrientation; }
     void setSampledTexelFormat(LayerTextureUpdater::SampledTexelFormat sampledTexelFormat) { m_sampledTexelFormat = sampledTexelFormat; }
@@ -61,11 +60,15 @@ public:
     typedef ProgramBinding<VertexShaderTile, FragmentShaderRGBATexSwizzleAlpha> ProgramSwizzle;
 
     // Shader program that produces anti-aliased layer edges.
-    typedef ProgramBinding<VertexShaderTile, FragmentShaderRGBATexAlphaAA> ProgramAA;
-    typedef ProgramBinding<VertexShaderTile, FragmentShaderRGBATexSwizzleAlphaAA> ProgramSwizzleAA;
+    typedef ProgramBinding<VertexShaderTile, FragmentShaderRGBATexClampAlphaAA> ProgramAA;
+    typedef ProgramBinding<VertexShaderTile, FragmentShaderRGBATexClampSwizzleAlphaAA> ProgramSwizzleAA;
 
 private:
     explicit CCTiledLayerImpl(int id);
+
+    virtual const char* layerTypeAsString() const { return "ContentLayer"; }
+
+    TransformationMatrix tilingTransform() const;
 
     // Draw all tiles that intersect with the content rect.
     void draw(LayerRendererChromium*, const IntRect& contentRect, const TransformationMatrix&, float opacity);
@@ -75,9 +78,8 @@ private:
 
     // Draw all tiles that intersect with contentRect.
     template <class T>
-    void drawTiles(LayerRendererChromium*, const IntRect& contentRect, const TransformationMatrix&, float opacity, const T* program, int fragmentTexTransformLocation, int edgeLocation);
+    void drawTiles(LayerRendererChromium*, const IntRect& contentRect, const TransformationMatrix& globalTransform, const TransformationMatrix& deviceTransform, const CCLayerQuad& deviceRect, const CCLayerQuad& contentQuad, float opacity, const T* program, int fragmentTexTransformLocation, int edgeLocation);
 
-    TransformationMatrix m_tilingTransform;
     bool m_skipsDraw;
     LayerTextureUpdater::Orientation m_textureOrientation;
     LayerTextureUpdater::SampledTexelFormat m_sampledTexelFormat;

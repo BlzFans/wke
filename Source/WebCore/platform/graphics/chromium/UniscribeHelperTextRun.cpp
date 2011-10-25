@@ -32,7 +32,7 @@
 #include "UniscribeHelperTextRun.h"
 
 #include "Font.h"
-#include "PlatformBridge.h"
+#include "PlatformSupport.h"
 #include "SimpleFontData.h"
 #include "TextRun.h"
 
@@ -53,6 +53,7 @@ UniscribeHelperTextRun::UniscribeHelperTextRun(const TextRun& run,
     setSpaceWidth(font.spaceWidth());
     setWordSpacing(font.wordSpacing());
     setAscent(font.fontMetrics().ascent());
+    setRangeProperties(font.fontDescription().featureSettings());
 
     init();
 
@@ -81,7 +82,7 @@ void UniscribeHelperTextRun::tryToPreloadFont(HFONT font)
     // Ask the browser to get the font metrics for this font.
     // That will preload the font and it should now be accessible
     // from the renderer.
-    PlatformBridge::ensureFontLoaded(font);
+    PlatformSupport::ensureFontLoaded(font);
 }
 
 bool UniscribeHelperTextRun::nextWinFontData(

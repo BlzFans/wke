@@ -34,6 +34,7 @@
 #include "GlyphBuffer.h"
 #include "GraphicsContext.h"
 #include "PlatformContextSkia.h"
+#include "PlatformSupport.h"
 #include "SimpleFontData.h"
 
 #include "SkCanvas.h"
@@ -48,12 +49,9 @@ bool Font::canReturnFallbackFontsForComplexText()
     return true;
 }
 
-// FIXME: Determine if the Mac port of Chromium using Skia can expand around
-// ideographs in complex text. (The Windows and Linux ports for Chromium can't.)
-// This issue is tracked in https://bugs.webkit.org/show_bug.cgi?id=62987
 bool Font::canExpandAroundIdeographsInComplexText()
 {
-    return false;
+    return true;
 }
 
 static bool isCanvasMultiLayered(SkCanvas* canvas)
@@ -73,12 +71,12 @@ static void adjustTextRenderMode(SkPaint* paint, PlatformContextSkia* skiaContex
         paint->setLCDRenderText(false);
 }
 
-static void setupPaint(SkPaint* paint, const SimpleFontData* fontData, const Font* font)
+static void setupPaint(SkPaint* paint, const SimpleFontData* fontData, const Font* font, bool shouldAntialias, bool shouldSmoothFonts)
 {
     const FontPlatformData& platformData = fontData->platformData();
     const float textSize = platformData.m_size >= 0 ? platformData.m_size : 12;
 
-    paint->setAntiAlias(true);
+    paint->setAntiAlias(shouldAntialias);
     paint->setEmbeddedBitmapText(false);
     paint->setTextSize(SkFloatToScalar(textSize));
     SkTypeface* typeface = SkCreateTypefaceFromCTFont(platformData.ctFont());
@@ -87,7 +85,8 @@ static void setupPaint(SkPaint* paint, const SimpleFontData* fontData, const Fon
     paint->setFakeBoldText(platformData.m_syntheticBold);
     paint->setTextSkewX(platformData.m_syntheticOblique ? -SK_Scalar1 / 4 : 0);
     paint->setAutohinted(false); // freetype specific
-    paint->setLCDRenderText(true); // font->fontDescription().fontSmoothing() == SubpixelAntialiased);
+    paint->setLCDRenderText(shouldSmoothFonts);
+    paint->setSubpixelText(true);
 }
 
 // TODO: This needs to be split into helper functions to better scope the
@@ -97,6 +96,27 @@ void Font::drawGlyphs(GraphicsContext* gc, const SimpleFontData* font,
                       const GlyphBuffer& glyphBuffer,  int from, int numGlyphs,
                       const FloatPoint& point) const {
     COMPILE_ASSERT(sizeof(GlyphBufferGlyph) == sizeof(uint16_t), GlyphBufferGlyphSize_equals_uint16_t);
+
+    bool shouldSmoothFonts = true;
+    bool shouldAntialias = true;
+    
+    switch (fontDescription().fontSmoothing()) {
+    case Antialiased:
+        shouldSmoothFonts = false;
+        break;
+    case SubpixelAntialiased:
+        break;
+    case NoSmoothing:
+        shouldAntialias = false;
+        shouldSmoothFonts = false;
+        break;
+    case AutoSmoothing:
+        // For the AutoSmooth case, don't do anything! Keep the default settings.
+        break; 
+    }
+    
+    if (!shouldUseSmoothing() || PlatformSupport::layoutTestMode())
+        shouldSmoothFonts = false;
 
     const GlyphBufferGlyph* glyphs = glyphBuffer.glyphs(from);
     SkScalar x = SkFloatToScalar(point.x());
@@ -126,8 +146,6 @@ void Font::drawGlyphs(GraphicsContext* gc, const SimpleFontData* font,
         y += SkFloatToScalar(adv[i].height);
     }
 
-    gc->platformContext()->makeGrContextCurrent();
-
     SkCanvas* canvas = gc->platformContext()->canvas();
     TextDrawingModeFlags textMode = gc->platformContext()->getTextDrawingMode();
 
@@ -135,7 +153,7 @@ void Font::drawGlyphs(GraphicsContext* gc, const SimpleFontData* font,
     if (textMode & TextModeFill) {
         SkPaint paint;
         gc->platformContext()->setupPaintForFilling(&paint);
-        setupPaint(&paint, font, this);
+        setupPaint(&paint, font, this, shouldAntialias, shouldSmoothFonts);
         adjustTextRenderMode(&paint, gc->platformContext());
         paint.setTextEncoding(SkPaint::kGlyphID_TextEncoding);
         paint.setColor(gc->fillColor().rgb());
@@ -158,7 +176,7 @@ void Font::drawGlyphs(GraphicsContext* gc, const SimpleFontData* font,
 
         SkPaint paint;
         gc->platformContext()->setupPaintForStroking(&paint, 0, 0);
-        setupPaint(&paint, font, this);
+        setupPaint(&paint, font, this, shouldAntialias, shouldSmoothFonts);
         adjustTextRenderMode(&paint, gc->platformContext());
         paint.setTextEncoding(SkPaint::kGlyphID_TextEncoding);
         paint.setColor(gc->strokeColor().rgb());

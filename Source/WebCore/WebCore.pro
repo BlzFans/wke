@@ -27,17 +27,13 @@ contains(DEFINES, ENABLE_SVG=1) {
     EXTRACSSVALUES += $$PWD/css/SVGCSSValueKeywords.in
 }
 
-contains(DEFINES, ENABLE_WCSS=1) {
-    EXTRACSSPROPERTIES += $$PWD/css/WCSSPropertyNames.in
-    EXTRACSSVALUES += $$PWD/css/WCSSValueKeywords.in
-}
-
 SOURCES += \
     accessibility/AccessibilityImageMapLink.cpp \
     accessibility/AccessibilityMediaControls.cpp \    
     accessibility/AccessibilityMenuList.cpp \
     accessibility/AccessibilityMenuListOption.cpp \
     accessibility/AccessibilityMenuListPopup.cpp \
+    accessibility/AccessibilityMockObject.cpp \    
     accessibility/AccessibilityObject.cpp \    
     accessibility/AccessibilityList.cpp \    
     accessibility/AccessibilityListBox.cpp \    
@@ -47,6 +43,7 @@ SOURCES += \
     accessibility/AccessibilityScrollbar.cpp \
     accessibility/AccessibilityScrollView.cpp \
     accessibility/AccessibilitySlider.cpp \    
+    accessibility/AccessibilitySpinButton.cpp \    
     accessibility/AccessibilityARIAGrid.cpp \    
     accessibility/AccessibilityARIAGridCell.cpp \    
     accessibility/AccessibilityARIAGridRow.cpp \    
@@ -63,8 +60,10 @@ v8 {
     include($$PWD/../JavaScriptCore/yarr/yarr.pri)
     include($$PWD/../JavaScriptCore/wtf/wtf.pri)
 
+    INCLUDEPATH = $$PWD/../JavaScriptCore/wtf/qt $$INCLUDEPATH
+
     SOURCES += \
-        platform/qt/PlatformBridgeQt.cpp \
+        platform/qt/PlatformSupportQt.cpp \
         bindings/generic/BindingSecurityBase.cpp \
         \
         bindings/v8/WorldContextHandle.cpp \
@@ -79,6 +78,7 @@ v8 {
         bindings/v8/custom/V8DataViewCustom.cpp \
         bindings/v8/custom/V8DeviceMotionEventCustom.cpp \
         bindings/v8/custom/V8DeviceOrientationEventCustom.cpp \
+        bindings/v8/custom/V8EventConstructors.cpp \
         bindings/v8/custom/V8Float32ArrayCustom.cpp \
         bindings/v8/custom/V8Float64ArrayCustom.cpp \
         bindings/v8/custom/V8Int8ArrayCustom.cpp \
@@ -165,7 +165,6 @@ v8 {
         bindings/v8/custom/V8DocumentLocationCustom.cpp \
         bindings/v8/custom/V8ElementCustom.cpp \
         bindings/v8/custom/V8EventCustom.cpp \
-        bindings/v8/custom/V8EventSourceConstructor.cpp \
         bindings/v8/custom/V8FileReaderCustom.cpp \
         bindings/v8/custom/V8HTMLAllCollectionCustom.cpp
 
@@ -194,6 +193,7 @@ v8 {
         bindings/v8/custom/V8MessageChannelConstructor.cpp \
         bindings/v8/custom/V8MessagePortCustom.cpp \
         bindings/v8/custom/V8MessageEventCustom.cpp \
+        bindings/v8/custom/V8MutationCallbackCustom.cpp \
         bindings/v8/custom/V8NamedNodeMapCustom.cpp \
         bindings/v8/custom/V8NamedNodesCollection.cpp \
         bindings/v8/custom/V8NodeCustom.cpp \
@@ -203,12 +203,11 @@ v8 {
         bindings/v8/custom/V8SQLTransactionCustom.cpp \
         bindings/v8/custom/V8WebSocketCustom.cpp \
         \
-        bindings/v8/custom/V8SharedWorkerCustom.cpp \
         bindings/v8/custom/V8StorageCustom.cpp \
         bindings/v8/custom/V8StyleSheetCustom.cpp \
         bindings/v8/custom/V8StyleSheetListCustom.cpp \
         bindings/v8/custom/V8WebKitAnimationCustom.cpp \
-        bindings/v8/custom/V8WebKitCSSMatrixConstructor.cpp \
+        bindings/v8/custom/V8WebKitMutationObserverCustom.cpp \
         bindings/v8/custom/V8WebKitPointConstructor.cpp \
         bindings/v8/custom/V8WorkerContextCustom.cpp \
         bindings/v8/custom/V8WorkerCustom.cpp \
@@ -254,6 +253,7 @@ v8 {
         bindings/js/JSCoordinatesCustom.cpp \
         bindings/js/JSCustomVoidCallback.cpp \
         bindings/js/JSCustomXPathNSResolver.cpp \
+        bindings/js/JSDictionary.cpp \
         bindings/js/JSDOMBinding.cpp \
         bindings/js/JSDOMFormDataCustom.cpp \
         bindings/js/JSDOMGlobalObject.cpp \
@@ -277,7 +277,6 @@ v8 {
         bindings/js/JSEventConstructors.cpp \
         bindings/js/JSEventCustom.cpp \
         bindings/js/JSEventListener.cpp \
-        bindings/js/JSEventSourceCustom.cpp \
         bindings/js/JSEventTarget.cpp \
         bindings/js/JSExceptionBase.cpp \
         bindings/js/JSFileReaderCustom.cpp \
@@ -319,6 +318,7 @@ v8 {
         bindings/js/JSMessageEventCustom.cpp \
         bindings/js/JSMessagePortCustom.cpp \
         bindings/js/JSMessagePortCustom.h \
+        bindings/js/JSMutationCallbackCustom.cpp \
         bindings/js/JSNamedNodeMapCustom.cpp \
         bindings/js/JSNavigatorCustom.cpp  \
         bindings/js/JSNodeCustom.cpp \
@@ -328,8 +328,10 @@ v8 {
         bindings/js/JSNodeListCustom.cpp \
         bindings/js/JSOptionConstructor.cpp \
         bindings/js/JSPluginElementFunctions.cpp \
+        bindings/js/JSPopStateEventCustom.cpp \
         bindings/js/JSProcessingInstructionCustom.cpp \
         bindings/js/JSScriptProfileNodeCustom.cpp \
+        bindings/js/JSStorageCustom.cpp \
         bindings/js/JSStyleSheetCustom.cpp \
         bindings/js/JSStyleSheetListCustom.cpp \
         bindings/js/JSTextCustom.cpp \
@@ -344,6 +346,7 @@ v8 {
         bindings/js/JSWebKitCSSKeyframeRuleCustom.cpp \
         bindings/js/JSWebKitCSSKeyframesRuleCustom.cpp \
         bindings/js/JSWebKitCSSMatrixCustom.cpp \
+        bindings/js/JSWebKitMutationObserverCustom.cpp \
         bindings/js/JSWebKitPointCustom.cpp \
         bindings/js/JSXMLHttpRequestCustom.cpp \
         bindings/js/JSXMLHttpRequestUploadCustom.cpp \
@@ -384,6 +387,7 @@ v8 {
 }
 
 SOURCES += \
+    css/CSSBorderImageSliceValue.cpp \
     css/CSSBorderImageValue.cpp \
     css/CSSCanvasValue.cpp \
     css/CSSCharsetRule.cpp \
@@ -415,6 +419,7 @@ SOURCES += \
     css/CSSPropertyLonghand.cpp \
     css/CSSPropertySourceData.cpp \
     css/CSSReflectValue.cpp \
+    css/CSSRegionStyleRule.cpp \
     css/CSSRule.cpp \
     css/CSSRuleList.cpp \
     css/CSSSelector.cpp \
@@ -441,12 +446,13 @@ SOURCES += \
     css/MediaQueryListListener.cpp \
     css/MediaQueryMatcher.cpp \
     css/RGBColor.cpp \
+    css/SelectorChecker.cpp \
     css/ShadowValue.cpp \
     css/StyleBase.cpp \
-    css/StyleList.cpp \
     css/StyleMedia.cpp \
     css/StyleSheet.cpp \
     css/StyleSheetList.cpp \
+    css/WebKitCSSFilterValue.cpp \
     css/WebKitCSSKeyframeRule.cpp \
     css/WebKitCSSKeyframesRule.cpp \
     css/WebKitCSSMatrix.cpp \
@@ -454,7 +460,6 @@ SOURCES += \
     dom/ActiveDOMObject.cpp \
     dom/Attr.cpp \
     dom/Attribute.cpp \
-    dom/BeforeProcessEvent.cpp \
     dom/BeforeTextInsertedEvent.cpp \
     dom/BeforeUnloadEvent.cpp \
     dom/CDATASection.cpp \
@@ -498,6 +503,7 @@ SOURCES += \
     dom/EventContext.cpp \
     dom/EventDispatchMediator.cpp \
     dom/EventDispatcher.cpp \
+    dom/EventListenerMap.cpp \
     dom/EventNames.cpp \
     dom/EventTarget.cpp \
     dom/EventQueue.cpp \
@@ -510,9 +516,11 @@ SOURCES += \
     dom/MessageEvent.cpp \
     dom/MessagePort.cpp \
     dom/MessagePortChannel.cpp \
+    dom/MicroDataItemList.cpp \
     dom/MouseEvent.cpp \
     dom/MouseRelatedEvent.cpp \
     dom/MutationEvent.cpp \
+    dom/MutationRecord.cpp \
     dom/NamedNodeMap.cpp \
     dom/NameNodeList.cpp \
     dom/Node.cpp \
@@ -521,7 +529,6 @@ SOURCES += \
     dom/NodeIterator.cpp \
     dom/NodeRenderingContext.cpp \
     dom/Notation.cpp \
-    dom/OptionGroupElement.cpp \
     dom/OptionElement.cpp \
     dom/StaticHashSetNodeList.cpp \
     dom/OverflowEvent.cpp \
@@ -541,8 +548,7 @@ SOURCES += \
     dom/ScriptElement.cpp \
     dom/ScriptExecutionContext.cpp \
     dom/ScriptRunner.cpp \
-    dom/SelectElement.cpp \
-    dom/SelectorNodeList.cpp \
+    dom/SelectorQuery.cpp \
     dom/ShadowContentElement.cpp \
     dom/ShadowInclusionSelector.cpp \
     dom/ShadowRoot.cpp \
@@ -565,6 +571,7 @@ SOURCES += \
     dom/UserTypingGestureIndicator.cpp \
     dom/ViewportArguments.cpp \
     dom/WebKitAnimationEvent.cpp \
+    dom/WebKitMutationObserver.cpp \
     dom/WebKitTransitionEvent.cpp \
     dom/WheelEvent.cpp \
     dom/WindowEventContext.cpp \
@@ -607,8 +614,10 @@ SOURCES += \
     editing/ReplaceNodeWithSpanCommand.cpp \
     editing/ReplaceSelectionCommand.cpp \
     editing/SetNodeAttributeCommand.cpp \
+    editing/SetSelectionCommand.cpp \
     editing/SmartReplaceICU.cpp \
     editing/SpellChecker.cpp \
+    editing/SpellingCorrectionCommand.cpp \
     editing/SpellingCorrectionController.cpp \
     editing/SplitElementCommand.cpp \
     editing/SplitTextNodeCommand.cpp \
@@ -667,7 +676,6 @@ SOURCES += \
     html/HTMLBRElement.cpp \
     html/HTMLBaseElement.cpp \
     html/HTMLBaseFontElement.cpp \
-    html/HTMLBlockquoteElement.cpp \
     html/HTMLBodyElement.cpp \
     html/HTMLButtonElement.cpp \
     html/HTMLCanvasElement.cpp \
@@ -726,6 +734,7 @@ SOURCES += \
     html/HTMLQuoteElement.cpp \
     html/HTMLScriptElement.cpp \
     html/HTMLSelectElement.cpp \
+    html/HTMLSpanElement.cpp \
     html/HTMLStyleElement.cpp \
     html/HTMLSummaryElement.cpp \
     html/HTMLTableCaptionElement.cpp \
@@ -813,6 +822,7 @@ SOURCES += \
     html/shadow/SliderThumbElement.cpp \
     html/shadow/TextControlInnerElements.cpp \
     inspector/ConsoleMessage.cpp \
+    inspector/ContentSearchUtils.cpp \
     inspector/DOMNodeHighlighter.cpp \
     inspector/IdentifiersFactory.cpp \
     inspector/InjectedScript.cpp \
@@ -853,13 +863,20 @@ SOURCES += \
     inspector/TimelineRecordFactory.cpp \
     inspector/WorkerDebuggerAgent.cpp \
     inspector/WorkerInspectorController.cpp \
+    loader/appcache/ApplicationCache.cpp \
+    loader/appcache/ApplicationCacheGroup.cpp \
+    loader/appcache/ApplicationCacheHost.cpp \
+    loader/appcache/ApplicationCacheStorage.cpp \
+    loader/appcache/ApplicationCacheResource.cpp \
+    loader/appcache/DOMApplicationCache.cpp \
+    loader/appcache/ManifestParser.cpp \
     loader/archive/ArchiveResource.cpp \
     loader/archive/ArchiveResourceCollection.cpp \
     loader/cache/MemoryCache.cpp \
     loader/cache/CachedCSSStyleSheet.cpp \
     loader/cache/CachedFont.cpp \
     loader/cache/CachedImage.cpp \
-    loader/cache/CachedResourceClientWalker.cpp \
+    loader/cache/CachedRawResource.cpp \
     loader/cache/CachedResourceHandle.cpp \
     loader/cache/CachedResourceRequest.cpp \
     loader/cache/CachedResource.cpp \
@@ -1040,6 +1057,7 @@ SOURCES += \
     platform/mock/GeolocationClientMock.cpp \
     platform/mock/GeolocationServiceMock.cpp \
     platform/mock/SpeechInputClientMock.cpp \
+    platform/mock/ScrollbarThemeMock.cpp \
     platform/network/AuthenticationChallengeBase.cpp \
     platform/network/BlobData.cpp \
     platform/network/BlobRegistryImpl.cpp \
@@ -1049,6 +1067,7 @@ SOURCES += \
     platform/network/FormDataBuilder.cpp \
     platform/network/HTTPHeaderMap.cpp \
     platform/network/HTTPParsers.cpp \
+    platform/network/HTTPValidation.cpp \
     platform/network/MIMEHeader.cpp \
     platform/network/NetworkStateNotifier.cpp \
     platform/network/ProtectionSpace.cpp \
@@ -1063,6 +1082,7 @@ SOURCES += \
     platform/ScrollableArea.cpp \
     platform/ScrollAnimator.cpp \
     platform/Scrollbar.cpp \
+    platform/ScrollbarTheme.cpp \
     platform/ScrollbarThemeComposite.cpp \
     platform/ScrollView.cpp \
     platform/text/SegmentedString.cpp \
@@ -1103,10 +1123,12 @@ SOURCES += \
     rendering/FixedTableLayout.cpp \
     rendering/HitTestingTransformState.cpp \
     rendering/HitTestResult.cpp \
+    rendering/ImageBySizeCache.cpp \
     rendering/InlineBox.cpp \
     rendering/InlineFlowBox.cpp \
     rendering/InlineTextBox.cpp \
     rendering/LayoutState.cpp \
+    rendering/LayoutRepainter.cpp \
     rendering/RenderApplet.cpp \
     rendering/RenderArena.cpp \
     rendering/RenderBlock.cpp \
@@ -1190,6 +1212,7 @@ SOURCES += \
     rendering/style/StyleBoxData.cpp \
     rendering/style/StyleCachedImage.cpp \
     rendering/style/StyleDeprecatedFlexibleBoxData.cpp \
+    rendering/style/StyleFilterData.cpp \
     rendering/style/StyleFlexibleBoxData.cpp \
     rendering/style/StyleGeneratedImage.cpp \
     rendering/style/StyleInheritedData.cpp \
@@ -1200,13 +1223,40 @@ SOURCES += \
     rendering/style/StyleSurroundData.cpp \
     rendering/style/StyleTransformData.cpp \
     rendering/style/StyleVisualData.cpp \
+    storage/LocalStorageTask.cpp \
+    storage/LocalStorageThread.cpp \
+    storage/Storage.cpp \
+    storage/StorageAreaImpl.cpp \
+    storage/StorageAreaSync.cpp \
+    storage/StorageEvent.cpp \
+    storage/StorageEventDispatcher.cpp \
+    storage/StorageMap.cpp \
+    storage/StorageNamespace.cpp \
+    storage/StorageNamespaceImpl.cpp \
+    storage/StorageSyncManager.cpp \
+    storage/StorageTracker.cpp \
     testing/Internals.cpp \
     xml/DOMParser.cpp \
+    xml/NativeXPathNSResolver.cpp \
     xml/XMLHttpRequest.cpp \
     xml/XMLHttpRequestProgressEventThrottle.cpp \
     xml/XMLHttpRequestUpload.cpp \
     xml/XMLErrors.cpp \
     xml/XMLSerializer.cpp \
+    xml/XPathEvaluator.cpp \
+    xml/XPathExpression.cpp \
+    xml/XPathExpressionNode.cpp \
+    xml/XPathFunctions.cpp \
+    xml/XPathNodeSet.cpp \
+    xml/XPathNSResolver.cpp \
+    xml/XPathParser.cpp \
+    xml/XPathPath.cpp \
+    xml/XPathPredicate.cpp \
+    xml/XPathResult.cpp \
+    xml/XPathStep.cpp \
+    xml/XPathUtil.cpp \
+    xml/XPathValue.cpp \
+    xml/XPathVariableReference.cpp \
     xml/parser/NewXMLDocumentParser.cpp \
     xml/parser/XMLCharacterReferenceParser.cpp \
     xml/parser/XMLDocumentParser.cpp \
@@ -1228,6 +1278,7 @@ HEADERS += \
     accessibility/AccessibilityScrollbar.h \
     accessibility/AccessibilityScrollView.h \
     accessibility/AccessibilitySlider.h \
+    accessibility/AccessibilitySpinButton.h \
     accessibility/AccessibilityTableCell.h \
     accessibility/AccessibilityTableColumn.h \
     accessibility/AccessibilityTable.h \
@@ -1318,6 +1369,7 @@ v8 {
         bindings/js/JSCallbackData.h \
         bindings/js/JSCustomVoidCallback.h \
         bindings/js/JSCustomXPathNSResolver.h \
+        bindings/js/JSDictionary.h \
         bindings/js/JSDOMBinding.h \
         bindings/js/JSDOMGlobalObject.h \
         bindings/js/JSDOMStringMapCustom.h \
@@ -1376,7 +1428,6 @@ v8 {
         bridge/jsc/BridgeJSC.h \
         bridge/IdentifierRep.h \
         bridge/NP_jsobject.h \
-        bridge/npruntime.h \
         bridge/qt/qt_class.h \
         bridge/qt/qt_instance.h \
         bridge/qt/qt_runtime.h \
@@ -1384,10 +1435,12 @@ v8 {
         bridge/runtime_array.h \
         bridge/runtime_method.h \
         bridge/runtime_object.h \
-        bridge/runtime_root.h
+        bridge/runtime_root.h \
+        plugins/npruntime.h
 }
 
 HEADERS += \
+    css/CSSBorderImageSliceValue.h \
     css/CSSBorderImageValue.h \
     css/CSSCanvasValue.h \
     css/CSSCharsetRule.h \
@@ -1418,6 +1471,7 @@ HEADERS += \
     css/CSSProperty.h \
     css/CSSPropertyLonghand.h \
     css/CSSReflectValue.h \
+    css/CSSRegionStyleRule.h \
     css/CSSRule.h \
     css/CSSRuleList.h \
     css/CSSSegmentedFontFace.h \
@@ -1444,12 +1498,13 @@ HEADERS += \
     css/MediaQueryListListener.h \
     css/MediaQueryMatcher.h \
     css/RGBColor.h \
+    css/SelectorChecker.h \
     css/ShadowValue.h \
     css/StyleBase.h \
-    css/StyleList.h \
     css/StyleMedia.h \
     css/StyleSheet.h \
     css/StyleSheetList.h \
+    css/WebKitCSSFilterValue.h \
     css/WebKitCSSKeyframeRule.h \
     css/WebKitCSSKeyframesRule.h \
     css/WebKitCSSMatrix.h \
@@ -1499,6 +1554,7 @@ HEADERS += \
     dom/EntityReference.h \
     dom/Event.h \
     dom/EventDispatchMediator.h \
+    dom/EventListenerMap.h \
     dom/EventNames.h \
     dom/EventTarget.h \
     dom/ExceptionBase.h \
@@ -1509,9 +1565,12 @@ HEADERS += \
     dom/MessageEvent.h \
     dom/MessagePortChannel.h \
     dom/MessagePort.h \
+    dom/MicroDataItemList.h \
     dom/MouseEvent.h \
     dom/MouseRelatedEvent.h \
+    dom/MutationCallback.h \
     dom/MutationEvent.h \
+    dom/MutationRecord.h \
     dom/NamedNodeMap.h \
     dom/NameNodeList.h \
     dom/NodeFilterCondition.h \
@@ -1521,7 +1580,6 @@ HEADERS += \
     dom/NodeRenderingContext.h \
     dom/Notation.h \
     dom/OptionElement.h \
-    dom/OptionGroupElement.h \
     dom/StaticHashSetNodeList.h \
     dom/OverflowEvent.h \
     dom/PageTransitionEvent.h \
@@ -1535,8 +1593,7 @@ HEADERS += \
     dom/RenderedDocumentMarker.h \
     dom/ScriptElement.h \
     dom/ScriptExecutionContext.h \
-    dom/SelectElement.h \
-    dom/SelectorNodeList.h \
+    dom/SelectorQuery.h \
     dom/ShadowContentElement.h \
     dom/ShadowInclusionSelector.h \
     dom/ShadowRoot.h \
@@ -1561,6 +1618,7 @@ HEADERS += \
     dom/UserGestureIndicator.h \
     dom/ViewportArguments.h \
     dom/WebKitAnimationEvent.h \
+    dom/WebKitMutationObserver.h \
     dom/WebKitTransitionEvent.h \
     dom/WheelEvent.h \
     editing/AppendNodeCommand.h \
@@ -1603,6 +1661,7 @@ HEADERS += \
     editing/ReplaceSelectionCommand.h \
     editing/SetNodeAttributeCommand.h \
     editing/SmartReplace.h \
+    editing/SpellingCorrectionCommand.h \
     editing/SpellingCorrectionController.h \
     editing/SplitElementCommand.h \
     editing/SplitTextNodeCommand.h \
@@ -1655,7 +1714,6 @@ HEADERS += \
     html/canvas/Uint8Array.h \
     html/ClassList.h \
     html/CollectionCache.h \
-    html/CueIndex.h \
     html/DOMFormData.h \
     html/DOMSettableTokenList.h \
     html/DOMTokenList.h \
@@ -1670,7 +1728,6 @@ HEADERS += \
     html/HTMLAudioElement.h \
     html/HTMLBaseElement.h \
     html/HTMLBaseFontElement.h \
-    html/HTMLBlockquoteElement.h \
     html/HTMLBodyElement.h \
     html/HTMLBRElement.h \
     html/HTMLButtonElement.h \
@@ -1714,7 +1771,6 @@ HEADERS += \
     html/HTMLMeterElement.h \
     html/HTMLModElement.h \
     html/HTMLNameCollection.h \
-    html/HTMLNoScriptElement.h \
     html/HTMLObjectElement.h \
     html/HTMLOListElement.h \
     html/HTMLOptGroupElement.h \
@@ -1732,6 +1788,7 @@ HEADERS += \
     html/HTMLScriptElement.h \
     html/HTMLSelectElement.h \
     html/HTMLSourceElement.h \
+    html/HTMLSpanElement.h \
     html/HTMLStyleElement.h \
     html/HTMLSummaryElement.h \
     html/HTMLTableCaptionElement.h \
@@ -1761,6 +1818,7 @@ HEADERS += \
     html/TextDocument.h \
     html/TextTrack.h \
     html/TextTrackCue.h \
+    html/TextTrackCueIndex.h \
     html/TextTrackCueList.h \
     html/TimeRanges.h \
     html/ValidityState.h \
@@ -1783,7 +1841,11 @@ HEADERS += \
     html/parser/XSSAuditor.h \
     html/shadow/MediaControlElements.h \
     html/shadow/DetailsMarkerControl.h \
+    html/track/WebVTTParser.h \
+    html/track/WebVTTToken.h \
+    html/track/WebVTTTokenizer.h \
     inspector/ConsoleMessage.h \
+    inspector/ContentSearchUtils.h \
     inspector/DOMNodeHighlighter.h \
     inspector/IdentifiersFactory.h \
     inspector/InjectedScript.h \
@@ -1843,7 +1905,6 @@ HEADERS += \
     loader/cache/MemoryCache.h \
     loader/CrossOriginAccessControl.h \
     loader/CrossOriginPreflightResultCache.h \
-    loader/CueLoader.h \
     loader/cache/CachedResourceLoader.h \
     loader/DocumentLoader.h \
     loader/DocumentThreadableLoader.h \
@@ -1868,6 +1929,7 @@ HEADERS += \
     loader/ResourceLoader.h \
     loader/SubresourceLoader.h \
     loader/TextResourceDecoder.h \
+    loader/TextTrackLoader.h \
     loader/ThreadableLoader.h \
     loader/WorkerThreadableLoader.h \
     mathml/MathMLElement.h \
@@ -1951,6 +2013,7 @@ HEADERS += \
     platform/mock/GeolocationClientMock.cpp \
     platform/mock/GeolocationServiceMock.h \
     platform/mock/SpeechInputClientMock.h \
+    platform/mock/ScrollbarThemeMock.h \
     platform/graphics/BitmapImage.h \
     platform/graphics/Color.h \
     platform/graphics/filters/FEBlend.h \
@@ -1971,6 +2034,8 @@ HEADERS += \
     platform/graphics/filters/FETile.h \
     platform/graphics/filters/FETurbulence.h \
     platform/graphics/filters/FilterEffect.h \
+    platform/graphics/filters/FilterOperation.h \
+    platform/graphics/filters/FilterOperations.h \
     platform/graphics/filters/LightSource.h \
     platform/graphics/filters/SourceAlpha.h \
     platform/graphics/filters/SourceGraphic.h \
@@ -2059,6 +2124,7 @@ HEADERS += \
     platform/network/FormData.h \
     platform/network/HTTPHeaderMap.h \
     platform/network/HTTPParsers.h \
+    platform/network/HTTPValidation.h \
     platform/network/HTTPStatusCodes.h \
     platform/network/MIMESniffing.h \
     platform/network/NetworkingContext.h \
@@ -2075,10 +2141,12 @@ HEADERS += \
     platform/network/ResourceRequestBase.h \
     platform/network/ResourceResponseBase.h \
     platform/network/qt/DnsPrefetchHelper.h \
+    platform/network/qt/NetworkStateNotifierPrivate.h \
     platform/PlatformTouchEvent.h \
     platform/PlatformTouchPoint.h \
     platform/PopupMenu.h \
     platform/qt/ClipboardQt.h \
+    platform/qt/CookieJarQt.h \
     platform/qt/QWebPageClient.h \
     platform/qt/QtStyleOptionWebComboBox.h \
     platform/qt/RenderThemeQt.h \
@@ -2098,6 +2166,7 @@ HEADERS += \
     platform/sql/SQLValue.h \
     platform/text/Base64.h \
     platform/text/BidiContext.h \
+    platform/text/DecodeEscapeSequences.h \
     platform/text/Hyphenation.h \
     platform/text/QuotedPrintable.h \
     platform/text/qt/TextCodecQt.h \
@@ -2118,9 +2187,6 @@ HEADERS += \
     platform/ThreadGlobalData.h \
     platform/ThreadTimers.h \
     platform/Timer.h \
-    platform/track/CueParser.h \
-    platform/track/CueParserPrivate.h \
-    platform/track/WebVTTParser.h \
     platform/Widget.h \
     platform/PlatformStrategies.h \
     platform/LocalizedStrings.h \
@@ -2144,11 +2210,13 @@ HEADERS += \
     rendering/FixedTableLayout.h \
     rendering/HitTestingTransformState.h \
     rendering/HitTestResult.h \
+    rendering/ImageBySizeCache.h \
     rendering/InlineBox.h \
     rendering/InlineFlowBox.h \
     rendering/InlineTextBox.h \
     rendering/LayoutState.h \
     rendering/LayoutTypes.h \
+    rendering/LayoutRepainter.h \
     rendering/mathml/RenderMathMLBlock.h \
     rendering/mathml/RenderMathMLFenced.h \
     rendering/mathml/RenderMathMLFraction.h \
@@ -2247,6 +2315,7 @@ HEADERS += \
     rendering/style/StyleBoxData.h \
     rendering/style/StyleCachedImage.h \
     rendering/style/StyleDeprecatedFlexibleBoxData.h \
+    rendering/style/StyleFilterData.h \
     rendering/style/StyleFlexibleBoxData.h \
     rendering/style/StyleGeneratedImage.h \
     rendering/style/StyleInheritedData.h \
@@ -2312,6 +2381,41 @@ HEADERS += \
     rendering/svg/SVGTextMetrics.h \
     rendering/svg/SVGTextQuery.h \
     rendering/svg/SVGTextRunRenderingContext.h \
+    storage/AbstractDatabase.h \
+    storage/ChangeVersionWrapper.h \
+    storage/DatabaseAuthorizer.h \
+    storage/Database.h \
+    storage/DatabaseCallback.h \
+    storage/DatabaseSync.h \
+    storage/DatabaseTask.h \
+    storage/DatabaseThread.h \
+    storage/DatabaseTracker.h \
+    storage/LocalStorageTask.h \
+    storage/LocalStorageThread.h \
+    storage/OriginQuotaManager.h \
+    storage/OriginUsageRecord.h \
+    storage/SQLCallbackWrapper.h \
+    storage/SQLResultSet.h \
+    storage/SQLResultSetRowList.h \
+    storage/SQLStatement.h \
+    storage/SQLStatementSync.h \
+    storage/SQLTransaction.h \
+    storage/SQLTransactionClient.h \
+    storage/SQLTransactionCoordinator.h \
+    storage/SQLTransactionSync.h \
+    storage/SQLTransactionSyncCallback.h \
+    storage/StorageArea.h \
+    storage/StorageAreaImpl.h \
+    storage/StorageAreaSync.h \
+    storage/StorageEvent.h \
+    storage/StorageEventDispatcher.h \
+    storage/Storage.h \
+    storage/StorageMap.h \
+    storage/StorageNamespace.h \
+    storage/StorageNamespaceImpl.h \
+    storage/StorageSyncManager.h \
+    storage/StorageTracker.h \
+    storage/StorageTrackerClient.h \
     svg/animation/SMILTimeContainer.h \
     svg/animation/SMILTime.h \
     svg/animation/SVGSMILElement.h \
@@ -2554,7 +2658,6 @@ SOURCES += \
     accessibility/qt/AccessibilityObjectQt.cpp \
     page/qt/DragControllerQt.cpp \
     page/qt/EventHandlerQt.cpp \
-    page/qt/FrameQt.cpp \
     platform/graphics/qt/TransformationMatrixQt.cpp \
     platform/graphics/qt/ColorQt.cpp \
     platform/graphics/qt/FontQt.cpp \
@@ -2578,6 +2681,7 @@ SOURCES += \
     platform/network/qt/ResourceHandleQt.cpp \
     platform/network/qt/ResourceRequestQt.cpp \
     platform/network/qt/DnsPrefetchHelper.cpp \
+    platform/network/qt/NetworkStateNotifierQt.cpp \
     platform/network/qt/ProxyServerQt.cpp \
     platform/network/qt/QtMIMETypeSniffer.cpp \
     platform/network/qt/QNetworkReplyHandler.cpp \
@@ -2658,17 +2762,11 @@ contains (CONFIG, use_system_icu) {
     SOURCES += platform/text/TextBreakIteratorICU.cpp
 }
 
-symbian {
-    SOURCES += \
-        plugins/symbian/PluginDatabaseSymbian.cpp \
-        plugins/symbian/PluginPackageSymbian.cpp
-}
-
 contains(DEFINES, ENABLE_NETSCAPE_PLUGIN_API=1) {
 
     SOURCES += plugins/npapi.cpp
 
-    unix:!symbian {
+    unix {
         mac {
             SOURCES += \
                 plugins/mac/PluginPackageMac.cpp
@@ -2726,7 +2824,7 @@ contains(DEFINES, ENABLE_SQLITE=1) {
 }
 
 
-contains(DEFINES, ENABLE_DATABASE=1) {
+contains(DEFINES, ENABLE_SQL_DATABASE=1) {
     SOURCES += \
         storage/ChangeVersionWrapper.cpp \
         storage/DatabaseTask.cpp \
@@ -2825,63 +2923,6 @@ contains(DEFINES, ENABLE_DATA_TRANSFER_ITEMS=1) {
         dom/StringCallback.cpp \
         platform/qt/DataTransferItemQt.cpp \
         platform/qt/DataTransferItemsQt.cpp
-}
-
-contains(DEFINES, ENABLE_DOM_STORAGE=1) {
-    HEADERS += \
-        storage/AbstractDatabase.h \
-        storage/ChangeVersionWrapper.h \
-        storage/DatabaseAuthorizer.h \
-        storage/Database.h \
-        storage/DatabaseCallback.h \
-        storage/DatabaseSync.h \
-        storage/DatabaseTask.h \
-        storage/DatabaseThread.h \
-        storage/DatabaseTracker.h \
-        storage/LocalStorageTask.h \
-        storage/LocalStorageThread.h \
-        storage/OriginQuotaManager.h \
-        storage/OriginUsageRecord.h \
-        storage/SQLCallbackWrapper.h \
-        storage/SQLResultSet.h \
-        storage/SQLResultSetRowList.h \
-        storage/SQLStatement.h \
-        storage/SQLStatementSync.h \
-        storage/SQLTransaction.h \
-        storage/SQLTransactionClient.h \
-        storage/SQLTransactionCoordinator.h \
-        storage/SQLTransactionSync.h \
-        storage/SQLTransactionSyncCallback.h \
-        storage/StorageArea.h \
-        storage/StorageAreaImpl.h \
-        storage/StorageAreaSync.h \
-        storage/StorageEvent.h \
-        storage/StorageEventDispatcher.h \
-        storage/Storage.h \
-        storage/StorageMap.h \
-        storage/StorageNamespace.h \
-        storage/StorageNamespaceImpl.h \
-        storage/StorageSyncManager.h \
-        storage/StorageTracker.h \
-        storage/StorageTrackerClient.h
-
-    !v8 {
-        SOURCES += \
-            bindings/js/JSStorageCustom.cpp
-    }
-    SOURCES += \
-        storage/LocalStorageTask.cpp \
-        storage/LocalStorageThread.cpp \
-        storage/Storage.cpp \
-        storage/StorageAreaImpl.cpp \
-        storage/StorageAreaSync.cpp \
-        storage/StorageEvent.cpp \
-        storage/StorageEventDispatcher.cpp \
-        storage/StorageMap.cpp \
-        storage/StorageNamespace.cpp \
-        storage/StorageNamespaceImpl.cpp \
-        storage/StorageSyncManager.cpp \
-        storage/StorageTracker.cpp
 }
 
 contains(DEFINES, ENABLE_FILE_SYSTEM=1) {
@@ -3033,7 +3074,9 @@ contains(DEFINES, ENABLE_VIDEO=1) {
 
     contains(DEFINES, WTF_USE_QTKIT=1) {
         INCLUDEPATH += \
-            $$SOURCE_DIR/../WebKitLibraries/
+            $$SOURCE_DIR/../WebKitLibraries/ \
+            $$PWD/platform/mac
+
 
         HEADERS += \
             platform/graphics/mac/MediaPlayerPrivateQTKit.h \
@@ -3046,6 +3089,7 @@ contains(DEFINES, ENABLE_VIDEO=1) {
             platform/mac/WebWindowAnimation.h
 
         SOURCES += \
+            platform/mac/DisplaySleepDisabler.cpp \
             platform/graphics/cg/IntRectCG.cpp \
             platform/graphics/cg/FloatSizeCG.cpp \
             platform/cf/SharedBufferCF.cpp \
@@ -3059,6 +3103,7 @@ contains(DEFINES, ENABLE_VIDEO=1) {
             platform/mac/SharedBufferMac.mm \
             platform/mac/KURLMac.mm \
             platform/text/mac/StringMac.mm \
+            platform/text/mac/StringImplMac.mm \
             platform/graphics/mac/FloatSizeMac.mm \
             platform/graphics/mac/IntRectMac.mm \
             platform/mac/WebVideoFullscreenController.mm \
@@ -3066,6 +3111,9 @@ contains(DEFINES, ENABLE_VIDEO=1) {
             platform/mac/WebWindowAnimation.mm
 
         DEFINES+=NSGEOMETRY_TYPES_SAME_AS_CGGEOMETRY_TYPES
+        contains(CONFIG, "x86") {
+            DEFINES+=NS_BUILD_32_LIKE_64
+        }
 
     } else: contains(DEFINES, WTF_USE_GSTREAMER=1) {
         HEADERS += \
@@ -3097,23 +3145,11 @@ contains(DEFINES, ENABLE_VIDEO=1) {
     }
 }
 
-contains(DEFINES, ENABLE_XPATH=1) {
+contains(DEFINES, ENABLE_FULLSCREEN_API=1) {
     SOURCES += \
-        xml/NativeXPathNSResolver.cpp \
-        xml/XPathEvaluator.cpp \
-        xml/XPathExpression.cpp \
-        xml/XPathExpressionNode.cpp \
-        xml/XPathFunctions.cpp \
-        xml/XPathNodeSet.cpp \
-        xml/XPathNSResolver.cpp \
-        xml/XPathParser.cpp \
-        xml/XPathPath.cpp \
-        xml/XPathPredicate.cpp \
-        xml/XPathResult.cpp \
-        xml/XPathStep.cpp \
-        xml/XPathUtil.cpp \
-        xml/XPathValue.cpp \
-        xml/XPathVariableReference.cpp
+        rendering/RenderFullScreen.cpp
+    HEADERS += \
+        rendering/RenderFullScreen.h
 }
 
 contains(DEFINES, ENABLE_XSLT=1) {
@@ -3177,6 +3213,7 @@ contains(DEFINES, ENABLE_FILTERS=1) {
         platform/graphics/filters/FETile.cpp \
         platform/graphics/filters/FETurbulence.cpp \
         platform/graphics/filters/FilterEffect.cpp \
+        platform/graphics/filters/FilterOperations.cpp \
         platform/graphics/filters/LightSource.cpp \
         platform/graphics/filters/PointLightSource.cpp \
         platform/graphics/filters/SpotLightSource.cpp \
@@ -3202,19 +3239,6 @@ contains(DEFINES, ENABLE_MATHML=1) {
         rendering/mathml/RenderMathMLSquareRoot.cpp \
         rendering/mathml/RenderMathMLSubSup.cpp \
         rendering/mathml/RenderMathMLUnderOver.cpp
-}
-
-contains(DEFINES, ENABLE_XHTMLMP=1) {
-    SOURCES += \
-        html/HTMLNoScriptElement.cpp
-}
-
-contains(DEFINES, WTF_USE_QT_BEARER=1) {
-    HEADERS += \
-        platform/network/qt/NetworkStateNotifierPrivate.h
-
-    SOURCES += \
-        platform/network/qt/NetworkStateNotifierQt.cpp
 }
 
 # QRawFont feature added in Qt 4.8.0
@@ -3279,8 +3303,7 @@ contains(DEFINES, ENABLE_MEDIA_STREAM=1) {
 
     v8 {
         SOURCES += \
-            bindings/v8/custom/V8NavigatorCustom.cpp \
-            bindings/v8/custom/V8PeerConnectionCustom.cpp
+            bindings/v8/custom/V8NavigatorCustom.cpp
     } else {
         SOURCES += \
             bindings/js/JSNavigatorCustom.cpp \
@@ -3545,19 +3568,11 @@ contains(DEFINES, ENABLE_JAVASCRIPT_DEBUGGER=1) {
     }
 }
 
-contains(DEFINES, ENABLE_OFFLINE_WEB_APPLICATIONS=1) {
-SOURCES += \
-    loader/appcache/ApplicationCache.cpp \
-    loader/appcache/ApplicationCacheGroup.cpp \
-    loader/appcache/ApplicationCacheHost.cpp \
-    loader/appcache/ApplicationCacheStorage.cpp \
-    loader/appcache/ApplicationCacheResource.cpp \
-    loader/appcache/DOMApplicationCache.cpp \
-    loader/appcache/ManifestParser.cpp
+contains(DEFINES, ENABLE_VIDEO_TRACK=1) {
 
     !v8 {
         SOURCES += \
-            bindings/js/JSDOMApplicationCacheCustom.cpp
+            bindings/js/JSTextTrackCustom.cpp
     }
 }
 
@@ -3608,6 +3623,8 @@ contains(DEFINES, ENABLE_WEBGL=1) {
         html/canvas/WebGLBuffer.h \
         html/canvas/WebGLContextAttributes.h \
         html/canvas/WebGLContextEvent.h \
+        html/canvas/WebGLDebugRendererInfo.h \
+        html/canvas/WebGLDebugShaders.h \
         html/canvas/WebGLExtension.h \
         html/canvas/WebGLFramebuffer.h \
         html/canvas/WebGLGetInfo.h \
@@ -3639,6 +3656,8 @@ contains(DEFINES, ENABLE_WEBGL=1) {
         html/canvas/WebGLBuffer.cpp \
         html/canvas/WebGLContextAttributes.cpp \
         html/canvas/WebGLContextEvent.cpp \
+        html/canvas/WebGLDebugRendererInfo.cpp \
+        html/canvas/WebGLDebugShaders.cpp \
         html/canvas/WebGLExtension.cpp \
         html/canvas/WebGLFramebuffer.cpp \
         html/canvas/WebGLGetInfo.cpp \
@@ -3836,7 +3855,7 @@ contains(CONFIG, texmap) {
         platform/graphics/texmap/TextureMapperNode.cpp \
         platform/graphics/texmap/GraphicsLayerTextureMapper.cpp
 
-    !symbian:!win32-*:contains(QT_CONFIG, opengl) {
+    !win32-*:contains(QT_CONFIG, opengl) {
         HEADERS += platform/graphics/opengl/TextureMapperGL.h
         SOURCES += platform/graphics/opengl/TextureMapperGL.cpp
         CONFIG += opengl-shims
@@ -3850,4 +3869,10 @@ contains(CONFIG, opengl-shims) {
     HEADERS += platform/graphics/cairo/OpenGLShims.h
     SOURCES += platform/graphics/cairo/OpenGLShims.cpp
     DEFINES += QT_OPENGL_SHIMS=1
+}
+
+qt5 {
+    # Add a QtScript dependency for the time being, in order to pull in the include
+    # path for QtScript when it's built as a standalone module
+    QT += script
 }

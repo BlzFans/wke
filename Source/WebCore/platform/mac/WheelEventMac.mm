@@ -93,7 +93,6 @@ PlatformWheelEvent::PlatformWheelEvent(NSEvent* event, NSView *windowView)
     : m_position(pointForEvent(event, windowView))
     , m_globalPosition(globalPointForEvent(event))
     , m_granularity(ScrollByPixelWheelEvent)
-    , m_isAccepted(false)
     , m_shiftKey([event modifierFlags] & NSShiftKeyMask)
     , m_ctrlKey([event modifierFlags] & NSControlKeyMask)
     , m_altKey([event modifierFlags] & NSAlternateKeyMask)
@@ -115,6 +114,12 @@ PlatformWheelEvent::PlatformWheelEvent(NSEvent* event, NSView *windowView)
         m_deltaY *= static_cast<float>(Scrollbar::pixelsPerLineStep());
         m_hasPreciseScrollingDeltas = false;
     }
+
+#if HAVE(INVERTED_WHEEL_EVENTS)
+    m_directionInvertedFromDevice = [event isDirectionInvertedFromDevice];
+#else
+    m_directionInvertedFromDevice = false;
+#endif
 }
 
 } // namespace WebCore

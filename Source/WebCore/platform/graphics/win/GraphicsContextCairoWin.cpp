@@ -65,7 +65,8 @@ static cairo_t* createCairoContextWithHDC(HDC hdc, bool hasAlpha)
 }
 
 GraphicsContext::GraphicsContext(HDC dc, bool hasAlpha)
-    : m_updatingControlTints(false)
+    : m_updatingControlTints(false),
+      m_transparencyCount(0)
 {
     platformInit(dc, hasAlpha);
 }
@@ -80,7 +81,6 @@ void GraphicsContext::platformInit(HDC dc, bool hasAlpha)
 
     m_data = new GraphicsContextPlatformPrivateToplevel(new PlatformContextCairo(cr));
     m_data->m_hdc = dc;
-    cairo_destroy(cr);
     if (platformContext()->cr()) {
         // Make sure the context starts in sync with our state.
         setPlatformFillColor(fillColor(), fillColorSpace());
@@ -123,7 +123,7 @@ static void drawBitmapToContext(GraphicsContextPlatformPrivate* context, cairo_t
 
 void GraphicsContext::releaseWindowsContext(HDC hdc, const IntRect& dstRect, bool supportAlphaBlend, bool mayCreateBitmap)
 {
-    bool createdBitmap = mayCreateBitmap && (!m_data->m_hdc || inTransparencyLayer());
+    bool createdBitmap = mayCreateBitmap && (!m_data->m_hdc || isInTransparencyLayer());
     if (!hdc || !createdBitmap) {
         m_data->restore();
         return;

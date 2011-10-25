@@ -261,7 +261,7 @@ inline void FELighting::platformApplyGeneric(LightingData& data, LightSource::Pa
         int job = parallelJobs.numberOfJobs();
         if (job > 1) {
             int yStart = 1;
-            int yStep = (data.widthDecreasedByOne - 1) / job;
+            int yStep = (data.heightDecreasedByOne - 1) / job;
             for (--job; job >= 0; --job) {
                 PlatformApplyGenericParameters& params = parallelJobs.parameter(job);
                 params.filter = this;
@@ -386,14 +386,9 @@ bool FELighting::drawLighting(ByteArray* pixels, int width, int height)
     return true;
 }
 
-void FELighting::apply()
+void FELighting::platformApplySoftware()
 {
-    if (hasResult())
-        return;
     FilterEffect* in = inputEffect(0);
-    in->apply();
-    if (!in->hasResult())
-        return;
 
     ByteArray* srcPixelArray = createUnmultipliedImageResult();
     if (!srcPixelArray)

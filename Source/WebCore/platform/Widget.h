@@ -78,15 +78,6 @@ class wxWindow;
 typedef wxWindow* PlatformWidget;
 #endif
 
-#if PLATFORM(HAIKU)
-class BView;
-typedef BView* PlatformWidget;
-#endif
-
-#if PLATFORM(BREWMP)
-typedef void* PlatformWidget;
-#endif
-
 #if PLATFORM(EFL)
 typedef struct _Evas_Object Evas_Object;
 typedef struct _Evas Evas;
@@ -137,14 +128,6 @@ public:
     PlatformWidget platformWidget() const;
     void setPlatformWidget(PlatformWidget);
 
-#if PLATFORM(HAIKU)
-    PlatformWidget topLevelPlatformWidget() const { return m_topLevelPlatformWidget; }
-    void setTopLevelPlatformWidget(PlatformWidget widget)
-    {
-        m_topLevelPlatformWidget = widget;
-    }
-#endif
-
     int x() const { return frameRect().x(); }
     int y() const { return frameRect().y(); }
     int width() const { return frameRect().width(); }
@@ -153,12 +136,11 @@ public:
     IntPoint location() const { return frameRect().location(); }
 
     virtual void setFrameRect(const IntRect&);
-    virtual void setBoundsSize(const IntSize&);
-    virtual IntRect frameRect() const;
+    IntRect frameRect() const;
     IntRect boundsRect() const { return IntRect(0, 0, width(),  height()); }
 
-    void resize(int w, int h) { setFrameRect(IntRect(x(), y(), w, h)); setBoundsSize(IntSize(w, h)); }
-    void resize(const IntSize& s) { setFrameRect(IntRect(location(), s)); setBoundsSize(s); }
+    void resize(int w, int h) { setFrameRect(IntRect(x(), y(), w, h)); }
+    void resize(const IntSize& s) { setFrameRect(IntRect(location(), s)); }
     void move(int x, int y) { setFrameRect(IntRect(x, y, width(), height())); }
     void move(const IntPoint& p) { setFrameRect(IntRect(p, size())); }
 
@@ -195,6 +177,12 @@ public:
 
     virtual void notifyWidget(WidgetNotification) { }
 
+    IntRect convertToRootView(const IntRect&) const;
+    IntRect convertFromRootView(const IntRect&) const;
+
+    IntPoint convertToRootView(const IntPoint&) const;
+    IntPoint convertFromRootView(const IntPoint&) const;
+
     // It is important for cross-platform code to realize that Mac has flipped coordinates.  Therefore any code
     // that tries to convert the location of a rect using the point-based convertFromContainingWindow will end
     // up with an inaccurate rect.  Always make sure to use the rect-based convertFromContainingWindow method
@@ -212,9 +200,6 @@ public:
 
 #if PLATFORM(MAC)
     NSView* getOuterView() const;
-
-    static void beforeMouseDown(NSView*, Widget*);
-    static void afterMouseDown(NSView*, Widget*);
 
     void removeFromSuperview();
 #endif
@@ -293,9 +278,6 @@ private:
     QWeakPointer<QObject> m_bindingObject;
 #endif
 
-#if PLATFORM(HAIKU)
-    PlatformWidget m_topLevelPlatformWidget;
-#endif
 };
 
 #if !PLATFORM(MAC)

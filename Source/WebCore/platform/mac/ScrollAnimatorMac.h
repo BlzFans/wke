@@ -32,30 +32,34 @@
 #include "FloatPoint.h"
 #include "FloatSize.h"
 #include "ScrollAnimator.h"
+#include "ScrollElasticityController.h"
 #include "Timer.h"
 #include <wtf/RetainPtr.h>
 
 #ifdef __OBJC__
-@class ScrollAnimationHelperDelegate;
-@class ScrollbarPainterDelegate;
-@class ScrollbarPainterControllerDelegate;
-@class ScrollbarPainterDelegate;
+@class WebScrollAnimationHelperDelegate;
+@class WebScrollbarPainterControllerDelegate;
+@class WebScrollbarPainterDelegate;
 #else
-class ScrollAnimationHelperDelegate;
-class ScrollbarPainterDelegate;
-class ScrollbarPainterControllerDelegate;
-class ScrollbarPainterDelegate;
+class WebScrollAnimationHelperDelegate;
+class WebScrollbarPainterControllerDelegate;
+class WebScrollbarPainterDelegate;
 #endif
 
 #if USE(SCROLLBAR_PAINTER)
 typedef id ScrollbarPainterController;
 #endif
 
+#if !ENABLE(RUBBER_BANDING)
+class ScrollElasticityControllerClient { };
+#endif
+
 namespace WebCore {
 
 class Scrollbar;
 
-class ScrollAnimatorMac : public ScrollAnimator {
+class ScrollAnimatorMac : public ScrollAnimator, private ScrollElasticityControllerClient {
+
 public:
     ScrollAnimatorMac(ScrollableArea*);
     virtual ~ScrollAnimatorMac();
@@ -64,7 +68,7 @@ public:
     virtual void scrollToOffsetWithoutAnimation(const FloatPoint&);
 
 #if ENABLE(RUBBER_BANDING)
-    virtual void handleWheelEvent(PlatformWheelEvent&);
+    virtual bool handleWheelEvent(const PlatformWheelEvent&) OVERRIDE;
 #if ENABLE(GESTURE_EVENTS)
     virtual void handleGestureEvent(const PlatformGestureEvent&);
 #endif
@@ -97,12 +101,12 @@ public:
 
 private:
     RetainPtr<id> m_scrollAnimationHelper;
-    RetainPtr<ScrollAnimationHelperDelegate> m_scrollAnimationHelperDelegate;
+    RetainPtr<WebScrollAnimationHelperDelegate> m_scrollAnimationHelperDelegate;
 
 #if USE(SCROLLBAR_PAINTER)
     RetainPtr<ScrollbarPainterController> m_scrollbarPainterController;
-    RetainPtr<ScrollbarPainterControllerDelegate> m_scrollbarPainterControllerDelegate;
-    RetainPtr<id> m_scrollbarPainterDelegate;
+    RetainPtr<WebScrollbarPainterControllerDelegate> m_scrollbarPainterControllerDelegate;
+    RetainPtr<WebScrollbarPainterDelegate> m_scrollbarPainterDelegate;
 
     void initialScrollbarPaintTimerFired(Timer<ScrollAnimatorMac>*);
     Timer<ScrollAnimatorMac> m_initialScrollbarPaintTimer;
@@ -134,35 +138,26 @@ private:
     FloatPoint adjustScrollPositionIfNecessary(const FloatPoint&) const;
 
 #if ENABLE(RUBBER_BANDING)
+    /// ScrollElasticityControllerClient member functions.
+    virtual bool isHorizontalScrollerPinnedToMinimumPosition() OVERRIDE;
+    virtual bool isHorizontalScrollerPinnedToMaximumPosition() OVERRIDE;
+    virtual IntSize stretchAmount() OVERRIDE;
+    virtual void startSnapRubberbandTimer() OVERRIDE;
+    virtual void stopSnapRubberbandTimer() OVERRIDE;
+
     bool allowsVerticalStretching() const;
     bool allowsHorizontalStretching() const;
     bool pinnedInDirection(float deltaX, float deltaY);
     void snapRubberBand();
     void snapRubberBandTimerFired(Timer<ScrollAnimatorMac>*);
-    void smoothScrollWithEvent(PlatformWheelEvent&);
+    void smoothScrollWithEvent(const PlatformWheelEvent&);
     void beginScrollGesture();
     void endScrollGesture();
 
-    bool m_inScrollGesture;
-    bool m_momentumScrollInProgress;
-    bool m_ignoreMomentumScrolls;
-    bool m_scrollerInitiallyPinnedOnLeft;
-    bool m_scrollerInitiallyPinnedOnRight;
-    int m_cumulativeHorizontalScroll;
-    bool m_didCumulativeHorizontalScrollEverSwitchToOppositeDirectionOfPin;
-    
-    CFTimeInterval m_lastMomentumScrollTimestamp;
-    FloatSize m_overflowScrollDelta;
-    FloatSize m_stretchScrollForce;
-    FloatSize m_momentumVelocity;
-
-    // Rubber band state.
-    CFTimeInterval m_startTime;
-    FloatSize m_startStretch;
-    FloatPoint m_origOrigin;
-    FloatSize m_origVelocity;
+    ScrollElasticityController m_scrollElasticityController;
     Timer<ScrollAnimatorMac> m_snapRubberBandTimer;
 #endif
+
     bool m_drawingIntoLayer;
     bool m_haveScrolledSincePageLoad;
     bool m_needsScrollerStyleUpdate;

@@ -52,6 +52,9 @@ ScrollAnimator::ScrollAnimator(ScrollableArea* scrollableArea)
     : m_scrollableArea(scrollableArea)
     , m_currentPosX(0)
     , m_currentPosY(0)
+    , m_currentZoomScale(1)
+    , m_currentZoomTransX(0)
+    , m_currentZoomTransY(0)
 {
 }
 
@@ -81,7 +84,7 @@ void ScrollAnimator::scrollToOffsetWithoutAnimation(const FloatPoint& offset)
     }
 }
 
-void ScrollAnimator::handleWheelEvent(PlatformWheelEvent& e)
+bool ScrollAnimator::handleWheelEvent(const PlatformWheelEvent& e)
 {
     Scrollbar* horizontalScrollbar = m_scrollableArea->horizontalScrollbar();
     Scrollbar* verticalScrollbar = m_scrollableArea->verticalScrollbar();
@@ -91,13 +94,15 @@ void ScrollAnimator::handleWheelEvent(PlatformWheelEvent& e)
     float deltaX = horizontalScrollbar ? e.deltaX() : 0;
     float deltaY = verticalScrollbar ? e.deltaY() : 0;
 
+    bool handled = false;
+
     IntSize maxForwardScrollDelta = m_scrollableArea->maximumScrollPosition() - m_scrollableArea->scrollPosition();
     IntSize maxBackwardScrollDelta = m_scrollableArea->scrollPosition() - m_scrollableArea->minimumScrollPosition();
     if ((deltaX < 0 && maxForwardScrollDelta.width() > 0)
         || (deltaX > 0 && maxBackwardScrollDelta.width() > 0)
         || (deltaY < 0 && maxForwardScrollDelta.height() > 0)
         || (deltaY > 0 && maxBackwardScrollDelta.height() > 0)) {
-        e.accept();
+        handled = true;
         if (e.granularity() == ScrollByPageWheelEvent) {
             ASSERT(!e.deltaX());
             bool negative = deltaY < 0;
@@ -111,6 +116,8 @@ void ScrollAnimator::handleWheelEvent(PlatformWheelEvent& e)
         if (deltaX)
             scroll(HorizontalScrollbar, ScrollByPixel, horizontalScrollbar->pixelStep(), -deltaX);
     }
+
+    return handled;
 }
 
 #if ENABLE(GESTURE_EVENTS)
@@ -127,6 +134,33 @@ FloatPoint ScrollAnimator::currentPosition() const
 void ScrollAnimator::notifyPositionChanged()
 {
     m_scrollableArea->setScrollOffsetFromAnimation(IntPoint(m_currentPosX, m_currentPosY));
+}
+
+void ScrollAnimator::notifyZoomChanged(ZoomAnimationState state)
+{
+    m_scrollableArea->zoomAnimatorTransformChanged(m_currentZoomScale, m_currentZoomTransX, m_currentZoomTransY,
+                                                   state == ZoomAnimationContinuing ? ScrollableArea::ZoomAnimationContinuing
+                                                                                    : ScrollableArea::ZoomAnimationFinishing);
+}
+
+FloatPoint ScrollAnimator::zoomTranslation() const
+{
+    return FloatPoint(m_currentZoomTransX, m_currentZoomTransY);
+}
+
+void ScrollAnimator::resetZoom()
+{
+    m_currentZoomScale = 1;
+    m_currentZoomTransX = 0;
+    m_currentZoomTransY = 0;
+}
+
+void ScrollAnimator::setZoomParametersForTest(float scale, float x, float y)
+{
+    m_currentZoomScale = scale;
+    m_currentZoomTransX = (1 - scale) * x;
+    m_currentZoomTransY = (1 - scale) * y;
+    notifyZoomChanged(ZoomAnimationContinuing); // Don't let page re-scale.
 }
 
 } // namespace WebCore

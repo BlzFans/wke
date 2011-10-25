@@ -45,11 +45,10 @@
 namespace WebCore {
 
 class ImageLayerTextureUpdater : public LayerTextureUpdater {
-    WTF_MAKE_NONCOPYABLE(ImageLayerTextureUpdater);
 public:
-    static PassOwnPtr<ImageLayerTextureUpdater> create(bool useMapTexSubImage)
+    static PassRefPtr<ImageLayerTextureUpdater> create(bool useMapTexSubImage)
     {
-        return adoptPtr(new ImageLayerTextureUpdater(useMapTexSubImage));
+        return adoptRef(new ImageLayerTextureUpdater(useMapTexSubImage));
     }
 
     virtual ~ImageLayerTextureUpdater() { }
@@ -67,9 +66,9 @@ public:
         m_texSubImage.setSubImageSize(tileSize);
     }
 
-    virtual void updateTextureRect(GraphicsContext3D* context, ManagedTexture* texture, const IntRect& sourceRect, const IntRect& destRect)
+    virtual void updateTextureRect(GraphicsContext3D* context, TextureAllocator* allocator, ManagedTexture* texture, const IntRect& sourceRect, const IntRect& destRect)
     {
-        texture->bindTexture(context);
+        texture->bindTexture(context, allocator);
 
         // Source rect should never go outside the image pixels, even if this
         // is requested because the texture extends outside the image.
@@ -108,13 +107,13 @@ private:
     LayerTextureSubImage m_texSubImage;
 };
 
-PassRefPtr<ImageLayerChromium> ImageLayerChromium::create(GraphicsLayerChromium* owner)
+PassRefPtr<ImageLayerChromium> ImageLayerChromium::create(CCLayerDelegate* delegate)
 {
-    return adoptRef(new ImageLayerChromium(owner));
+    return adoptRef(new ImageLayerChromium(delegate));
 }
 
-ImageLayerChromium::ImageLayerChromium(GraphicsLayerChromium* owner)
-    : TiledLayerChromium(owner)
+ImageLayerChromium::ImageLayerChromium(CCLayerDelegate* delegate)
+    : TiledLayerChromium(delegate)
     , m_imageForCurrentFrame(0)
 {
 }
@@ -142,6 +141,7 @@ void ImageLayerChromium::setContents(Image* contents)
     m_imageForCurrentFrame = m_contents->nativeImageForCurrentFrame();
     m_dirtyRect = IntRect(IntPoint(0, 0), bounds());
     setNeedsDisplay();
+    setOpaque(!m_contents->currentFrameHasAlpha());
 }
 
 void ImageLayerChromium::paintContentsIfDirty()
@@ -152,7 +152,7 @@ void ImageLayerChromium::paintContentsIfDirty()
         IntRect paintRect(IntPoint(), contentBounds());
         if (!m_dirtyRect.isEmpty()) {
             invalidateRect(paintRect);
-            m_dirtyRect = IntRect();
+            resetNeedsDisplay();
         }
     }
 
@@ -181,7 +181,7 @@ bool ImageLayerChromium::drawsContent() const
 
 void ImageLayerChromium::createTextureUpdater(const CCLayerTreeHost* host)
 {
-    m_textureUpdater = ImageLayerTextureUpdater::create(host->contextSupportsMapSub());
+    m_textureUpdater = ImageLayerTextureUpdater::create(host->layerRendererCapabilities().usingMapSub);
 }
 
 }

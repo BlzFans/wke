@@ -29,7 +29,6 @@
 #include "config.h"
 #include "DatabaseAuthorizer.h"
 
-#if ENABLE(DATABASE)
 #include <sqlite3.h>
 
 namespace WebCore {
@@ -39,5 +38,3 @@ const int SQLAuthIgnore = SQLITE_IGNORE;
 const int SQLAuthDeny = SQLITE_DENY;
 
 } // namespace WebCore
-
-#endif // ENABLE(DATABASE)

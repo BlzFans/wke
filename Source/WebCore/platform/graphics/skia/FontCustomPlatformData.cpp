@@ -36,8 +36,8 @@
 #if OS(WINDOWS)
 #include "Base64.h"
 #include "OpenTypeUtilities.h"
-#include "PlatformBridge.h"
-#elif OS(UNIX) || PLATFORM(BREWMP)
+#include "PlatformSupport.h"
+#elif OS(UNIX)
 #include "SkStream.h"
 #endif
 
@@ -48,7 +48,7 @@
 
 #if OS(WINDOWS)
 #include <objbase.h>
-#elif OS(UNIX) || PLATFORM(BREWMP)
+#elif OS(UNIX)
 #include <cstring>
 #endif
 
@@ -59,7 +59,7 @@ FontCustomPlatformData::~FontCustomPlatformData()
 #if OS(WINDOWS)
     if (m_fontReference)
         RemoveFontMemResourceEx(m_fontReference);
-#elif OS(UNIX) || PLATFORM(BREWMP)
+#elif OS(UNIX)
     if (m_fontReference)
         m_fontReference->unref();
 #endif
@@ -92,16 +92,16 @@ FontPlatformData FontCustomPlatformData::fontPlatformData(int size, bool bold, b
     logFont.lfStrikeOut = false;
     logFont.lfCharSet = DEFAULT_CHARSET;
     logFont.lfOutPrecision = OUT_TT_ONLY_PRECIS;
-    logFont.lfQuality = PlatformBridge::layoutTestMode() ?
+    logFont.lfQuality = PlatformSupport::layoutTestMode() ?
                         NONANTIALIASED_QUALITY :
                         DEFAULT_QUALITY; // Honor user's desktop settings.
     logFont.lfPitchAndFamily = DEFAULT_PITCH | FF_DONTCARE;
     logFont.lfItalic = italic;
-    logFont.lfWeight = bold ? 700 : 400;
+    logFont.lfWeight = bold ? FW_BOLD : FW_DONTCARE;
 
     HFONT hfont = CreateFontIndirect(&logFont);
     return FontPlatformData(hfont, size);
-#elif OS(UNIX) || PLATFORM(BREWMP)
+#elif OS(UNIX)
     ASSERT(m_fontReference);
     return FontPlatformData(m_fontReference, "", size, bold && !m_fontReference->isBold(), italic && !m_fontReference->isItalic(), orientation, textOrientation);
 #else
@@ -124,7 +124,7 @@ static String createUniqueFontName()
 }
 #endif
 
-#if OS(UNIX) || PLATFORM(BREWMP)
+#if OS(UNIX)
 class RemoteFontStream : public SkStream {
 public:
     explicit RemoteFontStream(PassRefPtr<SharedBuffer> buffer)
@@ -170,7 +170,7 @@ FontCustomPlatformData* createFontCustomPlatformData(SharedBuffer* buffer)
 {
     ASSERT_ARG(buffer, buffer);
 
-#if ENABLE(OPENTYPE_SANITIZER)
+#if USE(OPENTYPE_SANITIZER)
     OpenTypeSanitizer sanitizer(buffer);
     RefPtr<SharedBuffer> transcodeBuffer = sanitizer.sanitize();
     if (!transcodeBuffer)
@@ -187,9 +187,10 @@ FontCustomPlatformData* createFontCustomPlatformData(SharedBuffer* buffer)
     if (!fontReference)
         return 0;
     return new FontCustomPlatformData(fontReference, fontName);
-#elif OS(UNIX) || PLATFORM(BREWMP)
+#elif OS(UNIX)
     RemoteFontStream* stream = new RemoteFontStream(buffer);
     SkTypeface* typeface = SkTypeface::CreateFromStream(stream);
+    stream->unref();
     if (!typeface)
         return 0;
     return new FontCustomPlatformData(typeface);
@@ -202,7 +203,7 @@ FontCustomPlatformData* createFontCustomPlatformData(SharedBuffer* buffer)
 bool FontCustomPlatformData::supportsFormat(const String& format)
 {
     return equalIgnoringCase(format, "truetype") || equalIgnoringCase(format, "opentype")
-#if ENABLE(OPENTYPE_SANITIZER)
+#if USE(OPENTYPE_SANITIZER)
         || equalIgnoringCase(format, "woff")
 #endif
     ;

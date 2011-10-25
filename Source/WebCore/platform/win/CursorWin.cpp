@@ -49,6 +49,14 @@ static PassRefPtr<SharedCursor> createSharedCursor(Image* img, const IntPoint& h
     static bool doAlpha = windowsVersion() >= WindowsXP;
     BitmapInfo cursorImage = BitmapInfo::create(IntSize(img->width(), img->height()));
 
+//wke---
+    if (cursorImage.bmiHeader.biWidth == 0)
+        cursorImage.bmiHeader.biWidth = 16;
+
+    if (cursorImage.bmiHeader.biHeight == 0)
+        cursorImage.bmiHeader.biHeight = 16;
+//wke---
+
     HDC dc = GetDC(0);
     HDC workingDC = CreateCompatibleDC(dc);
     if (doAlpha) {
@@ -243,7 +251,6 @@ void Cursor::ensurePlatformCursor() const
         m_platformCursor = loadSharedCursor(0, IDC_APPSTARTING);
         break;
     case Cursor::NoDrop:
-        break;
     case Cursor::NotAllowed:
         m_platformCursor = loadSharedCursor(0, IDC_NO);
         break;
@@ -255,6 +262,10 @@ void Cursor::ensurePlatformCursor() const
         break;
     case Cursor::Custom:
         m_platformCursor = createSharedCursor(m_image.get(), m_hotSpot);
+        break;
+    default:
+        ASSERT_NOT_REACHED();
+        m_platformCursor = loadSharedCursor(0, IDC_ARROW);
         break;
     }
 }

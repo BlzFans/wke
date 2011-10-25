@@ -29,6 +29,12 @@
 #include "RefCounted.h"
 #include "TranslateTransformOperation.h"
 #include "UnitBezier.h"
+#include <qgraphicseffect.h>
+#include <qgraphicsitem.h>
+#include <qgraphicsscene.h>
+#include <qgraphicsview.h>
+#include <qgraphicswidget.h>
+#include <qstyleoption.h>
 #include <QtCore/qabstractanimation.h>
 #include <QtCore/qdatetime.h>
 #include <QtCore/qdebug.h>
@@ -36,17 +42,11 @@
 #include <QtCore/qset.h>
 #include <QtCore/qtimer.h>
 #include <QtGui/qcolor.h>
-#include <QtGui/qgraphicseffect.h>
-#include <QtGui/qgraphicsitem.h>
-#include <QtGui/qgraphicsscene.h>
-#include <QtGui/qgraphicsview.h>
-#include <QtGui/qgraphicswidget.h>
 #include <QtGui/qpainter.h>
 #include <QtGui/qpixmap.h>
 #include <QtGui/qpixmapcache.h>
-#include <QtGui/qstyleoption.h>
 
-#if ENABLE(TILED_BACKING_STORE)
+#if USE(TILED_BACKING_STORE)
 #include "TiledBackingStore.h"
 #include "TiledBackingStoreClient.h"
 
@@ -125,8 +125,8 @@ public:
 #endif // QT_NO_GRAPHICSEFFECT
 
 class GraphicsLayerQtImpl : public QGraphicsObject
-#if ENABLE(TILED_BACKING_STORE)
-, public virtual TiledBackingStoreClient
+#if USE(TILED_BACKING_STORE)
+                          , public virtual TiledBackingStoreClient
 #endif
 {
     Q_OBJECT
@@ -198,7 +198,7 @@ public:
     // ChromeClientQt::scheduleCompositingLayerSync (meaning the sync will happen ASAP)
     void flushChanges(bool recursive = true, bool forceTransformUpdate = false);
 
-#if ENABLE(TILED_BACKING_STORE)
+#if USE(TILED_BACKING_STORE)
     // reimplementations from TiledBackingStoreClient
     virtual void tiledBackingStorePaintBegin();
     virtual void tiledBackingStorePaint(GraphicsContext*, const IntRect&);
@@ -262,7 +262,7 @@ public:
 
     int m_changeMask;
 
-#if ENABLE(TILED_BACKING_STORE)
+#if USE(TILED_BACKING_STORE)
     TiledBackingStore* m_tiledBackingStore;
 #endif
 
@@ -334,7 +334,7 @@ GraphicsLayerQtImpl::GraphicsLayerQtImpl(GraphicsLayerQt* newLayer)
     , m_opacityAnimationRunning(false)
     , m_blockNotifySyncRequired(false)
     , m_changeMask(NoChanges)
-#if ENABLE(TILED_BACKING_STORE)
+#if USE(TILED_BACKING_STORE)
     , m_tiledBackingStore(0)
 #endif
 {
@@ -361,7 +361,7 @@ GraphicsLayerQtImpl::~GraphicsLayerQtImpl()
             item->setParentItem(0);
         }
     }
-#if ENABLE(TILED_BACKING_STORE)
+#if USE(TILED_BACKING_STORE)
     delete m_tiledBackingStore;
 #endif
 #ifndef QT_NO_ANIMATION
@@ -394,7 +394,7 @@ QPixmap GraphicsLayerQtImpl::recache(const QRegion& regionToUpdate)
     if (!m_layer->drawsContent() || m_size.isEmpty() || !m_size.isValid())
         return QPixmap();
 
-#if ENABLE(TILED_BACKING_STORE)
+#if USE(TILED_BACKING_STORE)
     const bool requiresTiling = (m_state.drawsContent && m_currentContent.contentType == HTMLContentType) && (m_size.width() > GRAPHICS_LAYER_TILING_THRESHOLD || m_size.height() > GRAPHICS_LAYER_TILING_THRESHOLD);
     if (requiresTiling && !m_tiledBackingStore) {
         m_tiledBackingStore = new TiledBackingStore(this);
@@ -625,7 +625,7 @@ QRectF GraphicsLayerQtImpl::boundingRect() const
 
 void GraphicsLayerQtImpl::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget)
 {
-#if ENABLE(TILED_BACKING_STORE)
+#if USE(TILED_BACKING_STORE)
     // FIXME: There's currently no Qt API to know if a new region of an item is exposed outside of the paint event.
     // Suggested for Qt: http://bugreports.qt.nokia.com/browse/QTBUG-14877.
     if (m_tiledBackingStore)
@@ -886,7 +886,7 @@ afterLayerChanges:
     }
 }
 
-#if ENABLE(TILED_BACKING_STORE)
+#if USE(TILED_BACKING_STORE)
 /* \reimp (TiledBackingStoreClient.h)
 */
 void GraphicsLayerQtImpl::tiledBackingStorePaintBegin()

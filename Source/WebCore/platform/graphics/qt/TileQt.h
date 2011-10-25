@@ -20,7 +20,7 @@
 #ifndef TileQt_h
 #define TileQt_h
 
-#if ENABLE(TILED_BACKING_STORE)
+#if USE(TILED_BACKING_STORE)
 
 #include "IntPoint.h"
 #include "IntRect.h"
@@ -53,6 +53,7 @@ public:
 
     const Tile::Coordinate& coordinate() const { return m_coordinate; }
     const IntRect& rect() const { return m_rect; }
+    void resize(const WebCore::IntSize&);
 
 private:
     TileQt(TiledBackingStore*, const Coordinate&);

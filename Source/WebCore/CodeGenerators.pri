@@ -1,13 +1,8 @@
 # Derived source generators
 
-include(../common.pri)
 include(features.pri)
 
-CONFIG(standalone_package) {
-    isEmpty(WC_GENERATED_SOURCES_DIR):WC_GENERATED_SOURCES_DIR = $$PWD/generated
-} else {
-    isEmpty(WC_GENERATED_SOURCES_DIR):WC_GENERATED_SOURCES_DIR = generated
-}
+isEmpty(WC_GENERATED_SOURCES_DIR):WC_GENERATED_SOURCES_DIR = generated
 
 ## Derived source generators
 MATHML_NAMES = $$PWD/mathml/mathtags.in
@@ -17,8 +12,6 @@ SVG_NAMES = $$PWD/svg/svgtags.in
 XLINK_NAMES = $$PWD/svg/xlinkattrs.in
 
 TOKENIZER = $$PWD/css/tokenizer.flex
-
-DOCTYPESTRINGS_GPERF = $$PWD/html/DocTypeStrings.gperf
 
 CSSBISON = $$PWD/css/CSSGrammar.y
 
@@ -38,6 +31,8 @@ XML_NAMES = $$PWD/xml/xmlattrs.in
 XMLNS_NAMES = $$PWD/xml/xmlnsattrs.in
 
 HTML_ENTITIES = $$PWD/html/parser/HTMLEntityNames.in
+
+EVENT_FACTORY = $$PWD/dom/EventFactory.in
 
 COLORDATA_GPERF = $$PWD/platform/ColorData.gperf
 
@@ -62,17 +57,13 @@ contains(DEFINES, ENABLE_SVG=1) {
     EXTRACSSVALUES += $$PWD/css/SVGCSSValueKeywords.in
 }
 
-contains(DEFINES, ENABLE_WCSS=1) {
-    EXTRACSSPROPERTIES += $$PWD/css/WCSSPropertyNames.in
-    EXTRACSSVALUES += $$PWD/css/WCSSValueKeywords.in
-}
-
 STYLESHEETS_EMBED = \
     $$PWD/css/html.css \
     $$PWD/css/quirks.css \
     $$PWD/css/mathml.css \
     $$PWD/css/svg.css \
     $$PWD/css/view-source.css \
+    $$PWD/css/fullscreen.css \
     $$PWD/css/mediaControls.css \
     $$PWD/css/mediaControlsQt.css \
     $$PWD/css/mediaControlsQtFullscreen.css \
@@ -107,13 +98,13 @@ IDL_BINDINGS += \
     css/StyleMedia.idl \
     css/StyleSheet.idl \
     css/StyleSheetList.idl \
+    css/WebKitCSSFilterValue.idl \
     css/WebKitCSSKeyframeRule.idl \
     css/WebKitCSSKeyframesRule.idl \
     css/WebKitCSSMatrix.idl \
     css/WebKitCSSTransformValue.idl \
     dom/Attr.idl \
     dom/BeforeLoadEvent.idl \
-    dom/BeforeProcessEvent.idl \
     dom/CharacterData.idl \
     dom/ClientRect.idl \
     dom/ClientRectList.idl \
@@ -166,6 +157,7 @@ IDL_BINDINGS += \
     dom/ProgressEvent.idl \
     dom/RangeException.idl \
     dom/Range.idl \
+    dom/RequestAnimationFrameCallback.idl \
     dom/StringCallback.idl \
     dom/Text.idl \
     dom/TextEvent.idl \
@@ -225,6 +217,7 @@ IDL_BINDINGS += \
     html/canvas/WebGLActiveInfo.idl \
     html/canvas/WebGLBuffer.idl \
     html/canvas/WebGLContextAttributes.idl \
+    html/canvas/WebGLContextEvent.idl \
     html/canvas/WebGLFramebuffer.idl \
     html/canvas/WebGLProgram.idl \
     html/canvas/WebGLRenderbuffer.idl \
@@ -249,7 +242,6 @@ IDL_BINDINGS += \
     html/HTMLAreaElement.idl \
     html/HTMLBaseElement.idl \
     html/HTMLBaseFontElement.idl \
-    html/HTMLBlockquoteElement.idl \
     html/HTMLBodyElement.idl \
     html/HTMLBRElement.idl \
     html/HTMLButtonElement.idl \
@@ -302,6 +294,7 @@ IDL_BINDINGS += \
     html/HTMLScriptElement.idl \
     html/HTMLSelectElement.idl \
     html/HTMLSourceElement.idl \
+    html/HTMLSpanElement.idl \
     html/HTMLStyleElement.idl \
     html/HTMLTableCaptionElement.idl \
     html/HTMLTableCellElement.idl \
@@ -586,6 +579,14 @@ contains(DEFINES, ENABLE_SVG=1) {
     svg/SVGVKernElement.idl
 }
 
+contains(DEFINES, ENABLE_VIDEO_TRACK=1) {
+  IDL_BINDINGS += \
+    html/MutableTextTrack.idl \
+    html/TextTrack.idl \
+    html/TextTrackCue.idl \
+    html/TextTrackCueList.idl \
+}
+
 v8: wrapperFactoryArg = --wrapperFactoryV8
 else: wrapperFactoryArg = --wrapperFactory
 
@@ -674,29 +675,20 @@ v8 {
 addExtraCompiler(idl)
 
 # GENERATOR 2: inspector idl compiler
-inspectorJSON.output = $${WC_GENERATED_SOURCES_DIR}/Inspector.idl
-inspectorJSON.input = INSPECTOR_JSON
-inspectorJSON.wkScript = $$PWD/inspector/generate-inspector-idl
-inspectorJSON.commands = python $$inspectorJSON.wkScript -o $${WC_GENERATED_SOURCES_DIR}/Inspector.idl $$PWD/inspector/Inspector.json
-inspectorJSON.depends = $$PWD/inspector/generate-inspector-idl
-inspectorJSON.wkAddOutputToSources = false
-addExtraCompiler(inspectorJSON)
-inspectorJSON.variable_out = INSPECTOR_JSON_OUTPUT
+inspectorValidate.output = $${WC_GENERATED_SOURCES_DIR}/InspectorProtocolVersion.h
+inspectorValidate.input = INSPECTOR_JSON
+inspectorValidate.wkScript = $$PWD/inspector/generate-inspector-protocol-version
+inspectorValidate.commands = python $$inspectorValidate.wkScript -o $${WC_GENERATED_SOURCES_DIR}/InspectorProtocolVersion.h $$PWD/inspector/Inspector.json
+inspectorValidate.depends = $$PWD/inspector/generate-inspector-protocol-version
+inspectorValidate.wkAddOutputToSources = false
+addExtraCompiler(inspectorValidate)
 
-inspectorIDL.output = $${WC_GENERATED_SOURCES_DIR}/InspectorFrontend.cpp $${WC_GENERATED_SOURCES_DIR}/InspectorBackendDispatcher.cpp
-inspectorIDL.input = INSPECTOR_JSON_OUTPUT
-inspectorIDL.wkScript = $$PWD/bindings/scripts/generate-bindings.pl
-inspectorIDL.commands = perl -I$$PWD/bindings/scripts -I$$PWD/inspector $$inspectorIDL.wkScript --defines \"$${FEATURE_DEFINES_JAVASCRIPT}\" --generator Inspector --outputDir $$WC_GENERATED_SOURCES_DIR --preprocessor \"$${QMAKE_MOC} -E\" ${QMAKE_FILE_NAME}
-inspectorIDL.depends = $$PWD/bindings/scripts/CodeGenerator.pm \
-              $$PWD/inspector/CodeGeneratorInspector.pm \
-              $$PWD/bindings/scripts/IDLParser.pm \
-              $$PWD/bindings/scripts/IDLStructure.pm \
-              $$PWD/bindings/scripts/InFilesParser.pm \
-              $$PWD/bindings/scripts/preprocessor.pm \
-              $$PWD/inspector/Inspector.json \
-              $$PWD/inspector/generate-inspector-idl
-inspectorIDL.wkExtraSources = $$inspectorIDL.output
-addExtraCompiler(inspectorIDL)
+inspectorJSON.output = $${WC_GENERATED_SOURCES_DIR}/InspectorFrontend.cpp $${WC_GENERATED_SOURCES_DIR}/InspectorBackendDispatcher.cpp
+inspectorJSON.input = INSPECTOR_JSON
+inspectorJSON.wkScript = $$PWD/inspector/CodeGeneratorInspector.py
+inspectorJSON.commands = python $$inspectorJSON.wkScript $$PWD/inspector/Inspector.json --output_h_dir $$WC_GENERATED_SOURCES_DIR --output_cpp_dir $$WC_GENERATED_SOURCES_DIR --defines \"$${FEATURE_DEFINES_JAVASCRIPT}\"
+inspectorJSON.depends = $$inspectorJSON.wkScript
+addExtraCompiler(inspectorJSON)
 
 inspectorBackendStub.output = generated/InspectorBackendStub.qrc
 inspectorBackendStub.input = INSPECTOR_BACKEND_STUB_QRC
@@ -772,6 +764,14 @@ fontnames.commands = perl -I$$PWD/bindings/scripts $$fontnames.wkScript --fonts 
 entities.depends = $$PWD/dom/make_names.pl $$FONT_NAMES
 addExtraCompiler(fontnames)
 
+# GENERATOR 5-E:
+eventfactory.output = $${WC_GENERATED_SOURCES_DIR}/EventFactory.cpp
+eventfactory.input = EVENT_FACTORY
+eventfactory.wkScript = $$PWD/dom/make_event_factory.pl
+eventfactory.commands = perl -I$$PWD/bindings/scripts $$eventfactory.wkScript --events $$EVENT_FACTORY --outputDir $$WC_GENERATED_SOURCES_DIR
+eventfactory.depends = $$PWD/dom/make_event_factory.pl $$EVENT_FACTORY
+addExtraCompiler(eventfactory)
+
 # GENERATOR 8-A:
 entities.output = $${WC_GENERATED_SOURCES_DIR}/HTMLEntityTable.cpp
 entities.input = HTML_ENTITIES
@@ -782,15 +782,6 @@ entities.depends = $$PWD/html/parser/create-html-entity-table
 addExtraCompiler(entities)
 
 # GENERATOR 8-B:
-doctypestrings.output = $${WC_GENERATED_SOURCES_DIR}/DocTypeStrings.cpp
-doctypestrings.input = DOCTYPESTRINGS_GPERF
-doctypestrings.wkScript = $$PWD/make-hash-tools.pl
-doctypestrings.commands = perl $$doctypestrings.wkScript $${WC_GENERATED_SOURCES_DIR} $$DOCTYPESTRINGS_GPERF
-doctypestrings.clean = ${QMAKE_FILE_OUT}
-doctypestrings.depends = $$PWD/make-hash-tools.pl
-addExtraCompiler(doctypestrings)
-
-# GENERATOR 8-C:
 colordata.output = $${WC_GENERATED_SOURCES_DIR}/ColorData.cpp
 colordata.input = COLORDATA_GPERF
 colordata.wkScript = $$PWD/make-hash-tools.pl
@@ -801,7 +792,7 @@ addExtraCompiler(colordata)
 
 contains(DEFINES, ENABLE_XSLT=1) {
 contains(DEFINES, WTF_USE_LIBXML2=1) {
-# GENERATOR 8-D:
+# GENERATOR 8-C:
 xmlviewercss.output = $${WC_GENERATED_SOURCES_DIR}/XMLViewerCSS.h
 xmlviewercss.input = XMLVIEWER_CSS
 xmlviewercss.wkScript = $$PWD/inspector/xxd.pl
@@ -811,7 +802,7 @@ xmlviewercss.depends = $$PWD/inspector/xxd.pl
 xmlviewercss.wkAddOutputToSources = false
 addExtraCompiler(xmlviewercss)
 
-# GENERATOR 8-E:
+# GENERATOR 8-D:
 xmlviewerjs.output = $${WC_GENERATED_SOURCES_DIR}/XMLViewerJS.h
 xmlviewerjs.input = XMLVIEWER_JS
 xmlviewerjs.wkScript = $$PWD/inspector/xxd.pl

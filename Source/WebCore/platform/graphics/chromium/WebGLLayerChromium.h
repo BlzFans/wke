@@ -45,33 +45,30 @@ class WebGLLayerChromiumRateLimitTask;
 // A Layer containing a WebGL canvas
 class WebGLLayerChromium : public CanvasLayerChromium {
 public:
-    static PassRefPtr<WebGLLayerChromium> create(GraphicsLayerChromium* owner = 0);
+    static PassRefPtr<WebGLLayerChromium> create(CCLayerDelegate* = 0);
 
     virtual ~WebGLLayerChromium();
 
     virtual bool drawsContent() const;
-    virtual void updateCompositorResources(GraphicsContext3D*);
+    virtual void updateCompositorResources(GraphicsContext3D*, TextureAllocator*);
     void setTextureUpdated();
     bool paintRenderedResultsToCanvas(ImageBuffer*);
 
     void setContext(const GraphicsContext3D* context);
     GraphicsContext3D* context() { return m_context; }
 
-protected:
-    virtual const char* layerTypeAsString() const { return "WebGLLayer"; }
-
 private:
-    explicit WebGLLayerChromium(GraphicsLayerChromium* owner);
+    explicit WebGLLayerChromium(CCLayerDelegate*);
     friend class WebGLLayerChromiumRateLimitTask;
 
-    virtual unsigned textureId() const { return m_textureId; }
+    GraphicsContext3D* layerRendererContext();
+
     void rateLimitContext(Timer<WebGLLayerChromium>*);
 
     // GraphicsContext3D::platformLayer has a side-effect of assigning itself
     // to the layer. Because of that GraphicsContext3D's destructor will reset
     // layer's context to 0.
     GraphicsContext3D* m_context;
-    unsigned m_textureId;
     bool m_textureChanged;
     bool m_contextSupportsRateLimitingExtension;
     Timer<WebGLLayerChromium> m_rateLimitingTimer;

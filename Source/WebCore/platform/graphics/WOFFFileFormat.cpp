@@ -27,20 +27,12 @@
 #include "WOFFFileFormat.h"
 #include <zlib.h>
 
-#if !ENABLE(OPENTYPE_SANITIZER)
+#if !USE(OPENTYPE_SANITIZER)
 
 #include "SharedBuffer.h"
 
 #if OS(UNIX)
 #include <netinet/in.h>
-#endif
-
-#if PLATFORM(BREWMP)
-#include <AEEstd.h>
-#define htonl(x) std_htonl(x)
-#define htons(x) std_htons(x)
-#define ntohl(x) std_ntohl(x)
-#define ntohs(x) std_ntohs(x)
 #endif
 
 #if OS(WINDOWS)
@@ -251,4 +243,4 @@ bool convertWOFFToSfnt(SharedBuffer* woff, Vector<char>& sfnt)
     
 } // namespace WebCore
 
-#endif // !ENABLE(OPENTYPE_SANITIZER)
+#endif // !USE(OPENTYPE_SANITIZER)

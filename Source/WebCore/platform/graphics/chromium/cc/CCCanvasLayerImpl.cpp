@@ -31,7 +31,7 @@
 
 #include "GraphicsContext3D.h"
 #include "LayerRendererChromium.h"
-#include "cc/CCLayerTreeHostImplProxy.h"
+#include "cc/CCProxy.h"
 #include <wtf/text/WTFString.h>
 
 namespace WebCore {
@@ -48,13 +48,12 @@ CCCanvasLayerImpl::~CCCanvasLayerImpl()
 {
 }
 
-void CCCanvasLayerImpl::draw()
+void CCCanvasLayerImpl::draw(LayerRendererChromium* layerRenderer)
 {
-    ASSERT(CCLayerTreeHostImplProxy::isImplThread());
-    ASSERT(layerRenderer());
-    const CCCanvasLayerImpl::Program* program = layerRenderer()->canvasLayerProgram();
+    ASSERT(CCProxy::isImplThread());
+    const CCCanvasLayerImpl::Program* program = layerRenderer->canvasLayerProgram();
     ASSERT(program && program->initialized());
-    GraphicsContext3D* context = layerRenderer()->context();
+    GraphicsContext3D* context = layerRenderer->context();
     GLC(context, context->activeTexture(GraphicsContext3D::TEXTURE0));
     GLC(context, context->bindTexture(GraphicsContext3D::TEXTURE_2D, m_textureId));
     if (!m_hasAlpha) {
@@ -67,10 +66,10 @@ void CCCanvasLayerImpl::draw()
     }
     GLC(context, context->useProgram(program->program()));
     GLC(context, context->uniform1i(program->fragmentShader().samplerLocation(), 0));
-    LayerChromium::drawTexturedQuad(context, layerRenderer()->projectionMatrix(), drawTransform(),
-                                    bounds().width(), bounds().height(), drawOpacity(),
+    layerRenderer->drawTexturedQuad(drawTransform(), bounds().width(), bounds().height(), drawOpacity(), layerRenderer->sharedGeometryQuad(),
                                     program->vertexShader().matrixLocation(),
-                                    program->fragmentShader().alphaLocation());
+                                    program->fragmentShader().alphaLocation(),
+                                    -1);
     if (!m_hasAlpha)
         context->enable(GraphicsContext3D::BLEND);
 }

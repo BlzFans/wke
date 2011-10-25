@@ -186,7 +186,7 @@ public:
     bool antiAliasingForRectsAndLines;
 
     QStack<TransparencyLayer*> layers;
-    // Counting real layers. Required by inTransparencyLayer() calls
+    // Counting real layers. Required by isInTransparencyLayer() calls
     // For example, layers with valid alphaMask are not real layers
     int layerCount;
 
@@ -227,15 +227,8 @@ GraphicsContextPlatformPrivate::GraphicsContextPlatformPrivate(QPainter* p, cons
     if (!painter)
         return;
 
-#if OS(SYMBIAN)
-    if (painter->paintEngine()->type() == QPaintEngine::OpenVG)
-        antiAliasingForRectsAndLines = true;
-    else
-        antiAliasingForRectsAndLines = painter->testRenderHint(QPainter::Antialiasing);
-#else
     // Use the default the QPainter was constructed with.
     antiAliasingForRectsAndLines = painter->testRenderHint(QPainter::Antialiasing);
-#endif
 
     // Used for default image interpolation quality.
     initialSmoothPixmapTransformHint = painter->testRenderHint(QPainter::SmoothPixmapTransform);
@@ -289,6 +282,9 @@ PlatformGraphicsContext* GraphicsContext::platformContext() const
 
 AffineTransform GraphicsContext::getCTM() const
 {
+    if (paintingDisabled())
+        return AffineTransform();
+
     const QTransform& matrix = platformContext()->combinedTransform();
     return AffineTransform(matrix.m11(), matrix.m12(), matrix.m21(),
                            matrix.m22(), matrix.dx(), matrix.dy());
@@ -763,7 +759,7 @@ void GraphicsContext::fillRoundedRect(const IntRect& rect, const IntSize& topLef
     p->fillPath(path.platformPath(), QColor(color));
 }
 
-bool GraphicsContext::inTransparencyLayer() const
+bool GraphicsContext::isInTransparencyLayer() const
 {
     return m_data->layerCount;
 }
@@ -1060,7 +1056,7 @@ void GraphicsContext::pushTransparencyLayerInternal(const QRect &rect, qreal opa
     m_data->layers.push(new TransparencyLayer(p, deviceClip, 1.0, alphaMask));
 }
 
-void GraphicsContext::beginTransparencyLayer(float opacity)
+void GraphicsContext::beginPlatformTransparencyLayer(float opacity)
 {
     if (paintingDisabled())
         return;
@@ -1084,7 +1080,7 @@ void GraphicsContext::beginTransparencyLayer(float opacity)
     ++m_data->layerCount;
 }
 
-void GraphicsContext::endTransparencyLayer()
+void GraphicsContext::endPlatformTransparencyLayer()
 {
     if (paintingDisabled())
         return;
@@ -1106,6 +1102,11 @@ void GraphicsContext::endTransparencyLayer()
     p->restore();
 
     delete layer;
+}
+
+bool GraphicsContext::supportsTransparencyLayers()
+{
+    return true;
 }
 
 void GraphicsContext::clearRect(const FloatRect& rect)

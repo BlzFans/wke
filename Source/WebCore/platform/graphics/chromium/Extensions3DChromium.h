@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010 Google Inc. All rights reserved.
+ * Copyright (C) 2011 Google Inc. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 
 namespace WebCore {
 
-class GraphicsContext3DInternal;
+class GraphicsContext3DPrivate;
 class ImageBuffer;
 
 class Extensions3DChromium : public Extensions3D {
@@ -56,6 +56,7 @@ public:
     virtual void deleteVertexArrayOES(Platform3DObject);
     virtual GC3Dboolean isVertexArrayOES(Platform3DObject);
     virtual void bindVertexArrayOES(Platform3DObject);
+    virtual String getTranslatedShaderSourceANGLE(Platform3DObject);
 
     enum {
         // GL_CHROMIUM_map_sub (enums inherited from GL_ARB_vertex_buffer_object)
@@ -86,11 +87,11 @@ public:
 private:
     // Instances of this class are strictly owned by the GraphicsContext3D implementation and do not
     // need to be instantiated by any other code.
-    friend class GraphicsContext3DInternal;
-    explicit Extensions3DChromium(GraphicsContext3DInternal*);
+    friend class GraphicsContext3DPrivate;
+    explicit Extensions3DChromium(GraphicsContext3DPrivate*);
 
-    // Weak pointer back to GraphicsContext3DInternal
-    GraphicsContext3DInternal* m_internal;
+    // Weak pointer back to GraphicsContext3DPrivate
+    GraphicsContext3DPrivate* m_private;
 };
 
 } // namespace WebCore

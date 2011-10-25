@@ -33,7 +33,6 @@
 #include "PlatformContextSkia.h"
 
 #include "AffineTransform.h"
-#include "DrawingBuffer.h"
 #include "Extensions3D.h"
 #include "GraphicsContext.h"
 #include "GraphicsContext3D.h"
@@ -245,6 +244,9 @@ void PlatformContextSkia::beginLayerClippedToImage(const FloatRect& rect,
                       SkFloatToScalar(rect.maxX()), SkFloatToScalar(rect.maxY()) };
 
     canvas()->clipRect(bounds);
+    if (imageBuffer->size().isEmpty())
+        return;
+
     canvas()->saveLayerAlpha(&bounds, 255,
                              static_cast<SkCanvas::SaveFlags>(SkCanvas::kHasAlphaLayer_SaveFlag | SkCanvas::kFullColorLayer_SaveFlag));
     // Copy off the image as |imageBuffer| may be deleted before restore is invoked.
@@ -265,7 +267,6 @@ void PlatformContextSkia::beginLayerClippedToImage(const FloatRect& rect,
 
 void PlatformContextSkia::clipPathAntiAliased(const SkPath& clipPath)
 {
-    makeGrContextCurrent();
     if (m_canvas->getTopDevice()->getDeviceCapabilities() & SkDevice::kVector_Capability) {
         // When the output is a vector device, like PDF, we don't need antialiased clips.
         // It's up to the PDF rendering engine to do that. We can simply disable the
@@ -580,7 +581,7 @@ const SkBitmap* PlatformContextSkia::bitmap() const
 
 bool PlatformContextSkia::isNativeFontRenderingAllowed()
 {
-#if ENABLE(SKIA_TEXT)
+#if USE(SKIA_TEXT)
     return false;
 #else
     if (isAccelerated())
@@ -660,34 +661,9 @@ void PlatformContextSkia::applyAntiAliasedClipPaths(WTF::Vector<SkPath>& paths)
     m_canvas->restore();
 }
 
-void PlatformContextSkia::setGraphicsContext3D(GraphicsContext3D* context, DrawingBuffer* drawingBuffer)
+void PlatformContextSkia::setGraphicsContext3D(GraphicsContext3D* context)
 {
     m_gpuContext = context;
-#if ENABLE(ACCELERATED_2D_CANVAS)
-    if (context && drawingBuffer) {
-        // use skia gpu rendering if available
-        GrContext* gr = context->grContext();
-        if (gr) {
-            context->makeContextCurrent();
-            drawingBuffer->bind();
-
-            gr->resetContext();
-            drawingBuffer->setGrContext(gr);
-
-            GrPlatformSurfaceDesc drawBufDesc;
-            drawingBuffer->getGrPlatformSurfaceDesc(&drawBufDesc);
-            SkAutoTUnref<GrTexture> drawBufTex(static_cast<GrTexture*>(gr->createPlatformSurface(drawBufDesc)));
-            m_canvas->setDevice(new SkGpuDevice(gr, drawBufTex.get()))->unref();
-        } else
-            m_gpuContext = 0;
-    }
-#endif
-}
-
-void PlatformContextSkia::makeGrContextCurrent()
-{
-    if (m_gpuContext)
-        m_gpuContext->makeContextCurrent();
 }
 
 } // namespace WebCore

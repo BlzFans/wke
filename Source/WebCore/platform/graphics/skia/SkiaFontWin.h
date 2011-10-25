@@ -34,16 +34,17 @@
 #include <windows.h>
 #include <usp10.h>
 
-class SkPoint;
+struct SkPoint;
 
 namespace WebCore {
 
 class GraphicsContext;
 class PlatformContextSkia;
 
+#if !USE(SKIA_TEXT)
 // The functions below are used for more complex font drawing (effects such as
-// stroking and more complex transforms) than Windows supports directly.  Since 
-// Windows drawing is faster you should use windowsCanHandleTextDrawing first to 
+// stroking and more complex transforms) than Windows supports directly. Since
+// Windows drawing is faster you should use windowsCanHandleTextDrawing first to
 // check if using Skia is required at all.
 // Note that the text will look different (no ClearType) so this should only be
 // used when necessary.
@@ -66,6 +67,7 @@ bool windowsCanHandleTextDrawing(GraphicsContext*);
 // Returns true if advanced font rendering is recommended if shadows are
 // disregarded.
 bool windowsCanHandleTextDrawingWithoutShadow(GraphicsContext*);
+#endif
 
 // Note that the offsets parameter is optional.  If not NULL it represents a
 // per glyph offset (such as returned by ScriptPlace Windows API function).

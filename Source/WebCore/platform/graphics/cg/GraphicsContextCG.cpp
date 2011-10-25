@@ -963,7 +963,7 @@ void GraphicsContext::addInnerRoundedRectClip(const IntRect& rect, int thickness
     CGContextEOClip(context);
 }
 
-void GraphicsContext::beginTransparencyLayer(float opacity)
+void GraphicsContext::beginPlatformTransparencyLayer(float opacity)
 {
     if (paintingDisabled())
         return;
@@ -973,19 +973,22 @@ void GraphicsContext::beginTransparencyLayer(float opacity)
     CGContextRef context = platformContext();
     CGContextSetAlpha(context, opacity);
     CGContextBeginTransparencyLayer(context, 0);
-    m_data->beginTransparencyLayer();
     m_data->m_userToDeviceTransformKnownToBeIdentity = false;
 }
 
-void GraphicsContext::endTransparencyLayer()
+void GraphicsContext::endPlatformTransparencyLayer()
 {
     if (paintingDisabled())
         return;
     CGContextRef context = platformContext();
     CGContextEndTransparencyLayer(context);
-    m_data->endTransparencyLayer();
 
     restore();
+}
+
+bool GraphicsContext::supportsTransparencyLayers()
+{
+    return true;
 }
 
 void GraphicsContext::setPlatformShadow(const FloatSize& offset, float blur, const Color& color, ColorSpace colorSpace)
@@ -1021,20 +1024,21 @@ void GraphicsContext::setPlatformShadow(const FloatSize& offset, float blur, con
     // Extreme "blur" values can make text drawing crash or take crazy long times, so clamp
     blurRadius = min(blurRadius, narrowPrecisionToCGFloat(1000.0));
 
-#if defined(BUILDING_ON_LEOPARD) || defined(BUILDING_ON_SNOW_LEOPARD)
-    // Work around <rdar://problem/5539388> by ensuring that the offsets will get truncated
-    // to the desired integer.
-    static const CGFloat extraShadowOffset = narrowPrecisionToCGFloat(1.0 / 128);
-    if (xOffset > 0)
-        xOffset += extraShadowOffset;
-    else if (xOffset < 0)
-        xOffset -= extraShadowOffset;
 
-    if (yOffset > 0)
-        yOffset += extraShadowOffset;
-    else if (yOffset < 0)
-        yOffset -= extraShadowOffset;
-#endif
+    if (!isAcceleratedContext()) {
+        // Work around <rdar://problem/5539388> by ensuring that the offsets will get truncated
+        // to the desired integer. Also see: <rdar://problem/10056277>
+        static const CGFloat extraShadowOffset = narrowPrecisionToCGFloat(1.0 / 128);
+        if (xOffset > 0)
+            xOffset += extraShadowOffset;
+        else if (xOffset < 0)
+            xOffset -= extraShadowOffset;
+
+        if (yOffset > 0)
+            yOffset += extraShadowOffset;
+        else if (yOffset < 0)
+            yOffset -= extraShadowOffset;
+    }
 
     // Check for an invalid color, as this means that the color was not set for the shadow
     // and we should therefore just use the default shadow color.
@@ -1246,6 +1250,9 @@ void GraphicsContext::setCTM(const AffineTransform& transform)
 
 AffineTransform GraphicsContext::getCTM() const
 {
+    if (paintingDisabled())
+        return AffineTransform();
+
     CGAffineTransform t = CGContextGetCTM(platformContext());
     return AffineTransform(t.a, t.b, t.c, t.d, t.tx, t.ty);
 }
@@ -1461,6 +1468,11 @@ void GraphicsContext::setIsAcceleratedContext(bool isAccelerated)
 bool GraphicsContext::isAcceleratedContext() const
 {
     return m_data->m_contextFlags & IsAcceleratedCGContext;
+}
+
+void GraphicsContext::setBaseCTM(const AffineTransform& transform)
+{
+    wkSetBaseCTM(platformContext(), transform);
 }
 
 void GraphicsContext::setPlatformTextDrawingMode(TextDrawingModeFlags mode)

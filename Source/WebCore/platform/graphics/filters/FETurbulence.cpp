@@ -364,16 +364,16 @@ void FETurbulence::fillRegionWorker(FillRegionParameters* parameters)
 }
 #endif // ENABLE(PARALLEL_JOBS)
 
-void FETurbulence::apply()
+void FETurbulence::platformApplySoftware()
 {
-    if (hasResult())
-        return;
     ByteArray* pixelArray = createUnmultipliedImageResult();
     if (!pixelArray)
         return;
 
-    if (absolutePaintRect().isEmpty())
+    if (absolutePaintRect().isEmpty()) {
+        pixelArray->clear();
         return;
+    }
 
     PaintingData paintingData(m_seed, roundedIntSize(filterPrimitiveSubregion().size()));
     initPaint(paintingData);

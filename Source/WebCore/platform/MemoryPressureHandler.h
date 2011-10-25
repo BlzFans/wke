@@ -26,6 +26,7 @@
 #ifndef MemoryPressureHandler_h
 #define MemoryPressureHandler_h
 
+#include <time.h>
 #include <wtf/Platform.h>
 
 namespace WebCore {
@@ -35,6 +36,9 @@ public:
     friend MemoryPressureHandler& memoryPressureHandler();
 
     void install();
+    void uninstall();
+
+    void holdOff(unsigned);
 
 private:
     MemoryPressureHandler();
@@ -43,6 +47,7 @@ private:
     void respondToMemoryPressure();
 
     bool m_installed;
+    time_t m_lastRespondTime;
 };
  
 // Function to obtain the global memory pressure object.

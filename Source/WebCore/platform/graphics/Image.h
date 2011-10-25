@@ -32,11 +32,11 @@
 #include "GraphicsTypes.h"
 #include "ImageSource.h"
 #include "IntRect.h"
-#include "PlatformString.h"
 #include <wtf/PassRefPtr.h>
 #include <wtf/RefCounted.h>
 #include <wtf/RefPtr.h>
 #include <wtf/RetainPtr.h>
+#include <wtf/text/WTFString.h>
 
 #if PLATFORM(MAC)
 #ifdef __OBJC__
@@ -66,12 +66,13 @@ typedef struct _GdkPixbuf GdkPixbuf;
 
 namespace WebCore {
 
+class AffineTransform;
 class FloatPoint;
 class FloatRect;
 class FloatSize;
 class GraphicsContext;
 class SharedBuffer;
-class AffineTransform;
+struct Length;
 
 // This class gets notified when an image creates or destroys decoded frames and when it advances animation frames.
 class ImageObserver;
@@ -87,6 +88,7 @@ public:
     static PassRefPtr<Image> loadPlatformResource(const char* name);
     static bool supportsType(const String&); 
 
+    virtual bool isSVGImage() const { return false; }
     virtual bool isBitmapImage() const { return false; }
     virtual bool currentFrameHasAlpha() { return false; }
 
@@ -97,11 +99,11 @@ public:
     static Image* nullImage();
     bool isNull() const { return size().isEmpty(); }
 
-    // These are only used for SVGImage right now
     virtual void setContainerSize(const IntSize&) { }
     virtual bool usesContainerSize() const { return false; }
     virtual bool hasRelativeWidth() const { return false; }
     virtual bool hasRelativeHeight() const { return false; }
+    virtual void computeIntrinsicDimensions(Length& intrinsicWidth, Length& intrinsicHeight, FloatSize& intrinsicRatio);
 
     virtual IntSize size() const = 0;
     IntRect rect() const { return IntRect(IntPoint(), size()); }
@@ -128,7 +130,7 @@ public:
     // Typically the CachedImage that owns us.
     ImageObserver* imageObserver() const { return m_imageObserver; }
 
-    enum TileRule { StretchTile, RoundTile, RepeatTile };
+    enum TileRule { StretchTile, RoundTile, SpaceTile, RepeatTile };
 
     virtual NativeImagePtr nativeImageForCurrentFrame() { return 0; }
     
@@ -173,7 +175,7 @@ protected:
 #endif
     virtual void draw(GraphicsContext*, const FloatRect& dstRect, const FloatRect& srcRect, ColorSpace styleColorSpace, CompositeOperator) = 0;
     void drawTiled(GraphicsContext*, const FloatRect& dstRect, const FloatPoint& srcPoint, const FloatSize& tileSize, ColorSpace styleColorSpace, CompositeOperator);
-    void drawTiled(GraphicsContext*, const FloatRect& dstRect, const FloatRect& srcRect, TileRule hRule, TileRule vRule, ColorSpace styleColorSpace, CompositeOperator);
+    void drawTiled(GraphicsContext*, const FloatRect& dstRect, const FloatRect& srcRect, const FloatSize& tileScaleFactor, TileRule hRule, TileRule vRule, ColorSpace styleColorSpace, CompositeOperator);
 
     // Supporting tiled drawing
     virtual bool mayFillWithSolidColor() { return false; }

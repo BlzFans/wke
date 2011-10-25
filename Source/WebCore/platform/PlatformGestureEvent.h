@@ -38,7 +38,9 @@ public:
         ScrollBeginType,
         ScrollEndType,
         ScrollUpdateType,
-        TapType
+        TapType,
+        TapDownType,
+        DoubleTapType,
     };
 
     PlatformGestureEvent()

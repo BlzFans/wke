@@ -450,10 +450,13 @@ void MediaPlayerPrivateAVFoundation::updateStates()
                 break;
 
             case MediaPlayerAVPlayerItemStatusPlaybackLikelyToKeepUp:
+            case MediaPlayerAVPlayerItemStatusPlaybackBufferFull:
+                // If the status becomes PlaybackBufferFull, loading stops and the status will not
+                // progress to LikelyToKeepUp. Set the readyState to  HAVE_ENOUGH_DATA, on the
+                // presumption that if the playback buffer is full, playback will probably not stall.
                 m_readyState = MediaPlayer::HaveEnoughData;
                 break;
 
-            case MediaPlayerAVPlayerItemStatusPlaybackBufferFull:
             case MediaPlayerAVPlayerItemStatusReadyToPlay:
                 // If the readyState is already HaveEnoughData, don't go lower because of this state change.
                 if (m_readyState == MediaPlayer::HaveEnoughData)
@@ -617,23 +620,15 @@ void MediaPlayerPrivateAVFoundation::setPreload(MediaPlayer::Preload preload)
 
     if (m_preload >= MediaPlayer::MetaData && assetStatus() == MediaPlayerAVAssetStatusDoesNotExist) {
         createAVAssetForURL(m_assetURL);
-        // FIXME: Remove this Windows-specific code when <rdar://problem/9877730> is fixed, until then
-        // we can't create an AVPlayer without an AVPlayerItem on Windows, so we always have to create
-        // the item first.
-#if PLATFORM(WIN)
-        createAVPlayerItem();
-#endif
-        createAVPlayer();
         checkPlayability();
     }
 
-    // FIXME: Enable this code on Windows when <rdar://problem/9877730> is fixed.
-#if PLATFORM(MAC)
-    // Don't force creation of the player item unless we already know that the asset is playable. If we aren't
-    // there yet, or if we already know it is not playable, creating it now won't help.
-    if (m_preload == MediaPlayer::Auto && m_assetIsPlayable)
+    // Don't force creation of the player and player item unless we already know that the asset is playable. If we aren't
+    // there yet, or if we already know it is not playable, creating them now won't help.
+    if (m_preload == MediaPlayer::Auto && m_assetIsPlayable) {
         createAVPlayerItem();
-#endif
+        createAVPlayer();
+    }
 
     setDelayCallbacks(false);
 }

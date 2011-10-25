@@ -34,6 +34,7 @@
 #include "LayerTextureUpdater.h"
 #include "PlatformCanvas.h"
 #include <wtf/PassOwnPtr.h>
+#include <wtf/PassRefPtr.h>
 
 #if USE(SKIA)
 #include "SkPicture.h"
@@ -50,7 +51,6 @@ class LayerPainterChromium;
 
 // A LayerTextureUpdater with an internal canvas.
 class LayerTextureUpdaterCanvas : public LayerTextureUpdater {
-    WTF_MAKE_NONCOPYABLE(LayerTextureUpdaterCanvas);
 protected:
     explicit LayerTextureUpdaterCanvas(PassOwnPtr<LayerPainterChromium>);
 
@@ -65,14 +65,13 @@ private:
 
 // A LayerTextureUpdater with an internal bitmap canvas.
 class LayerTextureUpdaterBitmap : public LayerTextureUpdaterCanvas {
-    WTF_MAKE_NONCOPYABLE(LayerTextureUpdaterBitmap);
 public:
-    static PassOwnPtr<LayerTextureUpdaterBitmap> create(PassOwnPtr<LayerPainterChromium>, bool useMapTexSubImage);
+    static PassRefPtr<LayerTextureUpdaterBitmap> create(PassOwnPtr<LayerPainterChromium>, bool useMapTexSubImage);
 
     virtual Orientation orientation() { return LayerTextureUpdater::BottomUpOrientation; }
     virtual SampledTexelFormat sampledTexelFormat(GC3Denum textureFormat);
     virtual void prepareToUpdate(const IntRect& contentRect, const IntSize& tileSize, int borderTexels);
-    virtual void updateTextureRect(GraphicsContext3D*, ManagedTexture*, const IntRect& sourceRect, const IntRect& destRect);
+    virtual void updateTextureRect(GraphicsContext3D*, TextureAllocator*, ManagedTexture*, const IntRect& sourceRect, const IntRect& destRect);
 
 private:
     LayerTextureUpdaterBitmap(PassOwnPtr<LayerPainterChromium>, bool useMapTexSubImage);
@@ -80,26 +79,23 @@ private:
     LayerTextureSubImage m_texSubImage;
 };
 
-#if !USE(THREADED_COMPOSITING)
-#if USE(SKIA)
+#if USE(SKIA) && USE(ACCELERATED_DRAWING)
 class LayerTextureUpdaterSkPicture : public LayerTextureUpdaterCanvas {
-    WTF_MAKE_NONCOPYABLE(LayerTextureUpdaterSkPicture);
 public:
-    static PassOwnPtr<LayerTextureUpdaterSkPicture> create(PassOwnPtr<LayerPainterChromium>, GrContext*);
+    static PassRefPtr<LayerTextureUpdaterSkPicture> create(PassOwnPtr<LayerPainterChromium>);
     virtual ~LayerTextureUpdaterSkPicture();
 
     virtual Orientation orientation() { return LayerTextureUpdater::TopDownOrientation; }
     virtual SampledTexelFormat sampledTexelFormat(GC3Denum textureFormat);
     virtual void prepareToUpdate(const IntRect& contentRect, const IntSize& tileSize, int borderTexels);
-    virtual void updateTextureRect(GraphicsContext3D*, ManagedTexture*, const IntRect& sourceRect, const IntRect& destRect);
+    virtual void updateTextureRect(GraphicsContext3D*, TextureAllocator*, ManagedTexture*, const IntRect& sourceRect, const IntRect& destRect);
 
 private:
-    LayerTextureUpdaterSkPicture(PassOwnPtr<LayerPainterChromium>, GrContext*);
+    explicit LayerTextureUpdaterSkPicture(PassOwnPtr<LayerPainterChromium>);
     void deleteFrameBuffer();
     bool createFrameBuffer();
     GraphicsContext3D* context() { return m_context; }
 
-    GrContext* m_skiaContext; // SKIA graphics context.
     GraphicsContext3D* m_context;
 
     bool m_createFrameBuffer; // Need to create FBO if true.
@@ -109,8 +105,7 @@ private:
     Platform3DObject m_depthStencilBuffer;
     OwnPtr<SkCanvas> m_canvas; // GPU accelerated canvas.
 };
-#endif // SKIA
-#endif // !THREADED_COMPOSITING
+#endif // USE(SKIA) && USE(ACCELERATED_DRAWING)
 
 } // namespace WebCore
 #endif // USE(ACCELERATED_COMPOSITING)

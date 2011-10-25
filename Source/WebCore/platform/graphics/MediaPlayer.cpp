@@ -142,6 +142,11 @@ public:
 #endif
 
     virtual bool hasSingleSecurityOrigin() const { return true; }
+
+#if ENABLE(MEDIA_SOURCE)
+    virtual bool sourceAppend(const unsigned char*, unsigned) { return false; }
+    virtual void sourceEndOfStream(MediaPlayer::EndOfStreamStatus status) { }
+#endif
 };
 
 static PassOwnPtr<MediaPlayerPrivateInterface> createNullMediaPlayer(MediaPlayer* player) 
@@ -432,6 +437,18 @@ void MediaPlayer::pause()
     m_private->pause();
 }
 
+#if ENABLE(MEDIA_SOURCE)
+bool MediaPlayer::sourceAppend(const unsigned char* data, unsigned length)
+{
+    return m_private->sourceAppend(data, length);
+}
+
+void MediaPlayer::sourceEndOfStream(MediaPlayer::EndOfStreamStatus status)
+{
+    return m_private->sourceEndOfStream(status);
+}
+#endif
+
 float MediaPlayer::duration() const
 {
     return m_private->duration();
@@ -440,6 +457,11 @@ float MediaPlayer::duration() const
 float MediaPlayer::startTime() const
 {
     return m_private->startTime();
+}
+
+double MediaPlayer::initialTime() const
+{
+    return m_private->initialTime();
 }
 
 float MediaPlayer::currentTime() const
@@ -470,6 +492,11 @@ bool MediaPlayer::supportsFullscreen() const
 bool MediaPlayer::supportsSave() const
 {
     return m_private->supportsSave();
+}
+
+bool MediaPlayer::supportsScanning() const
+{
+    return m_private->supportsScanning();
 }
 
 IntSize MediaPlayer::naturalSize()
@@ -787,6 +814,21 @@ void MediaPlayer::setPrivateBrowsingMode(bool privateBrowsingMode)
     m_privateBrowsing = privateBrowsingMode;
     m_private->setPrivateBrowsingMode(m_privateBrowsing);
 }
+
+#if ENABLE(MEDIA_SOURCE)
+void MediaPlayer::sourceOpened()
+{
+    if (m_mediaPlayerClient)
+        m_mediaPlayerClient->mediaPlayerSourceOpened();
+}
+
+String MediaPlayer::sourceURL() const
+{
+    if (m_mediaPlayerClient)
+        return m_mediaPlayerClient->mediaPlayerSourceURL();
+    return String();
+}
+#endif
 
 // Client callbacks.
 void MediaPlayer::networkStateChanged()

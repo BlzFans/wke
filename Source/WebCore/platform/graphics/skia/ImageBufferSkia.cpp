@@ -36,7 +36,8 @@
 #include "Base64.h"
 #include "BitmapImage.h"
 #include "BitmapImageSingleFrameSkia.h"
-#include "DrawingBuffer.h"
+#include "Canvas2DLayerChromium.h"
+#include "GrContext.h"
 #include "GraphicsContext.h"
 #include "ImageData.h"
 #include "JPEGImageEncoder.h"
@@ -45,6 +46,7 @@
 #include "PlatformContextSkia.h"
 #include "SharedGraphicsContext3D.h"
 #include "SkColorPriv.h"
+#include "SkGpuDevice.h"
 #include "SkiaUtils.h"
 
 #include <wtf/text/WTFString.h>
@@ -62,12 +64,46 @@ ImageBufferData::ImageBufferData(const IntSize& size)
 {
 }
 
+static SkCanvas* createAcceleratedCanvas(const IntSize& size, ImageBufferData* data)
+{
+    GraphicsContext3D* context3D = SharedGraphicsContext3D::get();
+    if (!context3D)
+        return 0;
+    GrContext* gr = context3D->grContext();
+    if (!gr)
+        return 0;
+    gr->resetContext();
+    GrTextureDesc desc;
+    desc.fFlags = kRenderTarget_GrTextureFlagBit;
+    desc.fAALevel = kNone_GrAALevel;
+    desc.fWidth = size.width();
+    desc.fHeight = size.height();
+    desc.fFormat = kRGBA_8888_GrPixelConfig;
+    SkAutoTUnref<GrTexture> texture(gr->createUncachedTexture(desc, 0, 0));
+    if (!texture.get())
+        return 0;
+    SkCanvas* canvas = new SkCanvas();
+    canvas->setDevice(new SkGpuDevice(gr, texture.get()))->unref();
+    data->m_platformContext.setGraphicsContext3D(context3D);
+#if USE(ACCELERATED_COMPOSITING)
+    data->m_platformLayer = Canvas2DLayerChromium::create(context3D);
+    data->m_platformLayer->setTextureId(texture.get()->getTextureHandle());
+#endif
+    return canvas;
+}
+
 ImageBuffer::ImageBuffer(const IntSize& size, ColorSpace, RenderingMode renderingMode, bool& success)
     : m_data(size)
     , m_size(size)
-    , m_accelerateRendering(false)
 {
-    OwnPtr<SkCanvas> canvas = adoptPtr(skia::TryCreateBitmapCanvas(size.width(), size.height(), false));
+    OwnPtr<SkCanvas> canvas;
+
+    if (renderingMode == Accelerated)
+        canvas = adoptPtr(createAcceleratedCanvas(size, &m_data));
+
+    if (!canvas)
+        canvas = adoptPtr(skia::TryCreateBitmapCanvas(size.width(), size.height(), false));
+
     if (!canvas) {
         success = false;
         return;
@@ -82,21 +118,16 @@ ImageBuffer::ImageBuffer(const IntSize& size, ColorSpace, RenderingMode renderin
     // required, but the canvas is currently filled with the magic transparency
     // color. Can we have another way to manage this?
     m_data.m_canvas->drawARGB(0, 0, 0, 0, SkXfermode::kClear_Mode);
-    if (renderingMode == Accelerated) {
-        m_accelerateRendering = true;
-        GraphicsContext3D* context3D = SharedGraphicsContext3D::create(0);
-        if (context3D) {
-            m_data.m_drawingBuffer = context3D->createDrawingBuffer(size);
-            if (m_data.m_drawingBuffer)
-                m_data.m_platformContext.setGraphicsContext3D(context3D, m_data.m_drawingBuffer.get());
-        }
-    }
 
     success = true;
 }
 
 ImageBuffer::~ImageBuffer()
 {
+#if USE(ACCELERATED_COMPOSITING)
+    if (m_data.m_platformLayer)
+        m_data.m_platformLayer->setTextureId(0);
+#endif
 }
 
 GraphicsContext* ImageBuffer::context() const
@@ -112,8 +143,12 @@ size_t ImageBuffer::dataSize() const
 PassRefPtr<Image> ImageBuffer::copyImage(BackingStoreCopy copyBehavior) const
 {
     ASSERT(copyBehavior == CopyBackingStore);
-    m_context->platformContext()->makeGrContextCurrent();
     return BitmapImageSingleFrameSkia::create(*m_data.m_platformContext.bitmap(), true);
+}
+
+PlatformLayer* ImageBuffer::platformLayer() const
+{
+    return m_data.m_platformLayer.get();
 }
 
 void ImageBuffer::clip(GraphicsContext* context, const FloatRect& rect) const
@@ -124,14 +159,6 @@ void ImageBuffer::clip(GraphicsContext* context, const FloatRect& rect) const
 void ImageBuffer::draw(GraphicsContext* context, ColorSpace styleColorSpace, const FloatRect& destRect, const FloatRect& srcRect,
                        CompositeOperator op, bool useLowQualityScale)
 {
-    // Set both graphics contexts current. This looks a little weird, but is
-    // necessary since we may be drawing from an accelerated to
-    // non-accelerated context (e.g., printing), or vice versa. Note that it
-    // only works because the context is actually the same underlying context
-    // (or null), since we use one context for accelerated drawing. If that
-    // assumption changes, we'll have to revisit this code.
-    context->platformContext()->makeGrContextCurrent();
-    m_context->platformContext()->makeGrContextCurrent();
     RefPtr<Image> image = BitmapImageSingleFrameSkia::create(*m_data.m_platformContext.bitmap(), context == m_context);
     context->drawImage(image.get(), styleColorSpace, destRect, srcRect, op, useLowQualityScale);
 }
@@ -139,7 +166,6 @@ void ImageBuffer::draw(GraphicsContext* context, ColorSpace styleColorSpace, con
 void ImageBuffer::drawPattern(GraphicsContext* context, const FloatRect& srcRect, const AffineTransform& patternTransform,
                               const FloatPoint& phase, ColorSpace styleColorSpace, CompositeOperator op, const FloatRect& destRect)
 {
-    context->platformContext()->makeGrContextCurrent();
     RefPtr<Image> image = BitmapImageSingleFrameSkia::create(*m_data.m_platformContext.bitmap(), context == m_context);
     image->drawPattern(context, srcRect, patternTransform, phase, styleColorSpace, op, destRect);
 }
@@ -256,13 +282,11 @@ PassRefPtr<ByteArray> getImageData(const IntRect& rect, SkDevice& srcDevice,
 
 PassRefPtr<ByteArray> ImageBuffer::getUnmultipliedImageData(const IntRect& rect) const
 {
-    m_context->platformContext()->makeGrContextCurrent();
     return getImageData<Unmultiplied>(rect, *context()->platformContext()->canvas()->getDevice(), m_size);
 }
 
 PassRefPtr<ByteArray> ImageBuffer::getPremultipliedImageData(const IntRect& rect) const
 {
-    m_context->platformContext()->makeGrContextCurrent();
     return getImageData<Premultiplied>(rect, *context()->platformContext()->canvas()->getDevice(), m_size);
 }
 
@@ -337,13 +361,11 @@ void putImageData(ByteArray*& source, const IntSize& sourceSize, const IntRect& 
 
 void ImageBuffer::putUnmultipliedImageData(ByteArray* source, const IntSize& sourceSize, const IntRect& sourceRect, const IntPoint& destPoint)
 {
-    m_context->platformContext()->makeGrContextCurrent();
     putImageData<Unmultiplied>(source, sourceSize, sourceRect, destPoint, context()->platformContext()->canvas()->getDevice(), m_size);
 }
 
 void ImageBuffer::putPremultipliedImageData(ByteArray* source, const IntSize& sourceSize, const IntRect& sourceRect, const IntPoint& destPoint)
 {
-    m_context->platformContext()->makeGrContextCurrent();
     putImageData<Premultiplied>(source, sourceSize, sourceRect, destPoint, context()->platformContext()->canvas()->getDevice(), m_size);
 }
 
@@ -373,14 +395,8 @@ static String ImageToDataURL(T& source, const String& mimeType, const double* qu
 
 String ImageBuffer::toDataURL(const String& mimeType, const double* quality) const
 {
-    m_context->platformContext()->makeGrContextCurrent();
     SkDevice* device = context()->platformContext()->canvas()->getDevice();
     return ImageToDataURL(device->accessBitmap(false), mimeType, quality);
-}
-
-PlatformLayer* ImageBuffer::platformLayer() const
-{
-    return m_data.m_drawingBuffer ? m_data.m_drawingBuffer->platformLayer() : 0;
 }
 
 String ImageDataToDataURL(const ImageData& source, const String& mimeType, const double* quality)

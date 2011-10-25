@@ -37,12 +37,16 @@
 #include "FloatPoint.h"
 #include "NotImplemented.h"
 #include "OwnArrayPtr.h"
+#include "PlatformGestureEvent.h"
 #include "ScrollableArea.h"
 #include "ScrollbarTheme.h"
-#include "TraceEvent.h"
 #include <algorithm>
 #include <wtf/CurrentTime.h>
 #include <wtf/PassOwnPtr.h>
+
+#if PLATFORM(CHROMIUM)
+#include "TraceEvent.h"
+#endif
 
 using namespace std;
 
@@ -51,6 +55,7 @@ namespace WebCore {
 static double kFrameRate = 60;
 static double kTickTime = 1 / kFrameRate;
 static double kMinimumTimerInterval = .001;
+static double kZoomTicks = 11;
 
 PassOwnPtr<ScrollAnimator> ScrollAnimator::create(ScrollableArea* scrollableArea)
 {
@@ -366,10 +371,36 @@ void ScrollAnimatorNone::PerAxisData::updateVisibleLength(LayoutUnit visibleLeng
     m_visibleLength = visibleLength;
 }
 
+ScrollAnimatorNone::ZoomData::ZoomData(WebCore::ScrollAnimatorNone* parent)
+    : m_parent(parent)
+    , m_isAnimating(false)
+{
+}
+
+bool ScrollAnimatorNone::ZoomData::animateZoom(double currentTime)
+{
+    m_lastAnimationTime = currentTime;
+    double deltaTime = currentTime - m_startTime;
+
+    if (deltaTime > m_animationTime) {
+        m_parent->m_currentZoomScale = m_desiredScale;
+        m_parent->m_currentZoomTransX = m_desiredTransX;
+        m_parent->m_currentZoomTransY = m_desiredTransY;
+        return false;
+    }
+
+    double elapsedTimeFraction = deltaTime / m_animationTime;
+    m_parent->m_currentZoomScale = elapsedTimeFraction * (m_desiredScale - m_startScale) + m_startScale;
+    m_parent->m_currentZoomTransX = elapsedTimeFraction * m_desiredTransX;
+    m_parent->m_currentZoomTransY = elapsedTimeFraction * m_desiredTransY;
+    return true;
+}
+
 ScrollAnimatorNone::ScrollAnimatorNone(ScrollableArea* scrollableArea)
     : ScrollAnimator(scrollableArea)
     , m_horizontalData(this, &m_currentPosX, scrollableArea->visibleWidth())
     , m_verticalData(this, &m_currentPosY, scrollableArea->visibleHeight())
+    , m_zoomData(this)
     , m_animationTimer(this, &ScrollAnimatorNone::animationTimerFired)
 {
 }
@@ -383,6 +414,10 @@ bool ScrollAnimatorNone::scroll(ScrollbarOrientation orientation, ScrollGranular
 {
     if (!m_scrollableArea->scrollAnimatorEnabled())
         return ScrollAnimator::scroll(orientation, granularity, step, multiplier);
+
+#if PLATFORM(CHROMIUM)
+    TRACE_EVENT("ScrollAnimatorNone::scroll", this, 0);
+#endif
 
     // FIXME: get the type passed in. MouseWheel could also be by line, but should still have different
     // animation parameters than the keyboard.
@@ -435,6 +470,63 @@ void ScrollAnimatorNone::scrollToOffsetWithoutAnimation(const FloatPoint& offset
     notifyPositionChanged();
 }
 
+#if ENABLE(GESTURE_EVENTS)
+void ScrollAnimatorNone::zoom(const PlatformGestureEvent& pge)
+{
+    ASSERT(pge.type() == PlatformGestureEvent::DoubleTapType);
+    // FIXME: modify this so we can start even if the timer is active.
+    if (!m_animationTimer.isActive()) {
+        m_currentZoomScale = 1;
+        m_currentZoomTransX = 0;
+        m_currentZoomTransY = 0;
+
+        double currentTime = WTF::monotonicallyIncreasingTime();
+        float scale = pge.deltaX();
+
+        m_zoomData.m_startTime = currentTime - kTickTime / 2;
+        m_zoomData.m_startScale = m_currentZoomScale;
+        m_zoomData.m_desiredScale = scale;
+        // FIXME: Document then simplify the following equations.
+        m_zoomData.m_desiredTransX = (1 - scale) * pge.globalPosition().x();
+        m_zoomData.m_desiredTransY = (1 - scale) * pge.globalPosition().y();
+#if ENABLE(DOUBLE_TAP_CENTERS)
+        if (pge.type() == PlatformGestureEvent::DoubleTapType) {
+            // Zoom to centre of display. Pinch-to-zoom may not want this behaviour.
+            m_zoomData.m_desiredTransX += m_scrollableArea->visibleWidth() / 2 - pge.globalPosition().x();
+            m_zoomData.m_desiredTransY += m_scrollableArea->visibleHeight() / 2 - pge.globalPosition().y();
+        }
+#endif
+        m_zoomData.m_lastAnimationTime = currentTime;
+        m_zoomData.m_animationTime = kZoomTicks * kTickTime;
+
+        bool isContinuing = m_zoomData.animateZoom(currentTime);
+
+        double deltaToNextFrame = ceil((currentTime - m_startTime) * kFrameRate) / kFrameRate - (currentTime - m_startTime);
+        double nextTimerInterval = max(kMinimumTimerInterval, deltaToNextFrame);
+        if (isContinuing) {
+            m_animationTimer.startOneShot(nextTimerInterval);
+            m_zoomData.m_isAnimating = true;
+            notifyZoomChanged(ZoomAnimationContinuing);
+        } else
+            notifyZoomChanged(ZoomAnimationFinishing);
+    }
+}
+
+void ScrollAnimatorNone::handleGestureEvent(const PlatformGestureEvent& pge)
+{
+    TRACE_EVENT("ScrollAnimatorNone::handleGestureEvent", this, 0);
+    switch (pge.type()) {
+    case PlatformGestureEvent::DoubleTapType:
+        zoom(pge);
+        break;
+
+    default:
+        // TODO: add any other event types we should handle
+        { }
+    }
+}
+#endif
+
 void ScrollAnimatorNone::willEndLiveResize()
 {
     updateVisibleLengths();
@@ -458,6 +550,10 @@ void ScrollAnimatorNone::updateVisibleLengths()
 
 void ScrollAnimatorNone::animationTimerFired(Timer<ScrollAnimatorNone>* timer)
 {
+#if PLATFORM(CHROMIUM)
+    TRACE_EVENT("ScrollAnimatorNone::animationTimerFired", this, 0);
+#endif
+
     double currentTime = WTF::monotonicallyIncreasingTime();
     double deltaToNextFrame = ceil((currentTime - m_startTime) * kFrameRate) / kFrameRate - (currentTime - m_startTime);
 
@@ -466,10 +562,28 @@ void ScrollAnimatorNone::animationTimerFired(Timer<ScrollAnimatorNone>* timer)
         continueAnimation = true;
     if (m_verticalData.m_startTime && m_verticalData.animateScroll(currentTime + deltaToNextFrame))
         continueAnimation = true;
+
+    if (m_zoomData.m_isAnimating) {
+#if PLATFORM(CHROMIUM)
+        TRACE_EVENT("ScrollAnimatorNone::notifyZoomChanged", this, 0);
+#endif
+        if (m_zoomData.m_startTime && m_zoomData.animateZoom(currentTime + deltaToNextFrame)) {
+            continueAnimation = true;
+            notifyZoomChanged(ZoomAnimationContinuing);
+        } else {
+            notifyZoomChanged(ZoomAnimationFinishing);
+            m_zoomData.m_isAnimating = false;
+        }
+    }
+
     if (continueAnimation) {
         double nextTimerInterval = max(kMinimumTimerInterval, deltaToNextFrame);
         timer->startOneShot(nextTimerInterval);
     }
+
+#if PLATFORM(CHROMIUM)
+    TRACE_EVENT("ScrollAnimatorNone::notifyPositionChanged", this, 0);
+#endif
     notifyPositionChanged();
 }
 

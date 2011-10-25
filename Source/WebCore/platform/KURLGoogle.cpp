@@ -284,6 +284,7 @@ void KURLGooglePrivate::copyTo(KURLGooglePrivate* dest) const
     dest->m_utf8 = CString(m_utf8.data(), m_utf8.length());
     dest->m_utf8IsASCII = m_utf8IsASCII;
     dest->m_stringIsValid = false;
+    dest->m_string = String(); // Clear the invalid string to avoid cross thread ref counting.
 }
 
 String KURLGooglePrivate::componentString(const url_parse::Component& comp) const
@@ -593,7 +594,6 @@ String KURL::query() const
 
 String KURL::path() const
 {
-    // Note: KURL.cpp unescapes here.
     return m_url.componentString(m_url.m_parsed.path);
 }
 
@@ -670,16 +670,12 @@ void KURL::setPort(unsigned short i)
 {
     KURLGooglePrivate::Replacements replacements;
     String portStr;
-    if (i) {
-        portStr = String::number(i);
-        replacements.SetPort(
-            reinterpret_cast<const url_parse::UTF16Char*>(portStr.characters()),
-            url_parse::Component(0, portStr.length()));
 
-    } else {
-        // Clear any existing port when it is set to 0.
-        replacements.ClearPort();
-    }
+    portStr = String::number(i);
+    replacements.SetPort(
+        reinterpret_cast<const url_parse::UTF16Char*>(portStr.characters()),
+        url_parse::Component(0, portStr.length()));
+
     m_url.replaceComponents(replacements);
 }
 

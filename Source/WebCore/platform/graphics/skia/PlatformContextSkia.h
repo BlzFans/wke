@@ -45,7 +45,6 @@
 namespace WebCore {
 
 enum CompositeOperator;
-class DrawingBuffer;
 class GraphicsContext3D;
 class Texture;
 
@@ -171,6 +170,7 @@ public:
     // Returns if the context allows rendering of fonts using native platform
     // APIs. If false is returned font rendering is performed using the skia
     // text drawing APIs.
+    // if USE(SKIA_TEXT) is enabled, this always returns false
     bool isNativeFontRenderingAllowed();
 
     void getImageResamplingHint(IntSize* srcSize, FloatSize* dstSize) const;
@@ -179,8 +179,7 @@ public:
     bool hasImageResamplingHint() const;
 
     bool isAccelerated() const { return m_gpuContext; }
-    void setGraphicsContext3D(GraphicsContext3D*, DrawingBuffer*);
-    void makeGrContextCurrent();
+    void setGraphicsContext3D(GraphicsContext3D*);
 
 private:
     // Used when restoring and the state has an image clip. Only shows the pixels in

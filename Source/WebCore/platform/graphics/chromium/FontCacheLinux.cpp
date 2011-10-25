@@ -36,7 +36,7 @@
 #include "FontPlatformData.h"
 #include "Logging.h"
 #include "NotImplemented.h"
-#include "PlatformBridge.h"
+#include "PlatformSupport.h"
 #include "SimpleFontData.h"
 
 #include "SkPaint.h"
@@ -59,12 +59,12 @@ const SimpleFontData* FontCache::getFontDataForCharacters(const Font& font,
                                                           int length)
 {
     icu::Locale locale = icu::Locale::getDefault();
-    String family = PlatformBridge::getFontFamilyForCharacters(characters, length, locale.getLanguage());
+    String family = PlatformSupport::getFontFamilyForCharacters(characters, length, locale.getLanguage());
     if (family.isEmpty())
         return 0;
 
     AtomicString atomicFamily(family);
-    return getCachedFontData(getCachedFontPlatformData(font.fontDescription(), atomicFamily, DoNotRetain));
+    return getCachedFontData(getCachedFontPlatformData(font.fontDescription(), atomicFamily, DoNotRetain), DoNotRetain);
 }
 
 SimpleFontData* FontCache::getSimilarFontPlatformData(const Font& font)

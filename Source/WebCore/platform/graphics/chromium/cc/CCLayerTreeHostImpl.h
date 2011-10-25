@@ -25,56 +25,90 @@
 #ifndef CCLayerTreeHostImpl_h
 #define CCLayerTreeHostImpl_h
 
-#include "cc/CCThread.h"
+#include "cc/CCLayerTreeHost.h"
+#include "cc/CCLayerTreeHostCommon.h"
+#include "cc/CCScrollController.h"
 #include <wtf/RefPtr.h>
-#include <wtf/ThreadSafeRefCounted.h>
+
+#if USE(SKIA)
+class GrContext;
+#endif
 
 namespace WebCore {
 
 class CCCompletionEvent;
+class CCLayerImpl;
 class LayerRendererChromium;
+class TextureAllocator;
+struct LayerRendererCapabilities;
+class TransformationMatrix;
 
-// Provides scheduling infrastructure for a CCLayerTreeHostImpl
-class CCLayerTreeHostImplClient  {
+// CCLayerTreeHost->CCProxy callback interface.
+class CCLayerTreeHostImplClient {
 public:
-    virtual void postDrawLayersTaskOnCCThread() = 0;
-    virtual void requestFrameAndCommitOnCCThread(double frameBeginTime) = 0;
-
-protected:
-    virtual ~CCLayerTreeHostImplClient() { }
+    virtual void onSwapBuffersCompleteOnImplThread() = 0;
+    virtual void setNeedsRedrawOnImplThread() = 0;
+    virtual void setNeedsCommitOnImplThread() = 0;
 };
 
 // CCLayerTreeHostImpl owns the CCLayerImpl tree as well as associated rendering state
-class CCLayerTreeHostImpl {
+class CCLayerTreeHostImpl : public CCScrollController {
     WTF_MAKE_NONCOPYABLE(CCLayerTreeHostImpl);
 public:
-    static PassOwnPtr<CCLayerTreeHostImpl> create(CCLayerTreeHostImplClient*, PassRefPtr<LayerRendererChromium>);
+    static PassOwnPtr<CCLayerTreeHostImpl> create(const CCSettings&, CCLayerTreeHostImplClient*);
     virtual ~CCLayerTreeHostImpl();
 
+    // CCScrollController implementation
+    virtual void scrollRootLayer(const IntSize&);
+
+    // Virtual for testing
     virtual void beginCommit();
     virtual void commitComplete();
+    virtual void drawLayers();
 
-    void drawLayers();
+    GraphicsContext3D* context();
 
+    void finishAllRendering();
     int frameNumber() const { return m_frameNumber; }
 
-    void setNeedsRedraw();
-    void setNeedsCommitAndRedraw();
+    bool initializeLayerRenderer(PassRefPtr<GraphicsContext3D>);
+    bool isContextLost();
+    LayerRendererChromium* layerRenderer() { return m_layerRenderer.get(); }
+    const LayerRendererCapabilities& layerRendererCapabilities() const;
+    TextureAllocator* contentsTextureAllocator() const;
+
+    void swapBuffers();
+    void onSwapBuffersComplete();
+
+    void readback(void* pixels, const IntRect&);
+
+    CCLayerImpl* rootLayer() const { return m_rootLayerImpl.get(); }
+    void setRootLayer(PassRefPtr<CCLayerImpl>);
+
+    void setVisible(bool);
 
     int sourceFrameNumber() const { return m_sourceFrameNumber; }
     void setSourceFrameNumber(int frameNumber) { m_sourceFrameNumber = frameNumber; }
 
+    void setViewport(const IntSize& viewportSize);
+    const IntSize& viewportSize() const { return m_viewportSize; }
+    void setZoomAnimatorTransform(const TransformationMatrix&);
+
+    const CCSettings& settings() const { return m_settings; }
+
+    PassOwnPtr<CCScrollUpdateSet> processScrollDeltas();
+
 protected:
-    CCLayerTreeHostImpl(CCLayerTreeHostImplClient*, PassRefPtr<LayerRendererChromium>);
-    void drawLayersOnMainThread(CCCompletionEvent*, bool* contextLost);
+    CCLayerTreeHostImpl(const CCSettings&, CCLayerTreeHostImplClient*);
+    CCLayerTreeHostImplClient* m_client;
     int m_sourceFrameNumber;
     int m_frameNumber;
 
 private:
-    CCLayerTreeHostImplClient* m_client;
-    bool m_commitPending;
-    RefPtr<LayerRendererChromium> m_layerRenderer;
-    bool m_redrawPending;
+    OwnPtr<LayerRendererChromium> m_layerRenderer;
+    RefPtr<CCLayerImpl> m_rootLayerImpl;
+    CCSettings m_settings;
+    IntSize m_viewportSize;
 };
 
 };

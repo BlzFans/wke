@@ -47,8 +47,11 @@ typedef void* LPVOID;
 typedef LPVOID HINTERNET;
 #endif
 
-#if PLATFORM(MAC)
+#if PLATFORM(MAC) || USE(CFURLSTORAGESESSIONS)
 #include <wtf/RetainPtr.h>
+#endif
+
+#if PLATFORM(MAC)
 #ifdef __OBJC__
 @class NSData;
 @class NSError;
@@ -155,9 +158,6 @@ public:
     static void setClientCertificate(const String& host, CFDataRef);
 #endif
 
-    PassRefPtr<SharedBuffer> bufferedData();
-    static bool supportsBufferedData();
-
     bool shouldContentSniff() const;
     static bool shouldContentSniffURL(const KURL&);
 
@@ -198,14 +198,13 @@ public:
     void fireFailure(Timer<ResourceHandle>*);
 
 #if USE(CFURLSTORAGESESSIONS)
-    static void setPrivateBrowsingEnabled(bool);
-    static CFURLStorageSessionRef privateBrowsingStorageSession();
-    static void setPrivateBrowsingStorageSessionIdentifierBase(const String&);
     static CFURLStorageSessionRef currentStorageSession();
-#if PLATFORM(WIN)
     static void setDefaultStorageSession(CFURLStorageSessionRef);
     static CFURLStorageSessionRef defaultStorageSession();
-#endif // PLATFORM(WIN)
+    static void setPrivateBrowsingEnabled(bool);
+
+    static void setPrivateBrowsingStorageSessionIdentifierBase(const String&);
+    static RetainPtr<CFURLStorageSessionRef> createPrivateBrowsingStorageSession(CFStringRef identifier);
 #endif // USE(CFURLSTORAGESESSIONS)
 
     using RefCounted<ResourceHandle>::ref;
@@ -215,7 +214,7 @@ public:
     static CFStringRef synchronousLoadRunLoopMode();
 #endif
 
-#if HAVE(CFNETWORK_DATA_ARRAY_CALLBACK)
+#if HAVE(NETWORK_CFDATA_ARRAY_CALLBACK)
     void handleDataArray(CFArrayRef dataArray);
 #endif
 
@@ -245,8 +244,8 @@ private:
 #endif
 
 #if USE(CFURLSTORAGESESSIONS)
-    static RetainPtr<CFURLStorageSessionRef> createPrivateBrowsingStorageSession(CFStringRef identifier);
     static String privateBrowsingStorageSessionIdentifierDefaultBase();
+    static CFURLStorageSessionRef privateBrowsingStorageSession();
 #endif
 
     friend class ResourceHandleInternal;

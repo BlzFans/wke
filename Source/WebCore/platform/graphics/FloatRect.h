@@ -51,10 +51,6 @@ QT_END_NAMESPACE
 class wxRect2DDouble;
 #endif
 
-#if PLATFORM(HAIKU)
-class BRect;
-#endif
-
 #if USE(SKIA)
 struct SkRect;
 #endif
@@ -103,6 +99,7 @@ public:
 
     bool isEmpty() const { return m_size.isEmpty(); }
     bool isZero() const { return m_size.isZero(); }
+    bool isExpressibleAsIntRect() const;
 
     FloatPoint center() const { return FloatPoint(x() + width() / 2, y() + height() / 2); }
 
@@ -195,11 +192,6 @@ public:
 #if PLATFORM(WX) && USE(WXGC)
     FloatRect(const wxRect2DDouble&);
     operator wxRect2DDouble() const;
-#endif
-
-#if PLATFORM(HAIKU)
-    FloatRect(const BRect&);
-    operator BRect() const;
 #endif
 
 #if USE(SKIA)

@@ -34,70 +34,76 @@
 #include "PlatformGestureRecognizer.h"
 
 #include "PlatformTouchEvent.h"
-#include "TouchEvent.h"
+#include "PlatformTouchPoint.h"
 #include <wtf/HashMap.h>
+
+class InspectableGestureRecognizerChromium;
 
 namespace WebCore {
 
 class PlatformGestureEvent;
 
-class InnerGestureRecognizer {
+class GestureRecognizerChromium : public PlatformGestureRecognizer  {
 public:
     enum State {
         NoGesture,
         PendingSyntheticClick,
-        Scroll
+        Scroll,
     };
 
     typedef Vector<PlatformGestureEvent>* Gestures;
-    typedef bool (*GestureTransitionFunction)(InnerGestureRecognizer*, const PlatformTouchPoint&, Gestures);
+    typedef bool (GestureRecognizerChromium::*GestureTransitionFunction)(const PlatformTouchPoint&, Gestures);
 
-    ~InnerGestureRecognizer();
+    GestureRecognizerChromium();
+    ~GestureRecognizerChromium();
 
-    void appendClickGestureEvent(const PlatformTouchPoint&, Gestures);
     virtual void reset();
-    bool isInClickTimeWindow();
-    bool isInsideManhattanSquare(const PlatformTouchPoint&);
     virtual PlatformGestureRecognizer::PassGestures  processTouchEventForGestures(const PlatformTouchEvent&, bool defaultPrevented);
-    void appendScrollGestureBegin(const IntPoint&, Gestures);
-    void appendScrollGestureEnd(const IntPoint&, Gestures);
-    void appendScrollGestureUpdate(const IntPoint&, Gestures);
-    void setState(State value) { m_state = value; }
     State state() { return m_state; }
 
-    IntPoint firstTouchPosition() { return m_firstTouchPosition; }
-protected:
-    InnerGestureRecognizer();
-    void addEdgeFunction(State, unsigned finger, PlatformTouchPoint::State, bool touchHandledByJavaScript, GestureTransitionFunction);
-    void updateValues(double touchTime, const PlatformTouchPoint&);
-    static unsigned int signature(State, unsigned, PlatformTouchPoint::State, bool);
+private:
+    friend class ::InspectableGestureRecognizerChromium;
 
-    friend class GestureRecognizerChromium;
+    static unsigned int signature(State, unsigned, PlatformTouchPoint::State, bool);
+    void addEdgeFunction(State, unsigned finger, PlatformTouchPoint::State, bool touchHandledByJavaScript, GestureTransitionFunction);
+    void appendTapDownGestureEvent(const PlatformTouchPoint&, Gestures);
+    void appendClickGestureEvent(const PlatformTouchPoint&, Gestures);
+    void appendDoubleClickGestureEvent(const PlatformTouchPoint&, Gestures);
+    void appendScrollGestureBegin(const PlatformTouchPoint&, Gestures);
+    void appendScrollGestureEnd(const PlatformTouchPoint&, Gestures, float, float);
+    void appendScrollGestureUpdate(const PlatformTouchPoint&, Gestures);
+    bool isInClickTimeWindow();
+    bool isInSecondClickTimeWindow();
+    bool isInsideManhattanSquare(const PlatformTouchPoint&);
+    bool isSecondClickInsideManhattanSquare(const PlatformTouchPoint&);
+    bool isOverMinFlickSpeed();
+    void setState(State value) { m_state = value; }
+    void updateValues(double touchTime, const PlatformTouchPoint&);
+
+    bool click(const PlatformTouchPoint&, Gestures);
+    bool isClickOrScroll(const PlatformTouchPoint&, Gestures);
+    bool inScroll(const PlatformTouchPoint&, Gestures);
+    bool noGesture(const PlatformTouchPoint&, Gestures);
+    bool touchDown(const PlatformTouchPoint&, Gestures);
+    bool scrollEnd(const PlatformTouchPoint&, Gestures);
 
     WTF::HashMap<int, GestureTransitionFunction> m_edgeFunctions;
     IntPoint m_firstTouchPosition;
+    IntPoint m_firstTouchScreenPosition;
     double m_firstTouchTime;
     State m_state;
-    IntPoint m_lastTouchPosition;
     double m_lastTouchTime;
+    double m_lastClickTime;
+    IntPoint m_lastClickPosition;
+    IntPoint m_lastTouchPosition;
+    IntPoint m_lastTouchScreenPosition;
+    float m_xVelocity;
+    float m_yVelocity;
 
     bool m_ctrlKey;
     bool m_altKey;
     bool m_shiftKey;
     bool m_metaKey;
-};
-
-class GestureRecognizerChromium : public PlatformGestureRecognizer  {
-public:
-
-    GestureRecognizerChromium();
-    virtual ~GestureRecognizerChromium();
-
-    virtual void reset();
- 
-    virtual PlatformGestureRecognizer::PassGestures  processTouchEventForGestures(const PlatformTouchEvent&, bool defaultPrevented);
-private:
-    InnerGestureRecognizer m_innerGestureRecognizer;
 };
 
 } // namespace WebCore

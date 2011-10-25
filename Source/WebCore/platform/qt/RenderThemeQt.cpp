@@ -76,6 +76,7 @@
 #include <QLineEdit>
 #include <QMacStyle>
 #include <QPainter>
+#include <QPlastiqueStyle>
 #include <QPushButton>
 #include <QStyleFactory>
 #include <QStyleOptionButton>
@@ -175,7 +176,7 @@ PassRefPtr<RenderTheme> RenderTheme::themeForPage(Page* page)
     if (page)
         return RenderThemeQt::create(page);
 
-    static RenderTheme* fallback = RenderThemeQt::create(0).releaseRef();
+    static RenderTheme* fallback = RenderThemeQt::create(0).leakRef();
     return fallback;
 }
 
@@ -1033,8 +1034,8 @@ bool RenderThemeQt::paintSearchFieldCancelButton(RenderObject* o, const PaintInf
                              inputContentBox.y() + (inputContentBox.height() - cancelButtonSize + 1) / 2,
                              cancelButtonSize, cancelButtonSize);
     IntRect paintingRect = convertToPaintingRect(inputRenderBox, o, cancelButtonRect, r);
-    static Image* cancelImage = Image::loadPlatformResource("searchCancelButton").releaseRef();
-    static Image* cancelPressedImage = Image::loadPlatformResource("searchCancelButtonPressed").releaseRef();
+    static Image* cancelImage = Image::loadPlatformResource("searchCancelButton").leakRef();
+    static Image* cancelPressedImage = Image::loadPlatformResource("searchCancelButtonPressed").leakRef();
     pi.context->drawImage(isPressed(o) ? cancelPressedImage : cancelImage,
                                  o->style()->colorSpace(), paintingRect);
     return false;
@@ -1073,7 +1074,7 @@ void RenderThemeQt::adjustInnerSpinButtonStyle(CSSStyleSelector* selector, Rende
                                                Element* e) const
 {
     // Use the same width as our native scrollbar
-    int width = ScrollbarTheme::nativeTheme()->scrollbarThickness();
+    int width = ScrollbarTheme::theme()->scrollbarThickness();
     style->setWidth(Length(width, Fixed));
     style->setMinWidth(Length(width, Fixed));
 }
@@ -1098,23 +1099,34 @@ bool RenderThemeQt::paintInnerSpinButton(RenderObject* o, const PaintInfo& paint
                 option.activeSubControls = QStyle::SC_SpinBoxDown;
         }
     }
+    // Render the spin buttons for LTR or RTL accordingly.
+    option.direction = o->style()->isLeftToRightDirection() ? Qt::LeftToRight : Qt::RightToLeft;
 
     IntRect buttonRect = rect;
-    buttonRect.inflateY(-2);
+    // Default to moving the buttons a little bit within the editor frame.
+    int inflateX = -2;
+    int inflateY = -2;
 #if defined(Q_WS_MAC) && !defined(QT_NO_STYLE_MAC)
     // QMacStyle will position the aqua buttons flush to the right.
-    // This will move them more left for better style, a la
+    // This will move them more within the control for better style, a la
     // Chromium look & feel.
     if (qobject_cast<QMacStyle*>(p.style)) {
-        buttonRect.inflateX(-4);
+        inflateX = -4;
         // Render mini aqua spin buttons for QMacStyle to fit nicely into
         // the editor area, like Chromium.
         option.state |= QStyle::State_Mini;
-#else
-    {
-        buttonRect.inflateX(-2);
-#endif
     }
+#endif
+#if defined(Q_WS_X11) && !defined(QT_NO_STYLE_PLASTIQUE)
+    // QPlastiqueStyle looks best when the spin buttons are flush with the frame's edge.
+    if (qobject_cast<QPlastiqueStyle*>(p.style)) {
+        inflateX = 0;
+        inflateY = 0;
+    }
+#endif
+
+    buttonRect.inflateX(inflateX);
+    buttonRect.inflateY(inflateY);
     option.rect = buttonRect;
 
     p.drawComplexControl(QStyle::CC_SpinBox, option);

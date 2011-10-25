@@ -36,7 +36,6 @@
 
 #include "FloatPoint.h"
 #include "GraphicsContext.h"
-#include "GraphicsLayerChromium.h"
 #include "PlatformString.h"
 #include "ProgramBinding.h"
 #include "RenderSurfaceChromium.h"
@@ -55,14 +54,21 @@ namespace WebCore {
 class CCLayerImpl;
 class CCLayerTreeHost;
 class GraphicsContext3D;
-class LayerRendererChromium;
+
+class CCLayerDelegate {
+public:
+    virtual ~CCLayerDelegate() { }
+    virtual bool drawsContent() const = 0;
+    virtual void paintContents(GraphicsContext&, const IntRect& clip) = 0;
+    virtual void notifySyncRequired() = 0;
+};
 
 // Base class for composited layers. Special layer types are derived from
 // this class.
 class LayerChromium : public RefCounted<LayerChromium> {
     friend class LayerTilerChromium;
 public:
-    static PassRefPtr<LayerChromium> create(GraphicsLayerChromium* owner = 0);
+    static PassRefPtr<LayerChromium> create(CCLayerDelegate*);
 
     virtual ~LayerChromium();
 
@@ -89,15 +95,6 @@ public:
     const IntSize& bounds() const { return m_bounds; }
     virtual IntSize contentBounds() const { return bounds(); }
 
-    void setClearsContext(bool clears) { m_clearsContext = clears; setNeedsCommit(); }
-    bool clearsContext() const { return m_clearsContext; }
-
-    void setFrame(const FloatRect&);
-    FloatRect frame() const { return m_frame; }
-
-    void setHidden(bool hidden) { m_hidden = hidden; setNeedsCommit(); }
-    bool isHidden() const { return m_hidden; }
-
     void setMasksToBounds(bool masksToBounds) { m_masksToBounds = masksToBounds; }
     bool masksToBounds() const { return m_masksToBounds; }
 
@@ -112,8 +109,6 @@ public:
     const FloatRect& dirtyRect() const { return m_dirtyRect; }
     void resetNeedsDisplay();
 
-    void setNeedsDisplayOnBoundsChange(bool needsDisplay) { m_needsDisplayOnBoundsChange = needsDisplay; }
-
     void setOpacity(float opacity) { m_opacity = opacity; setNeedsCommit(); }
     float opacity() const { return m_opacity; }
 
@@ -122,9 +117,6 @@ public:
 
     void setPosition(const FloatPoint& position) { m_position = position;  setNeedsCommit(); }
     FloatPoint position() const { return m_position; }
-
-    void setZPosition(float zPosition) { m_zPosition = zPosition; setNeedsCommit(); }
-    float zPosition() const {  return m_zPosition; }
 
     void setSublayerTransform(const TransformationMatrix& transform) { m_sublayerTransform = transform; setNeedsCommit(); }
     const TransformationMatrix& sublayerTransform() const { return m_sublayerTransform; }
@@ -138,59 +130,47 @@ public:
     const IntPoint& scrollPosition() const { return m_scrollPosition; }
     void setScrollPosition(const IntPoint& scrollPosition) { m_scrollPosition = scrollPosition; }
 
+    const IntSize& maxScrollPosition() const {return m_maxScrollPosition; }
+    void setMaxScrollPosition(const IntSize& maxScrollPosition) { m_maxScrollPosition = maxScrollPosition; }
+
+    IntSize scrollDelta() const { return IntSize(); }
+
+    bool scrollable() const { return !maxScrollPosition().isZero(); }
+
     bool doubleSided() const { return m_doubleSided; }
     void setDoubleSided(bool doubleSided) { m_doubleSided = doubleSided; setNeedsCommit(); }
 
-    // FIXME: This setting is currently ignored.
-    void setGeometryFlipped(bool flipped) { m_geometryFlipped = flipped; setNeedsCommit(); }
-    bool geometryFlipped() const { return m_geometryFlipped; }
-
-    bool preserves3D() { return m_owner && m_owner->preserves3D(); }
+    void setPreserves3D(bool preserve3D) { m_preserves3D = preserve3D; }
+    bool preserves3D() const { return m_preserves3D; }
 
     void setUsesLayerScissor(bool usesLayerScissor) { m_usesLayerScissor = usesLayerScissor; }
     bool usesLayerScissor() const { return m_usesLayerScissor; }
 
-    void setIsRootLayer(bool isRootLayer) { m_isRootLayer = isRootLayer; }
-    bool isRootLayer() const { return m_isRootLayer; }
-
-    // Derived types must override this method if they need to react to a change
-    // in the LayerRendererChromium.
-    // FIXME, replace with CCLayerTreeHost.
-    virtual void setLayerRenderer(LayerRendererChromium*);
+    void setIsNonCompositedContent(bool isNonCompositedContent) { m_isNonCompositedContent = isNonCompositedContent; }
+    bool isNonCompositedContent() const { return m_isNonCompositedContent; }
 
     virtual void setLayerTreeHost(CCLayerTreeHost*);
 
-    void setOwner(GraphicsLayerChromium* owner) { m_owner = owner; }
+    void setDelegate(CCLayerDelegate* delegate) { m_delegate = delegate; }
 
     void setReplicaLayer(LayerChromium* layer) { m_replicaLayer = layer; }
-    LayerChromium* replicaLayer() { return m_replicaLayer.get(); }
+    LayerChromium* replicaLayer() const { return m_replicaLayer.get(); }
 
     // These methods typically need to be overwritten by derived classes.
     virtual bool drawsContent() const { return false; }
     virtual void paintContentsIfDirty() { }
-    virtual void updateCompositorResources(GraphicsContext3D*) { }
-    virtual void setIsMask(bool) {}
+    virtual void updateCompositorResources(GraphicsContext3D*, TextureAllocator*) { }
+    virtual void setIsMask(bool) { }
     virtual void unreserveContentsTexture() { }
     virtual void bindContentsTexture() { }
     virtual void protectVisibleTileTextures() { }
 
-    // These exists just for debugging (via drawDebugBorder()).
-    void setBorderColor(const Color&);
-
+    // These exist just for debugging (via drawDebugBorder()).
+    void setDebugBorderColor(const Color&);
+    void setDebugBorderWidth(float);
     void drawDebugBorder();
-    String layerTreeAsText() const;
-
-    void setBorderWidth(float);
-
-    static void drawTexturedQuad(GraphicsContext3D*, const TransformationMatrix& projectionMatrix, const TransformationMatrix& layerMatrix,
-                                 float width, float height, float opacity,
-                                 int matrixLocation, int alphaLocation);
 
     virtual void pushPropertiesTo(CCLayerImpl*);
-
-    // Begin calls that forward to the CCLayerImpl.
-    LayerRendererChromium* layerRenderer() const;
-    // End calls that forward to the CCLayerImpl.
 
     typedef ProgramBinding<VertexShaderPos, FragmentShaderColor> BorderProgram;
 
@@ -216,26 +196,27 @@ public:
     // Returns true if any of the layer's descendants has content to draw.
     bool descendantDrawsContent();
 
+    CCLayerTreeHost* layerTreeHost() const { return m_layerTreeHost.get(); }
+    void cleanupResourcesRecursive();
+
 protected:
-    GraphicsLayerChromium* m_owner;
-    explicit LayerChromium(GraphicsLayerChromium* owner);
+    CCLayerDelegate* m_delegate;
+    explicit LayerChromium(CCLayerDelegate*);
 
     // This is called to clean up resources being held in the same context as
     // layerRendererContext(). Subclasses should override this method if they
     // hold context-dependent resources such as textures.
     virtual void cleanupResources();
 
-    GraphicsContext3D* layerRendererContext() const;
+    void setNeedsCommit();
 
-    static void toGLMatrix(float*, const TransformationMatrix&);
-
-    void dumpLayer(TextStream&, int indent) const;
-
-    virtual const char* layerTypeAsString() const { return "LayerChromium"; }
-    virtual void dumpLayerProperties(TextStream&, int indent) const;
-
+    // The dirty rect is the union of damaged regions that need repainting/updating.
     FloatRect m_dirtyRect;
-    bool m_contentsDirty;
+
+    // The update rect is the region of the compositor resource that was actually updated by the compositor.
+    // For layers that may do updating outside the compositor's control (i.e. plugin layers), this information
+    // is not available and the update rect will remain empty.
+    FloatRect m_updateRect;
 
     RefPtr<LayerChromium> m_maskLayer;
 
@@ -246,8 +227,6 @@ protected:
     int m_layerId;
 
 private:
-    void setNeedsCommit();
-
     void setParent(LayerChromium*);
     bool hasAncestor(LayerChromium*) const;
 
@@ -265,34 +244,29 @@ private:
     Vector<RefPtr<LayerChromium> > m_children;
     LayerChromium* m_parent;
 
-    RefPtr<LayerRendererChromium> m_layerRenderer;
+    RefPtr<CCLayerTreeHost> m_layerTreeHost;
 
     // Layer properties.
     IntSize m_bounds;
     IntRect m_visibleLayerRect;
     IntPoint m_scrollPosition;
+    IntSize m_maxScrollPosition;
     FloatPoint m_position;
     FloatPoint m_anchorPoint;
     Color m_backgroundColor;
     Color m_debugBorderColor;
     float m_debugBorderWidth;
     float m_opacity;
-    float m_zPosition;
     float m_anchorPointZ;
-    bool m_clearsContext;
-    bool m_hidden;
     bool m_masksToBounds;
     bool m_opaque;
-    bool m_geometryFlipped;
-    bool m_needsDisplayOnBoundsChange;
     bool m_doubleSided;
     bool m_usesLayerScissor;
-    bool m_isRootLayer;
+    bool m_isNonCompositedContent;
+    bool m_preserves3D;
 
     TransformationMatrix m_transform;
     TransformationMatrix m_sublayerTransform;
-
-    FloatRect m_frame;
 
     // Replica layer used for reflections.
     RefPtr<LayerChromium> m_replicaLayer;
@@ -308,6 +282,8 @@ private:
 
     String m_name;
 };
+
+void sortLayers(Vector<RefPtr<LayerChromium> >::iterator, Vector<RefPtr<LayerChromium> >::iterator, void*);
 
 }
 #endif // USE(ACCELERATED_COMPOSITING)

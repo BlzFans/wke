@@ -42,7 +42,7 @@ struct FileChooserSettings {
 #if ENABLE(DIRECTORY_UPLOAD)
     bool allowsDirectoryUpload;
 #endif
-    String acceptTypes;
+    Vector<String> acceptMIMETypes;
     Vector<String> selectedFiles;
 };
 

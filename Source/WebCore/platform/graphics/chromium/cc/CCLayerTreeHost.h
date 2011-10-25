@@ -27,36 +27,37 @@
 
 #include "GraphicsTypes3D.h"
 #include "IntRect.h"
-#include "cc/CCLayerTreeHostCommitter.h"
-#include "cc/CCLayerTreeHostImplProxy.h"
+#include "TransformationMatrix.h"
+#include "cc/CCLayerTreeHostCommon.h"
+#include "cc/CCProxy.h"
 
 #include <wtf/PassOwnPtr.h>
 #include <wtf/PassRefPtr.h>
 #include <wtf/RefCounted.h>
 
+#if USE(SKIA)
+class GrContext;
+#endif
+
 namespace WebCore {
 
 class CCLayerTreeHostImpl;
-class CCLayerTreeHostImplClient;
-class CCThread;
 class GraphicsContext3D;
 class LayerChromium;
 class LayerPainterChromium;
-class LayerRendererChromium;
-class GraphicsLayer;
-class NonCompositedContentHost;
+class TextureAllocator;
 class TextureManager;
 
 class CCLayerTreeHostClient {
 public:
     virtual void animateAndLayout(double frameBeginTime) = 0;
-    virtual PassOwnPtr<CCThread> createCompositorThread() = 0;
+    virtual void applyScrollDelta(const IntSize&) = 0;
     virtual PassRefPtr<GraphicsContext3D> createLayerTreeHostContext3D() = 0;
-    virtual PassOwnPtr<LayerPainterChromium> createRootLayerPainter() = 0;
     virtual void didRecreateGraphicsContext(bool success) = 0;
-#if !USE(THREADED_COMPOSITING)
+
+    // Used only in the single-threaded path.
     virtual void scheduleComposite() = 0;
-#endif
+
 protected:
     virtual ~CCLayerTreeHostClient() { }
 };
@@ -65,93 +66,109 @@ struct CCSettings {
     CCSettings()
             : acceleratePainting(false)
             , compositeOffscreen(false)
+            , enableCompositorThread(false)
             , showFPSCounter(false)
             , showPlatformLayerTree(false) { }
 
     bool acceleratePainting;
     bool compositeOffscreen;
+    bool enableCompositorThread;
     bool showFPSCounter;
     bool showPlatformLayerTree;
 };
 
+// Provides information on an Impl's rendering capabilities back to the CCLayerTreeHost
+struct LayerRendererCapabilities {
+    LayerRendererCapabilities()
+        : bestTextureFormat(0)
+        , usingMapSub(false)
+        , usingAcceleratedPainting(false)
+        , usingSwapCompleteCallback(false)
+        , maxTextureSize(0) { }
+
+    GC3Denum bestTextureFormat;
+    bool usingMapSub;
+    bool usingAcceleratedPainting;
+    bool usingSwapCompleteCallback;
+    int maxTextureSize;
+};
+
 class CCLayerTreeHost : public RefCounted<CCLayerTreeHost> {
 public:
-    static PassRefPtr<CCLayerTreeHost> create(CCLayerTreeHostClient*, const CCSettings&);
+    static PassRefPtr<CCLayerTreeHost> create(CCLayerTreeHostClient*, PassRefPtr<LayerChromium> rootLayer, const CCSettings&);
     virtual ~CCLayerTreeHost();
 
-    virtual void animateAndLayout(double frameBeginTime);
-    virtual void beginCommit();
-    virtual void commitComplete();
-
+    // CCLayerTreeHost interface to CCProxy.
+    void animateAndLayout(double frameBeginTime);
+    void commitComplete();
+    void commitToOnImplThread(CCLayerTreeHostImpl*);
+    PassRefPtr<GraphicsContext3D> createLayerTreeHostContext3D();
     virtual PassOwnPtr<CCLayerTreeHostImpl> createLayerTreeHostImpl(CCLayerTreeHostImplClient*);
-    virtual PassOwnPtr<CCLayerTreeHostCommitter> createLayerTreeHostCommitter();
+    void didRecreateGraphicsContext(bool success);
+    void deleteContentsTexturesOnImplThread(TextureAllocator*);
 
+    // CCLayerTreeHost interface to WebView.
     bool animating() const { return m_animating; }
     void setAnimating(bool animating) { m_animating = animating; } // Can be removed when non-threaded scheduling moves inside.
 
     CCLayerTreeHostClient* client() { return m_client; }
 
+    int compositorIdentifier() const { return m_compositorIdentifier; }
+
+    // Only used when compositing on the main thread.
+    void composite();
+
     GraphicsContext3D* context();
 
-    void compositeAndReadback(void *pixels, const IntRect&);
+    // Composites and attempts to read back the result into the provided
+    // buffer. If it wasn't possible, e.g. due to context lost, will return
+    // false.
+    bool compositeAndReadback(void *pixels, const IntRect&);
 
     void finishAllRendering();
 
     int frameNumber() const { return m_frameNumber; }
 
-    void invalidateRootLayerRect(const IntRect& dirtyRect);
+    void setZoomAnimatorTransform(const TransformationMatrix&);
 
-    void setNeedsCommitAndRedraw();
+    const LayerRendererCapabilities& layerRendererCapabilities() const;
+
+    // Test-only hook
+    void loseCompositorContext(int numTimes);
+
+    void setNeedsAnimate();
+    void setNeedsCommitThenRedraw();
     void setNeedsRedraw();
 
-    void setRootLayer(GraphicsLayer*);
-    GraphicsLayer* rootLayer() { return m_rootLayer.get(); }
-    const GraphicsLayer* rootLayer() const { return m_rootLayer.get(); }
+    LayerChromium* rootLayer() { return m_rootLayer.get(); }
+    const LayerChromium* rootLayer() const { return m_rootLayer.get(); }
 
     const CCSettings& settings() const { return m_settings; }
 
-    void setViewport(const IntSize& viewportSize, const IntSize& contentsSize, const IntPoint& scrollPosition);
+    void setViewport(const IntSize& viewportSize);
 
     const IntSize& viewportSize() const { return m_viewportSize; }
     TextureManager* contentsTextureManager() const;
 
     void setVisible(bool);
 
-    // Temporary home for the non-threaded rendering path.
-#if !USE(THREADED_COMPOSITING)
-    void composite(bool finish);
+    void updateLayers();
 
-    void loseCompositorContext();
-
-    LayerRendererChromium* layerRenderer() const { return m_layerRenderer.get(); }
-#endif
-
-    NonCompositedContentHost* nonCompositedContentHost() const { return m_nonCompositedContentHost.get(); }
-
-    bool contextSupportsMapSub() const { return m_contextSupportsMapSub; }
-    int maxTextureSize() const { return m_maxTextureSize; }
-    GC3Denum bestTextureFormat() { return m_bestTextureFormat; }
-
+    void applyScrollDeltas(const CCScrollUpdateSet&);
 protected:
-    CCLayerTreeHost(CCLayerTreeHostClient*, const CCSettings&);
-
-private:
+    CCLayerTreeHost(CCLayerTreeHostClient*, PassRefPtr<LayerChromium> rootLayer, const CCSettings&);
     bool initialize();
 
-    PassRefPtr<LayerRendererChromium> createLayerRenderer();
+private:
+    typedef Vector<RefPtr<LayerChromium> > LayerList;
 
-    // Temporary home for the non-threaded rendering path.
-#if !USE(THREADED_COMPOSITING)
-    void doComposite();
-    void reallocateRenderer();
+    void paintLayerContents(const LayerList&);
+    void updateLayers(LayerChromium*);
+    void updateCompositorResources(const LayerList&, GraphicsContext3D*, TextureAllocator*);
+    void updateCompositorResources(LayerChromium*, GraphicsContext3D*, TextureAllocator*);
+    void clearPendingUpdate();
 
-    bool m_recreatingGraphicsContext;
-    RefPtr<LayerRendererChromium> m_layerRenderer;
-#endif
-
-    int m_maxTextureSize;
-    GC3Denum m_bestTextureFormat;
-    bool m_contextSupportsMapSub;
+    int m_compositorIdentifier;
 
     bool m_animating;
 
@@ -159,14 +176,18 @@ private:
 
     int m_frameNumber;
 
-    OwnPtr<CCLayerTreeHostImplProxy> m_proxy;
+    OwnPtr<CCProxy> m_proxy;
 
-    OwnPtr<GraphicsLayer> m_rootLayer;
-    OwnPtr<NonCompositedContentHost> m_nonCompositedContentHost;
+    RefPtr<LayerChromium> m_rootLayer;
+    OwnPtr<TextureManager> m_contentsTextureManager;
+
+    LayerList m_updateList;
 
     CCSettings m_settings;
 
     IntSize m_viewportSize;
+    TransformationMatrix m_zoomAnimatorTransform;
+    bool m_visible;
 };
 
 }

@@ -43,7 +43,7 @@ public:
 
     virtual ~TiledLayerChromium();
 
-    virtual void updateCompositorResources(GraphicsContext3D*);
+    virtual void updateCompositorResources(GraphicsContext3D*, TextureAllocator*);
     virtual void setIsMask(bool);
 
     virtual void pushPropertiesTo(CCLayerImpl*);
@@ -55,7 +55,7 @@ public:
     void protectTileTextures(const IntRect& contentRect);
 
 protected:
-    explicit TiledLayerChromium(GraphicsLayerChromium*);
+    explicit TiledLayerChromium(CCLayerDelegate*);
 
     virtual void cleanupResources();
     void updateTileSizeAndTilingOption();
@@ -67,33 +67,27 @@ protected:
     void invalidateRect(const IntRect& contentRect);
     // Prepare data needed to update textures that intersect with contentRect.
     void prepareToUpdate(const IntRect& contentRect);
-    // Update invalid textures that intersect with contentRect provided in prepareToUpdate().
-    void updateRect(GraphicsContext3D*, LayerTextureUpdater*);
+
     virtual void protectVisibleTileTextures();
 
 private:
     virtual PassRefPtr<CCLayerImpl> createCCLayerImpl();
 
-    virtual void dumpLayerProperties(TextStream&, int indent) const;
-
     virtual void setLayerTreeHost(CCLayerTreeHost*);
 
     void createTilerIfNeeded();
     void setTilingOption(TilingOption);
-    TransformationMatrix tilingTransform() const;
 
     UpdatableTile* tileAt(int, int) const;
     UpdatableTile* createTile(int, int);
-    void invalidateTiles(const IntRect& contentRect);
 
     TextureManager* textureManager() const;
 
-    // State held between update and upload.
+    // Temporary state held between prepareToUpdate() and updateCompositorResources().
+    IntRect m_requestedUpdateRect;
+    // State held between prepareToUpdate() and pushPropertiesTo(). This represents the area
+    // of the layer that is actually re-painted by WebKit.
     IntRect m_paintRect;
-    IntRect m_updateRect;
-
-    // Tightly packed set of unused tiles.
-    Vector<RefPtr<UpdatableTile> > m_unusedTiles;
 
     TilingOption m_tilingOption;
     GC3Denum m_textureFormat;

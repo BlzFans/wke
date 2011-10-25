@@ -25,6 +25,8 @@
 #include "Image.h"
 #include "Timer.h"
 #include <wtf/HashMap.h>
+#include <wtf/OwnArrayPtr.h>
+#include <wtf/PassOwnArrayPtr.h>
 #include <wtf/PassRefPtr.h>
 #include <wtf/RefCounted.h>
 
@@ -238,6 +240,7 @@ public:
     inline FloatSize relativeSize() const { return m_relativeSize; }
     void setTextureMapper(TextureMapperGL* texmap) { m_textureMapper = texmap; }
 
+    void updateContents(PixelFormat, const IntRect&, void*);
     void pack()
     {
         // This is currently a stub.
@@ -265,7 +268,7 @@ private:
     FloatSize m_relativeSize;
     bool m_opaque;
     IntSize m_textureSize;
-    RefPtr<RGBA32PremultimpliedBuffer> m_buffer;
+    OwnPtr<BGRA32PremultimpliedBuffer> m_buffer;
     IntRect m_dirtyRect;
     GLuint m_fbo;
     GLuint m_rbo;
@@ -296,6 +299,7 @@ private:
 
 TextureMapperGL::TextureMapperGL()
     : m_data(new TextureMapperGLData)
+    , m_context(0)
 {
 }
 
@@ -394,9 +398,11 @@ void TextureMapperGL::beginPainting()
         return;
 
     glGetIntegerv(GL_CURRENT_PROGRAM, &m_data->previousProgram);
-    QPainter* painter = m_context->platformContext();
-    painter->save();
-    painter->beginNativePainting();
+    if (m_context) {
+        QPainter* painter = m_context->platformContext();
+        painter->save();
+        painter->beginNativePainting();
+    }
     glClearStencil(0);
     glClear(GL_STENCIL_BUFFER_BIT);
     bindSurface(0);
@@ -409,8 +415,10 @@ void TextureMapperGL::endPainting()
 #if PLATFORM(QT)
     glClearStencil(1);
     glClear(GL_STENCIL_BUFFER_BIT);
-    QPainter* painter = m_context->platformContext();
     glUseProgram(m_data->previousProgram);
+    if (!m_context)
+        return;
+    QPainter* painter = m_context->platformContext();
     painter->endNativePainting();
     painter->restore();
 #endif
@@ -495,6 +503,19 @@ const char* TextureMapperGL::type() const
     return "OpenGL";
 }
 
+// This function is similar with GraphicsContext3D::texImage2DResourceSafe.
+static void texImage2DResourceSafe(size_t width, size_t height)
+{
+    const int pixelSize = 4; // RGBA
+    OwnArrayPtr<unsigned char> zero;
+    if (width && height) {
+        unsigned int size = width * height * pixelSize;
+        zero = adoptArrayPtr(new unsigned char[size]);
+        memset(zero.get(), 0, size);
+    }
+    GL_CMD(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, zero.get()))
+}
+
 void BitmapTextureGL::reset(const IntSize& newSize, bool opaque)
 {
     BitmapTexture::reset(newSize, opaque);
@@ -513,7 +534,7 @@ void BitmapTextureGL::reset(const IntSize& newSize, bool opaque)
         GL_CMD(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR))
         GL_CMD(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE))
         GL_CMD(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE))
-        GL_CMD(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, m_textureSize.width(), m_textureSize.height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, 0))
+        texImage2DResourceSafe(m_textureSize.width(), m_textureSize.height());
     }
     m_actualSize = newSize;
     m_relativeSize = FloatSize(float(newSize.width()) / m_textureSize.width(), float(newSize.height()) / m_textureSize.height());
@@ -523,7 +544,7 @@ void BitmapTextureGL::reset(const IntSize& newSize, bool opaque)
 
 PlatformGraphicsContext* BitmapTextureGL::beginPaint(const IntRect& dirtyRect)
 {
-    m_buffer = RGBA32PremultimpliedBuffer::create();
+    m_buffer = BGRA32PremultimpliedBuffer::create();
     m_dirtyRect = dirtyRect;
     return m_buffer->beginPaint(dirtyRect, m_opaque);
 }
@@ -533,9 +554,62 @@ void BitmapTextureGL::endPaint()
     if (!m_buffer)
         return;
     m_buffer->endPaint();
+    updateContents(BGRAFormat, m_dirtyRect, m_buffer->data());
     GL_CMD(glBindTexture(GL_TEXTURE_2D, m_id))
-    GL_CMD(glTexSubImage2D(GL_TEXTURE_2D, 0, m_dirtyRect.x(), m_dirtyRect.y(), m_dirtyRect.width(), m_dirtyRect.height(), GL_BGRA, GL_UNSIGNED_BYTE, m_buffer->data()))
     m_buffer.clear();
+}
+
+#ifdef TEXMAP_OPENGL_ES_2
+static void swizzleBGRAToRGBA(uint32_t* data, const IntSize& size)
+{
+    int width = size.width();
+    int height = size.height();
+    for (int y = 0; y < height; ++y) {
+        uint32_t* p = data + y * width;
+        for (int x = 0; x < width; ++x)
+            p[x] = ((p[x] << 16) & 0xff0000) | ((p[x] >> 16) & 0xff) | (p[x] & 0xff00ff00);
+    }
+}
+#endif
+
+void BitmapTextureGL::updateContents(PixelFormat pixelFormat, const IntRect& rect, void* bits)
+{
+    GL_CMD(glBindTexture(GL_TEXTURE_2D, m_id))
+#ifdef TEXMAP_OPENGL_ES_2
+    bool shouldSwizzle = false;
+#endif
+
+    GLint glFormat = GL_RGBA;
+    switch (pixelFormat) {
+    case RGBAFormat:
+        glFormat = GL_RGBA;
+        break;
+    case RGBFormat:
+        glFormat = GL_RGB;
+        break;
+    case BGRAFormat:
+#ifdef TEXMAP_OPENGL_ES_2
+        shouldSwizzle = true;
+        glFormat = GL_RGBA;
+#else
+        glFormat = GL_BGRA;
+#endif
+        break;
+    case BGRFormat:
+#ifdef TEXMAP_OPENGL_ES_2
+        shouldSwizzle = true;
+        glFormat = GL_RGB;
+#else
+        glFormat = GL_BGR;
+#endif
+         break;
+    }
+
+#ifdef TEXMAP_OPENGL_ES_2
+    if (shouldSwizzle)
+        swizzleBGRAToRGBA(static_cast<uint32_t*>(bits), rect.size());
+#endif
+    GL_CMD(glTexSubImage2D(GL_TEXTURE_2D, 0, rect.x(), rect.y(), rect.width(), rect.height(), glFormat, GL_UNSIGNED_BYTE, bits))
 }
 
 void BitmapTextureGL::setContentsToImage(Image* image)
@@ -693,6 +767,7 @@ void TextureMapperGL::beginClip(const TransformationMatrix& modelViewMatrix, con
     GL_CMD(glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP))
     stencilIndex <<= 1;
     glStencilFunc(stencilIndex > 1 ? GL_EQUAL : GL_ALWAYS, stencilIndex - 1, stencilIndex - 1);
+    GL_CMD(glDisableVertexAttribArray(programInfo.vertexAttrib))
 }
 
 void TextureMapperGL::endClip()

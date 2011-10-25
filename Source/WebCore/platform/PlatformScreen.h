@@ -40,6 +40,8 @@
 #endif
 #endif
 
+typedef uint32_t PlatformDisplayID;
+
 namespace WebCore {
 
     class FloatRect;

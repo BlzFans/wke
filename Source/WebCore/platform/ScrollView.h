@@ -145,7 +145,7 @@ public:
     // the setFixedVisibleContentRect instead for the mainframe, though this must be updated manually, e.g just before resuming the page
     // which usually will happen when panning, pinching and rotation ends, or when scale or position are changed manually.
     virtual IntRect visibleContentRect(bool includeScrollbars = false) const;
-    void setFixedVisibleContentRect(const IntRect& visibleContentRect) { m_fixedVisibleContentRect = visibleContentRect; }
+    virtual void setFixedVisibleContentRect(const IntRect& visibleContentRect) { m_fixedVisibleContentRect = visibleContentRect; }
     LayoutUnit visibleWidth() const { return visibleContentRect().width(); }
     LayoutUnit visibleHeight() const { return visibleContentRect().height(); }
 
@@ -197,6 +197,11 @@ public:
     void setScrollbarsSuppressed(bool suppressed, bool repaintOnUnsuppress = false);
     bool scrollbarsSuppressed() const { return m_scrollbarsSuppressed; }
 
+    IntPoint rootViewToContents(const IntPoint&) const;
+    IntPoint contentsToRootView(const IntPoint&) const;
+    IntRect rootViewToContents(const IntRect&) const;
+    IntRect contentsToRootView(const IntRect&) const;
+
     // Event coordinates are assumed to be in the coordinate space of a window that contains
     // the entire widget hierarchy. It is up to the platform to decide what the precise definition
     // of containing window is. (For example on Mac it is the containing NSWindow.)
@@ -227,7 +232,6 @@ public:
     
     // Widget override to update our scrollbars and notify our contents of the resize.
     virtual void setFrameRect(const IntRect&);
-    virtual void setBoundsSize(const IntSize&);
 
     // For platforms that need to hit test scrollbars from within the engine's event handlers (like Win32).
     Scrollbar* scrollbarAtPoint(const IntPoint& windowPoint);
@@ -235,7 +239,7 @@ public:
     // This function exists for scrollviews that need to handle wheel events manually.
     // On Mac the underlying NSScrollView just does the scrolling, but on other platforms
     // (like Windows), we need this function in order to do the scroll ourselves.
-    void wheelEvent(PlatformWheelEvent&);
+    bool wheelEvent(const PlatformWheelEvent&);
 #if ENABLE(GESTURE_EVENTS)
     void gestureEvent(const PlatformGestureEvent&);
 #endif
@@ -286,6 +290,8 @@ public:
     bool containsScrollableAreaWithOverlayScrollbars() const { return m_containsScrollableAreaWithOverlayScrollbars; }
     void setContainsScrollableAreaWithOverlayScrollbars(bool contains) { m_containsScrollableAreaWithOverlayScrollbars = contains; }
 
+    void calculateAndPaintOverhangAreas(GraphicsContext*, const IntRect& dirtyRect);
+
 protected:
     ScrollView();
 
@@ -299,9 +305,6 @@ protected:
     virtual void visibleContentsResized() = 0;
 
     IntRect fixedVisibleContentRect() const { return m_fixedVisibleContentRect; }
-
-    IntSize boundsSize() const { return m_boundsSize; }
-    void setInitialBoundsSize(const IntSize&);
 
     // These functions are used to create/destroy scrollbars.
     void setHasHorizontalScrollbar(bool);
@@ -361,8 +364,6 @@ private:
 
     bool m_containsScrollableAreaWithOverlayScrollbars;
 
-    IntSize m_boundsSize;
-
     void init();
     void destroy();
 
@@ -382,7 +383,6 @@ private:
     void platformSetCanBlitOnScroll(bool);
     bool platformCanBlitOnScroll() const;
     IntRect platformVisibleContentRect(bool includeScrollbars) const;
-    IntSize platformContentsSize() const;
     void platformSetContentsSize();
     IntRect platformContentsToScreen(const IntRect&) const;
     IntPoint platformScreenToContents(const IntPoint&) const;

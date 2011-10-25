@@ -336,17 +336,8 @@ String DefaultLocalizationStrategy::contextMenuItemTagSearchWeb()
 
 String DefaultLocalizationStrategy::contextMenuItemTagLookUpInDictionary(const String& selectedString)
 {
-//#if defined(BUILDING_ON_LEOPARD) || defined(BUILDING_ON_SNOW_LEOPARD)
-//    UNUSED_PARAM(selectedString);
+    UNUSED_PARAM(selectedString);
     return WEB_UI_STRING("Look Up in Dictionary", "Look Up in Dictionary context menu item");
-//#else
-//#if USE(CF)
-//    RetainPtr<CFStringRef> selectedCFString(AdoptCF, truncatedStringForLookupMenuItem(selectedString).createCFString());
-//    return formatLocalizedString(WEB_UI_STRING("Look Up “%@”", "Look Up context menu item with selected word"), selectedCFString.get());
-//#else
-//    return WEB_UI_STRING("Look Up “<selection>”", "Look Up context menu item with selected word").replace("<selection>", truncatedStringForLookupMenuItem(selectedString));
-//#endif
-//#endif
 }
 
 String DefaultLocalizationStrategy::contextMenuItemTagOpenLink()
@@ -729,6 +720,18 @@ String DefaultLocalizationStrategy::allFilesText()
 
 #if PLATFORM(MAC)
 
+String DefaultLocalizationStrategy::builtInPDFPluginName()
+{
+    // Also exposed to DOM.
+    return WEB_UI_STRING("WebKit built-in PDF", "Pseudo plug-in name, visible in Installed Plug-ins page in Safari.");
+}
+
+String DefaultLocalizationStrategy::pdfDocumentTypeDescription()
+{
+    // Also exposed to DOM.
+    return WEB_UI_STRING("Portable Document Format", "Description of the (only) type supported by PDF pseudo plug-in. Visible in Installed Plug-ins page in Safari.");
+}
+
 String DefaultLocalizationStrategy::keygenMenuItem512()
 {
     return WEB_UI_STRING("512 (Low Grade)", "Menu item title for KEYGEN pop-up menu");
@@ -755,24 +758,24 @@ String DefaultLocalizationStrategy::keygenKeychainItemName(const String& host)
 String DefaultLocalizationStrategy::imageTitle(const String& filename, const IntSize& size)
 {
 #if USE(CF)
-//#if !defined(BUILDING_ON_LEOPARD)
-//    RetainPtr<CFStringRef> filenameCFString(AdoptCF, filename.createCFString());
-//    RetainPtr<CFLocaleRef> locale(AdoptCF, CFLocaleCopyCurrent());
-//    RetainPtr<CFNumberFormatterRef> formatter(AdoptCF, CFNumberFormatterCreate(0, locale.get(), kCFNumberFormatterDecimalStyle));
-//
-//    int widthInt = size.width();
-//    RetainPtr<CFNumberRef> width(AdoptCF, CFNumberCreate(0, kCFNumberIntType, &widthInt));
-//    RetainPtr<CFStringRef> widthString(AdoptCF, CFNumberFormatterCreateStringWithNumber(0, formatter.get(), width.get()));
-//
-//    int heightInt = size.height();
-//    RetainPtr<CFNumberRef> height(AdoptCF, CFNumberCreate(0, kCFNumberIntType, &heightInt));
-//    RetainPtr<CFStringRef> heightString(AdoptCF, CFNumberFormatterCreateStringWithNumber(0, formatter.get(), height.get()));
-//
-//    return formatLocalizedString(WEB_UI_STRING("%@ %@×%@ pixels", "window title for a standalone image (uses multiplication symbol, not x)"), filenameCFString.get(), widthString.get(), heightString.get());
-//#else
+#if !defined(BUILDING_ON_LEOPARD)
+    RetainPtr<CFStringRef> filenameCFString(AdoptCF, filename.createCFString());
+    RetainPtr<CFLocaleRef> locale(AdoptCF, CFLocaleCopyCurrent());
+    RetainPtr<CFNumberFormatterRef> formatter(AdoptCF, CFNumberFormatterCreate(0, locale.get(), kCFNumberFormatterDecimalStyle));
+
+    int widthInt = size.width();
+    RetainPtr<CFNumberRef> width(AdoptCF, CFNumberCreate(0, kCFNumberIntType, &widthInt));
+    RetainPtr<CFStringRef> widthString(AdoptCF, CFNumberFormatterCreateStringWithNumber(0, formatter.get(), width.get()));
+
+    int heightInt = size.height();
+    RetainPtr<CFNumberRef> height(AdoptCF, CFNumberCreate(0, kCFNumberIntType, &heightInt));
+    RetainPtr<CFStringRef> heightString(AdoptCF, CFNumberFormatterCreateStringWithNumber(0, formatter.get(), height.get()));
+
+    return formatLocalizedString(WEB_UI_STRING("%@ %@×%@ pixels", "window title for a standalone image (uses multiplication symbol, not x)"), filenameCFString.get(), widthString.get(), heightString.get());
+#else
     RetainPtr<CFStringRef> filenameCFString(AdoptCF, filename.createCFString());
     return formatLocalizedString(WEB_UI_STRING("%@ %d×%d pixels", "window title for a standalone image (uses multiplication symbol, not x)"), filenameCFString.get(), size.width(), size.height());
-//#endif
+#endif
 #else
     return formatLocalizedString(WEB_UI_STRING("<filename> %d×%d pixels", "window title for a standalone image (uses multiplication symbol, not x)"), size.width(), size.height()).replace("<filename>", filename);
 #endif

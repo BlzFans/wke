@@ -36,8 +36,9 @@
 #include <objidl.h>
 #include <mlang.h>
 
-#include "PlatformBridge.h"
+#include "PlatformSupport.h"
 #include "SkiaFontWin.h"
+#include "StdLibExtras.h"
 
 namespace WebCore {
 
@@ -116,8 +117,8 @@ FontPlatformData::RefCountedHFONT::~RefCountedHFONT()
 
 FontPlatformData::RefCountedHFONT* FontPlatformData::hashTableDeletedFontValue()
 {
-    static RefPtr<RefCountedHFONT> deletedValue =
-        RefCountedHFONT::create(reinterpret_cast<HFONT>(-1));
+    DEFINE_STATIC_LOCAL(RefPtr<RefCountedHFONT>, deletedValue,
+                        (RefCountedHFONT::create(reinterpret_cast<HFONT>(-1))));
     return deletedValue.get();
 }
 
@@ -135,7 +136,7 @@ SCRIPT_FONTPROPERTIES* FontPlatformData::scriptFontProperties() const
             HRESULT hr = ScriptGetFontProperties(dc, scriptCache(),
                                                  m_scriptFontProperties);
             if (S_OK != hr) {
-                if (PlatformBridge::ensureFontLoaded(hfont())) {
+                if (PlatformSupport::ensureFontLoaded(hfont())) {
                     // FIXME: Handle gracefully the error if this call also fails.
                     hr = ScriptGetFontProperties(dc, scriptCache(),
                                                  m_scriptFontProperties);

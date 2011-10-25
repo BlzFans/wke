@@ -105,7 +105,6 @@ enum MediaPlayerAVFoundationObservationContext {
 -(void)disconnect;
 -(void)playableKnown;
 -(void)metadataLoaded;
--(void)timeChanged:(double)time;
 -(void)seekCompleted:(BOOL)finished;
 -(void)didEnd:(NSNotification *)notification;
 -(void)observeValueForKeyPath:keyPath ofObject:(id)object change:(NSDictionary *)change context:(MediaPlayerAVFoundationObservationContext)context;
@@ -280,13 +279,8 @@ void MediaPlayerPrivateAVFoundationObjC::createAVPlayer()
     m_avPlayer.adoptNS([[AVPlayer alloc] init]);
     [m_avPlayer.get() addObserver:m_objcObserver.get() forKeyPath:@"rate" options:nil context:(void *)MediaPlayerAVFoundationObservationContextPlayer];
     
-    // Add a time observer, ask to be called infrequently because we don't really want periodic callbacks but
-    // our observer will also be called whenever a seek happens.
-    const double veryLongInterval = 60 * 60 * 24 * 30;
-    WebCoreAVFMovieObserver *observer = m_objcObserver.get();
-    m_timeObserver = [m_avPlayer.get() addPeriodicTimeObserverForInterval:CMTimeMakeWithSeconds(veryLongInterval, 10) queue:nil usingBlock:^(CMTime time){
-        [observer timeChanged:CMTimeGetSeconds(time)];
-    }];
+    if (m_avPlayerItem)
+        [m_avPlayer.get() replaceCurrentItemWithPlayerItem:m_avPlayerItem.get()];
 
     setDelayCallbacks(false);
 }
@@ -298,8 +292,6 @@ void MediaPlayerPrivateAVFoundationObjC::createAVPlayerItem()
 
     LOG(Media, "MediaPlayerPrivateAVFoundationObjC::createAVPlayerItem(%p)", this);
 
-    ASSERT(m_avPlayer);
-
     setDelayCallbacks(true);
 
     // Create the player item so we can load media data. 
@@ -310,7 +302,8 @@ void MediaPlayerPrivateAVFoundationObjC::createAVPlayerItem()
     for (NSString *keyName in itemKVOProperties())
         [m_avPlayerItem.get() addObserver:m_objcObserver.get() forKeyPath:keyName options:nil context:(void *)MediaPlayerAVFoundationObservationContextPlayerItem];
 
-    [m_avPlayer.get() replaceCurrentItemWithPlayerItem:m_avPlayerItem.get()];
+    if (m_avPlayer)
+        [m_avPlayer.get() replaceCurrentItemWithPlayerItem:m_avPlayerItem.get()];
 
     setDelayCallbacks(false);
 }
@@ -437,8 +430,9 @@ float MediaPlayerPrivateAVFoundationObjC::currentTime() const
         return 0;
 
     CMTime itemTime = [m_avPlayerItem.get() currentTime];
-    if (CMTIME_IS_NUMERIC(itemTime))
-        return narrowPrecisionToFloat(CMTimeGetSeconds(itemTime));
+    if (CMTIME_IS_NUMERIC(itemTime)) {
+        return max(narrowPrecisionToFloat(CMTimeGetSeconds(itemTime)), 0.0f);
+    }
 
     return 0;
 }
@@ -838,14 +832,6 @@ NSArray* itemKVOProperties()
         return;
 
     m_callback->scheduleMainThreadNotification(MediaPlayerPrivateAVFoundation::Notification::AssetPlayabilityKnown);
-}
-
-- (void)timeChanged:(double)time
-{
-    if (!m_callback)
-        return;
-
-    m_callback->scheduleMainThreadNotification(MediaPlayerPrivateAVFoundation::Notification::PlayerTimeChanged, time);
 }
 
 - (void)seekCompleted:(BOOL)finished

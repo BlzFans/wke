@@ -54,9 +54,6 @@ public:
     void cleanupResources();
     void draw(const IntRect& targetSurfaceRect);
 
-    String name() const;
-    void dumpSurface(TextStream&, int indent) const;
-
     // Returns the rect that encloses the RenderSurface including any reflection.
     FloatRect drawableContentRect() const;
 
@@ -87,8 +84,6 @@ public:
     void setMaskLayer(LayerChromium* maskLayer) { m_maskLayer = maskLayer; }
 
 private:
-    LayerRendererChromium* layerRenderer();
-
     LayerChromium* m_owningLayer;
     LayerChromium* m_maskLayer;
 

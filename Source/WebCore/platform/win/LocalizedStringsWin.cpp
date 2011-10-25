@@ -74,18 +74,18 @@ String localizedString(const char* key)
 {
     ASSERT(isMainThread());
 
-//#if USE(CF)
-//    static CFStringRef notFound = CFSTR("localized string not found");
-//
-//    RetainPtr<CFStringRef> keyString(AdoptCF, CFStringCreateWithCStringNoCopy(NULL, key, kCFStringEncodingUTF8, kCFAllocatorNull));
-//    RetainPtr<CFStringRef> result(AdoptCF, CFCopyLocalizedStringWithDefaultValue(keyString.get(), 0, webKitBundle(), notFound, 0));
-//    ASSERT_WITH_MESSAGE(result.get() != notFound, "could not find localizable string %s in bundle", key);
-//
-//    return result.get();
-//#else
+#if USE(CF)
+    static CFStringRef notFound = CFSTR("localized string not found");
+
+    RetainPtr<CFStringRef> keyString(AdoptCF, CFStringCreateWithCStringNoCopy(NULL, key, kCFStringEncodingUTF8, kCFAllocatorNull));
+    RetainPtr<CFStringRef> result(AdoptCF, CFCopyLocalizedStringWithDefaultValue(keyString.get(), 0, webKitBundle(), notFound, 0));
+    ASSERT_WITH_MESSAGE(result.get() != notFound, "could not find localizable string %s in bundle", key);
+
+    return result.get();
+#else
     // FIXME: Implement localizedString() for !USE(CF).
     return String::fromUTF8(key, strlen(key));
-//#endif
+#endif
 }
 
 } // namespace WebCore

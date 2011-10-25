@@ -48,12 +48,6 @@ RenderSurfaceChromium::~RenderSurfaceChromium()
 {
 }
 
-LayerRendererChromium* RenderSurfaceChromium::layerRenderer()
-{
-    ASSERT(m_owningLayer);
-    return m_owningLayer->layerRenderer();
-}
-
 FloatRect RenderSurfaceChromium::drawableContentRect() const
 {
     FloatRect localContentRect(-0.5 * m_contentRect.width(), -0.5 * m_contentRect.height(),
@@ -63,28 +57,6 @@ FloatRect RenderSurfaceChromium::drawableContentRect() const
         drawableContentRect.unite(m_replicaDrawTransform.mapRect(localContentRect));
 
     return drawableContentRect;
-}
-
-String RenderSurfaceChromium::name() const
-{
-    return String::format("RenderSurface(id=%d,owner=%s)", m_owningLayer->id(), m_owningLayer->name().utf8().data());
-}
-
-static void writeIndent(TextStream& ts, int indent)
-{
-    for (int i = 0; i != indent; ++i)
-        ts << "  ";
-}
-
-void RenderSurfaceChromium::dumpSurface(TextStream& ts, int indent) const
-{
-    writeIndent(ts, indent);
-    ts << name() << "\n";
-
-    writeIndent(ts, indent+1);
-    ts << "contentRect: (" << m_contentRect.x() << ", " << m_contentRect.y() << ", " << m_contentRect.width() << ", " << m_contentRect.height()
-        << " scissorRect: (" << m_scissorRect.x() << ", " << m_scissorRect.y() << ", " << m_scissorRect.width() << ", " << m_scissorRect.height() << ")"
-        << "\n";
 }
 
 }

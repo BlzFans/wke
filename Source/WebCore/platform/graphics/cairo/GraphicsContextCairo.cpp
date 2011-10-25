@@ -174,7 +174,8 @@ static inline void shadowAndStrokeCurrentCairoPath(GraphicsContext* context)
 }
 
 GraphicsContext::GraphicsContext(cairo_t* cr)
-    : m_updatingControlTints(false)
+    : m_updatingControlTints(false),
+      m_transparencyCount(0)
 {
     m_data = new GraphicsContextPlatformPrivateToplevel(new PlatformContextCairo(cr));
 }
@@ -195,6 +196,9 @@ void GraphicsContext::platformDestroy()
 
 AffineTransform GraphicsContext::getCTM() const
 {
+    if (paintingDisabled())
+        return AffineTransform();
+
     cairo_t* cr = platformContext()->cr();
     cairo_matrix_t m;
     cairo_get_matrix(cr, &m);
@@ -879,7 +883,7 @@ void GraphicsContext::clearPlatformShadow()
     platformContext()->shadowBlur().clear();
 }
 
-void GraphicsContext::beginTransparencyLayer(float opacity)
+void GraphicsContext::beginPlatformTransparencyLayer(float opacity)
 {
     if (paintingDisabled())
         return;
@@ -887,10 +891,9 @@ void GraphicsContext::beginTransparencyLayer(float opacity)
     cairo_t* cr = platformContext()->cr();
     cairo_push_group(cr);
     m_data->layers.append(opacity);
-    m_data->beginTransparencyLayer();
 }
 
-void GraphicsContext::endTransparencyLayer()
+void GraphicsContext::endPlatformTransparencyLayer()
 {
     if (paintingDisabled())
         return;
@@ -900,7 +903,11 @@ void GraphicsContext::endTransparencyLayer()
     cairo_pop_group_to_source(cr);
     cairo_paint_with_alpha(cr, m_data->layers.last());
     m_data->layers.removeLast();
-    m_data->endTransparencyLayer();
+}
+
+bool GraphicsContext::supportsTransparencyLayers()
+{
+    return true;
 }
 
 void GraphicsContext::clearRect(const FloatRect& rect)

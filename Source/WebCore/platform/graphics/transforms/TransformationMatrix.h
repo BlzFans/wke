@@ -80,6 +80,10 @@ public:
         setMatrix(m11, m12, m13, m14, m21, m22, m23, m24, m31, m32, m33, m34, m41, m42, m43, m44);
     }
 
+#if PLATFORM(QT)
+    TransformationMatrix(const QTransform&);
+#endif
+
     void setMatrix(double a, double b, double c, double d, double e, double f)
     {
         m_matrix[0][0] = a; m_matrix[0][1] = b; m_matrix[0][2] = 0; m_matrix[0][3] = 0; 
@@ -340,6 +344,9 @@ public:
     }
 
     bool isIntegerTranslation() const;
+
+    // This method returns the matrix without 3D components.
+    TransformationMatrix to2dTransform() const;
 
 private:
     // multiply passed 2D point by matrix (assume z=0)

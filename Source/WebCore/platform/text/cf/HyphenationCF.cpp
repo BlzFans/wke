@@ -35,14 +35,14 @@
 
 namespace WebCore {
 
-#if !PLATFORM(WIN) || (defined(MAC_OS_X_VERSION_10_7) && MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_7)
-
 template<>
 RetainPtr<CFLocaleRef> AtomicStringKeyedMRUCache<RetainPtr<CFLocaleRef> >::createValueForNullKey()
 {
     RetainPtr<CFLocaleRef> locale(AdoptCF, CFLocaleCopyCurrent());
 
-    return CFStringIsHyphenationAvailableForLocale(locale.get()) ? locale : 0;
+    //wke---
+    //return CFStringIsHyphenationAvailableForLocale(locale.get()) ? locale : 0;
+    return 0;
 }
 
 template<>
@@ -51,7 +51,9 @@ RetainPtr<CFLocaleRef> AtomicStringKeyedMRUCache<RetainPtr<CFLocaleRef> >::creat
     RetainPtr<CFStringRef> cfLocaleIdentifier(AdoptCF, localeIdentifier.createCFString());
     RetainPtr<CFLocaleRef> locale(AdoptCF, CFLocaleCreate(kCFAllocatorDefault, cfLocaleIdentifier.get()));
 
-    return CFStringIsHyphenationAvailableForLocale(locale.get()) ? locale : 0;
+    //wke---
+    //return CFStringIsHyphenationAvailableForLocale(locale.get()) ? locale : 0;
+    return 0;
 }
 
 static AtomicStringKeyedMRUCache<RetainPtr<CFLocaleRef> >& cfLocaleCache()
@@ -72,24 +74,11 @@ size_t lastHyphenLocation(const UChar* characters, size_t length, size_t beforeI
     RetainPtr<CFLocaleRef> locale = cfLocaleCache().get(localeIdentifier);
     ASSERT(locale);
 
-    CFIndex result = CFStringGetHyphenationLocationBeforeIndex(string.get(), beforeIndex, CFRangeMake(0, length), 0, locale.get(), 0);
-    return result == kCFNotFound ? 0 : result;
-}
-
-#else
-
-bool canHyphenate(const AtomicString&)
-{
-    return false;
-}
-
-size_t lastHyphenLocation(const UChar*, size_t, size_t, const AtomicString&)
-{
-    ASSERT_NOT_REACHED();
+    //wke---
+    //CFIndex result = CFStringGetHyphenationLocationBeforeIndex(string.get(), beforeIndex, CFRangeMake(0, length), 0, locale.get(), 0);
+    //return result == kCFNotFound ? 0 : result;
     return 0;
 }
-
-#endif // PLATFORM(WIN) && (!defined(MAC_OS_X_VERSION_10_7) || MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_7)
 
 } // namespace WebCore
 

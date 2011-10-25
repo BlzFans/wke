@@ -193,22 +193,19 @@ void FEMorphology::platformApply(PaintingData* paintingData)
 }
 
 
-void FEMorphology::apply()
+void FEMorphology::platformApplySoftware()
 {
-    if (hasResult())
-        return;
     FilterEffect* in = inputEffect(0);
-    in->apply();
-    if (!in->hasResult())
-        return;
 
     ByteArray* dstPixelArray = createPremultipliedImageResult();
     if (!dstPixelArray)
         return;
 
     setIsAlphaImage(in->isAlphaImage());
-    if (m_radiusX <= 0 || m_radiusY <= 0)
+    if (m_radiusX <= 0 || m_radiusY <= 0) {
+        dstPixelArray->clear();
         return;
+    }
 
     Filter* filter = this->filter();
     int radiusX = static_cast<int>(floorf(filter->applyHorizontalScale(m_radiusX)));

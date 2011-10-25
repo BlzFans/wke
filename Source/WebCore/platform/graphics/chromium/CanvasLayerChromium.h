@@ -46,15 +46,15 @@ public:
     virtual PassRefPtr<CCLayerImpl> createCCLayerImpl();
 
     virtual void pushPropertiesTo(CCLayerImpl*);
+    unsigned textureId() const { return m_textureId; }
+    void setTextureId(unsigned textureId) { m_textureId = textureId; }
 
 protected:
-    explicit CanvasLayerChromium(GraphicsLayerChromium* owner);
-
-    virtual unsigned textureId() const = 0;
-    virtual const char* layerTypeAsString() const { return "CanvasLayer"; }
+    explicit CanvasLayerChromium(CCLayerDelegate*);
 
     bool m_hasAlpha;
     bool m_premultipliedAlpha;
+    unsigned m_textureId;
 };
 
 }

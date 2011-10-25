@@ -62,11 +62,11 @@ PlatformWheelEvent::PlatformWheelEvent(QGraphicsSceneWheelEvent* e)
     : m_position(e->pos().toPoint())
     , m_globalPosition(e->screenPos())
     , m_granularity(ScrollByPixelWheelEvent)
-    , m_isAccepted(false)
     , m_shiftKey(e->modifiers() & Qt::ShiftModifier)
     , m_ctrlKey(e->modifiers() & Qt::ControlModifier)
     , m_altKey(e->modifiers() & Qt::AltModifier)
     , m_metaKey(e->modifiers() & Qt::MetaModifier)
+    , m_directionInvertedFromDevice(false)
 #endif
 {
 #ifndef QT_NO_WHEELEVENT
@@ -81,11 +81,11 @@ PlatformWheelEvent::PlatformWheelEvent(QWheelEvent* e)
     : m_position(e->pos())
     , m_globalPosition(e->globalPos())
     , m_granularity(ScrollByPixelWheelEvent)
-    , m_isAccepted(false)
     , m_shiftKey(e->modifiers() & Qt::ShiftModifier)
     , m_ctrlKey(e->modifiers() & Qt::ControlModifier)
     , m_altKey(e->modifiers() & Qt::AltModifier)
     , m_metaKey(e->modifiers() & Qt::MetaModifier)
+    , m_directionInvertedFromDevice(false)
 #endif
 {
 #ifndef QT_NO_WHEELEVENT

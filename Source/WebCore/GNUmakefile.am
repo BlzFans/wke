@@ -30,6 +30,7 @@ webcore_cppflags += \
 	-I$(srcdir)/Source/WebCore/html/canvas \
 	-I$(srcdir)/Source/WebCore/html/parser \
 	-I$(srcdir)/Source/WebCore/html/shadow \
+	-I$(srcdir)/Source/WebCore/html/track \
 	-I$(srcdir)/Source/WebCore/inspector \
 	-I$(srcdir)/Source/WebCore/loader \
 	-I$(srcdir)/Source/WebCore/loader/appcache \
@@ -59,12 +60,12 @@ webcore_cppflags += \
 	-I$(srcdir)/Source/WebCore/platform/image-decoders/webp \
 	-I$(srcdir)/Source/WebCore/platform/image-decoders/png \
 	-I$(srcdir)/Source/WebCore/platform/leveldb \
+	-I$(srcdir)/Source/WebCore/platform/mediastream \
 	-I$(srcdir)/Source/WebCore/platform/mock \
 	-I$(srcdir)/Source/WebCore/platform/network \
 	-I$(srcdir)/Source/WebCore/platform/sql \
 	-I$(srcdir)/Source/WebCore/platform/text \
 	-I$(srcdir)/Source/WebCore/platform/text/transcoder \
-	-I$(srcdir)/Source/WebCore/platform/track \
 	-I$(srcdir)/Source/WebCore/platform/win \
 	-I$(srcdir)/Source/WebCore/plugins \
 	-I$(srcdir)/Source/WebCore/plugins/win \
@@ -173,22 +174,24 @@ webcore_cppflags += -DENABLE_JAVASCRIPT_DEBUGGER=0
 endif # END ENABLE_JAVASCRIPT_DEBUGGER
 
 # ----
-# Offline Web Applications
-# ----
-if ENABLE_OFFLINE_WEB_APPLICATIONS
-FEATURE_DEFINES += ENABLE_OFFLINE_WEB_APPLICATIONS=1
-webcore_cppflags += -DENABLE_OFFLINE_WEB_APPLICATIONS=1
-endif # END ENABLE_OFFLINE_WEB_APPLICATIONS
+# Gamepad support
+# ---
+if ENABLE_GAMEPAD
+FEATURE_DEFINES += ENABLE_GAMEPAD=1
+webcore_cppflags += -DENABLE_GAMEPAD=1
+else
+webcore_cppflags += -DENABLE_GAMEPAD=0
+endif # END ENABLE_GAMEPAD
 
 # ----
 # Database Support
 # ----
-if ENABLE_DATABASE
-FEATURE_DEFINES += ENABLE_DATABASE=1
-webcore_cppflags += -DENABLE_DATABASE=1
+if ENABLE_SQL_DATABASE
+FEATURE_DEFINES += ENABLE_SQL_DATABASE=1
+webcore_cppflags += -DENABLE_SQL_DATABASE=1
 else
-webcore_cppflags += -DENABLE_DATABASE=0
-endif # END ENABLE_DATABASE
+webcore_cppflags += -DENABLE_SQL_DATABASE=0
+endif # END ENABLE_SQL_DATABASE
 
 # ----
 # HTML5 datalist Support
@@ -206,16 +209,6 @@ if ENABLE_DATA_TRANSFER_ITEMS
 FEATURE_DEFINES += ENABLE_DATA_TRANSFER_ITEMS=1
 webcore_cppflags += -DENABLE_DATA_TRANSFER_ITEMS=1
 endif # END ENABLE_DATA_TRANSFER_ITEMS
-
-# ----
-# HTML5 server-sent events
-# ----
-if !ENABLE_EVENTSOURCE
-global_cppflags += -DENABLE_EVENTSOURCE=0
-else
-FEATURE_DEFINES += ENABLE_EVENTSOURCE=1
-webcore_cppflags += -DENABLE_EVENTSOURCE=1
-endif # ENABLE_EVENTSOURCE
 
 # ----
 # Indexed Database API support
@@ -236,12 +229,12 @@ webcore_cppflags += -DENABLE_DIRECTORY_UPLOAD=0
 endif # END ENABLE_DIRECTORY_UPLOAD
 
 # ----
-# HTML5 client-side session and persistent storage
+# DOM mutation observer support
 # ----
-if ENABLE_DOM_STORAGE
-FEATURE_DEFINES += ENABLE_DOM_STORAGE=1
-webcore_cppflags += -DENABLE_DOM_STORAGE=1
-endif # END ENABLE_DOM_STORAGE
+if ENABLE_MUTATION_OBSERVERS
+FEATURE_DEFINES += ENABLE_MUTATION_OBSERVERS=1
+webcore_cppflags += -DENABLE_MUTATION_OBSERVERS=1
+endif # END ENABLE_MUTATION_OBSERVERS
 
 # ----
 # FileSystem API support
@@ -336,6 +329,16 @@ endif # END USE_GSTREAMER
 endif # END ENABLE_VIDEO
 
 # ----
+# Media Source Support
+# ----
+if ENABLE_MEDIA_SOURCE
+FEATURE_DEFINES += ENABLE_MEDIA_SOURCE=1
+webcore_cppflags += -DENABLE_MEDIA_SOURCE=1
+else
+webcore_cppflags += -DENABLE_MEDIA_SOURCE=0
+endif # END ENABLE_MEDIA_SOURCE
+
+# ----
 # Media Statistics Support
 # ----
 if ENABLE_MEDIA_STATISTICS
@@ -373,21 +376,6 @@ else
 webcore_cppflags += -DENABLE_MEDIA_STREAM=0
 endif # END ENABLE_MEDIA_STREAM
 
-# ----
-# XHTML-MP Support
-# ----
-if ENABLE_XHTMLMP
-FEATURE_DEFINES += ENABLE_XHTMLMP=1
-webcore_cppflags += -DENABLE_XHTMLMP=1
-endif # END ENABLE_XHTMLMP
-
-# ----
-# XPath Support
-# ----
-if ENABLE_XPATH
-FEATURE_DEFINES += ENABLE_XPATH=1
-webcore_cppflags += -DENABLE_XPATH=1
-
 # XPath grammar
 # NOTE: older versions of bison do not inject an inclusion guard, so we do it
 $(GENSOURCES_WEBCORE)/XPathGrammar.h: $(GENSOURCES_WEBCORE)/XPathGrammar.cpp
@@ -400,7 +388,6 @@ $(GENSOURCES_WEBCORE)/XPathGrammar.cpp: $(WebCore)/xml/XPathGrammar.y
 	cat $(GENSOURCES_WEBCORE)/XPathGrammar.cpp.h $(GENSOURCES_WEBCORE)/XPathGrammar.hpp >> $(GENSOURCES_WEBCORE)/XPathGrammar.h
 	echo '#endif' >> $(GENSOURCES_WEBCORE)/XPathGrammar.h
 	rm -f $(GENSOURCES_WEBCORE)/XPathGrammar.cpp.h $(GENSOURCES_WEBCORE)/XPathGrammar.hpp
-endif # END ENABLE_XPATH
 
 # ----
 # XSLT Support
@@ -427,14 +414,6 @@ webcore_cppflags += -DENABLE_SHARED_WORKERS=1
 endif
 
 # ----
-# WCSS Support
-# ----
-if ENABLE_WCSS
-FEATURE_DEFINES += ENABLE_WCSS=1
-webcore_cppflags += -DENABLE_WCSS=1
-endif # END ENABLE_WCSS
-
-# ----
 # Filters
 # ----
 if ENABLE_FILTERS
@@ -451,8 +430,8 @@ endif # END ENABLE_FILTERS
 # ----
 if ENABLE_GEOLOCATION
 
-FEATURE_DEFINES += ENABLE_GEOLOCATION=1
-webcore_cppflags += -DENABLE_GEOLOCATION=1
+FEATURE_DEFINES += ENABLE_GEOLOCATION=1 ENABLE_CLIENT_BASED_GEOLOCATION=1
+webcore_cppflags += -DENABLE_GEOLOCATION=1 -DENABLE_CLIENT_BASED_GEOLOCATION=1
 endif # END ENABLE_GEOLOCATION
 
 # ----
@@ -489,34 +468,10 @@ WEBCORE_CSS_PROPERTY_NAMES += $(WebCore)/css/SVGCSSPropertyNames.in
 WEBCORE_CSS_VALUE_KEYWORDS += $(WebCore)/css/SVGCSSValueKeywords.in
 
 # SVG Features
-if ENABLE_SVG_USE
-FEATURE_DEFINES += ENABLE_SVG_USE=1
-SVG_FEATURES += ENABLE_SVG_USE=1
-webcore_cppflags += -DENABLE_SVG_USE=1
-endif
-
-if ENABLE_SVG_FOREIGN_OBJECT
-FEATURE_DEFINES += ENABLE_SVG_FOREIGN_OBJECT=1
-SVG_FEATURES += ENABLE_SVG_FOREIGN_OBJECT=1
-webcore_cppflags += -DENABLE_SVG_FOREIGN_OBJECT=1
-endif
-
 if ENABLE_SVG_FONTS
 FEATURE_DEFINES += ENABLE_SVG_FONTS=1
 SVG_FEATURES += ENABLE_SVG_FONTS=1
 webcore_cppflags += -DENABLE_SVG_FONTS=1
-endif
-
-if ENABLE_SVG_AS_IMAGE
-FEATURE_DEFINES += ENABLE_SVG_AS_IMAGE=1
-SVG_FEATURES += ENABLE_SVG_AS_IMAGE=1
-webcore_cppflags += -DENABLE_SVG_AS_IMAGE=1
-endif
-
-if ENABLE_SVG_ANIMATION
-FEATURE_DEFINES += ENABLE_SVG_ANIMATION=1
-SVG_FEATURES += ENABLE_SVG_ANIMATION=1
-webcore_cppflags += -DENABLE_SVG_ANIMATION=1
 endif
 
 endif # END ENABLE_SVG
@@ -574,6 +529,14 @@ webcore_cppflags += -DENABLE_ANIMATION_API=1
 endif  # END ENABLE_ANIMATION_API
 
 # ---
+# RequestAnimationFrame support
+# ---
+if ENABLE_REQUEST_ANIMATION_FRAME
+FEATURE_DEFINES += ENABLE_REQUEST_ANIMATION_FRAME=1
+webcore_cppflags += -DENABLE_REQUEST_ANIMATION_FRAME=1
+endif  # END ENABLE_REQUEST_ANIMATION_FRAME
+
+# ---
 # 3D canvas (WebGL) support
 # ---
 if ENABLE_WEBGL
@@ -596,6 +559,14 @@ if ENABLE_MHTML
 FEATURE_DEFINES += ENABLE_MHTML=1
 webcore_cppflags += -DENABLE_MHTML=1
 endif  # END ENABLE_MHTML
+
+# ---
+# HTML5 Microdata support
+# ---
+if ENABLE_MICRODATA
+FEATURE_DEFINES += ENABLE_MICRODATA=1
+webcore_cppflags += -DENABLE_MICRODATA=1
+endif  # END ENABLE_MICRODATA
 
 # ---
 # Register Protocol Handler support
@@ -625,11 +596,6 @@ DerivedSources/WebCore/CSSValueKeywords.h: $(WEBCORE_CSS_VALUE_KEYWORDS) $(WebCo
 	cat $(WEBCORE_CSS_VALUE_KEYWORDS) > CSSValueKeywords.in
 	$(PERL) -I$(WebCore)/bindings/scripts "$(WebCore)/css/makevalues.pl" --defines "$(FEATURE_DEFINES)"
 	mv CSSValueKeywords* $(GENSOURCES_WEBCORE)
-
-# DOCTYPE strings
-DerivedSources/WebCore/HashTools.h: DerivedSources/WebCore/DocTypeStrings.cpp
-DerivedSources/WebCore/DocTypeStrings.cpp: $(WebCore)/html/DocTypeStrings.gperf $(WebCore)/make-hash-tools.pl
-	$(PERL) $(WebCore)/make-hash-tools.pl $(GENSOURCES_WEBCORE) $(WebCore)/html/DocTypeStrings.gperf
 
 # XML Viewer CSS
 DerivedSources/WebCore/XMLViewerCSS.h: $(WebCore)/xml/XMLViewer.css
@@ -715,12 +681,15 @@ DerivedSources/WebCore/XMLNSNames.cpp DerivedSources/WebCore/XMLNSNames.h: $(Web
 DerivedSources/WebCore/XMLNames.cpp DerivedSources/WebCore/XMLNames.h: $(WebCore)/dom/make_names.pl $(WebCore)/xml/xmlattrs.in
 	$(AM_V_GEN)$(PERL) -I$(WebCore)/bindings/scripts $< --attrs $(WebCore)/xml/xmlattrs.in --outputDir "$(GENSOURCES_WEBCORE)"
 
-# All Web Inspector generated files are created with this one call to CodeGeneratorInspector.pm
-DerivedSources/WebCore/Inspector.idl : $(WebCore)/inspector/Inspector.json $(WebCore)/inspector/generate-inspector-idl
-	$(PYTHON) $(WebCore)/inspector/generate-inspector-idl -o $(GENSOURCES_WEBCORE)/Inspector.idl $(WebCore)/inspector/Inspector.json
+DerivedSources/WebCore/EventFactory.cpp DerivedSources/WebCore/EventHeaders.h DerivedSources/WebCore/EventInterfaces.h: $(WebCore)/dom/make_event_factory.pl $(WebCore)/dom/EventFactory.in
+	$(AM_V_GEN)$(PERL) -I$(WebCore)/bindings/scripts $< --events $(WebCore)/dom/EventFactory.in --outputDir "$(GENSOURCES_WEBCORE)"
 
-DerivedSources/WebCore/InspectorBackendDispatcher.cpp: DerivedSources/WebCore/Inspector.idl $(SCRIPTS_BINDINGS) $(WebCore)/inspector/CodeGeneratorInspector.pm
-	$(AM_V_GEN)$(PERL) -I$(WebCore)/bindings/scripts -I$(WebCore)/inspector $(WebCore)/bindings/scripts/generate-bindings.pl $(IDL_PATH:%=--include "%") --outputDir "$(GENSOURCES_WEBCORE)" --defines "LANGUAGE_JAVASCRIPT=1 $(FEATURE_DEFINES)" --generator Inspector $<
+# All Web Inspector generated files are created with this one call to CodeGeneratorInspector.pm
+DerivedSources/WebCore/InspectorProtocolVersion.h : $(WebCore)/inspector/Inspector.json $(WebCore)/inspector/generate-inspector-protocol-version
+	$(PYTHON) $(WebCore)/inspector/generate-inspector-protocol-version -o $(GENSOURCES_WEBCORE)/InspectorProtocolVersion.h $(WebCore)/inspector/Inspector.json
+
+DerivedSources/WebCore/InspectorBackendDispatcher.cpp: $(WebCore)/inspector/Inspector.json $(WebCore)/inspector/CodeGeneratorInspector.py
+	$(PYTHON) $(WebCore)/inspector/CodeGeneratorInspector.py $< --output_h_dir $(GENSOURCES_WEBCORE) --output_cpp_dir $(GENSOURCES_WEBCORE) --defines "LANGUAGE_JAVASCRIPT=1 $(FEATURE_DEFINES)"
 DerivedSources/WebCore/InspectorFrontend.h: DerivedSources/WebCore/InspectorFrontend.cpp
 DerivedSources/WebCore/InspectorFrontend.cpp: DerivedSources/WebCore/InspectorBackendStub.js
 DerivedSources/WebCore/InspectorBackendStub.js: DerivedSources/WebCore/InspectorBackendDispatcher.h
@@ -909,7 +878,6 @@ EXTRA_DIST += \
 	Source/WebCore/css/view-source.css \
 	Source/WebCore/css/WebKitFontFamilyNames.in \
 	Source/WebCore/dom/make_names.pl \
-	Source/WebCore/html/DocTypeStrings.gperf \
 	Source/WebCore/html/HTMLAttributeNames.in \
 	Source/WebCore/html/HTMLTagNames.in \
 	Source/WebCore/html/parser/create-html-entity-table \
@@ -918,7 +886,9 @@ EXTRA_DIST += \
 	Source/WebCore/inspector/CodeGeneratorInspector.pm \
 	Source/WebCore/inspector/InjectedScriptSource.js \
 	Source/WebCore/inspector/Inspector.json \
+	Source/WebCore/inspector/Inspector-0.1.json \
 	Source/WebCore/inspector/generate-inspector-idl \
+	Source/WebCore/inspector/generate-inspector-protocol-version \
 	Source/WebCore/inspector/xxd.pl \
 	Source/WebCore/LICENSE-APPLE \
 	Source/WebCore/LICENSE-LGPL-2 \

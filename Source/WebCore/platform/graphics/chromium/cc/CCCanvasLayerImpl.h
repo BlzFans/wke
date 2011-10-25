@@ -42,7 +42,7 @@ public:
 
     typedef ProgramBinding<VertexShaderPosTex, FragmentShaderRGBATexFlipAlpha> Program;
 
-    virtual void draw();
+    virtual void draw(LayerRendererChromium*);
 
     virtual void dumpLayerProperties(TextStream&, int indent) const;
 
@@ -51,6 +51,8 @@ public:
     void setPremultipliedAlpha(bool premultipliedAlpha) { m_premultipliedAlpha = premultipliedAlpha; }
 private:
     explicit CCCanvasLayerImpl(int);
+
+    virtual const char* layerTypeAsString() const { return "CanvasLayer"; }
 
     unsigned m_textureId;
     bool m_hasAlpha;

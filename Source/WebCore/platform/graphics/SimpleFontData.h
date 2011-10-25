@@ -34,6 +34,7 @@
 #include "TypesettingFeatures.h"
 #include <wtf/OwnPtr.h>
 #include <wtf/PassOwnPtr.h>
+#include <wtf/text/StringHash.h>
 
 #if USE(ATSUI)
 typedef struct OpaqueATSUStyle* ATSUStyle;
@@ -54,10 +55,6 @@ typedef struct OpaqueATSUStyle* ATSUStyle;
 
 #if PLATFORM(QT)
 #include <QFont>
-#endif
-
-#if PLATFORM(HAIKU)
-#include <Font.h>
 #endif
 
 namespace WebCore {
@@ -176,6 +173,10 @@ public:
     CFDictionaryRef getCFStringAttributes(TypesettingFeatures, FontOrientation) const;
 #endif
 
+#if PLATFORM(MAC) || (PLATFORM(CHROMIUM) && OS(DARWIN))
+    bool canRenderCombiningCharacterSequence(const UChar*, size_t) const;
+#endif
+
 #if USE(ATSUI)
     void checkShapesArabic() const;
     bool shapesArabic() const
@@ -287,6 +288,10 @@ private:
 
 #if PLATFORM(MAC) || USE(CORE_TEXT)
     mutable HashMap<unsigned, RetainPtr<CFDictionaryRef> > m_CFStringAttributes;
+#endif
+
+#if PLATFORM(MAC) || (PLATFORM(CHROMIUM) && OS(DARWIN))
+    mutable OwnPtr<HashMap<String, bool> > m_combiningCharacterSequenceSupport;
 #endif
 
 #if PLATFORM(WIN) || (OS(WINDOWS) && PLATFORM(WX))

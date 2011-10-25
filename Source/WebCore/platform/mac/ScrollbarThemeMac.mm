@@ -59,7 +59,7 @@ static ScrollbarPainterMap* scrollbarMap()
 
 }
 
-@interface ScrollbarPrefsObserver : NSObject
+@interface WebScrollbarPrefsObserver : NSObject
 {
 }
 
@@ -69,13 +69,13 @@ static ScrollbarPainterMap* scrollbarMap()
 
 @end
 
-@implementation ScrollbarPrefsObserver
+@implementation WebScrollbarPrefsObserver
 
 + (void)appearancePrefsChanged:(NSNotification*)unusedNotification
 {
     UNUSED_PARAM(unusedNotification);
 
-    static_cast<ScrollbarThemeMac*>(ScrollbarTheme::nativeTheme())->preferencesChanged();
+    static_cast<ScrollbarThemeMac*>(ScrollbarTheme::theme())->preferencesChanged();
     if (scrollbarMap()->isEmpty())
         return;
     ScrollbarPainterMap::iterator end = scrollbarMap()->end();
@@ -94,7 +94,7 @@ static ScrollbarPainterMap* scrollbarMap()
 {
     UNUSED_PARAM(unusedNotification);
 
-    static_cast<ScrollbarThemeMac*>(ScrollbarTheme::nativeTheme())->preferencesChanged();
+    static_cast<ScrollbarThemeMac*>(ScrollbarTheme::theme())->preferencesChanged();
 }
 
 + (void)registerAsObserver
@@ -192,7 +192,7 @@ ScrollbarThemeMac::ScrollbarThemeMac()
     static bool initialized;
     if (!initialized) {
         initialized = true;
-        [ScrollbarPrefsObserver registerAsObserver];
+        [WebScrollbarPrefsObserver registerAsObserver];
         preferencesChanged();
     }
 }

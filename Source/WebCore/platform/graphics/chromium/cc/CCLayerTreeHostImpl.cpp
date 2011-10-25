@@ -38,24 +38,26 @@
 
 namespace WebCore {
 
-PassOwnPtr<CCLayerTreeHostImpl> CCLayerTreeHostImpl::create(CCLayerTreeHostImplClient* client, PassRefPtr<LayerRendererChromium> renderer)
+PassOwnPtr<CCLayerTreeHostImpl> CCLayerTreeHostImpl::create(const CCSettings& settings, CCLayerTreeHostImplClient* client)
 {
-    return adoptPtr(new CCLayerTreeHostImpl(client, renderer));
+    return adoptPtr(new CCLayerTreeHostImpl(settings, client));
 }
 
-CCLayerTreeHostImpl::CCLayerTreeHostImpl(CCLayerTreeHostImplClient* client, PassRefPtr<LayerRendererChromium> renderer)
-    : m_sourceFrameNumber(-1)
+CCLayerTreeHostImpl::CCLayerTreeHostImpl(const CCSettings& settings, CCLayerTreeHostImplClient* client)
+    : m_client(client)
+    , m_sourceFrameNumber(-1)
     , m_frameNumber(0)
-    , m_client(client)
-    , m_commitPending(false)
-    , m_layerRenderer(renderer)
-    , m_redrawPending(false)
+    , m_settings(settings)
 {
+    ASSERT(CCProxy::isImplThread());
 }
 
 CCLayerTreeHostImpl::~CCLayerTreeHostImpl()
 {
+    ASSERT(CCProxy::isImplThread());
     TRACE_EVENT("CCLayerTreeHostImpl::~CCLayerTreeHostImpl()", this, 0);
+    if (m_layerRenderer)
+        m_layerRenderer->close();
 }
 
 void CCLayerTreeHostImpl::beginCommit()
@@ -64,71 +66,130 @@ void CCLayerTreeHostImpl::beginCommit()
 
 void CCLayerTreeHostImpl::commitComplete()
 {
-    m_commitPending = false;
-    setNeedsRedraw();
+}
+
+GraphicsContext3D* CCLayerTreeHostImpl::context()
+{
+    return m_layerRenderer ? m_layerRenderer->context() : 0;
 }
 
 void CCLayerTreeHostImpl::drawLayers()
 {
-    // If a commit is pending, do not draw. This is a temporary restriction that
-    // is necessary because drawLayers is currently a blocking operation on the main thread.
-    if (m_commitPending)
-        return;
-
     TRACE_EVENT("CCLayerTreeHostImpl::drawLayers", this, 0);
-    ASSERT(m_redrawPending);
-    m_redrawPending = false;
-
-    {
-        TRACE_EVENT("CCLayerTreeHostImpl::drawLayersAndPresent", this, 0);
-        CCCompletionEvent completion;
-        bool contextLost;
-        CCMainThread::postTask(createMainThreadTask(this, &CCLayerTreeHostImpl::drawLayersOnMainThread, AllowCrossThreadAccess(&completion), AllowCrossThreadAccess(&contextLost)));
-        completion.wait();
-
-        // FIXME: Send the "UpdateRect" message up to the RenderWidget [or moveplugin equivalents...]
-
-        // FIXME: handle context lost
-        if (contextLost)
-            FATAL("LayerRendererChromiumImpl does not handle context lost yet.");
-    }
+    ASSERT(m_layerRenderer);
+    if (m_layerRenderer->rootLayer())
+        m_layerRenderer->drawLayers();
 
     ++m_frameNumber;
 }
 
-void CCLayerTreeHostImpl::setNeedsCommitAndRedraw()
+void CCLayerTreeHostImpl::finishAllRendering()
 {
-    TRACE_EVENT("CCLayerTreeHostImpl::setNeedsCommitAndRedraw", this, 0);
-
-    // FIXME: move the requestFrameAndCommit out from here once we add framerate throttling/animation
-    double frameBeginTime = currentTime();
-    m_commitPending = true;
-    m_client->requestFrameAndCommitOnCCThread(frameBeginTime);
+    m_layerRenderer->finish();
 }
 
-void CCLayerTreeHostImpl::setNeedsRedraw()
+bool CCLayerTreeHostImpl::isContextLost()
 {
-    if (m_redrawPending || m_commitPending)
+    ASSERT(m_layerRenderer);
+    return m_layerRenderer->isContextLost();
+}
+
+const LayerRendererCapabilities& CCLayerTreeHostImpl::layerRendererCapabilities() const
+{
+    return m_layerRenderer->capabilities();
+}
+
+TextureAllocator* CCLayerTreeHostImpl::contentsTextureAllocator() const
+{
+    return m_layerRenderer ? m_layerRenderer->contentsTextureAllocator() : 0;
+}
+
+void CCLayerTreeHostImpl::swapBuffers()
+{
+    ASSERT(m_layerRenderer && !isContextLost());
+    m_layerRenderer->swapBuffers();
+}
+
+void CCLayerTreeHostImpl::onSwapBuffersComplete()
+{
+    m_client->onSwapBuffersCompleteOnImplThread();
+}
+
+void CCLayerTreeHostImpl::readback(void* pixels, const IntRect& rect)
+{
+    ASSERT(m_layerRenderer && !isContextLost());
+    m_layerRenderer->getFramebufferPixels(pixels, rect);
+}
+
+void CCLayerTreeHostImpl::setRootLayer(PassRefPtr<CCLayerImpl> layer)
+{
+    m_rootLayerImpl = layer;
+}
+
+void CCLayerTreeHostImpl::setVisible(bool visible)
+{
+    if (m_layerRenderer && !visible)
+        m_layerRenderer->releaseRenderSurfaceTextures();
+}
+
+bool CCLayerTreeHostImpl::initializeLayerRenderer(PassRefPtr<GraphicsContext3D> context)
+{
+    OwnPtr<LayerRendererChromium> layerRenderer;
+    layerRenderer = LayerRendererChromium::create(this, context);
+
+    // If creation failed, and we had asked for accelerated painting, disable accelerated painting
+    // and try creating the renderer again.
+    if (!layerRenderer && m_settings.acceleratePainting) {
+        m_settings.acceleratePainting = false;
+
+        layerRenderer = LayerRendererChromium::create(this, context);
+    }
+
+    if (m_layerRenderer)
+        m_layerRenderer->close();
+
+    m_layerRenderer = layerRenderer.release();
+    return m_layerRenderer;
+}
+
+void CCLayerTreeHostImpl::setViewport(const IntSize& viewportSize)
+{
+    bool changed = viewportSize != m_viewportSize;
+    m_viewportSize = viewportSize;
+    if (changed)
+        m_layerRenderer->viewportChanged();
+}
+
+void CCLayerTreeHostImpl::setZoomAnimatorTransform(const TransformationMatrix& zoom)
+{
+    m_layerRenderer->setZoomAnimatorTransform(zoom);
+}
+
+void CCLayerTreeHostImpl::scrollRootLayer(const IntSize& scrollDelta)
+{
+    TRACE_EVENT("CCLayerTreeHostImpl::scrollRootLayer", this, 0);
+    if (!m_rootLayerImpl || !m_rootLayerImpl->scrollable())
         return;
 
-    TRACE_EVENT("CCLayerTreeHostImpl::setNeedsRedraw", this, 0);
-    m_redrawPending = true;
-    m_client->postDrawLayersTaskOnCCThread();
+    m_rootLayerImpl->scrollBy(scrollDelta);
+    m_client->setNeedsCommitOnImplThread();
+    m_client->setNeedsRedrawOnImplThread();
 }
 
-void CCLayerTreeHostImpl::drawLayersOnMainThread(CCCompletionEvent* completion, bool* contextLost)
+PassOwnPtr<CCScrollUpdateSet> CCLayerTreeHostImpl::processScrollDeltas()
 {
-    ASSERT(isMainThread());
+    OwnPtr<CCScrollUpdateSet> scrollInfo = adoptPtr(new CCScrollUpdateSet());
+    // FIXME: track scrolls from layers other than the root
+    if (rootLayer() && !rootLayer()->scrollDelta().isZero()) {
+        CCLayerTreeHostCommon::ScrollUpdateInfo info;
+        info.layerId = rootLayer()->id();
+        info.scrollDelta = rootLayer()->scrollDelta();
+        scrollInfo->append(info);
 
-    if (m_layerRenderer->owner()->rootLayer()) {
-        m_layerRenderer->drawLayers();
-        m_layerRenderer->present();
-
-        GraphicsContext3D* context = m_layerRenderer->context();
-        *contextLost = context->getExtensions()->getGraphicsResetStatusARB() != GraphicsContext3D::NO_ERROR;
-    } else
-        *contextLost = false;
-    completion->signal();
+        rootLayer()->setScrollPosition(rootLayer()->scrollPosition() + rootLayer()->scrollDelta());
+        rootLayer()->setScrollDelta(IntSize());
+    }
+    return scrollInfo.release();
 }
 
 }

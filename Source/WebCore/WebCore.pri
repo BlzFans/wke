@@ -1,12 +1,11 @@
 # Include file for WebCore
 
-include(../common.pri)
 include(features.pri)
 
 # We enable TextureMapper by default; remove this line to enable GraphicsLayerQt.
 CONFIG += texmap
 
-QT *= network
+QT *= network sql
 
 SOURCE_DIR = $$replace(PWD, /WebCore, "")
 
@@ -20,17 +19,13 @@ else: WEBCORE_TARGET = webcore
 CONFIG(debug, debug|release) : WEBCORE_DESTDIR = debug
 else: WEBCORE_DESTDIR = release
 
-CONFIG(standalone_package) {
-    isEmpty(WC_GENERATED_SOURCES_DIR):WC_GENERATED_SOURCES_DIR = $$PWD/../WebCore/generated
-} else {
-    isEmpty(WC_GENERATED_SOURCES_DIR):WC_GENERATED_SOURCES_DIR = $$OUTPUT_DIR/WebCore/generated
-}
+isEmpty(WC_GENERATED_SOURCES_DIR):WC_GENERATED_SOURCES_DIR = $$OUTPUT_DIR/WebCore/generated
 
 V8_DIR = "$$[QT_INSTALL_PREFIX]/src/3rdparty/v8"
 V8_LIB_DIR = "$$[QT_INSTALL_PREFIX]/src/script/v8"
 
 v8 {
-    lessThan(QT_MAJOR_VERSION, 5): error("To build QtWebKit+V8 you need qtscript-staging's v8 branch. (See: http://qt.gitorious.org/+qt-developers/qt/qtscript-staging)")
+    !qt5: error("To build QtWebKit+V8 you need qtscript-staging's v8 branch. (See: http://qt.gitorious.org/+qt-developers/qt/qtscript-staging)")
     !exists($${V8_DIR}$${QMAKE_DIR_SEP}include$${QMAKE_DIR_SEP}v8.h): error("Cannot build with V8. Needed file $${V8_DIR}$${QMAKE_DIR_SEP}include$${QMAKE_DIR_SEP}v8.h does not exist.")
     !exists($${V8_LIB_DIR}$${QMAKE_DIR_SEP}libv8.a): error("Cannot build with V8. Needed library $${V8_LIB_DIR}$${QMAKE_DIR_SEP}libv8.a does not exist.")
 
@@ -76,6 +71,7 @@ WEBCORE_INCLUDEPATH = \
     $$SOURCE_DIR/WebCore/html/canvas \
     $$SOURCE_DIR/WebCore/html/parser \
     $$SOURCE_DIR/WebCore/html/shadow \
+    $$SOURCE_DIR/WebCore/html/track \
     $$SOURCE_DIR/WebCore/inspector \
     $$SOURCE_DIR/WebCore/loader \
     $$SOURCE_DIR/WebCore/loader/appcache \
@@ -101,7 +97,6 @@ WEBCORE_INCLUDEPATH = \
     $$SOURCE_DIR/WebCore/platform/sql \
     $$SOURCE_DIR/WebCore/platform/text \
     $$SOURCE_DIR/WebCore/platform/text/transcoder \
-    $$SOURCE_DIR/WebCore/platform/track \
     $$SOURCE_DIR/WebCore/plugins \
     $$SOURCE_DIR/WebCore/rendering \
     $$SOURCE_DIR/WebCore/rendering/mathml \
@@ -132,41 +127,7 @@ WEBCORE_INCLUDEPATH = \
     $$SOURCE_DIR/WebKit/qt/WebCoreSupport \
     $$WEBCORE_INCLUDEPATH
 
-# On Symbian PREPEND_INCLUDEPATH is the best way to make sure that WebKit headers
-# are included before platform headers.
-symbian {
-    PREPEND_INCLUDEPATH = $$WEBCORE_INCLUDEPATH $$WC_GENERATED_SOURCES_DIR $$PREPEND_INCLUDEPATH
-} else {
-    INCLUDEPATH = $$WEBCORE_INCLUDEPATH $$WC_GENERATED_SOURCES_DIR $$INCLUDEPATH
-}
-
-symbian {
-    v8 {
-        QMAKE_CXXFLAGS.ARMCC += -OTime -O3
-        QMAKE_CXXFLAGS.ARMCC += --fpu softvfp+vfpv2 --fpmode fast
-        LIBS += -llibpthread
-    }
-
-    # RO text (code) section in qtwebkit.dll exceeds allocated space for gcce udeb target.
-    # Move RW-section base address to start from 0x1000000 instead of the toolchain default 0x400000.
-    QMAKE_LFLAGS.ARMCC += --rw-base 0x1000000
-    QMAKE_LFLAGS.GCCE += -Tdata 0x1000000
-
-    CONFIG += do_not_build_as_thumb
-
-    CONFIG(release, debug|release): QMAKE_CXXFLAGS.ARMCC += -OTime -O3
-    # Symbian plugin support
-    LIBS += -lefsrv
-
-    !CONFIG(QTDIR_build) {
-        # Test if symbian OS comes with sqlite
-        exists($${EPOCROOT}epoc32/release/armv5/lib/sqlite3.dso):CONFIG *= system-sqlite
-    } else:!symbian-abld:!symbian-sbsv2 {
-        # When bundled with Qt, all Symbian build systems extract their own sqlite files if
-        # necessary, but on non-mmp based ones we need to specify this ourselves.
-        include($$QT_SOURCE_TREE/src/plugins/sqldrivers/sqlite_symbian/sqlite_symbian.pri)
-    }
-}
+INCLUDEPATH = $$WEBCORE_INCLUDEPATH $$WC_GENERATED_SOURCES_DIR $$INCLUDEPATH
 
 contains(DEFINES, ENABLE_XSLT=1) {
     contains(DEFINES, WTF_USE_LIBXML2=1) {
@@ -185,22 +146,15 @@ contains(DEFINES, ENABLE_SQLITE=1) {
             INCLUDEPATH += $${SQLITE3SRCDIR}
             DEFINES += SQLITE_CORE SQLITE_OMIT_LOAD_EXTENSION SQLITE_OMIT_COMPLETE
             CONFIG(release, debug|release): DEFINES *= NDEBUG
-            contains(DEFINES, ENABLE_SINGLE_THREADED=1): DEFINES += SQLITE_THREADSAFE=0
     } else {
-        # Use sqlite3 from the underlying OS
-        CONFIG(QTDIR_build) {
-            QMAKE_CXXFLAGS *= $$QT_CFLAGS_SQLITE
-            LIBS *= $$QT_LFLAGS_SQLITE
-        } else {
-            INCLUDEPATH += $${SQLITE3SRCDIR}
-            LIBS += -lsqlite3
-        }
+        INCLUDEPATH += $${SQLITE3SRCDIR}
+        LIBS += -lsqlite3
     }
     wince*:DEFINES += HAVE_LOCALTIME_S=0
 }
 
 contains(DEFINES, ENABLE_NETSCAPE_PLUGIN_API=1) {
-    unix:!symbian {
+    unix {
         mac {
             INCLUDEPATH += platform/mac
             # Note: XP_MACOSX is defined in npapi.h
@@ -245,15 +199,6 @@ contains(DEFINES, WTF_USE_QT_MOBILITY_SYSTEMINFO=1) {
      MOBILITY *= systeminfo
 }
 
-contains(DEFINES, WTF_USE_QT_BEARER=1) {
-    # Bearer management is part of Qt 4.7, so don't accidentially
-    # pull in Qt Mobility when building against >= 4.7
-    !greaterThan(QT_MINOR_VERSION, 6) {
-        CONFIG *= mobility
-        MOBILITY *= bearer
-    }
-}
-
 contains(DEFINES, ENABLE_VIDEO=1) {
     contains(DEFINES, WTF_USE_QTKIT=1) {
         INCLUDEPATH += $$PWD/platform/graphics/mac
@@ -283,30 +228,22 @@ contains(DEFINES, ENABLE_WEBGL=1) {
 
 contains(CONFIG, texmap) {
     DEFINES += WTF_USE_TEXTURE_MAPPER=1
-    !symbian:!win32-*:contains(QT_CONFIG, opengl) {
+    !win32-*:contains(QT_CONFIG, opengl) {
         DEFINES += WTF_USE_TEXTURE_MAPPER_GL
         QT *= opengl
     }
 }
 
-!CONFIG(webkit-debug):CONFIG(QTDIR_build) {
-    # Remove the following 2 lines if you want debug information in WebCore
-    CONFIG -= separate_debug_info
-    CONFIG += no_debug_info
+win32-*|wince* {
+    DLLDESTDIR = $$OUTPUT_DIR/bin
+    isEmpty(QT_SOURCE_TREE):build_pass: TARGET = $$qtLibraryTarget($$TARGET)
+
+    dlltarget.commands = $(COPY_FILE) $(DESTDIR_TARGET) $$[QT_INSTALL_BINS]
+    dlltarget.CONFIG = no_path
+    INSTALLS += dlltarget
 }
-
-!CONFIG(QTDIR_build) {
-    win32-*|wince* {
-        DLLDESTDIR = $$OUTPUT_DIR/bin
-        isEmpty(QT_SOURCE_TREE):build_pass: TARGET = $$qtLibraryTarget($$TARGET)
-
-        dlltarget.commands = $(COPY_FILE) $(DESTDIR_TARGET) $$[QT_INSTALL_BINS]
-        dlltarget.CONFIG = no_path
-        INSTALLS += dlltarget
-    }
-    mac {
-        LIBS += -framework Carbon -framework AppKit
-    }
+mac {
+    LIBS += -framework Carbon -framework AppKit
 }
 
 win32-* {
@@ -317,7 +254,7 @@ win32-* {
 }
 
 # Remove whole program optimizations due to miscompilations
-win32-msvc2005|win32-msvc2008|wince*:{
+win32-msvc2005|win32-msvc2008|win32-msvc2010|wince*:{
     QMAKE_CFLAGS_RELEASE -= -GL
     QMAKE_CXXFLAGS_RELEASE -= -GL
 
@@ -343,8 +280,11 @@ unix:!mac:*-g++*:QMAKE_CXXFLAGS += -ffunction-sections -fdata-sections
 unix:!mac:*-g++*:QMAKE_LFLAGS += -Wl,--gc-sections
 linux*-g++*:QMAKE_LFLAGS += $$QMAKE_LFLAGS_NOUNDEF
 
-unix|win32-g++*:QMAKE_PKGCONFIG_REQUIRES = QtCore QtGui QtNetwork
-unix:!mac:!symbian:CONFIG += link_pkgconfig
+unix|win32-g++* {
+    QMAKE_PKGCONFIG_REQUIRES = QtCore QtGui QtNetwork
+    qt5: QMAKE_PKGCONFIG_REQUIRES += QtWidgets
+}
+unix:!mac:CONFIG += link_pkgconfig
 
 # Disable C++0x mode in WebCore for those who enabled it in their Qt's mkspec
 *-g++*:QMAKE_CXXFLAGS -= -std=c++0x -std=gnu++0x
@@ -359,10 +299,6 @@ defineTest(prependWebCoreLib) {
     win32-msvc*|wince*|win32-icc {
         LIBS = -l$$WEBCORE_TARGET $$LIBS
         LIBS = -L$$pathToWebCoreOutput $$LIBS
-        POST_TARGETDEPS += $${pathToWebCoreOutput}$${QMAKE_DIR_SEP}$${WEBCORE_TARGET}.lib
-    } else:symbian {
-        LIBS = -l$${WEBCORE_TARGET}.lib $$LIBS
-        QMAKE_LIBDIR += $$pathToWebCoreOutput
         POST_TARGETDEPS += $${pathToWebCoreOutput}$${QMAKE_DIR_SEP}$${WEBCORE_TARGET}.lib
     } else {
         QMAKE_LIBDIR = $$pathToWebCoreOutput $$QMAKE_LIBDIR

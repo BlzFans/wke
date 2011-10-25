@@ -53,7 +53,6 @@ ScrollbarEfl::ScrollbarEfl(ScrollableArea* scrollableArea, ScrollbarOrientation 
     , m_lastTotalSize(0)
     , m_lastVisibleSize(0)
 {
-    Widget::setFrameRect(IntRect(0, 0, 0, 0));
 }
 
 ScrollbarEfl::~ScrollbarEfl()
@@ -90,12 +89,11 @@ static void scrollbarEflEdjeMessage(void* data, Evas_Object* object, Edje_Messag
 void ScrollbarEfl::setParent(ScrollView* view)
 {
     Evas_Object* object = evasObject();
-    Evas_Coord w, h;
 
     Widget::setParent(view);
 
     if (!object) {
-        if (!view)
+        if (!view || !view->evas() || !view->evasObject())
             return;
 
         object = edje_object_add(view->evas());
@@ -106,7 +104,7 @@ void ScrollbarEfl::setParent(ScrollView* view)
         }
         edje_object_message_handler_set(object, scrollbarEflEdjeMessage, this);
         setEvasObject(object);
-    } else if (!view) {
+    } else if (!view || !view->evas() || !view->evasObject()) {
         evas_object_hide(object);
         return;
     }
@@ -132,12 +130,6 @@ void ScrollbarEfl::setParent(ScrollView* view)
     setPlatformWidget(object);
     evas_object_smart_member_add(object, view->evasObject());
     evas_object_show(object);
-
-    edje_object_size_min_get(object, &w, &h);
-
-    IntRect rect = frameRect();
-    rect.setSize(IntSize(w, h));
-    setFrameRect(rect);
 }
 
 void ScrollbarEfl::updateThumbPosition()
@@ -209,8 +201,3 @@ void ScrollbarEfl::frameRectsChanged()
     evas_object_move(object, x + rect.x(), y + rect.y());
     evas_object_resize(object, rect.width(), rect.height());
 }
-
-void ScrollbarEfl::paint(GraphicsContext* graphicsContext, const IntRect& damageRect)
-{
-}
-

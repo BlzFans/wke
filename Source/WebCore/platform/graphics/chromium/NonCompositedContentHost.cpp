@@ -42,31 +42,49 @@ NonCompositedContentHost::NonCompositedContentHost(PassOwnPtr<LayerPainterChromi
     m_graphicsLayer->setName("non-composited content");
 #endif
     m_graphicsLayer->setDrawsContent(true);
-    m_graphicsLayer->platformLayer()->setIsRootLayer(true);
+    m_graphicsLayer->platformLayer()->setIsNonCompositedContent(true);
 }
 
 NonCompositedContentHost::~NonCompositedContentHost()
 {
 }
 
-void NonCompositedContentHost::invalidateRect(const IntRect& rect)
+void NonCompositedContentHost::setRootLayer(GraphicsLayer* layer)
 {
-    m_graphicsLayer->setNeedsDisplayInRect(FloatRect(rect));
-}
-
-void NonCompositedContentHost::invalidateEntireLayer()
-{
+    m_graphicsLayer->removeAllChildren();
     m_graphicsLayer->setNeedsDisplay();
+    if (layer)
+        m_graphicsLayer->addChild(layer);
+    else
+        m_graphicsLayer->platformLayer()->setLayerTreeHost(0);
 }
 
-void NonCompositedContentHost::setScrollPosition(const IntPoint& scrollPosition)
+void NonCompositedContentHost::setViewport(const IntSize& viewportSize, const IntSize& contentsSize, const IntPoint& scrollPosition)
 {
+    bool visibleRectChanged = m_viewportSize != viewportSize;
+
+    m_viewportSize = viewportSize;
     m_graphicsLayer->platformLayer()->setScrollPosition(scrollPosition);
+    IntSize maxScroll = contentsSize - viewportSize;
+    // The viewport may be larger than the contents in some cases, such as
+    // having a vertical scrollbar but no horizontal overflow.
+    maxScroll.clampNegativeToZero();
+
+    m_graphicsLayer->platformLayer()->setMaxScrollPosition(maxScroll);
+    m_graphicsLayer->setSize(contentsSize);
+
+    if (visibleRectChanged)
+        m_graphicsLayer->setNeedsDisplay();
 }
 
 void NonCompositedContentHost::protectVisibleTileTextures()
 {
     m_graphicsLayer->platformLayer()->protectVisibleTileTextures();
+}
+
+void NonCompositedContentHost::invalidateRect(const IntRect& rect)
+{
+    m_graphicsLayer->setNeedsDisplayInRect(FloatRect(rect));
 }
 
 void NonCompositedContentHost::notifyAnimationStarted(const GraphicsLayer*, double /* time */)
@@ -94,4 +112,3 @@ bool NonCompositedContentHost::showRepaintCounter() const
 }
 
 } // namespace WebCore
-

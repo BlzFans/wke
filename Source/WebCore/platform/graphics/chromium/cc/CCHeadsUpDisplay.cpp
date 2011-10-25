@@ -82,13 +82,16 @@ void CCHeadsUpDisplay::onFrameBegin(double timestamp)
     m_beginTimeHistoryInSec[m_currentFrameNumber % kBeginFrameHistorySize] = timestamp;
 }
 
-void CCHeadsUpDisplay::onPresent()
+void CCHeadsUpDisplay::onSwapBuffers()
 {
     m_currentFrameNumber += 1;
 }
 
 bool CCHeadsUpDisplay::enabled() const
 {
+    // FIXME: HUD does not work in compositor thread mode.
+    if (settings().enableCompositorThread)
+        return false;
     return settings().showPlatformLayerTree || settings().showFPSCounter;
 }
 
@@ -123,7 +126,7 @@ void CCHeadsUpDisplay::draw()
     {
         PlatformCanvas::AutoLocker locker(&canvas);
 
-        m_hudTexture->bindTexture(context);
+        m_hudTexture->bindTexture(context, m_layerRenderer->renderSurfaceTextureAllocator());
         bool uploadedViaMap = false;
         if (m_useMapSubForUploads) {
             Extensions3DChromium* extensions = static_cast<Extensions3DChromium*>(context->getExtensions());
@@ -145,16 +148,16 @@ void CCHeadsUpDisplay::draw()
     const Program* program = m_layerRenderer->headsUpDisplayProgram();
     ASSERT(program && program->initialized());
     GLC(context, context->activeTexture(GraphicsContext3D::TEXTURE0));
-    m_hudTexture->bindTexture(context);
+    m_hudTexture->bindTexture(context, m_layerRenderer->renderSurfaceTextureAllocator());
     GLC(context, context->useProgram(program->program()));
     GLC(context, context->uniform1i(program->fragmentShader().samplerLocation(), 0));
 
     TransformationMatrix matrix;
     matrix.translate3d(hudSize.width() * 0.5, hudSize.height() * 0.5, 0);
-    LayerChromium::drawTexturedQuad(context, m_layerRenderer->projectionMatrix(),
-                                    matrix, hudSize.width(), hudSize.height(),
-                                    1.0f, program->vertexShader().matrixLocation(),
-                                    program->fragmentShader().alphaLocation());
+    m_layerRenderer->drawTexturedQuad(matrix, hudSize.width(), hudSize.height(),
+                                      1.0f, m_layerRenderer->sharedGeometryQuad(), program->vertexShader().matrixLocation(),
+                                      program->fragmentShader().alphaLocation(),
+                                      -1);
     m_hudTexture->unreserve();
 }
 

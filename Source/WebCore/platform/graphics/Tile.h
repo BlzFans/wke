@@ -20,7 +20,7 @@
 #ifndef Tile_h
 #define Tile_h
 
-#if ENABLE(TILED_BACKING_STORE)
+#if USE(TILED_BACKING_STORE)
 
 #include "IntPoint.h"
 #include "IntPointHash.h"
@@ -46,6 +46,7 @@ public:
 
     virtual const Tile::Coordinate& coordinate() const = 0;
     virtual const IntRect& rect() const = 0;
+    virtual void resize(const WebCore::IntSize&) = 0;
 };
 
 }

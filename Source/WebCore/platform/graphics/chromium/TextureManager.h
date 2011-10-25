@@ -37,6 +37,15 @@ namespace WebCore {
 
 typedef int TextureToken;
 
+class TextureAllocator {
+public:
+    virtual unsigned createTexture(const IntSize&, GC3Denum format) = 0;
+    virtual void deleteTexture(unsigned texture, const IntSize&, GC3Denum) = 0;
+
+protected:
+    virtual ~TextureAllocator() { }
+};
+
 class TextureManager {
     WTF_MAKE_NONCOPYABLE(TextureManager);
 public:
@@ -45,38 +54,47 @@ public:
         return adoptPtr(new TextureManager(memoryLimitBytes, maxTextureSize));
     }
 
+    // Absolute maximum limit for texture allocations for this instance.
+    static size_t highLimitBytes();
+    // Preferred texture size limit. Can be exceeded if needed.
+    static size_t reclaimLimitBytes();
+    // The maximum texture memory usage when asked to release textures.
+    static size_t lowLimitBytes();
+
+    static size_t memoryUseBytes(const IntSize&, GC3Denum format);
+
     void setMemoryLimitBytes(size_t);
 
     TextureToken getToken();
     void releaseToken(TextureToken);
     bool hasTexture(TextureToken);
 
-    bool requestTexture(TextureToken, IntSize, unsigned textureFormat);
+    bool requestTexture(TextureToken, IntSize, GC3Denum textureFormat);
 
     void protectTexture(TextureToken);
     void unprotectTexture(TextureToken);
     void unprotectAllTextures();
     bool isProtected(TextureToken);
 
-    unsigned allocateTexture(GraphicsContext3D*, TextureToken);
-    void deleteEvictedTextures(GraphicsContext3D*);
+    unsigned allocateTexture(TextureAllocator*, TextureToken);
+    void deleteEvictedTextures(TextureAllocator*);
+
+    void evictAndDeleteAllTextures(TextureAllocator*);
 
     void reduceMemoryToLimit(size_t);
     size_t currentMemoryUseBytes() const { return m_memoryUseBytes; }
-
-#ifndef NDEBUG
-    void setAssociatedContextDebugOnly(GraphicsContext3D* context) { m_associatedContextDebugOnly = context; }
-    GraphicsContext3D* associatedContextDebugOnly() const { return m_associatedContextDebugOnly; }
-#endif
 
 private:
     TextureManager(size_t memoryLimitBytes, int maxTextureSize);
 
     struct TextureInfo {
         IntSize size;
-        unsigned format;
+        GC3Denum format;
         unsigned textureId;
         bool isProtected;
+#ifndef NDEBUG
+        TextureAllocator* allocator;
+#endif
     };
 
     void addTexture(TextureToken, TextureInfo);
@@ -91,11 +109,16 @@ private:
     int m_maxTextureSize;
     TextureToken m_nextToken;
 
+    struct EvictionEntry {
+        unsigned textureId;
+        IntSize size;
+        GC3Denum format;
 #ifndef NDEBUG
-    GraphicsContext3D* m_associatedContextDebugOnly;
+        TextureAllocator* allocator;
 #endif
+    };
 
-    Vector<unsigned> m_evictedTextureIds;
+    Vector<EvictionEntry> m_evictedTextures;
 };
 
 }

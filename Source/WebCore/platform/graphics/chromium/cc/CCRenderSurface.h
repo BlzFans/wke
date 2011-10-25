@@ -35,6 +35,7 @@
 #include "ShaderChromium.h"
 #include "TextureManager.h"
 #include "TransformationMatrix.h"
+#include "cc/CCLayerQuad.h"
 #include <wtf/Noncopyable.h>
 
 namespace WebCore {
@@ -49,10 +50,10 @@ public:
     explicit CCRenderSurface(CCLayerImpl*);
     ~CCRenderSurface();
 
-    bool prepareContentsTexture();
+    bool prepareContentsTexture(LayerRendererChromium*);
     void releaseContentsTexture();
     void cleanupResources();
-    void draw(const IntRect& targetSurfaceRect);
+    void draw(LayerRendererChromium*, const IntRect& targetSurfaceRect);
 
     String name() const;
     void dumpSurface(TextStream&, int indent) const;
@@ -90,13 +91,16 @@ public:
 
     typedef ProgramBinding<VertexShaderPosTex, FragmentShaderRGBATexAlpha> Program;
     typedef ProgramBinding<VertexShaderPosTex, FragmentShaderRGBATexAlphaMask> MaskProgram;
+    typedef ProgramBinding<VertexShaderQuad, FragmentShaderRGBATexAlphaAA> ProgramAA;
+    typedef ProgramBinding<VertexShaderQuad, FragmentShaderRGBATexAlphaMaskAA> MaskProgramAA;
 
     ManagedTexture* contentsTexture() const { return m_contentsTexture.get(); }
 
     int owningLayerId() const;
 private:
-    LayerRendererChromium* layerRenderer();
-    void drawSurface(CCLayerImpl* maskLayer, const TransformationMatrix& drawTransform);
+    void drawLayer(LayerRendererChromium*, CCLayerImpl*, const TransformationMatrix&);
+    template <class T>
+    void drawSurface(LayerRendererChromium*, CCLayerImpl*, const TransformationMatrix& drawTransform, const TransformationMatrix& deviceTransform, const CCLayerQuad& deviceRect, const CCLayerQuad&, const T* program, int shaderMaskSamplerLocation, int shaderQuadLocation, int shaderEdgeLocation);
 
     CCLayerImpl* m_owningLayer;
     CCLayerImpl* m_maskLayer;

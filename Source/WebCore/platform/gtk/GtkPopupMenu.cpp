@@ -6,6 +6,7 @@
  * Copyright (C) 2008 Collabora Ltd.
  * Copyright (C) 2010 Nokia Corporation and/or its subsidiary(-ies).
  * Copyright (C) 2010-2011 Igalia S.L.
+ * Portions Copyright (c) 2010 Motorola Mobility, Inc.  All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -64,6 +65,7 @@ void GtkPopupMenu::appendSeparator()
 void GtkPopupMenu::appendItem(GtkAction* action)
 {
     GtkWidget* menuItem = gtk_action_create_menu_item(action);
+    gtk_widget_set_tooltip_text(menuItem, gtk_action_get_tooltip(action));
     g_signal_connect(menuItem, "select", G_CALLBACK(GtkPopupMenu::selectItemCallback), this);
     gtk_menu_shell_append(GTK_MENU_SHELL(m_popup.get()), menuItem);
     gtk_widget_show(menuItem);
@@ -144,7 +146,7 @@ void GtkPopupMenu::menuPositionFunction(GtkMenu*, gint* x, gint* y, gboolean* pu
 {
     *x = popupMenu->m_menuPosition.x();
     *y = popupMenu->m_menuPosition.y();
-    *pushIn = true;
+    *pushIn = false;
 }
 
 void GtkPopupMenu::resetTypeAheadFindState()

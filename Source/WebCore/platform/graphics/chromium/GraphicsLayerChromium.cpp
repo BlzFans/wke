@@ -47,7 +47,6 @@
 
 #include "Canvas2DLayerChromium.h"
 #include "ContentLayerChromium.h"
-#include "DrawingBuffer.h"
 #include "FloatConversion.h"
 #include "FloatRect.h"
 #include "Image.h"
@@ -63,26 +62,6 @@
 using namespace std;
 
 namespace WebCore {
-
-static void setLayerBorderColor(LayerChromium& layer, const Color& color)
-{
-    layer.setBorderColor(color);
-}
-
-static void clearBorderColor(LayerChromium& layer)
-{
-    layer.setBorderColor(static_cast<RGBA32>(0));
-}
-
-static void setLayerBackgroundColor(LayerChromium& layer, const Color& color)
-{
-    layer.setBackgroundColor(color);
-}
-
-static void clearLayerBackgroundColor(LayerChromium& layer)
-{
-    layer.setBackgroundColor(static_cast<RGBA32>(0));
-}
 
 PassOwnPtr<GraphicsLayer> GraphicsLayer::create(GraphicsLayerClient* client)
 {
@@ -103,15 +82,15 @@ GraphicsLayerChromium::GraphicsLayerChromium(GraphicsLayerClient* client)
 GraphicsLayerChromium::~GraphicsLayerChromium()
 {
     if (m_layer) {
-        m_layer->setOwner(0);
+        m_layer->setDelegate(0);
         m_layer->clearRenderSurface();
     }
     if (m_contentsLayer) {
-        m_contentsLayer->setOwner(0);
+        m_contentsLayer->setDelegate(0);
         m_contentsLayer->clearRenderSurface();
     }
     if (m_transformLayer) {
-        m_transformLayer->setOwner(0);
+        m_transformLayer->setDelegate(0);
         m_transformLayer->clearRenderSurface();
     }
 }
@@ -272,7 +251,7 @@ void GraphicsLayerChromium::clearBackgroundColor()
         return;
 
     GraphicsLayer::clearBackgroundColor();
-    clearLayerBackgroundColor(*m_contentsLayer);
+    m_contentsLayer->setBackgroundColor(static_cast<RGBA32>(0));
 }
 
 void GraphicsLayerChromium::setContentsOpaque(bool opaque)
@@ -384,7 +363,7 @@ void GraphicsLayerChromium::setContentsToCanvas(PlatformLayer* platformLayer)
 {
     bool childrenChanged = false;
     if (platformLayer) {
-        platformLayer->setOwner(this);
+        platformLayer->setDelegate(this);
         if (m_contentsLayer.get() != platformLayer) {
             setupContentsLayer(platformLayer);
             m_contentsLayer = platformLayer;
@@ -416,7 +395,7 @@ void GraphicsLayerChromium::setContentsToMedia(PlatformLayer* layer)
             m_contentsLayerPurpose = ContentsLayerForVideo;
             childrenChanged = true;
         }
-        layer->setOwner(this);
+        layer->setDelegate(this);
         layer->setNeedsDisplay();
         updateContentsRect();
     } else {
@@ -450,19 +429,19 @@ PlatformLayer* GraphicsLayerChromium::platformLayer() const
 void GraphicsLayerChromium::setDebugBackgroundColor(const Color& color)
 {
     if (color.isValid())
-        setLayerBackgroundColor(*m_layer, color);
+        m_layer->setBackgroundColor(color);
     else
-        clearLayerBackgroundColor(*m_layer);
+        m_layer->setBackgroundColor(static_cast<RGBA32>(0));
 }
 
 void GraphicsLayerChromium::setDebugBorder(const Color& color, float borderWidth)
 {
     if (color.isValid()) {
-        setLayerBorderColor(*m_layer, color);
-        m_layer->setBorderWidth(borderWidth);
+        m_layer->setDebugBorderColor(color);
+        m_layer->setDebugBorderWidth(borderWidth);
     } else {
-        clearBorderColor(*m_layer);
-        m_layer->setBorderWidth(0);
+        m_layer->setDebugBorderColor(static_cast<RGBA32>(0));
+        m_layer->setDebugBorderWidth(0);
     }
 }
 
@@ -572,6 +551,7 @@ void GraphicsLayerChromium::updateLayerPreserves3D()
     if (m_preserves3D && !m_transformLayer) {
         // Create the transform layer.
         m_transformLayer = LayerChromium::create(this);
+        m_transformLayer->setPreserves3D(true);
 
         // Copy the position from this layer.
         updateLayerPosition();
@@ -613,6 +593,7 @@ void GraphicsLayerChromium::updateLayerPreserves3D()
         updateChildList();
     }
 
+    m_layer->setPreserves3D(m_preserves3D);
     updateOpacityOnLayer();
     updateNames();
 }
@@ -632,9 +613,9 @@ void GraphicsLayerChromium::updateLayerBackgroundColor()
 
     // We never create the contents layer just for background color yet.
     if (m_backgroundColorSet)
-        setLayerBackgroundColor(*m_contentsLayer, m_backgroundColor);
+        m_contentsLayer->setBackgroundColor(m_backgroundColor);
     else
-        clearLayerBackgroundColor(*m_contentsLayer);
+        m_contentsLayer->setBackgroundColor(static_cast<RGBA32>(0));
 }
 
 void GraphicsLayerChromium::updateContentsVideo()
@@ -673,8 +654,8 @@ void GraphicsLayerChromium::setupContentsLayer(LayerChromium* contentsLayer)
         updateContentsRect();
 
         if (showDebugBorders()) {
-            setLayerBorderColor(*m_contentsLayer, Color(0, 0, 128, 180));
-            m_contentsLayer->setBorderWidth(1);
+            m_contentsLayer->setDebugBorderColor(Color(0, 0, 128, 180));
+            m_contentsLayer->setDebugBorderWidth(1);
         }
     }
     updateDebugIndicators();
@@ -685,6 +666,22 @@ void GraphicsLayerChromium::setupContentsLayer(LayerChromium* contentsLayer)
 void GraphicsLayerChromium::updateOpacityOnLayer()
 {
     primaryLayer()->setOpacity(m_opacity);
+}
+
+bool GraphicsLayerChromium::drawsContent() const
+{
+    return GraphicsLayer::drawsContent();
+}
+
+void GraphicsLayerChromium::paintContents(GraphicsContext& context, const IntRect& clip)
+{
+    paintGraphicsLayerContents(context, clip);
+}
+
+void GraphicsLayerChromium::notifySyncRequired()
+{
+    if (m_client)
+        m_client->notifySyncRequired(this);
 }
 
 } // namespace WebCore

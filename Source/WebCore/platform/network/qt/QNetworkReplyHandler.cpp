@@ -455,18 +455,8 @@ void QNetworkReplyHandler::finish()
 
     if (!m_replyWrapper->reply()->error() || shouldIgnoreHttpError(m_replyWrapper->reply(), m_replyWrapper->responseContainsData()))
         client->didFinishLoading(m_resourceHandle, 0);
-    else {
-        QUrl url = m_replyWrapper->reply()->url();
-        int httpStatusCode = m_replyWrapper->reply()->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
-
-        if (httpStatusCode) {
-            ResourceError error("HTTP", httpStatusCode, url.toString(), m_replyWrapper->reply()->attribute(QNetworkRequest::HttpReasonPhraseAttribute).toString());
-            client->didFail(m_resourceHandle, error);
-        } else {
-            ResourceError error("QtNetwork", m_replyWrapper->reply()->error(), url.toString(), m_replyWrapper->reply()->errorString());
-            client->didFail(m_resourceHandle, error);
-        }
-    }
+    else
+        client->didFail(m_resourceHandle, errorForReply(m_replyWrapper->reply()));
 
     m_replyWrapper = nullptr;
 }
@@ -538,7 +528,7 @@ void QNetworkReplyHandler::redirect(ResourceResponse& response, const QUrl& redi
 
     m_redirectionTries--;
     if (!m_redirectionTries) {
-        ResourceError error(newUrl.host(), 400 /*bad request*/,
+        ResourceError error("HTTP", 400 /*bad request*/,
                             newUrl.toString(),
                             QCoreApplication::translate("QWebPage", "Redirection limit reached"));
         client->didFail(m_resourceHandle, error);
@@ -628,7 +618,7 @@ QNetworkReply* QNetworkReplyHandler::sendNetworkRequest(QNetworkAccessManager* m
         return 0;
 
     const QUrl url = m_request.url();
-    const QString scheme = url.scheme();
+
     // Post requests on files and data don't really make sense, but for
     // fast/forms/form-post-urlencoded.html and for fast/forms/button-state-restore.html
     // we still need to retrieve the file/data, which means we map it to a Get instead.
@@ -692,6 +682,17 @@ void QNetworkReplyHandler::start()
 
     if (m_resourceHandle->firstRequest().reportUploadProgress())
         connect(m_replyWrapper->reply(), SIGNAL(uploadProgress(qint64, qint64)), this, SLOT(uploadProgress(qint64, qint64)));
+}
+
+ResourceError QNetworkReplyHandler::errorForReply(QNetworkReply* reply)
+{
+    QUrl url = reply->url();
+    int httpStatusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+
+    if (httpStatusCode)
+        return ResourceError("HTTP", httpStatusCode, url.toString(), reply->attribute(QNetworkRequest::HttpReasonPhraseAttribute).toString());
+
+    return ResourceError("QtNetwork", reply->error(), url.toString(), reply->errorString());
 }
 
 }

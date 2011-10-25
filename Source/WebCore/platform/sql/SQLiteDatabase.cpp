@@ -27,7 +27,6 @@
 #include "config.h"
 #include "SQLiteDatabase.h"
 
-#if ENABLE(DATABASE)
 #include "DatabaseAuthorizer.h"
 #include "Logging.h"
 #include "SQLiteFileSystem.h"
@@ -107,7 +106,6 @@ void SQLiteDatabase::close()
 
 void SQLiteDatabase::interrupt()
 {
-#if !ENABLE(SINGLE_THREADED)
     m_interrupted = true;
     while (!m_lockingMutex.tryLock()) {
         MutexLocker locker(m_databaseClosingMutex);
@@ -118,7 +116,6 @@ void SQLiteDatabase::interrupt()
     }
 
     m_lockingMutex.unlock();
-#endif
 }
 
 bool SQLiteDatabase::isInterrupted()
@@ -472,5 +469,3 @@ bool SQLiteDatabase::turnOnIncrementalAutoVacuum()
 }
 
 } // namespace WebCore
-
-#endif // ENABLE(DATABASE)

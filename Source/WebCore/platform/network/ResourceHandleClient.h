@@ -81,7 +81,7 @@ namespace WebCore {
         virtual void wasBlocked(ResourceHandle*) { }
         virtual void cannotShowURL(ResourceHandle*) { }
 
-#if HAVE(CFNETWORK_DATA_ARRAY_CALLBACK)
+#if HAVE(NETWORK_CFDATA_ARRAY_CALLBACK)
         virtual bool supportsDataArray() { return false; }
         virtual void didReceiveDataArray(ResourceHandle*, CFArrayRef) { }
 #endif
@@ -106,6 +106,9 @@ namespace WebCore {
 #endif // PLATFORM(MAC)
 #if PLATFORM(WIN) && USE(CFNETWORK)
         virtual bool shouldCacheResponse(ResourceHandle*, CFCachedURLResponseRef) { return true; }
+#endif
+#if PLATFORM(CHROMIUM)
+        virtual void didDownloadData(ResourceHandle*, int /*dataLength*/) { }
 #endif
 #if ENABLE(BLOB)
         virtual AsyncFileStream* createAsyncFileStream(FileStreamClient*) { return 0; }

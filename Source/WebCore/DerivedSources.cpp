@@ -141,7 +141,6 @@
 #include "JSHTMLAudioElement.cpp"
 #include "JSHTMLBaseElement.cpp"
 #include "JSHTMLBaseFontElement.cpp"
-#include "JSHTMLBlockquoteElement.cpp"
 #include "JSHTMLBodyElement.cpp"
 #include "JSHTMLBRElement.cpp"
 #include "JSHTMLButtonElement.cpp"
@@ -195,6 +194,7 @@
 #include "JSHTMLScriptElement.cpp"
 #include "JSHTMLSelectElement.cpp"
 #include "JSHTMLSourceElement.cpp"
+#include "JSHTMLSpanElement.cpp"
 #include "JSHTMLStyleElement.cpp"
 #include "JSHTMLTableCaptionElement.cpp"
 #include "JSHTMLTableCellElement.cpp"
@@ -244,7 +244,12 @@
 #include "JSMetadata.cpp"
 #include "JSMetadataCallback.cpp"
 #include "JSMouseEvent.cpp"
+#if ENABLE(VIDEO_TRACK)
+#include "JSMutableTextTrack.cpp"
+#endif
+#include "JSMutationCallback.cpp"
 #include "JSMutationEvent.cpp"
+#include "JSMutationRecord.cpp"
 #include "JSNamedNodeMap.cpp"
 #include "JSNavigator.cpp"
 #include "JSNavigatorUserMediaError.cpp"
@@ -273,6 +278,7 @@
 #include "JSRange.cpp"
 #include "JSRangeException.cpp"
 #include "JSRect.cpp"
+#include "JSRequestAnimationFrameCallback.cpp"
 #include "JSRGBColor.cpp"
 #include "JSScreen.cpp"
 #include "JSScriptProfile.cpp"
@@ -445,6 +451,11 @@
 #include "JSText.cpp"
 #include "JSTextEvent.cpp"
 #include "JSTextMetrics.cpp"
+#if ENABLE(VIDEO_TRACK)
+#include "JSTextTrack.cpp"
+#include "JSTextTrackCue.cpp"
+#include "JSTextTrackCueList.cpp"
+#endif
 #include "JSTimeRanges.cpp"
 #include "JSTouch.cpp"
 #include "JSTouchEvent.cpp"
@@ -459,10 +470,14 @@
 #include "JSWebKitAnimationEvent.cpp"
 #include "JSWebKitAnimationList.cpp"
 #include "JSWebKitBlobBuilder.cpp"
+#if ENABLE(CSS_FILTERS)
+#include "JSWebKitCSSFilterValue.cpp"
+#endif
 #include "JSWebKitCSSKeyframeRule.cpp"
 #include "JSWebKitCSSKeyframesRule.cpp"
 #include "JSWebKitCSSTransformValue.cpp"
 #include "JSWebKitCSSMatrix.cpp"
+#include "JSWebKitMutationObserver.cpp"
 #include "JSWebKitPoint.cpp"
 #include "JSWebKitTransitionEvent.cpp"
 #include "JSWebSocket.cpp"

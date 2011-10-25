@@ -25,6 +25,9 @@
 
 #include "config.h"
 
+#include <sys/time.h>
+#include <sys/sysctl.h>
+
 #include "ScrollAnimatorChromiumMac.h"
 
 #include "FloatPoint.h"
@@ -46,8 +49,30 @@ using namespace std;
 @protocol NSAnimationDelegate
 @end
 
-@interface NSProcessInfo (NSObject)
+@interface NSProcessInfo (ScrollAnimatorChromiumMacExt)
 - (NSTimeInterval)systemUptime;
+@end
+
+@implementation NSProcessInfo (ScrollAnimatorChromiumMacExt)
+- (NSTimeInterval)systemUptime
+{
+    // Get how long system has been up. Found by looking getting "boottime" from the kernel.
+    static struct timeval boottime = {0};
+    if (!boottime.tv_sec) {
+        int mib[2] = {CTL_KERN, KERN_BOOTTIME};
+        size_t size = sizeof(boottime);
+        if (-1 == sysctl(mib, 2, &boottime, &size, 0, 0))
+            boottime.tv_sec = 0;
+    }
+    struct timeval now;
+    if (boottime.tv_sec && -1 != gettimeofday(&now, 0)) {
+        struct timeval uptime;
+        timersub(&now, &boottime, &uptime);
+        NSTimeInterval result = uptime.tv_sec + (uptime.tv_usec / 1E+6);
+        return result;
+    }
+    return 0;
+}
 @end
 #endif
 
@@ -461,6 +486,12 @@ PassOwnPtr<ScrollAnimator> ScrollAnimator::create(ScrollableArea* scrollableArea
     return adoptPtr(new ScrollAnimatorChromiumMac(scrollableArea));
 }
 
+static ScrollbarThemeChromiumMac* chromiumScrollbarTheme()
+{
+    ScrollbarTheme* scrollbarTheme = ScrollbarTheme::theme();
+    return !scrollbarTheme->isMockTheme() ? static_cast<ScrollbarThemeChromiumMac*>(scrollbarTheme) : 0;
+}
+
 ScrollAnimatorChromiumMac::ScrollAnimatorChromiumMac(ScrollableArea* scrollableArea)
     : ScrollAnimator(scrollableArea)
 #if USE(WK_SCROLLBAR_PAINTER)
@@ -506,7 +537,7 @@ bool ScrollAnimatorChromiumMac::scroll(ScrollbarOrientation orientation, ScrollG
     return ScrollAnimator::scroll(orientation, granularity, step, multiplier);
 #endif
 
-    if (![[NSUserDefaults standardUserDefaults] boolForKey:@"AppleScrollAnimationEnabled"])
+    if (![[NSUserDefaults standardUserDefaults] boolForKey:@"AppleScrollAnimationEnabled"] || !m_scrollableArea->scrollAnimatorEnabled())
         return ScrollAnimator::scroll(orientation, granularity, step, multiplier);
 
     if (granularity == ScrollByPixel)
@@ -682,8 +713,11 @@ void ScrollAnimatorChromiumMac::didEndScrollGesture() const
 
 void ScrollAnimatorChromiumMac::didAddVerticalScrollbar(Scrollbar* scrollbar)
 {
-    if (isScrollbarOverlayAPIAvailable()) {
-        WKScrollbarPainterRef painter = static_cast<WebCore::ScrollbarThemeChromiumMac*>(WebCore::ScrollbarTheme::nativeTheme())->painterForScrollbar(scrollbar);
+    if (!isScrollbarOverlayAPIAvailable())
+        return;
+        
+    if (ScrollbarThemeChromiumMac* theme = chromiumScrollbarTheme()) {
+        WKScrollbarPainterRef painter = theme->painterForScrollbar(scrollbar);
         wkScrollbarPainterSetDelegate(painter, m_scrollbarPainterDelegate.get());
         wkSetPainterForPainterController(m_scrollbarPainterController.get(), painter, false);
         if (scrollableArea()->inLiveResize())
@@ -693,8 +727,11 @@ void ScrollAnimatorChromiumMac::didAddVerticalScrollbar(Scrollbar* scrollbar)
 
 void ScrollAnimatorChromiumMac::willRemoveVerticalScrollbar(Scrollbar* scrollbar)
 {
-    if (isScrollbarOverlayAPIAvailable()) {
-        WKScrollbarPainterRef painter = static_cast<WebCore::ScrollbarThemeChromiumMac*>(WebCore::ScrollbarTheme::nativeTheme())->painterForScrollbar(scrollbar);
+    if (!isScrollbarOverlayAPIAvailable())
+        return;
+
+    if (ScrollbarThemeChromiumMac* theme = chromiumScrollbarTheme()) {
+        WKScrollbarPainterRef painter = theme->painterForScrollbar(scrollbar);
         wkScrollbarPainterSetDelegate(painter, nil);
         wkSetPainterForPainterController(m_scrollbarPainterController.get(), nil, false);
     }
@@ -702,8 +739,11 @@ void ScrollAnimatorChromiumMac::willRemoveVerticalScrollbar(Scrollbar* scrollbar
 
 void ScrollAnimatorChromiumMac::didAddHorizontalScrollbar(Scrollbar* scrollbar)
 {
-    if (isScrollbarOverlayAPIAvailable()) {
-        WKScrollbarPainterRef painter = static_cast<WebCore::ScrollbarThemeChromiumMac*>(WebCore::ScrollbarTheme::nativeTheme())->painterForScrollbar(scrollbar);
+    if (!isScrollbarOverlayAPIAvailable())
+        return;
+
+    if (ScrollbarThemeChromiumMac* theme = chromiumScrollbarTheme()) {
+        WKScrollbarPainterRef painter = theme->painterForScrollbar(scrollbar);
         wkScrollbarPainterSetDelegate(painter, m_scrollbarPainterDelegate.get());
         wkSetPainterForPainterController(m_scrollbarPainterController.get(), painter, true);
         if (scrollableArea()->inLiveResize())
@@ -713,8 +753,11 @@ void ScrollAnimatorChromiumMac::didAddHorizontalScrollbar(Scrollbar* scrollbar)
 
 void ScrollAnimatorChromiumMac::willRemoveHorizontalScrollbar(Scrollbar* scrollbar)
 {
-    if (isScrollbarOverlayAPIAvailable()) {
-        WKScrollbarPainterRef painter = static_cast<WebCore::ScrollbarThemeChromiumMac*>(WebCore::ScrollbarTheme::nativeTheme())->painterForScrollbar(scrollbar);
+    if (!isScrollbarOverlayAPIAvailable())
+        return;
+
+    if (ScrollbarThemeChromiumMac* theme = chromiumScrollbarTheme()) {
+        WKScrollbarPainterRef painter = theme->painterForScrollbar(scrollbar);
         wkScrollbarPainterSetDelegate(painter, nil);
         wkSetPainterForPainterController(m_scrollbarPainterController.get(), nil, true);
     }
@@ -771,39 +814,33 @@ static float scrollWheelMultiplier()
     return multiplier;
 }
 
-static inline bool isScrollingLeftAndShouldNotRubberBand(PlatformWheelEvent& wheelEvent, ScrollableArea* scrollableArea)
+static inline bool isScrollingLeftAndShouldNotRubberBand(const PlatformWheelEvent& wheelEvent, ScrollableArea* scrollableArea)
 {
     return wheelEvent.deltaX() > 0 && !scrollableArea->shouldRubberBandInDirection(ScrollLeft);
 }
 
-static inline bool isScrollingRightAndShouldNotRubberBand(PlatformWheelEvent& wheelEvent, ScrollableArea* scrollableArea)
+static inline bool isScrollingRightAndShouldNotRubberBand(const PlatformWheelEvent& wheelEvent, ScrollableArea* scrollableArea)
 {
     return wheelEvent.deltaX() < 0 && !scrollableArea->shouldRubberBandInDirection(ScrollRight);
 }
 
-void ScrollAnimatorChromiumMac::handleWheelEvent(PlatformWheelEvent& wheelEvent)
+bool ScrollAnimatorChromiumMac::handleWheelEvent(const PlatformWheelEvent& wheelEvent)
 {
     m_haveScrolledSincePageLoad = true;
 
-    if (!wheelEvent.hasPreciseScrollingDeltas()) {
-        ScrollAnimator::handleWheelEvent(wheelEvent);
-        return;
-    }
+    if (!wheelEvent.hasPreciseScrollingDeltas())
+        return ScrollAnimator::handleWheelEvent(wheelEvent);
 
     // FIXME: This is somewhat roundabout hack to allow forwarding wheel events
     // up to the parent scrollable area. It takes advantage of the fact that
     // the base class implemenatation of handleWheelEvent will not accept the
     // wheel event if there is nowhere to scroll.
     if (fabsf(wheelEvent.deltaY()) >= fabsf(wheelEvent.deltaX())) {
-        if (!allowsVerticalStretching()) {
-            ScrollAnimator::handleWheelEvent(wheelEvent);
-            return;
-        }
+        if (!allowsVerticalStretching())
+            return ScrollAnimator::handleWheelEvent(wheelEvent);
     } else {
-        if (!allowsHorizontalStretching()) {
-            ScrollAnimator::handleWheelEvent(wheelEvent);
-            return;
-        }
+        if (!allowsHorizontalStretching())
+            return ScrollAnimator::handleWheelEvent(wheelEvent);
         
         if (m_scrollableArea->horizontalScrollbar()) {
             // If there is a scrollbar, we aggregate the wheel events to get an
@@ -829,8 +866,7 @@ void ScrollAnimatorChromiumMac::handleWheelEvent(PlatformWheelEvent& wheelEvent)
                 (isScrollingRightAndShouldNotRubberBand(wheelEvent, m_scrollableArea) &&
                 m_scrollerInitiallyPinnedOnRight &&
                 m_scrollableArea->isHorizontalScrollerPinnedToMaximumPosition())) {
-                ScrollAnimator::handleWheelEvent(wheelEvent);
-                return;
+                return ScrollAnimator::handleWheelEvent(wheelEvent);
             }
         }
     }
@@ -839,13 +875,13 @@ void ScrollAnimatorChromiumMac::handleWheelEvent(PlatformWheelEvent& wheelEvent)
     if (m_ignoreMomentumScrolls && (isMomentumScrollEvent || m_snapRubberBandTimer.isActive())) {
         if (wheelEvent.momentumPhase() == PlatformWheelEventPhaseEnded) {
             m_ignoreMomentumScrolls = false;
-            wheelEvent.accept();
+            return true;
         }
-        return;
+        return false;
     }
 
-    wheelEvent.accept();
     smoothScrollWithEvent(wheelEvent);
+    return true;
 }
 
 void ScrollAnimatorChromiumMac::handleGestureEvent(const PlatformGestureEvent& gestureEvent)
@@ -918,7 +954,7 @@ bool ScrollAnimatorChromiumMac::allowsHorizontalStretching() const
     return false;
 }
 
-void ScrollAnimatorChromiumMac::smoothScrollWithEvent(PlatformWheelEvent& wheelEvent)
+void ScrollAnimatorChromiumMac::smoothScrollWithEvent(const PlatformWheelEvent& wheelEvent)
 {
     m_haveScrolledSincePageLoad = true;
 
@@ -1225,7 +1261,12 @@ void ScrollAnimatorChromiumMac::updateScrollerStyle()
         return;
     }
 
-    ScrollbarThemeChromiumMac* macTheme = (ScrollbarThemeChromiumMac*)ScrollbarTheme::nativeTheme();
+    ScrollbarThemeChromiumMac* macTheme = chromiumScrollbarTheme();
+    if (!macTheme) {
+        setNeedsScrollerStyleUpdate(false);
+        return;
+    }
+
     int newStyle = wkScrollbarPainterControllerStyle(m_scrollbarPainterController.get());
 
     if (Scrollbar* verticalScrollbar = scrollableArea()->verticalScrollbar()) {

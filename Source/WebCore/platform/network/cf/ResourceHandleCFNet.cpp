@@ -50,11 +50,13 @@
 #include <wtf/Threading.h>
 #include <wtf/text/CString.h>
 
-#if PLATFORM(MAC) && USE(CFNETWORK)
+#if PLATFORM(MAC)
 #include "WebCoreSystemInterface.h"
+#if USE(CFNETWORK)
 #include "WebCoreURLResponse.h"
 #include <CFNetwork/CFURLConnectionPriv.h>
 #include <CFNetwork/CFURLRequestPriv.h>
+#endif
 #endif
 
 #if PLATFORM(WIN)
@@ -137,6 +139,7 @@ static void setDefaultMIMEType(CFURLResponseRef response)
 static void applyBasicAuthorizationHeader(ResourceRequest& request, const Credential& credential)
 {
     String authenticationHeader = "Basic " + base64Encode(String(credential.user() + ":" + credential.password()).utf8());
+    request.clearHTTPAuthorization(); // FIXME: Should addHTTPHeaderField be smart enough to not build comma-separated lists in headers like Authorization?
     request.addHTTPHeaderField("Authorization", authenticationHeader);
 }
 
@@ -231,7 +234,7 @@ static void didReceiveResponse(CFURLConnectionRef conn, CFURLResponseRef cfRespo
     handle->client()->didReceiveResponse(handle, cfResponse);
 }
 
-#if HAVE(CFNETWORK_DATA_ARRAY_CALLBACK)
+#if HAVE(NETWORK_CFDATA_ARRAY_CALLBACK)
 static void didReceiveDataArray(CFURLConnectionRef conn, CFArrayRef dataArray, const void* clientInfo)
 {
 #if LOG_DISABLED
@@ -413,15 +416,15 @@ static CFURLRequestRef makeFinalRequest(const ResourceRequest& request, bool sho
     if (sslProps)
         CFURLRequestSetSSLProperties(newRequest, sslProps.get());
 
-    if (CFHTTPCookieStorageRef cookieStorage = currentCookieStorage()) {
-        CFURLRequestSetHTTPCookieStorage(newRequest, cookieStorage);
-        CFHTTPCookieStorageAcceptPolicy policy = CFHTTPCookieStorageGetCookieAcceptPolicy(cookieStorage);
+    if (RetainPtr<CFHTTPCookieStorageRef> cookieStorage = currentCFHTTPCookieStorage()) {
+        CFURLRequestSetHTTPCookieStorage(newRequest, cookieStorage.get());
+        CFHTTPCookieStorageAcceptPolicy policy = CFHTTPCookieStorageGetCookieAcceptPolicy(cookieStorage.get());
         CFURLRequestSetHTTPCookieStorageAcceptPolicy(newRequest, policy);
 
         // If a URL already has cookies, then we'll relax the 3rd party cookie policy and accept new cookies.
         if (policy == CFHTTPCookieStorageAcceptPolicyOnlyFromMainDocumentDomain) {
             CFURLRef url = CFURLRequestGetURL(newRequest);
-            RetainPtr<CFArrayRef> cookies(AdoptCF, CFHTTPCookieStorageCopyCookiesForURL(cookieStorage, url, false));
+            RetainPtr<CFArrayRef> cookies(AdoptCF, CFHTTPCookieStorageCopyCookiesForURL(cookieStorage.get(), url, false));
             if (CFArrayGetCount(cookies.get()))
                 CFURLRequestSetMainDocumentURL(newRequest, url);
         }
@@ -478,7 +481,7 @@ void ResourceHandle::createCFURLConnection(bool shouldUseCredentialStorage, bool
 
     RetainPtr<CFURLRequestRef> request(AdoptCF, makeFinalRequest(firstRequest(), shouldContentSniff));
 
-#if HAVE(CFNETWORK_DATA_ARRAY_CALLBACK) && USE(PROTECTION_SPACE_AUTH_CALLBACK)
+#if HAVE(NETWORK_CFDATA_ARRAY_CALLBACK) && USE(PROTECTION_SPACE_AUTH_CALLBACK)
     CFURLConnectionClient_V6 client = { 6, this, 0, 0, 0, WebCore::willSendRequest, didReceiveResponse, didReceiveData, 0, didFinishLoading, didFail, willCacheResponse, didReceiveChallenge, didSendBodyData, shouldUseCredentialStorageCallback, 0, canRespondToProtectionSpace, 0, didReceiveDataArray};
 #else
     CFURLConnectionClient_V3 client = { 3, this, 0, 0, 0, WebCore::willSendRequest, didReceiveResponse, didReceiveData, 0, didFinishLoading, didFail, willCacheResponse, didReceiveChallenge, didSendBodyData, shouldUseCredentialStorageCallback, 0};
@@ -521,17 +524,6 @@ void ResourceHandle::cancel()
         CFURLConnectionCancel(d->m_connection.get());
         d->m_connection = 0;
     }
-}
-
-PassRefPtr<SharedBuffer> ResourceHandle::bufferedData()
-{
-    ASSERT_NOT_REACHED();
-    return 0;
-}
-
-bool ResourceHandle::supportsBufferedData()
-{
-    return false;
 }
 
 void ResourceHandle::willSendRequest(ResourceRequest& request, const ResourceResponse& redirectResponse)
@@ -707,7 +699,7 @@ CFURLConnectionRef ResourceHandle::connection() const
 CFURLConnectionRef ResourceHandle::releaseConnectionForDownload()
 {
     LOG(Network, "CFNet - Job %p releasing connection %p for download", this, d->m_connection.get());
-    return d->m_connection.releaseRef();
+    return d->m_connection.leakRef();
 }
 
 CFStringRef ResourceHandle::synchronousLoadRunLoopMode()
@@ -812,55 +804,6 @@ bool ResourceHandle::willLoadFromCache(ResourceRequest& request, Frame*)
     return cached;
 }
 
-#if USE(CFURLSTORAGESESSIONS)
-
-RetainPtr<CFURLStorageSessionRef> ResourceHandle::createPrivateBrowsingStorageSession(CFStringRef identifier)
-{
-#if PLATFORM(WIN)
-    return RetainPtr<CFURLStorageSessionRef>(AdoptCF, wkCreatePrivateStorageSession(identifier, defaultStorageSession()));
-#else
-    return RetainPtr<CFURLStorageSessionRef>(AdoptCF, wkCreatePrivateStorageSession(identifier));
-#endif
-}
-
-String ResourceHandle::privateBrowsingStorageSessionIdentifierDefaultBase()
-{
-    return String(reinterpret_cast<CFStringRef>(CFBundleGetValueForInfoDictionaryKey(CFBundleGetMainBundle(), kCFBundleIdentifierKey)));
-}
-
-CFURLStorageSessionRef ResourceHandle::currentStorageSession()
-{
-    if (CFURLStorageSessionRef privateStorageSession = privateBrowsingStorageSession())
-        return privateStorageSession;
-#if PLATFORM(WIN)
-    return defaultStorageSession();
-#else
-    return 0;
-#endif
-}
-
-#if PLATFORM(WIN)
-
-static RetainPtr<CFURLStorageSessionRef>& defaultCFURLStorageSession()
-{
-    DEFINE_STATIC_LOCAL(RetainPtr<CFURLStorageSessionRef>, storageSession, ());
-    return storageSession;
-}
-
-void ResourceHandle::setDefaultStorageSession(CFURLStorageSessionRef storageSession)
-{
-    defaultCFURLStorageSession().adoptCF(storageSession);
-}
-
-CFURLStorageSessionRef ResourceHandle::defaultStorageSession()
-{
-    return defaultCFURLStorageSession().get();
-}
-
-#endif // PLATFORM(WIN)
-
-#endif // USE(CFURLSTORAGESESSIONS)
-
 #if PLATFORM(MAC)
 void ResourceHandle::schedule(SchedulePair* pair)
 {
@@ -943,7 +886,7 @@ bool WebCoreSynchronousLoaderClient::canAuthenticateAgainstProtectionSpace(Resou
 
 #endif // USE(CFNETWORK)
 
-#if HAVE(CFNETWORK_DATA_ARRAY_CALLBACK)
+#if HAVE(NETWORK_CFDATA_ARRAY_CALLBACK)
 void ResourceHandle::handleDataArray(CFArrayRef dataArray)
 {
     ASSERT(client());
@@ -975,6 +918,89 @@ void ResourceHandle::handleDataArray(CFArrayRef dataArray)
     client()->didReceiveData(this, reinterpret_cast<const char*>(CFDataGetBytePtr(mergedData.get())), totalSize, static_cast<int>(totalSize));
 }
 #endif
+
+#if USE(CFURLSTORAGESESSIONS)
+
+RetainPtr<CFURLStorageSessionRef> ResourceHandle::createPrivateBrowsingStorageSession(CFStringRef identifier)
+{
+#if PLATFORM(WIN)
+    return RetainPtr<CFURLStorageSessionRef>(AdoptCF, wkCreatePrivateStorageSession(identifier, defaultStorageSession()));
+#else
+    return RetainPtr<CFURLStorageSessionRef>(AdoptCF, wkCreatePrivateStorageSession(identifier));
+#endif
+}
+
+CFURLStorageSessionRef ResourceHandle::currentStorageSession()
+{
+    if (CFURLStorageSessionRef privateStorageSession = privateBrowsingStorageSession())
+        return privateStorageSession;
+    return defaultStorageSession();
+}
+
+static RetainPtr<CFURLStorageSessionRef>& defaultCFURLStorageSession()
+{
+    DEFINE_STATIC_LOCAL(RetainPtr<CFURLStorageSessionRef>, storageSession, ());
+    return storageSession;
+}
+
+void ResourceHandle::setDefaultStorageSession(CFURLStorageSessionRef storageSession)
+{
+    defaultCFURLStorageSession() = storageSession;
+}
+
+CFURLStorageSessionRef ResourceHandle::defaultStorageSession()
+{
+    return defaultCFURLStorageSession().get();
+}
+
+static RetainPtr<CFURLStorageSessionRef>& privateStorageSession()
+{
+    DEFINE_STATIC_LOCAL(RetainPtr<CFURLStorageSessionRef>, storageSession, ());
+    return storageSession;
+}
+
+static String& privateBrowsingStorageSessionIdentifierBase()
+{
+    DEFINE_STATIC_LOCAL(String, base, ());
+    return base;
+}
+
+void ResourceHandle::setPrivateBrowsingEnabled(bool enabled)
+{
+    if (!enabled) {
+        privateStorageSession() = nullptr;
+        return;
+    }
+
+    if (privateStorageSession())
+        return;
+
+    String base = privateBrowsingStorageSessionIdentifierBase().isNull() ? privateBrowsingStorageSessionIdentifierDefaultBase() : privateBrowsingStorageSessionIdentifierBase();
+    RetainPtr<CFStringRef> cfIdentifier(AdoptCF, String(base + ".PrivateBrowsing").createCFString());
+
+    privateStorageSession() = createPrivateBrowsingStorageSession(cfIdentifier.get());
+}
+
+CFURLStorageSessionRef ResourceHandle::privateBrowsingStorageSession()
+{
+    return privateStorageSession().get();
+}
+
+void ResourceHandle::setPrivateBrowsingStorageSessionIdentifierBase(const String& identifier)
+{
+    privateBrowsingStorageSessionIdentifierBase() = identifier;
+}
+
+#if PLATFORM(WIN)
+
+String ResourceHandle::privateBrowsingStorageSessionIdentifierDefaultBase()
+{
+    return String(reinterpret_cast<CFStringRef>(CFBundleGetValueForInfoDictionaryKey(CFBundleGetMainBundle(), kCFBundleIdentifierKey)));
+}
+
+#endif // PLATFORM(WIN)
+
+#endif // USE(CFURLSTORAGESESSIONS)
 
 } // namespace WebCore
 

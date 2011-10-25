@@ -306,13 +306,16 @@ bool PopupContainer::handleGestureEvent(const PlatformGestureEvent& gestureEvent
         handleMouseReleaseEvent(fakeMouseUp);
         return true;
     }
+    case PlatformGestureEvent::DoubleTapType:
+        break;
     case PlatformGestureEvent::ScrollUpdateType: {
-        PlatformWheelEvent syntheticWheelEvent(gestureEvent.position(), gestureEvent.globalPosition(), gestureEvent.deltaX(), gestureEvent.deltaY(), gestureEvent.deltaX() / 120.0f, gestureEvent.deltaY() / 120.0f, ScrollByPixelWheelEvent, /* isAccepted */ false, gestureEvent.shiftKey(), gestureEvent.ctrlKey(), gestureEvent.altKey(), gestureEvent.metaKey());
+        PlatformWheelEvent syntheticWheelEvent(gestureEvent.position(), gestureEvent.globalPosition(), gestureEvent.deltaX(), gestureEvent.deltaY(), gestureEvent.deltaX() / 120.0f, gestureEvent.deltaY() / 120.0f, ScrollByPixelWheelEvent, gestureEvent.shiftKey(), gestureEvent.ctrlKey(), gestureEvent.altKey(), gestureEvent.metaKey());
         handleWheelEvent(syntheticWheelEvent);
         return true;
     }
     case PlatformGestureEvent::ScrollBeginType:
     case PlatformGestureEvent::ScrollEndType:
+    case PlatformGestureEvent::TapDownType:
         break;
     }
     return false;
@@ -406,7 +409,6 @@ void PopupContainer::refresh(const IntRect& targetControlRect)
     location.move(0, targetControlRect.height());
 
     listBox()->setBaseWidth(max(m_originalFrameRect.width() - kBorderSize * 2, 0));
-    setBoundsSize(m_originalFrameRect.size());
 
     listBox()->updateFromElement();
     // Store the original size to check if we need to request the location.

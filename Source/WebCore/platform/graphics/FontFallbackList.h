@@ -53,7 +53,10 @@ public:
     FontSelector* fontSelector() const { return m_fontSelector.get(); }
     unsigned generation() const { return m_generation; }
 
-    typedef HashMap<int, GlyphPageTreeNode*> GlyphPages;
+    struct GlyphPagesHashTraits : HashTraits<int> {
+        static const int minimumTableSize = 16;
+    };
+    typedef HashMap<int, GlyphPageTreeNode*, DefaultHash<int>::Hash, GlyphPagesHashTraits> GlyphPages;
     GlyphPageTreeNode* glyphPageZero() const { return m_pageZero; }
     const GlyphPages& glyphPages() const { return m_pages; }
 
@@ -85,9 +88,9 @@ private:
     mutable const SimpleFontData* m_cachedPrimarySimpleFontData;
     RefPtr<FontSelector> m_fontSelector;
     mutable int m_familyIndex;
-    mutable Pitch m_pitch;
-    mutable bool m_loadingCustomFonts;
-    unsigned m_generation;
+    unsigned short m_generation;
+    mutable unsigned m_pitch : 3; // Pitch
+    mutable bool m_loadingCustomFonts : 1;
 
     friend class Font;
 };

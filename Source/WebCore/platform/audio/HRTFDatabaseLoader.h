@@ -44,7 +44,7 @@ public:
     // Lazily creates the singleton HRTFDatabaseLoader (if not already created) and starts loading asynchronously (when created the first time).
     // Returns the singleton HRTFDatabaseLoader.
     // Must be called from the main thread.
-    static PassRefPtr<HRTFDatabaseLoader> createAndLoadAsynchronouslyIfNecessary(double sampleRate);
+    static PassRefPtr<HRTFDatabaseLoader> createAndLoadAsynchronouslyIfNecessary(float sampleRate);
 
     // Returns the singleton HRTFDatabaseLoader.
     static HRTFDatabaseLoader* loader() { return s_loader; }
@@ -55,13 +55,12 @@ public:
     // Returns true once the default database has been completely loaded.
     bool isLoaded() const;
 
-    // May not be called on the main thread.
-    // This is so a different background thread may synchronize with the loader thread.
+    // waitForLoaderThreadCompletion() may be called more than once and is thread-safe.
     void waitForLoaderThreadCompletion();
     
     HRTFDatabase* database() { return m_hrtfDatabase.get(); }
 
-    double databaseSampleRate() const { return m_databaseSampleRate; }
+    float databaseSampleRate() const { return m_databaseSampleRate; }
     
     // Called in asynchronous loading thread.
     void load();
@@ -73,7 +72,7 @@ public:
 
 private:
     // Both constructor and destructor must be called from the main thread.
-    explicit HRTFDatabaseLoader(double sampleRate);    
+    explicit HRTFDatabaseLoader(float sampleRate);
     
     // If it hasn't already been loaded, creates a new thread and initiates asynchronous loading of the default database.
     // This must be called from the main thread.
@@ -81,11 +80,13 @@ private:
 
     static HRTFDatabaseLoader* s_loader; // singleton
     OwnPtr<HRTFDatabase> m_hrtfDatabase;
-    ThreadIdentifier m_databaseLoaderThread;
-    bool m_startedLoadingDatabase;
-    double m_databaseSampleRate;    
-};
 
+    // Holding a m_threadLock is required when accessing m_databaseLoaderThread.
+    Mutex m_threadLock;
+    ThreadIdentifier m_databaseLoaderThread;
+
+    float m_databaseSampleRate;
+};
 
 } // namespace WebCore
 

@@ -205,6 +205,11 @@ static void drawResampledBitmap(SkCanvas& canvas, SkPaint& paint, const NativeIm
     canvas.drawBitmapRect(resampled, 0, destRectVisibleSubset, &paint);
 }
 
+static bool hasNon90rotation(PlatformContextSkia* context)
+{
+    return !context->canvas()->getTotalMatrix().rectStaysRect();
+}
+
 static void paintSkBitmap(PlatformContextSkia* platformContext, const NativeImageSkia& bitmap, const SkIRect& srcRect, const SkRect& destRect, const SkXfermode::Mode& compOp)
 {
     SkPaint paint;
@@ -212,6 +217,8 @@ static void paintSkBitmap(PlatformContextSkia* platformContext, const NativeImag
     paint.setFilterBitmap(true);
     paint.setAlpha(platformContext->getNormalizedAlpha());
     paint.setLooper(platformContext->getDrawLooper());
+    // only antialias if we're rotated or skewed
+    paint.setAntiAlias(hasNon90rotation(platformContext));
 
     SkCanvas* canvas = platformContext->canvas();
 
@@ -415,8 +422,6 @@ void BitmapImage::draw(GraphicsContext* ctxt, const FloatRect& dstRect,
     if (normSrcRect.isEmpty() || normDstRect.isEmpty())
         return;  // Nothing to draw.
 
-    ctxt->platformContext()->makeGrContextCurrent();
-
     paintSkBitmap(ctxt->platformContext(),
                   *bm,
                   enclosingIntRect(normSrcRect),
@@ -440,8 +445,6 @@ void BitmapImageSingleFrameSkia::draw(GraphicsContext* ctxt,
 
     if (normSrcRect.isEmpty() || normDstRect.isEmpty())
         return;  // Nothing to draw.
-
-    ctxt->platformContext()->makeGrContextCurrent();
 
     paintSkBitmap(ctxt->platformContext(),
                   m_nativeImage,

@@ -123,9 +123,14 @@ void ScrollableArea::scrollToYOffsetWithoutAnimation(float y)
     scrollToOffsetWithoutAnimation(FloatPoint(scrollAnimator()->currentPosition().x(), y));
 }
 
-void ScrollableArea::handleWheelEvent(PlatformWheelEvent& wheelEvent)
+void ScrollableArea::zoomAnimatorTransformChanged(float, float, float, ZoomAnimationState)
 {
-    scrollAnimator()->handleWheelEvent(wheelEvent);
+    // Requires FrameView to override this.
+}
+
+bool ScrollableArea::handleWheelEvent(const PlatformWheelEvent& wheelEvent)
+{
+    return scrollAnimator()->handleWheelEvent(wheelEvent);
 }
 
 #if ENABLE(GESTURE_EVENTS)
@@ -134,6 +139,12 @@ void ScrollableArea::handleGestureEvent(const PlatformGestureEvent& gestureEvent
     scrollAnimator()->handleGestureEvent(gestureEvent);
 }
 #endif
+
+// NOTE: Only called from Internals for testing.
+void ScrollableArea::setScrollOffsetFromInternals(const IntPoint& offset)
+{
+    setScrollOffsetFromAnimation(offset);
+}
 
 void ScrollableArea::setScrollOffsetFromAnimation(const IntPoint& offset)
 {
@@ -217,12 +228,12 @@ void ScrollableArea::setScrollbarOverlayStyle(ScrollbarOverlayStyle overlayStyle
     m_scrollbarOverlayStyle = overlayStyle;
 
     if (horizontalScrollbar()) {
-        ScrollbarTheme::nativeTheme()->updateScrollbarOverlayStyle(horizontalScrollbar());
+        ScrollbarTheme::theme()->updateScrollbarOverlayStyle(horizontalScrollbar());
         horizontalScrollbar()->invalidate();
     }
     
     if (verticalScrollbar()) {
-        ScrollbarTheme::nativeTheme()->updateScrollbarOverlayStyle(verticalScrollbar());
+        ScrollbarTheme::theme()->updateScrollbarOverlayStyle(verticalScrollbar());
         verticalScrollbar()->invalidate();
     }
 }
@@ -268,7 +279,7 @@ void ScrollableArea::invalidateScrollbar(Scrollbar* scrollbar, const IntRect& re
     invalidateScrollbarRect(scrollbar, rect);
 }
 
-void ScrollableArea::invalidateScrollCorner()
+void ScrollableArea::invalidateScrollCorner(const IntRect& rect)
 {
 #if USE(ACCELERATED_COMPOSITING)
     if (GraphicsLayer* graphicsLayer = layerForScrollCorner()) {
@@ -276,7 +287,7 @@ void ScrollableArea::invalidateScrollCorner()
         return;
     }
 #endif
-    invalidateScrollCornerRect(scrollCornerRect());
+    invalidateScrollCornerRect(rect);
 }
 
 bool ScrollableArea::hasLayerForHorizontalScrollbar() const
