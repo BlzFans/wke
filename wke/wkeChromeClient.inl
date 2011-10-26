@@ -252,10 +252,6 @@ namespace wke
         {
         }
 
-        virtual void scrollRectIntoView(const WebCore::IntRect&, const WebCore::ScrollView*) const override
-        {
-        }
-
         virtual void mouseDidMoveOverElement(const WebCore::HitTestResult&, unsigned modifierFlags) override
         {
         }
@@ -272,13 +268,12 @@ namespace wke
         {
         }
 
-#if ENABLE(DATABASE)
+#if ENABLE(SQL_DATABASE)
         virtual void exceededDatabaseQuota(WebCore::Frame*, const WTF::String& databaseName) override
         {
         }
 #endif
 
-#if ENABLE(OFFLINE_WEB_APPLICATIONS)
         virtual void reachedMaxAppCacheSize(int64_t spaceNeeded) override
         {
         }
@@ -286,7 +281,6 @@ namespace wke
         virtual void reachedApplicationCacheOriginQuota(WebCore::SecurityOrigin*, int64_t totalSpaceNeeded) override
         {
         }
-#endif
 
 #if ENABLE(CONTEXT_MENUS)
         virtual void showContextMenu() override { }

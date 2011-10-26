@@ -300,10 +300,16 @@ namespace wke
         virtual void committedLoad(WebCore::DocumentLoader* loader, const char* data, int length) override
         {
             loader->commitData(data, length);
+            if (frame_->document()->isMediaDocument())
+                loader->cancelMainResourceLoad(pluginWillHandleLoadError(loader->response()));
         }
 
-        virtual void finishedLoading(WebCore::DocumentLoader*) override
+        virtual void finishedLoading(WebCore::DocumentLoader* loader) override
         {
+            // Telling the frame we received some data and passing 0 as the data is our
+            // way to get work done that is normally done when the first bit of data is
+            // received, even for the case of a document with no data (like about:blank)
+            committedLoad(loader, 0, 0);
         }
         
         virtual void updateGlobalHistory() override
@@ -322,18 +328,6 @@ namespace wke
         virtual bool shouldStopLoadingForHistoryItem(WebCore::HistoryItem*) const override
         {
             return true;
-        }
-
-        virtual void dispatchDidAddBackForwardItem(WebCore::HistoryItem*) const override
-        {
-        }
-
-        virtual void dispatchDidRemoveBackForwardItem(WebCore::HistoryItem*) const override
-        {
-        }
-
-        virtual void dispatchDidChangeBackForwardIndex() const override
-        {
         }
 
         virtual void didDisplayInsecureContent() override

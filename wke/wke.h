@@ -1,3 +1,11 @@
+/*
+ * 
+ * BlzFans@hotmail.com
+ * http://wke.sf.net
+ * licence LGPL
+ *
+ */
+
 #ifndef WKE_VIEW_H
 #define WKE_VIEW_H
 
@@ -22,9 +30,12 @@ typedef struct {
     int h;
 } wkeRect;
 
-//
-//c++ interface
-//-----------------------------------------------------------------------------------------------------------
+/*
+ *c++ interface
+ *-----------------------------------------------------------------------------------------------------------
+ *
+ */
+
 #ifdef __cplusplus
 
 namespace wke
@@ -97,9 +108,12 @@ typedef void* wkeWebView;
 
 #endif
 
-//
-//c interface
-//----------------------------------------------------------------------------------------------------------
+/*
+ *c interface
+ *----------------------------------------------------------------------------------------------------------
+ *
+ */
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -157,4 +171,4 @@ WKE_API void wkeRunJS(wkeWebView webView, const utf8* script);
 #endif
 
 
-#endif //WKE_VIEW_H
+#endif

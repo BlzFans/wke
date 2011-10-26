@@ -276,7 +276,7 @@ LRESULT CALLBACK WebViewWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
             globalPos.y = y;
             ClientToScreen(hWnd, &globalPos);
 
-            g_webView->mouseEvent(message, wParam, x, y, globalPos.x, globalPos.y); 
+            g_webView->mouseEvent(message, wParam, x, y, x, y); 
         }
         break;
 
@@ -294,7 +294,7 @@ LRESULT CALLBACK WebViewWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
             globalPos.y = y;
             ClientToScreen(hWnd, &globalPos);
 
-            g_webView->mouseEvent(message, wParam, x, y, globalPos.x, globalPos.y);
+            g_webView->mouseEvent(message, wParam, x, y, x, y);
         }
         break;
 
@@ -308,7 +308,7 @@ LRESULT CALLBACK WebViewWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
             globalPos.y = y;
             ClientToScreen(hWnd, &globalPos);
 
-            g_webView->mouseEvent(message, wParam, x, y, globalPos.x, globalPos.y);
+            g_webView->mouseEvent(message, wParam, x, y, x, y);
         }
         break;
 
@@ -322,7 +322,7 @@ LRESULT CALLBACK WebViewWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
             globalPos.y = y;
             ClientToScreen(hWnd, &globalPos);
 
-            g_webView->mouseWheel(wParam, x, y, globalPos.x, globalPos.y);
+            g_webView->mouseWheel(wParam, x, y, x, y);
         }
         break;
 

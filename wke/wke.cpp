@@ -538,7 +538,7 @@ namespace wke
                     deltaY *= static_cast<float>(verticalMultiplier) * cScrollbarPixelsPerLine;
             }
 
-            WebCore::PlatformWheelEvent wheelEvent(pos, globalPos, deltaX, deltaY, wheelTicksX, wheelTicksY, granularity, false, shiftKey, ctrlKey, altKey, altKey);
+            WebCore::PlatformWheelEvent wheelEvent(pos, globalPos, deltaX, deltaY, wheelTicksX, wheelTicksY, granularity, shiftKey, ctrlKey, altKey, altKey);
             return mainFrame()->eventHandler()->handleWheelEvent(wheelEvent);
         }
 
@@ -733,7 +733,7 @@ WKE_API void wkeShutdown()
 
 #define MAJOR_VERSION   (1)
 #define MINOR_VERSION   (0)
-#define WEBKIT_BUILD    (93973)
+#define WEBKIT_BUILD    (98096)
 
 WKE_API unsigned int wkeVersion()
 {

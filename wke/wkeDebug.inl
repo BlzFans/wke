@@ -28,7 +28,6 @@ void outputMsg(const wchar_t* msg, ...)
 
 #ifdef _DEBUG
 #define dbgMsg(msg, ...) outputMsg(msg, __VA_ARGS__)
-//#define dbgMsg(msg, ...) { printf(msg, __VA_ARGS__); printf("\n"); } 
 #else
 #define dbgMsg(msg, ...) __noop
 #endif

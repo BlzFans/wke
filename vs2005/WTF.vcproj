@@ -21,51 +21,6 @@
 			InheritedPropertySheets="vsprops\WTFReleaseCairoCFLite.vsprops"
 			CharacterSet="1"
 			>
-			<Tool
-				Name="VCPreBuildEventTool"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-			/>
-			<Tool
-				Name="VCCLCompilerTool"
-			/>
-			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
-			<Tool
-				Name="VCLibrarianTool"
-			/>
-			<Tool
-				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCXDCMakeTool"
-			/>
-			<Tool
-				Name="VCBscMakeTool"
-			/>
-			<Tool
-				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCPostBuildEventTool"
-			/>
 		</Configuration>
 		<Configuration
 			Name="Debug_Cairo_CFLite|Win32"
@@ -73,51 +28,6 @@
 			InheritedPropertySheets="vsprops\WTFDebugCairoCFLite.vsprops"
 			CharacterSet="1"
 			>
-			<Tool
-				Name="VCPreBuildEventTool"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-			/>
-			<Tool
-				Name="VCCLCompilerTool"
-			/>
-			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
-			<Tool
-				Name="VCLibrarianTool"
-			/>
-			<Tool
-				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCXDCMakeTool"
-			/>
-			<Tool
-				Name="VCBscMakeTool"
-			/>
-			<Tool
-				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCPostBuildEventTool"
-			/>
 		</Configuration>
 	</Configurations>
 	<References>
@@ -144,10 +54,6 @@
 			</File>
 			<File
 				RelativePath="..\Source\JavaScriptCore\wtf\unicode\Collator.h"
-				>
-			</File>
-			<File
-				RelativePath="..\Source\JavaScriptCore\wtf\unicode\CollatorDefault.cpp"
 				>
 			</File>
 			<File
@@ -235,10 +141,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\Source\JavaScriptCore\wtf\text\StringImplBase.h"
-				>
-			</File>
-			<File
 				RelativePath="..\Source\JavaScriptCore\wtf\text\StringOperators.h"
 				>
 			</File>
@@ -252,6 +154,102 @@
 			</File>
 			<File
 				RelativePath="..\Source\JavaScriptCore\wtf\text\WTFString.h"
+				>
+			</File>
+		</Filter>
+        <Filter
+            Name="dtoa"
+            >
+            <File
+                RelativePath="..\Source\JavaScriptCore\wtf\dtoa\bignum-dtoa.cc"
+                >
+            </File>
+            <File
+                RelativePath="..\Source\JavaScriptCore\wtf\dtoa\bignum-dtoa.h"
+                >
+            </File>
+            <File
+                RelativePath="..\Source\JavaScriptCore\wtf\dtoa\bignum.cc"
+                >
+            </File>
+            <File
+                RelativePath="..\Source\JavaScriptCore\wtf\dtoa\bignum.h"
+                >
+            </File>
+            <File
+                RelativePath="..\Source\JavaScriptCore\wtf\dtoa\cached-powers.cc"
+                >
+            </File>
+            <File
+                RelativePath="..\Source\JavaScriptCore\wtf\dtoa\cached-powers.h"
+                >
+            </File>
+            <File
+                RelativePath="..\Source\JavaScriptCore\wtf\dtoa\diy-fp.cc"
+                >
+            </File>
+            <File
+                RelativePath="..\Source\JavaScriptCore\wtf\dtoa\diy-fp.h"
+                >
+            </File>
+            <File
+                RelativePath="..\Source\JavaScriptCore\wtf\dtoa\double-conversion.cc"
+                >
+            </File>
+            <File
+                RelativePath="..\Source\JavaScriptCore\wtf\dtoa\double-conversion.h"
+                >
+            </File>
+            <File
+                RelativePath="..\Source\JavaScriptCore\wtf\dtoa\double.h"
+                >
+            </File>
+            <File
+                RelativePath="..\Source\JavaScriptCore\wtf\dtoa\fast-dtoa.cc"
+                >
+            </File>
+            <File
+                RelativePath="..\Source\JavaScriptCore\wtf\dtoa\fast-dtoa.h"
+                >
+            </File>
+            <File
+                RelativePath="..\Source\JavaScriptCore\wtf\dtoa\fixed-dtoa.cc"
+                >
+            </File>
+            <File
+                RelativePath="..\Source\JavaScriptCore\wtf\dtoa\fixed-dtoa.h"
+                >
+            </File>
+            <File
+                RelativePath="..\Source\JavaScriptCore\wtf\dtoa\strtod.cc"
+                >
+            </File>
+            <File
+                RelativePath="..\Source\JavaScriptCore\wtf\dtoa\strtod.h"
+                >
+            </File>
+            <File
+                RelativePath="..\Source\JavaScriptCore\wtf\dtoa\utils.h"
+                >
+            </File>
+        </Filter>
+		<Filter
+			Name="threads"
+			>
+    		<Filter
+    			Name="win"
+    			>
+    			<File
+    				RelativePath="..\Source\JavaScriptCore\wtf\threads\win\BinarySemaphoreWin.cpp"
+    				>
+    			</File>
+    		</Filter>
+			<File
+				RelativePath="..\Source\JavaScriptCore\wtf\threads\BinarySemaphore.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\Source\JavaScriptCore\wtf\threads\BinarySemaphore.h"
 				>
 			</File>
 		</Filter>
@@ -284,6 +282,14 @@
 			>
 		</File>
 		<File
+			RelativePath="..\Source\JavaScriptCore\wtf\BitVector.cpp"
+			>
+		</File>
+		<File
+			RelativePath="..\Source\JavaScriptCore\wtf\BitVector.h"
+			>
+		</File>
+		<File
 			RelativePath="..\Source\JavaScriptCore\wtf\Bitmap.h"
 			>
 		</File>
@@ -296,6 +302,10 @@
 			>
 		</File>
 		<File
+			RelativePath="..\Source\JavaScriptCore\wtf\BoundsCheckedPointer.h"
+			>
+		</File>
+		<File
 			RelativePath="..\Source\JavaScriptCore\wtf\BumpPointerAllocator.h"
 			>
 		</File>
@@ -305,6 +315,14 @@
 		</File>
 		<File
 			RelativePath="..\Source\JavaScriptCore\wtf\ByteArray.h"
+			>
+		</File>
+		<File
+			RelativePath="..\Source\JavaScriptCore\wtf\CheckedArithmetic.h"
+			>
+		</File>
+		<File
+			RelativePath="..\Source\JavaScriptCore\wtf\Compiler.h"
 			>
 		</File>
 		<File
@@ -383,7 +401,31 @@
 			RelativePath="..\Source\JavaScriptCore\wtf\FastMalloc.cpp"
 			>
 			<FileConfiguration
+				Name="Release|Win32"
+				>
+				<Tool
+					Name="VCCLCompilerTool"
+					DisableSpecificWarnings="4702"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Production|Win32"
+				>
+				<Tool
+					Name="VCCLCompilerTool"
+					DisableSpecificWarnings="4702"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
 				Name="Release_Cairo_CFLite|Win32"
+				>
+				<Tool
+					Name="VCCLCompilerTool"
+					DisableSpecificWarnings="4702"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Release_PGO|Win32"
 				>
 				<Tool
 					Name="VCCLCompilerTool"
@@ -472,6 +514,18 @@
 			>
 		</File>
 		<File
+			RelativePath="..\Source\JavaScriptCore\wtf\MetaAllocator.cpp"
+			>
+		</File>
+		<File
+			RelativePath="..\Source\JavaScriptCore\wtf\MetaAllocator.h"
+			>
+		</File>
+		<File
+			RelativePath="..\Source\JavaScriptCore\wtf\MetaAllocatorHandle.h"
+			>
+		</File>
+		<File
 			RelativePath="..\Source\JavaScriptCore\wtf\MD5.cpp"
 			>
 		</File>
@@ -529,6 +583,10 @@
 		</File>
 		<File
 			RelativePath="..\Source\JavaScriptCore\wtf\OwnPtrCommon.h"
+			>
+		</File>
+		<File
+			RelativePath="..\Source\JavaScriptCore\wtf\PackedIntVector.h"
 			>
 		</File>
 		<File
@@ -609,6 +667,10 @@
 		</File>
 		<File
 			RelativePath="..\Source\JavaScriptCore\wtf\RandomNumberSeed.h"
+			>
+		</File>
+		<File
+			RelativePath="..\Source\JavaScriptCore\wtf\RedBlackTree.h"
 			>
 		</File>
 		<File
@@ -716,15 +778,15 @@
 			>
 		</File>
 		<File
-			RelativePath="..\Source\JavaScriptCore\wtf\ThreadingNone.cpp"
-			>
-		</File>
-		<File
 			RelativePath="..\Source\JavaScriptCore\wtf\ThreadingPrimitives.h"
 			>
 		</File>
 		<File
 			RelativePath="..\Source\JavaScriptCore\wtf\ThreadingWin.cpp"
+			>
+		</File>
+		<File
+			RelativePath="..\Source\JavaScriptCore\wtf\ThreadRestrictionVerifier.h"
 			>
 		</File>
 		<File

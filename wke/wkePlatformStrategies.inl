@@ -78,8 +78,7 @@ private:
         }
     }
 
-    // WebCore::VisitedLinkStrategy
-    virtual bool isLinkVisited(WebCore::Page* page, WebCore::LinkHash hash) override
+    virtual bool isLinkVisited(WebCore::Page* page, WebCore::LinkHash hash, const WebCore::KURL &,const WTF::AtomicString &) override
     {
         return page->group().isLinkVisited(hash);
     }
