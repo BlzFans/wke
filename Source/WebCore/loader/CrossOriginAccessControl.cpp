@@ -136,6 +136,8 @@ ResourceRequest createAccessControlPreflightRequest(const ResourceRequest& reque
 
 bool passesAccessControlCheck(const ResourceResponse& response, StoredCredentials includeCredentials, SecurityOrigin* securityOrigin, String& errorDescription)
 {
+    //wke++++++
+    /*
     AtomicallyInitializedStatic(AtomicString&, accessControlAllowOrigin = *new AtomicString("access-control-allow-origin"));
     AtomicallyInitializedStatic(AtomicString&, accessControlAllowCredentials = *new AtomicString("access-control-allow-credentials"));
 
@@ -167,6 +169,8 @@ bool passesAccessControlCheck(const ResourceResponse& response, StoredCredential
             return false;
         }
     }
+    */
+    //wke++++++
 
     return true;
 }
