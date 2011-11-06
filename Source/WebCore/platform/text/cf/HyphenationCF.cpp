@@ -40,9 +40,10 @@ RetainPtr<CFLocaleRef> AtomicStringKeyedMRUCache<RetainPtr<CFLocaleRef> >::creat
 {
     RetainPtr<CFLocaleRef> locale(AdoptCF, CFLocaleCopyCurrent());
 
-    //wke---
+    //wke++++++
     //return CFStringIsHyphenationAvailableForLocale(locale.get()) ? locale : 0;
     return 0;
+    //wke++++++
 }
 
 template<>
@@ -51,9 +52,10 @@ RetainPtr<CFLocaleRef> AtomicStringKeyedMRUCache<RetainPtr<CFLocaleRef> >::creat
     RetainPtr<CFStringRef> cfLocaleIdentifier(AdoptCF, localeIdentifier.createCFString());
     RetainPtr<CFLocaleRef> locale(AdoptCF, CFLocaleCreate(kCFAllocatorDefault, cfLocaleIdentifier.get()));
 
-    //wke---
+    //wke++++++
     //return CFStringIsHyphenationAvailableForLocale(locale.get()) ? locale : 0;
     return 0;
+    //wke++++++
 }
 
 static AtomicStringKeyedMRUCache<RetainPtr<CFLocaleRef> >& cfLocaleCache()
@@ -74,10 +76,11 @@ size_t lastHyphenLocation(const UChar* characters, size_t length, size_t beforeI
     RetainPtr<CFLocaleRef> locale = cfLocaleCache().get(localeIdentifier);
     ASSERT(locale);
 
-    //wke---
+    //wke++++++
     //CFIndex result = CFStringGetHyphenationLocationBeforeIndex(string.get(), beforeIndex, CFRangeMake(0, length), 0, locale.get(), 0);
     //return result == kCFNotFound ? 0 : result;
     return 0;
+    //wke++++++
 }
 
 } // namespace WebCore

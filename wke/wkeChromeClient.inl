@@ -225,10 +225,8 @@ namespace wke
 
         virtual PlatformPageClient platformPageClient() const override
         {
-            dbgMsg(L"platformPageClient\n");
-            
-            //test...
-            return GetDesktopWindow();
+            //dbgMsg(L"platformPageClient\n");
+            return 0;
         }
 
         virtual void scrollbarsModeDidChange() const override

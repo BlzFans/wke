@@ -304,6 +304,11 @@ void JSGlobalObject::reset(JSValue prototype)
     addStaticGlobals(staticGlobals, WTF_ARRAY_LENGTH(staticGlobals));
 
     resetPrototype(exec->globalData(), prototype);
+
+    //wke++++++
+    extern void onResetGlobalObject(JSGlobalObject* globalObject);
+    onResetGlobalObject(this);
+    //wke++++++
 }
 
 void JSGlobalObject::createThrowTypeError(ExecState* exec)

@@ -19,123 +19,41 @@
 		<Configuration
 			Name="Debug_Cairo_CFLite|Win32"
 			ConfigurationType="2"
-			InheritedPropertySheets="vsprops\wkeDebug.vsprops"
+			InheritedPropertySheets=".\vsprops\wkeDebug.vsprops"
 			CharacterSet="1"
 			>
-			<Tool
-				Name="VCPreBuildEventTool"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-			/>
-			<Tool
-				Name="VCCLCompilerTool"
-			/>
-			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
-			<Tool
-				Name="VCLinkerTool"
-			/>
-			<Tool
-				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCManifestTool"
-			/>
-			<Tool
-				Name="VCXDCMakeTool"
-			/>
-			<Tool
-				Name="VCBscMakeTool"
-			/>
-			<Tool
-				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCPostBuildEventTool"
-			/>
 		</Configuration>
 		<Configuration
 			Name="Release_Cairo_CFLite|Win32"
 			ConfigurationType="2"
-			InheritedPropertySheets="vsprops\wkeRelease.vsprops"
+			InheritedPropertySheets=".\vsprops\wkeRelease.vsprops"
 			CharacterSet="1"
 			>
-			<Tool
-				Name="VCPreBuildEventTool"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-			/>
-			<Tool
-				Name="VCCLCompilerTool"
-			/>
-			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
-			<Tool
-				Name="VCLinkerTool"
-			/>
-			<Tool
-				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCManifestTool"
-			/>
-			<Tool
-				Name="VCXDCMakeTool"
-			/>
-			<Tool
-				Name="VCBscMakeTool"
-			/>
-			<Tool
-				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCPostBuildEventTool"
-			/>
 		</Configuration>
 	</Configurations>
 	<References>
 	</References>
 	<Files>
+		<File
+			RelativePath="..\wke\icuwin.cpp"
+			>
+		</File>
+		<File
+			RelativePath="..\wke\icuwin.h"
+			>
+		</File>
+		<File
+			RelativePath="..\wke\jsBind.cpp"
+			>
+		</File>
+		<File
+			RelativePath="..\wke\stringTable.cpp"
+			>
+		</File>
+		<File
+			RelativePath="..\wke\stringTable.h"
+			>
+		</File>
 		<File
 			RelativePath="..\wke\wke.cpp"
 			>
@@ -153,7 +71,11 @@
 			>
 		</File>
 		<File
-			RelativePath="..\wke\wkeDebug.inl"
+			RelativePath="..\wke\wkeDebug.cpp"
+			>
+		</File>
+		<File
+			RelativePath="..\wke\wkeDebug.h"
 			>
 		</File>
 		<File
@@ -174,14 +96,6 @@
 		</File>
 		<File
 			RelativePath="..\wke\wkePlatformStrategies.inl"
-			>
-		</File>
-		<File
-			RelativePath="..\wke\icuwin.cpp"
-			>
-		</File>
-		<File
-			RelativePath="..\wke\icuwin.h"
 			>
 		</File>
 	</Files>

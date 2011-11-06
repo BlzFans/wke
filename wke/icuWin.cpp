@@ -311,10 +311,293 @@ u_charDirection(UChar32 c)
 int8_t
 u_charType(UChar32 c)
 {
-    if(iswspace(c))
-        return U_SPACE_SEPARATOR;
+    static int8_t s_charType[] = {
+        U_CONTROL_CHAR, //0
+        U_CONTROL_CHAR, //1
+        U_CONTROL_CHAR, //2
+        U_CONTROL_CHAR, //3
+        U_CONTROL_CHAR, //4
+        U_CONTROL_CHAR, //5
+        U_CONTROL_CHAR, //6
+        U_CONTROL_CHAR, //7
+        U_CONTROL_CHAR, //8
+        U_CONTROL_CHAR, //9
+        U_CONTROL_CHAR, //10
+        U_CONTROL_CHAR, //11
+        U_CONTROL_CHAR, //12
+        U_CONTROL_CHAR, //13
+        U_CONTROL_CHAR, //14
+        U_CONTROL_CHAR, //15
+        U_CONTROL_CHAR, //16
+        U_CONTROL_CHAR, //17
+        U_CONTROL_CHAR, //18
+        U_CONTROL_CHAR, //19
+        U_CONTROL_CHAR, //20
+        U_CONTROL_CHAR, //21
+        U_CONTROL_CHAR, //22
+        U_CONTROL_CHAR, //23
+        U_CONTROL_CHAR, //24
+        U_CONTROL_CHAR, //25
+        U_CONTROL_CHAR, //26
+        U_CONTROL_CHAR, //27
+        U_CONTROL_CHAR, //28
+        U_CONTROL_CHAR, //29
+        U_CONTROL_CHAR, //30
+        U_CONTROL_CHAR, //31
 
-    return 0;
+        U_SPACE_SEPARATOR, //32, space
+
+        U_OTHER_PUNCTUATION, //33, !
+        U_OTHER_PUNCTUATION, //34, "
+        U_OTHER_PUNCTUATION, //35, #
+
+        U_CURRENCY_SYMBOL, //36, $
+
+        U_OTHER_PUNCTUATION, //37, %
+        U_OTHER_PUNCTUATION, //38, &
+        U_OTHER_PUNCTUATION, //39, '
+
+        U_START_PUNCTUATION, //40, (
+        U_END_PUNCTUATION,   //41, )
+
+        U_OTHER_PUNCTUATION, //42, *
+        U_MATH_SYMBOL,       //43, +
+        U_OTHER_PUNCTUATION, //44, ,
+        U_DASH_PUNCTUATION,  //45, -
+        U_OTHER_PUNCTUATION, //46, .
+        U_OTHER_PUNCTUATION, //47, /
+
+        U_DECIMAL_DIGIT_NUMBER, //48, 0
+        U_DECIMAL_DIGIT_NUMBER, //49, 1
+        U_DECIMAL_DIGIT_NUMBER, //50, 2
+        U_DECIMAL_DIGIT_NUMBER, //51, 3
+        U_DECIMAL_DIGIT_NUMBER, //52, 4
+        U_DECIMAL_DIGIT_NUMBER, //53, 5
+        U_DECIMAL_DIGIT_NUMBER, //54, 6
+        U_DECIMAL_DIGIT_NUMBER, //55, 7
+        U_DECIMAL_DIGIT_NUMBER, //56, 8
+        U_DECIMAL_DIGIT_NUMBER, //57, 9
+
+        U_OTHER_PUNCTUATION, //58, :
+        U_OTHER_PUNCTUATION, //59, ;
+
+        U_MATH_SYMBOL, //60, <
+        U_MATH_SYMBOL, //61, =
+        U_MATH_SYMBOL, //62, >
+
+        U_OTHER_PUNCTUATION, //63, ?
+        U_OTHER_PUNCTUATION, //64, @
+
+        U_UPPERCASE_LETTER, //65, A
+        U_UPPERCASE_LETTER, //66, B
+        U_UPPERCASE_LETTER, //67, C
+        U_UPPERCASE_LETTER, //68, D
+        U_UPPERCASE_LETTER, //69, E
+        U_UPPERCASE_LETTER, //70, F
+        U_UPPERCASE_LETTER, //71, G
+        U_UPPERCASE_LETTER, //72, H
+        U_UPPERCASE_LETTER, //73, I
+        U_UPPERCASE_LETTER, //74, J
+        U_UPPERCASE_LETTER, //75, K
+        U_UPPERCASE_LETTER, //76, L
+        U_UPPERCASE_LETTER, //77, M
+        U_UPPERCASE_LETTER, //78, N
+        U_UPPERCASE_LETTER, //79, O
+        U_UPPERCASE_LETTER, //80, P
+        U_UPPERCASE_LETTER, //81, Q
+        U_UPPERCASE_LETTER, //82, R
+        U_UPPERCASE_LETTER, //83, S
+        U_UPPERCASE_LETTER, //84, T
+        U_UPPERCASE_LETTER, //85, U
+        U_UPPERCASE_LETTER, //86, V
+        U_UPPERCASE_LETTER, //87, W
+        U_UPPERCASE_LETTER, //88, X
+        U_UPPERCASE_LETTER, //89, Y
+        U_UPPERCASE_LETTER, //90, Z
+
+        U_START_PUNCTUATION, //91, [
+        U_OTHER_PUNCTUATION, //92, \   //
+        U_END_PUNCTUATION,   //93, ]
+        U_MODIFIER_SYMBOL,   //94, ^
+
+        U_CONNECTOR_PUNCTUATION, //95, _
+        U_MODIFIER_SYMBOL,       //96, `
+
+        U_LOWERCASE_LETTER, // 97, a
+        U_LOWERCASE_LETTER, // 98, b
+        U_LOWERCASE_LETTER, // 99, c
+        U_LOWERCASE_LETTER, //100, d
+        U_LOWERCASE_LETTER, //101, e
+        U_LOWERCASE_LETTER, //102, f
+        U_LOWERCASE_LETTER, //103, g
+        U_LOWERCASE_LETTER, //104, h
+        U_LOWERCASE_LETTER, //105, i
+        U_LOWERCASE_LETTER, //106, j
+        U_LOWERCASE_LETTER, //107, k
+        U_LOWERCASE_LETTER, //108, l
+        U_LOWERCASE_LETTER, //109, m
+        U_LOWERCASE_LETTER, //110, n
+        U_LOWERCASE_LETTER, //111, o
+        U_LOWERCASE_LETTER, //112, p
+        U_LOWERCASE_LETTER, //113, q
+        U_LOWERCASE_LETTER, //114, r
+        U_LOWERCASE_LETTER, //115, s
+        U_LOWERCASE_LETTER, //116, t
+        U_LOWERCASE_LETTER, //117, u
+        U_LOWERCASE_LETTER, //118, v
+        U_LOWERCASE_LETTER, //119, w
+        U_LOWERCASE_LETTER, //120, x
+        U_LOWERCASE_LETTER, //121, y
+        U_LOWERCASE_LETTER, //122, z
+
+        U_START_PUNCTUATION, //123, {
+        U_MATH_SYMBOL,       //124, |
+        U_END_PUNCTUATION,   //125, }
+        U_MATH_SYMBOL,       //126, ~
+
+        U_CONTROL_CHAR, //127
+
+        U_CONTROL_CHAR, //128
+        U_CONTROL_CHAR, //129
+        U_CONTROL_CHAR, //130
+        U_CONTROL_CHAR, //131
+        U_CONTROL_CHAR, //132
+        U_CONTROL_CHAR, //133
+        U_CONTROL_CHAR, //134
+        U_CONTROL_CHAR, //135
+        U_CONTROL_CHAR, //136
+        U_CONTROL_CHAR, //137
+        U_CONTROL_CHAR, //138
+        U_CONTROL_CHAR, //139
+        U_CONTROL_CHAR, //140
+        U_CONTROL_CHAR, //141
+        U_CONTROL_CHAR, //142
+        U_CONTROL_CHAR, //143
+        U_CONTROL_CHAR, //144
+        U_CONTROL_CHAR, //145
+        U_CONTROL_CHAR, //146
+        U_CONTROL_CHAR, //147
+        U_CONTROL_CHAR, //148
+        U_CONTROL_CHAR, //149
+        U_CONTROL_CHAR, //150
+        U_CONTROL_CHAR, //151
+        U_CONTROL_CHAR, //152
+        U_CONTROL_CHAR, //153
+        U_CONTROL_CHAR, //154
+        U_CONTROL_CHAR, //155
+        U_CONTROL_CHAR, //156
+        U_CONTROL_CHAR, //157
+        U_CONTROL_CHAR, //158
+        U_CONTROL_CHAR, //159
+
+        U_SPACE_SEPARATOR, //160
+ 
+        U_OTHER_PUNCTUATION, //161
+
+        U_CURRENCY_SYMBOL, //162
+        U_CURRENCY_SYMBOL, //163
+        U_CURRENCY_SYMBOL, //164
+        U_CURRENCY_SYMBOL, //165
+
+        U_OTHER_SYMBOL,    //166
+        U_OTHER_SYMBOL,    //167
+        U_MODIFIER_SYMBOL, //168
+        U_OTHER_SYMBOL,    //169
+
+        U_LOWERCASE_LETTER, //170
+
+        U_INITIAL_PUNCTUATION, //171
+        U_MATH_SYMBOL,         //172
+        U_FORMAT_CHAR,         //173
+        U_OTHER_SYMBOL,        //174
+        U_MODIFIER_SYMBOL,     //175
+        U_OTHER_SYMBOL,        //176
+        U_MATH_SYMBOL,         //177
+        U_OTHER_NUMBER,        //178
+        U_OTHER_NUMBER,        //179
+        U_MODIFIER_SYMBOL,     //180
+        U_LOWERCASE_LETTER,    //181
+        U_OTHER_SYMBOL,        //182
+        U_OTHER_PUNCTUATION,   //183
+        U_MODIFIER_SYMBOL,     //184
+        U_OTHER_NUMBER,        //185
+        U_LOWERCASE_LETTER,    //186
+        U_FINAL_PUNCTUATION,   //187
+        U_OTHER_NUMBER,        //188 1/2
+        U_OTHER_NUMBER,        //189 1/2
+        U_OTHER_NUMBER,        //190 3/4
+        U_OTHER_PUNCTUATION,   //191
+
+        U_UPPERCASE_LETTER,    //192
+        U_UPPERCASE_LETTER,    //193
+        U_UPPERCASE_LETTER,    //194
+        U_UPPERCASE_LETTER,    //195
+        U_UPPERCASE_LETTER,    //196
+        U_UPPERCASE_LETTER,    //197
+        U_UPPERCASE_LETTER,    //198
+        U_UPPERCASE_LETTER,    //199
+        U_UPPERCASE_LETTER,    //200
+        U_UPPERCASE_LETTER,    //201
+        U_UPPERCASE_LETTER,    //202
+        U_UPPERCASE_LETTER,    //203
+        U_UPPERCASE_LETTER,    //204
+        U_UPPERCASE_LETTER,    //205
+        U_UPPERCASE_LETTER,    //206
+        U_UPPERCASE_LETTER,    //207
+        U_UPPERCASE_LETTER,    //208
+        U_UPPERCASE_LETTER,    //209
+        U_UPPERCASE_LETTER,    //210
+        U_UPPERCASE_LETTER,    //211
+        U_UPPERCASE_LETTER,    //212
+        U_UPPERCASE_LETTER,    //213
+        U_UPPERCASE_LETTER,    //214
+        U_MATH_SYMBOL,         //215 multiplication sign
+        U_UPPERCASE_LETTER,    //216
+        U_UPPERCASE_LETTER,    //217
+        U_UPPERCASE_LETTER,    //218
+        U_UPPERCASE_LETTER,    //219
+        U_UPPERCASE_LETTER,    //220
+        U_UPPERCASE_LETTER,    //221
+        U_UPPERCASE_LETTER,    //222
+        U_LOWERCASE_LETTER,    //223
+        U_LOWERCASE_LETTER,    //224
+        U_LOWERCASE_LETTER,    //225
+        U_LOWERCASE_LETTER,    //226
+        U_LOWERCASE_LETTER,    //227
+        U_LOWERCASE_LETTER,    //228
+        U_LOWERCASE_LETTER,    //229
+        U_LOWERCASE_LETTER,    //230
+        U_LOWERCASE_LETTER,    //231
+        U_LOWERCASE_LETTER,    //232
+        U_LOWERCASE_LETTER,    //233
+        U_LOWERCASE_LETTER,    //234
+        U_LOWERCASE_LETTER,    //235
+        U_LOWERCASE_LETTER,    //236
+        U_LOWERCASE_LETTER,    //237
+        U_LOWERCASE_LETTER,    //238
+        U_LOWERCASE_LETTER,    //239
+        U_LOWERCASE_LETTER,    //240
+        U_LOWERCASE_LETTER,    //241
+        U_LOWERCASE_LETTER,    //242
+        U_LOWERCASE_LETTER,    //243
+        U_LOWERCASE_LETTER,    //244
+        U_LOWERCASE_LETTER,    //245
+        U_LOWERCASE_LETTER,    //246
+        U_MATH_SYMBOL,         //247 division sign
+        U_LOWERCASE_LETTER,    //248
+        U_LOWERCASE_LETTER,    //249
+        U_LOWERCASE_LETTER,    //250
+        U_LOWERCASE_LETTER,    //251
+        U_LOWERCASE_LETTER,    //252
+        U_LOWERCASE_LETTER,    //253
+        U_LOWERCASE_LETTER,    //254
+        U_LOWERCASE_LETTER     //255
+    };
+
+    if (c < sizeof(s_charType)/sizeof(s_charType[0]))
+        return s_charType[c];
+
+    return U_UNASSIGNED;
 }
 
 int32_t

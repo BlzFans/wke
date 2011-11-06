@@ -1,3 +1,5 @@
+#include <stdio.h>
+#include <windows.h>
 
 void outputMsg(const char* msg, ...)
 {
@@ -24,12 +26,3 @@ void outputMsg(const wchar_t* msg, ...)
 
     OutputDebugStringW(string);
 }
-
-
-#ifdef _DEBUG
-#define dbgMsg(msg, ...) outputMsg(msg, __VA_ARGS__)
-#else
-#define dbgMsg(msg, ...) __noop
-#endif
-
-#define CSTR(str) (WTF::String(str.characters(), str.length()).charactersWithNullTermination())

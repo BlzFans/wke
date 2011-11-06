@@ -49,13 +49,13 @@ static PassRefPtr<SharedCursor> createSharedCursor(Image* img, const IntPoint& h
     static bool doAlpha = windowsVersion() >= WindowsXP;
     BitmapInfo cursorImage = BitmapInfo::create(IntSize(img->width(), img->height()));
 
-//wke---
+//wke++++++
     if (cursorImage.bmiHeader.biWidth == 0)
         cursorImage.bmiHeader.biWidth = 16;
 
     if (cursorImage.bmiHeader.biHeight == 0)
         cursorImage.bmiHeader.biHeight = 16;
-//wke---
+//wke++++++
 
     HDC dc = GetDC(0);
     HDC workingDC = CreateCompatibleDC(dc);

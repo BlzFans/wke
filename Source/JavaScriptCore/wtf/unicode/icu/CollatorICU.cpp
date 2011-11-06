@@ -146,7 +146,9 @@ void Collator::releaseCollator()
 
 }
 
-//wke---
+//wke++++++
 #else
 #include "CollatorDefault.cpp"
+//wke++++++
+
 #endif

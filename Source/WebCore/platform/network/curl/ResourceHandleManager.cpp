@@ -250,7 +250,9 @@ static size_t headerCallback(char* ptr, size_t size, size_t nmemb, void* data)
 
         const char* hdr;
         err = curl_easy_getinfo(h, CURLINFO_EFFECTIVE_URL, &hdr);
-        d->m_response.setURL(KURL(ParsedURLString, hdr));
+        //wke++++++
+        d->m_response.setURL(KURL(KURL(), hdr));
+        //wke++++++
 
         long httpCode = 0;
         err = curl_easy_getinfo(h, CURLINFO_RESPONSE_CODE, &httpCode);

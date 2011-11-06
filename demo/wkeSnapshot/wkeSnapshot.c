@@ -1,6 +1,4 @@
 
-typedef unsigned short wchar_t;
-typedef unsigned char bool;
 
 #include <windows.h>
 #include <stdio.h>
