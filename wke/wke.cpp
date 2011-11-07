@@ -124,10 +124,9 @@ namespace wke
             mainFrame_->loader()->load(request, false);
         }
 
-        virtual void loadURL(const wchar_t* inUrl)
+        virtual void loadURL(const wchar_t* url)
         {
-            String url(inUrl, wcslen(inUrl));
-            loadURL(url.utf8().data());
+            loadURL(String(url).utf8().data());
         }
 
         virtual void loadHTML(const utf8* html)
@@ -185,14 +184,22 @@ namespace wke
         {
             if (mainFrame()->loader()->documentLoader())
             {
-                title_ = mainFrame()->loader()->documentLoader()->title().string().utf8();
-            }
-            else
-            {
-                title_ = WTF::CString("notitle");
+                const String& str = mainFrame()->loader()->documentLoader()->title().string();
+                return StringTable::addString(str.characters(), str.length());
             }
 
-            return title_.data();
+            return StringTable::addString("notitle");
+        }
+
+        const wchar_t* titleW()
+        {
+            if (mainFrame()->loader()->documentLoader())
+            {
+                const String& str = mainFrame()->loader()->documentLoader()->title().string();
+                return StringTableW::addString(str.characters(), str.length());
+            }
+
+            return StringTableW::addString(L"notitle");
         }
 
         virtual void resize(int w, int h)
@@ -507,7 +514,7 @@ namespace wke
             return handled;
         }
 
-        bool mouseWheel(WPARAM wParam, int x, int y, int globalX, int globalY)
+        bool mouseWheel(unsigned int wParam, int x, int y, int globalX, int globalY)
         {
             WebCore::IntPoint pos(x, y);
             WebCore::IntPoint globalPos(globalX, globalY);
@@ -551,7 +558,7 @@ namespace wke
             return frame->eventHandler()->keyEvent(keyEvent);
         }
 
-        bool keyDown(WPARAM virtualKeyCode, LPARAM keyData, bool systemKey)
+        bool keyDown(unsigned int virtualKeyCode, int keyData, bool systemKey)
         {
             WebCore::Frame* frame = page()->focusController()->focusedOrMainFrame();
 
@@ -639,13 +646,13 @@ namespace wke
             return frame->eventHandler()->keyEvent(keyEvent);
         }
 
-        virtual void onSetFocus()
+        virtual void focus()
         {
             WebCore::FocusController* focusController = page()->focusController();
             focusController->setFocused(true);
         }
 
-        virtual void onKillFocus()
+        virtual void unfocus()
         {
             WebCore::FocusController* focusController = page()->focusController();
             focusController->setFocused(false);
@@ -708,8 +715,6 @@ namespace wke
         OwnPtr<HDC> hdc_;
         OwnPtr<HBITMAP> hbmp_;
         void* pixels_;
-
-        WTF::CString title_;
     };
 }
 
@@ -785,7 +790,7 @@ void wkeLoadURL(wkeWebView webView, const utf8* url)
     return webView->loadURL(url);
 }
 
-void wkeLoadURL_Unicode(wkeWebView webView, const wchar_t* url)
+void wkeLoadURLW(wkeWebView webView, const wchar_t* url)
 {
     return webView->loadURL(url);
 }
@@ -795,7 +800,7 @@ void wkeLoadHTML(wkeWebView webView, const utf8* html)
     return webView->loadHTML(html);
 }
 
-void wkeLoadHTML_Unicode(wkeWebView webView, const wchar_t* html)
+void wkeLoadHTMLW(wkeWebView webView, const wchar_t* html)
 {
     return webView->loadHTML(html);
 }
@@ -818,6 +823,11 @@ void wkeReload(wkeWebView webView)
 const utf8* wkeTitle(wkeWebView webView)
 {
     return webView->title();
+}
+
+const wchar_t* wkeTitleW(wkeWebView webView)
+{
+    return webView->titleW();
 }
 
 void wkeResize(wkeWebView webView, int w, int h)
@@ -930,7 +940,7 @@ bool wkeMouseEvent(wkeWebView webView, unsigned int message, unsigned int wParam
     return webView->mouseEvent(message, wParam, x, y, globalX, globalY);
 }
 
-bool wkeMouseWheel(wkeWebView webView, WPARAM wParam, int x, int y, int globalX, int globalY)
+bool wkeMouseWheel(wkeWebView webView, unsigned int wParam, int x, int y, int globalX, int globalY)
 {
     return webView->mouseWheel(wParam, x, y, globalX, globalY);
 }
@@ -940,7 +950,7 @@ bool wkeKeyUp(wkeWebView webView, unsigned int virtualKeyCode, int keyData, bool
     return webView->keyUp(virtualKeyCode, keyData, systemKey);
 }
 
-bool wkeKeyDown(wkeWebView webView, WPARAM virtualKeyCode, LPARAM keyData, bool systemKey)
+bool wkeKeyDown(wkeWebView webView, unsigned int virtualKeyCode, int keyData, bool systemKey)
 {
     return webView->keyDown(virtualKeyCode, keyData, systemKey);
 }
@@ -950,14 +960,14 @@ bool wkeKeyPress(wkeWebView webView, unsigned int charCode, int keyData, bool sy
     return webView->keyPress(charCode, keyData, systemKey);
 }
 
-void wkeOnSetFocus(wkeWebView webView)
+void wkeFocus(wkeWebView webView)
 {
-    return webView->onSetFocus();
+    return webView->focus();
 }
 
-void wkeOnKillFocus(wkeWebView webView)
+void wkeUnfocus(wkeWebView webView)
 {
-    return webView->onKillFocus();
+    return webView->unfocus();
 }
 
 void wkeGetCaret(wkeWebView webView, wkeRect* rect)
@@ -965,12 +975,12 @@ void wkeGetCaret(wkeWebView webView, wkeRect* rect)
     return webView->getCaret(*rect);
 }
 
-void wkeRunJS(wkeWebView webView, const wchar_t* script)
+void wkeRunJS(wkeWebView webView, const utf8* script)
 {
     return webView->runJS(script);
 }
 
-void wkeRunJSUTF8(wkeWebView webView, const utf8* script)
+void wkeRunJSW(wkeWebView webView, const wchar_t* script)
 {
     return webView->runJS(script);
 }

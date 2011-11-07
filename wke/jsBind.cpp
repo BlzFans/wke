@@ -139,20 +139,20 @@ bool jsToBoolean(jsExecState es, jsValue v)
     return value.toBoolean((JSC::ExecState*)es);
 }
 
-const wchar_t* jsToString(jsExecState es, jsValue v)
+const utf8* jsToString(jsExecState es, jsValue v)
 {
     JSC::JSValue value = JSC::JSValue::decode(v);
     JSC::UString str = value.toString((JSC::ExecState*)es);
 
-    return addString(str.characters(), str.length());
+    return StringTable::addString(str.characters(), str.length());
 }
 
-const utf8* jsToUTF8(jsExecState es, jsValue v)
+const wchar_t* jsToStringW(jsExecState es, jsValue v)
 {
     JSC::JSValue value = JSC::JSValue::decode(v);
-    CString str = value.toString((JSC::ExecState*)es).utf8();
+    JSC::UString str = value.toString((JSC::ExecState*)es);
 
-    return addString(str.data(), str.length());
+    return StringTableW::addString(str.characters(), str.length());
 }
 
 jsValue jsInt(int n)
@@ -195,16 +195,16 @@ jsValue jsFalse()
     return JSC::JSValue::encode(JSC::jsBoolean(false));
 }
 
-jsValue jsString(jsExecState es, const wchar_t* str)
+jsValue jsString(jsExecState es, const utf8* str)
 {
-    JSC::JSValue value = JSC::jsString((JSC::ExecState*)es, JSC::UString(str));
+    String s = String::fromUTF8(str);
+    JSC::JSValue value = JSC::jsString((JSC::ExecState*)es, JSC::UString(s.impl()));
     return JSC::JSValue::encode(value);
 }
 
-jsValue jsUTF8(jsExecState es, const utf8* utf8Str)
+jsValue jsStringW(jsExecState es, const wchar_t* str)
 {
-    String str = String::fromUTF8(utf8Str);
-    JSC::JSValue value = JSC::jsString((JSC::ExecState*)es, JSC::UString(str.characters(), str.length()));
+    JSC::JSValue value = JSC::jsString((JSC::ExecState*)es, JSC::UString(str));
     return JSC::JSValue::encode(value);
 }
 
@@ -229,7 +229,13 @@ jsValue jsGlobalObject(jsExecState es)
     return JSC::JSValue::encode(value);
 }
 
-jsValue jsEval(jsExecState es, const wchar_t* str)
+jsValue jsEval(jsExecState es, const utf8* str)
+{
+    const wchar_t* s = String::fromUTF8(str).charactersWithNullTermination();
+    return jsEvalW(es, s);
+}
+
+jsValue jsEvalW(jsExecState es, const wchar_t* str)
 {
     JSC::ExecState* exec = (JSC::ExecState*)es;
 
@@ -243,12 +249,6 @@ jsValue jsEval(jsExecState es, const wchar_t* str)
 
     // happens, for example, when the only statement is an empty (';') statement
     return jsUndefined();
-}
-
-jsValue jsEvalUTF8(jsExecState es, const utf8* str)
-{
-    const wchar_t* s = String::fromUTF8(str).charactersWithNullTermination();
-    return jsEval(es, s);
 }
 
 jsValue jsCall(jsExecState es, jsValue func, jsValue thisValue, jsValue* args, int argCount)
@@ -388,8 +388,8 @@ void jsBindFunction(const char* name, jsFunction fn, unsigned int argCount)
 
 jsValue JS_CALL js_outputMsg(jsExecState es)
 {
-    //assert(jsArgCount(es) == 1);
-    //assert(jsArgType(es, 0) == JSTYPE_STRING);
+    //ASSERT(jsArgCount(es) == 1);
+    //ASSERT(jsArgType(es, 0) == JSTYPE_STRING);
 
     jsValue value = jsArg(es, 0);
     outputMsg(jsToString(es, value));
@@ -399,7 +399,7 @@ jsValue JS_CALL js_outputMsg(jsExecState es)
 
 jsValue JS_CALL js_wke(jsExecState es)
 {
-    return jsUTF8(es, wkeVersionString());
+    return jsString(es, wkeVersionString());
 }
 
 void onResetGlobalObject(JSC::JSGlobalObject* globalObject)

@@ -327,11 +327,11 @@ LRESULT CALLBACK WebViewWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
         break;
 
     case WM_SETFOCUS:
-        g_webView->onSetFocus();
+        g_webView->focus();
         break;
 
     case WM_KILLFOCUS:
-        g_webView->onKillFocus();
+        g_webView->unfocus();
         break;
 
     case WM_IME_STARTCOMPOSITION:

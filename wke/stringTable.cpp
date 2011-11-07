@@ -1,11 +1,15 @@
 #include <WebCore/config.h>
 #include <wtf/HashSet.h>
 #include <wtf/StringHasher.h>
+#include <wtf/text/CString.h>
+#include <wtf/text/WTFString.h>
 
-struct StringHash {
+#include "stringTable.h"
+
+struct StringTableHash {
 
     static unsigned hash(const char* key) 
-    { 
+    {
         ASSERT(false);
         return 0;
     }
@@ -88,11 +92,11 @@ namespace WTF {
 
 template<typename T> struct DefaultHash;
 template<> struct DefaultHash<const char*> {
-    typedef StringHash Hash;
+    typedef StringTableHash Hash;
 };
 
 template<> struct DefaultHash<const wchar_t*> {
-    typedef StringHash Hash;
+    typedef StringTableHash Hash;
 };
 
 }
@@ -100,10 +104,13 @@ template<> struct DefaultHash<const wchar_t*> {
 HashSet<const char*> s_stringTable;
 HashSet<const wchar_t*> s_stringTableW;
 
-const char* addString(const char* str, unsigned int len/* = 0*/)
+static const char* s_empty = "\0";
+static const wchar_t* s_emptyW = L"\0";
+
+const char* StringTable::addString(const char* str, unsigned int len/* = 0*/)
 {
-    if (str == NULL)
-        return "";
+    if (str == NULL || str[0] == '\0')
+        return s_empty;
 
     if (len == 0)
         len = strlen(str);
@@ -112,16 +119,40 @@ const char* addString(const char* str, unsigned int len/* = 0*/)
     return *s_stringTable.add<CharBuffer, CharBufferTranslator>(buf).first;
 }
 
-const wchar_t* addString(const wchar_t* str, unsigned int len/* = 0*/)
+const char* StringTable::addString(const wchar_t* str, unsigned int len/* = 0*/)
 {
-    if (str == NULL)
-        return L"";
+    if (str == NULL || str[0] == L'\0')
+        return s_empty;
+
+    if (len == 0)
+        len = wcslen(str);
+
+    CString s = String(str, len).utf8();
+    return addString(s.data(), s.length());
+}
+
+const wchar_t* StringTableW::addString(const wchar_t* str, unsigned int len/* = 0*/)
+{
+    if (str == NULL || str[0] == L'\0')
+        return s_emptyW;
 
     if (len == 0)
         len = wcslen(str);
 
     WCharBuffer buf = { str, len };
     return *s_stringTableW.add<WCharBuffer, WCharBufferTranslator>(buf).first;
+}
+
+const wchar_t* StringTableW::addString(const char* str, unsigned int len/* = 0*/)
+{
+    if (str == NULL || str[0] == '\0')
+        return s_emptyW;
+
+    if (len == 0)
+        len = strlen(str);
+
+    String s = String::fromUTF8(str, len);
+    return addString(s.characters(), s.length());
 }
 
 void initStringTable()
@@ -139,6 +170,5 @@ void destroyStringTable()
         fastFree((void*)*itr);
 
     s_stringTableW.clear();
-
 }
 

@@ -58,6 +58,7 @@ namespace wke
         virtual void reload() = 0;
 
         virtual const utf8* title() = 0;
+        virtual const wchar_t* titleW() = 0;
 
         virtual void resize(int w, int h) = 0;
         virtual int width() const = 0;
@@ -88,18 +89,18 @@ namespace wke
         virtual float mediaVolume() const = 0;
 
         virtual bool mouseEvent(unsigned int message, unsigned int wParam, int x, int y, int globalX, int globalY) = 0;
-        virtual bool mouseWheel(WPARAM wParam, int x, int y, int globalX, int globalY) = 0;
+        virtual bool mouseWheel(unsigned int wParam, int x, int y, int globalX, int globalY) = 0;
         virtual bool keyUp(unsigned int virtualKeyCode, int keyData, bool systemKey) = 0;
-        virtual bool keyDown(WPARAM virtualKeyCode, LPARAM keyData, bool systemKey) = 0;
+        virtual bool keyDown(unsigned int virtualKeyCode, int keyData, bool systemKey) = 0;
         virtual bool keyPress(unsigned int charCode, int keyData, bool systemKey) = 0;
 
-        virtual void onSetFocus() = 0;
-        virtual void onKillFocus() = 0;
+        virtual void focus() = 0;
+        virtual void unfocus() = 0;
 
         virtual void getCaret(wkeRect& rect) = 0;
 
-        virtual void runJS(const wchar_t* script) = 0;
         virtual void runJS(const utf8* script) = 0;
+        virtual void runJS(const wchar_t* script) = 0;
         virtual jsExecState execState() = 0;
     };
 }
@@ -116,6 +117,8 @@ typedef unsigned short wchar_t;
 
 #ifndef HAVE_BOOL
 typedef unsigned char bool;
+#define true 1
+#define false 0
 #endif
 
 #endif
@@ -137,50 +140,66 @@ WKE_API unsigned int wkeVersion();
 WKE_API const utf8* wkeVersionString();
 
 WKE_API wkeWebView wkeCreateWebView();
-
 WKE_API void wkeDestroy(wkeWebView webView);
+
 WKE_API void wkeLoadURL(wkeWebView webView, const utf8* url);
-WKE_API void wkeLoadURL_Unicode(wkeWebView webView, const wchar_t* url);
+WKE_API void wkeLoadURLW(wkeWebView webView, const wchar_t* url);
+
 WKE_API void wkeLoadHTML(wkeWebView webView, const utf8* html);
-WKE_API void wkeLoadHTML_Unicode(wkeWebView webView, const wchar_t* html);
+WKE_API void wkeLoadHTMLW(wkeWebView webView, const wchar_t* html);
+
 WKE_API bool wkeIsLoading(wkeWebView webView);
 WKE_API void wkeStopLoading(wkeWebView webView);
 WKE_API void wkeReload(wkeWebView webView);
+
 WKE_API const utf8* wkeTitle(wkeWebView webView);
+WKE_API const wchar_t* wkeTitleW(wkeWebView webView);
+
 WKE_API void wkeResize(wkeWebView webView, int w, int h);
 WKE_API int wkeWidth(wkeWebView webView);
 WKE_API int wkeHeight(wkeWebView webView);
+
 WKE_API void wkeSetDirty(wkeWebView webView, bool dirty);
 WKE_API bool wkeIsDirty(wkeWebView webView);
 WKE_API void wkeAddDirtyArea(wkeWebView webView, int x, int y, int w, int h);
 WKE_API void wkeLayoutIfNeeded(wkeWebView webView);
 WKE_API void wkePaint(wkeWebView webView, void* dst, int pitch);
+
 WKE_API bool wkeCanGoBack(wkeWebView webView);
 WKE_API bool wkeGoBack(wkeWebView webView);
 WKE_API bool wkeCanGoForward(wkeWebView webView);
 WKE_API bool wkeGoForward(wkeWebView webView);
+
 WKE_API void wkeSelectAll(wkeWebView webView);
 WKE_API void wkeCopy(wkeWebView webView);
 WKE_API void wkeCut(wkeWebView webView);
 WKE_API void wkePaste(wkeWebView webView);
 WKE_API void wkeDelete(wkeWebView webView);
+
 WKE_API void wkeSetCookieEnabled(wkeWebView webView, bool enable);
 WKE_API bool wkeCookieEnabled(wkeWebView webView);
+
 WKE_API void wkeSetMediaVolume(wkeWebView webView, float volume);
 WKE_API float wkeMediaVolume(wkeWebView webView);
+
 WKE_API bool wkeMouseEvent(wkeWebView webView, unsigned int message, unsigned int wParam, int x, int y, int globalX, int globalY);
-WKE_API bool wkeMouseWheel(wkeWebView webView, WPARAM wParam, int x, int y, int globalX, int globalY);
+WKE_API bool wkeMouseWheel(wkeWebView webView, unsigned int wParam, int x, int y, int globalX, int globalY);
 WKE_API bool wkeKeyUp(wkeWebView webView, unsigned int virtualKeyCode, int keyData, bool systemKey);
-WKE_API bool wkeKeyDown(wkeWebView webView, WPARAM virtualKeyCode, LPARAM keyData, bool systemKey);
+WKE_API bool wkeKeyDown(wkeWebView webView, unsigned int virtualKeyCode, int keyData, bool systemKey);
 WKE_API bool wkeKeyPress(wkeWebView webView, unsigned int charCode, int keyData, bool systemKey);
-WKE_API void wkeOnSetFocus(wkeWebView webView);
-WKE_API void wkeOnKillFocus(wkeWebView webView);
+
+WKE_API void wkeFocus(wkeWebView webView);
+WKE_API void wkeUnfocus(wkeWebView webView);
+
 WKE_API void wkeGetCaret(wkeWebView webView, wkeRect* rect);
-WKE_API void wkeRunJS(wkeWebView webView, const wchar_t* script);
-WKE_API void wkeRunJSUTF8(wkeWebView webView, const utf8* script);
+
+WKE_API void wkeRunJS(wkeWebView webView, const utf8* script);
+WKE_API void wkeRunJSW(wkeWebView webView, const wchar_t* script);
+
 WKE_API jsExecState wkeExecState(wkeWebView webView);
 
 /***JavaScript Bind***/
+
 typedef __int64 jsValue;
 typedef enum
 {
@@ -197,14 +216,12 @@ WKE_API jsType jsArgType(jsExecState es, int argIdx);
 WKE_API jsValue jsArg(jsExecState es, int argIdx);
 
 WKE_API jsType jsTypeOf(jsValue v);
-
 WKE_API bool jsIsNumber(jsValue v);
 WKE_API bool jsIsString(jsValue v);
 WKE_API bool jsIsBoolean(jsValue v);
 WKE_API bool jsIsObject(jsValue v);
 WKE_API bool jsIsFunction(jsValue v);
 WKE_API bool jsIsUndefined(jsValue v);
-
 WKE_API bool jsIsNull(jsValue v);
 WKE_API bool jsIsArray(jsValue v);
 WKE_API bool jsIsTrue(jsValue v);
@@ -214,9 +231,8 @@ WKE_API int jsToInt(jsExecState es, jsValue v);
 WKE_API float jsToFloat(jsExecState es, jsValue v);
 WKE_API double jsToDouble(jsExecState es, jsValue v);
 WKE_API bool jsToBoolean(jsExecState es, jsValue v);
-
-WKE_API const wchar_t* jsToString(jsExecState es, jsValue v);
-WKE_API const utf8* jsToUTF8(jsExecState es, jsValue v);
+WKE_API const utf8* jsToString(jsExecState es, jsValue v);
+WKE_API const wchar_t* jsToStringW(jsExecState es, jsValue v);
 
 WKE_API jsValue jsInt(int n);
 WKE_API jsValue jsFloat(float f);
@@ -228,17 +244,16 @@ WKE_API jsValue jsNull();
 WKE_API jsValue jsTrue();
 WKE_API jsValue jsFalse();
 
-WKE_API jsValue jsString(jsExecState es, const wchar_t* str);
-WKE_API jsValue jsUTF8(jsExecState es, const utf8* str);
-
+WKE_API jsValue jsString(jsExecState es, const utf8* str);
+WKE_API jsValue jsStringW(jsExecState es, const wchar_t* str);
 WKE_API jsValue jsObject(jsExecState es);
 WKE_API jsValue jsArray(jsExecState es);
 
 //return the window object
 WKE_API jsValue jsGlobalObject(jsExecState es);
 
-WKE_API jsValue jsEval(jsExecState es, const wchar_t* str);
-WKE_API jsValue jsEvalUTF8(jsExecState es, const utf8* str);
+WKE_API jsValue jsEval(jsExecState es, const utf8* str);
+WKE_API jsValue jsEvalW(jsExecState es, const wchar_t* str);
 
 WKE_API jsValue jsCall(jsExecState es, jsValue func, jsValue thisObject, jsValue* args, int argCount);
 WKE_API jsValue jsCallGlobal(jsExecState es, jsValue func, jsValue* args, int argCount);
