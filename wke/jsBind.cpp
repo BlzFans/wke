@@ -397,15 +397,12 @@ jsValue JS_CALL js_outputMsg(jsExecState es)
     return jsUndefined();
 }
 
-jsValue JS_CALL js_wke(jsExecState es)
+void onInitScript(JSC::JSGlobalObject* globalObject)
 {
-    return jsString(es, wkeVersionString());
-}
-
-void onResetGlobalObject(JSC::JSGlobalObject* globalObject)
-{
-    addFunction(globalObject, "wke", js_wke, 0);
     addFunction(globalObject, "outputMsg", js_outputMsg, 1);
+
+    JSC::ExecState* exec = globalObject->globalExec();
+    jsSetGlobal(exec, "wke", ::jsString(exec, wkeVersionString()));
 
     for (int i = 0; i < jsFunctions.size(); ++i)
     {

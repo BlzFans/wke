@@ -213,6 +213,11 @@ JSDOMWindowShell* ScriptController::initScript(DOMWrapperWorld* world)
 
     JSDOMWindowShell* windowShell = createWindowShell(world);
 
+    //wke++++++
+    extern void onInitScript(JSC::JSGlobalObject* globalObject);
+    onInitScript(windowShell->window());
+    //wke++++++
+
     windowShell->window()->updateDocument();
 
     if (Page* page = m_frame->page()) {

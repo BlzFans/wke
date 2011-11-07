@@ -25,6 +25,7 @@
 #include <WebCore/RenderThemeWin.h>
 #include <WebCore/TextEncoding.h>
 #include <WebCore/ResourceHandleManager.h>
+#include <WebCore/Console.h>
 
 #include "wke.h"
 
@@ -729,6 +730,7 @@ void wkeInit()
     WTF::initializeMainThread();
     wke::PlatformStrategies::initialize();
 
+    //WebCore::Console::setShouldPrintExceptions(true);
     //WebCore::ResourceHandleManager::sharedInstance()->setCookieJarFileName("cookie.txt");
 }
 
