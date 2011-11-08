@@ -48,6 +48,9 @@ namespace wke
             :webView_(webView)
             ,page_(page)
             ,frame_(NULL)
+            ,loadedFail_(false)
+            ,loaded_(false)
+            ,documentReady_(false)
         {
         }
 
@@ -122,12 +125,10 @@ namespace wke
 
         virtual void dispatchDidFinishLoading(WebCore::DocumentLoader*, unsigned long identifier) override
         {
-            dbgMsg(L"dispatchDidFinishLoading\n");
         }
 
         virtual void dispatchDidFailLoading(WebCore::DocumentLoader*, unsigned long identifier, const WebCore::ResourceError&) override
         {
-            dbgMsg(L"dispatchDidFailLoading\n");
         }
 
         virtual bool dispatchDidLoadResourceFromMemoryCache(WebCore::DocumentLoader*, const WebCore::ResourceRequest&, const WebCore::ResourceResponse&, int length) override
@@ -197,14 +198,17 @@ namespace wke
 
         virtual void dispatchDidFailLoad(const WebCore::ResourceError&) override
         {
+            loadedFail_ = true;
         }
 
         virtual void dispatchDidFinishDocumentLoad() override
         {
+            documentReady_ = true;
         }
 
         virtual void dispatchDidFinishLoad() override
         {
+            loaded_ = true;
         }
 
         virtual void dispatchDidFirstLayout() override
@@ -627,10 +631,29 @@ namespace wke
             return frame_;
         }
 
+        bool isLoadedFail() const
+        {
+            return loadedFail_;
+        }
+
+        bool isLoaded() const
+        {
+            return loaded_;
+        }
+
+        bool isDocumentReady() const
+        {
+            return documentReady_;
+        }
+
     protected:
         IWebView* webView_;
 
         WebCore::Page* page_;
         WebCore::Frame* frame_;
+
+        bool loadedFail_;
+        bool loaded_;
+        bool documentReady_;
     };
 }

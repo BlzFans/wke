@@ -30,6 +30,36 @@ typedef struct {
     int h;
 } wkeRect;
 
+enum wkeMouseFlags
+{
+    WKE_LBUTTON = 0x01,
+    WKE_RBUTTON = 0x02,
+    WKE_SHIFT   = 0x04,
+    WKE_CONTROL = 0x08,
+    WKE_MBUTTON = 0x10,
+};
+
+enum wkeKeyFlags
+{
+    WKE_EXTENDED = 0x0100,
+    WKE_REPEAT = 0x4000,
+};
+
+enum wkeMouseMsg
+{
+    WKE_MSG_MOUSEMOVE       =  0x0200,
+    WKE_MSG_LBUTTONDOWN     =  0x0201,
+    WKE_MSG_LBUTTONUP       =  0x0202,
+    WKE_MSG_LBUTTONDBLCLK   =  0x0203,
+    WKE_MSG_RBUTTONDOWN     =  0x0204,
+    WKE_MSG_RBUTTONUP       =  0x0205,
+    WKE_MSG_RBUTTONDBLCLK   =  0x0206,
+    WKE_MSG_MBUTTONDOWN     =  0x0207,
+    WKE_MSG_MBUTTONUP       =  0x0208,
+    WKE_MSG_MBUTTONDBLCLK   =  0x0209,
+    WKE_MSG_MOUSEWHEEL      =  0x020A,
+};
+
 typedef void* jsExecState;
 
 /*
@@ -88,11 +118,11 @@ namespace wke
         virtual void setMediaVolume(float volume) = 0;
         virtual float mediaVolume() const = 0;
 
-        virtual bool mouseEvent(unsigned int message, unsigned int wParam, int x, int y, int globalX, int globalY) = 0;
-        virtual bool mouseWheel(unsigned int wParam, int x, int y, int globalX, int globalY) = 0;
-        virtual bool keyUp(unsigned int virtualKeyCode, int keyData, bool systemKey) = 0;
-        virtual bool keyDown(unsigned int virtualKeyCode, int keyData, bool systemKey) = 0;
-        virtual bool keyPress(unsigned int charCode, int keyData, bool systemKey) = 0;
+        virtual bool mouseEvent(unsigned int message, int x, int y, unsigned int flags) = 0;
+        virtual bool mouseWheel(int x, int y, int delta, unsigned int flags) = 0;
+        virtual bool keyUp(unsigned int virtualKeyCode, unsigned int flags, bool systemKey) = 0;
+        virtual bool keyDown(unsigned int virtualKeyCode, unsigned int flags, bool systemKey) = 0;
+        virtual bool keyPress(unsigned int virtualKeyCode, unsigned int flags, bool systemKey) = 0;
 
         virtual void focus() = 0;
         virtual void unfocus() = 0;
@@ -182,11 +212,11 @@ WKE_API bool wkeCookieEnabled(wkeWebView webView);
 WKE_API void wkeSetMediaVolume(wkeWebView webView, float volume);
 WKE_API float wkeMediaVolume(wkeWebView webView);
 
-WKE_API bool wkeMouseEvent(wkeWebView webView, unsigned int message, unsigned int wParam, int x, int y, int globalX, int globalY);
-WKE_API bool wkeMouseWheel(wkeWebView webView, unsigned int wParam, int x, int y, int globalX, int globalY);
-WKE_API bool wkeKeyUp(wkeWebView webView, unsigned int virtualKeyCode, int keyData, bool systemKey);
-WKE_API bool wkeKeyDown(wkeWebView webView, unsigned int virtualKeyCode, int keyData, bool systemKey);
-WKE_API bool wkeKeyPress(wkeWebView webView, unsigned int charCode, int keyData, bool systemKey);
+WKE_API bool wkeMouseEvent(wkeWebView webView, unsigned int message, int x, int y, unsigned int flags);
+WKE_API bool wkeMouseWheel(wkeWebView webView, int x, int y, int delta, unsigned int flags);
+WKE_API bool wkeKeyUp(wkeWebView webView, unsigned int virtualKeyCode, unsigned int flags, bool systemKey);
+WKE_API bool wkeKeyDown(wkeWebView webView, unsigned int virtualKeyCode, unsigned int flags, bool systemKey);
+WKE_API bool wkeKeyPress(wkeWebView webView, unsigned int charCode, unsigned int flags, bool systemKey);
 
 WKE_API void wkeFocus(wkeWebView webView);
 WKE_API void wkeUnfocus(wkeWebView webView);

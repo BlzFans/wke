@@ -1,6 +1,7 @@
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include <windowsx.h>
 #include <stdlib.h>
 #include <malloc.h>
 #include <memory.h>
@@ -37,6 +38,16 @@ LRESULT CALLBACK WebViewWndProc(HWND, UINT, WPARAM, LPARAM);
 const LPCWSTR wkeWebViewClassName = L"wkeWebView";
 bool registerWebViewWindowClass();
 
+jsValue JS_CALL js_msgBox(jsExecState es)
+{
+    const wchar_t* text = jsToStringW(es, jsArg(es, 0));
+    const wchar_t* title = jsToStringW(es, jsArg(es, 1));
+
+    MessageBox(hMainWnd, text, title, 0);
+
+    return jsUndefined();
+}
+
 int APIENTRY _tWinMain(HINSTANCE hInstance,
                      HINSTANCE hPrevInstance,
                      LPTSTR    lpCmdLine,
@@ -56,6 +67,8 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 		return FALSE;
 
     wkeInit();
+    jsBindFunction("msgBox", js_msgBox, 2);
+
     g_webView = wkeCreateWebView();
     g_webView->loadHTML(L"<p style=\"background-color: #00FF00\">Testing</p><img id=\"webkit logo\" src=\"http://webkit.org/images/icon-gold.png\" alt=\"Face\"><div style=\"border: solid blue; background: white;\" contenteditable=\"true\">div with blue border</div><ul><li>foo<li>bar<li>baz</ul>");
 
@@ -250,15 +263,48 @@ LRESULT CALLBACK WebViewWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
         break;
 
     case WM_KEYDOWN:
-        g_webView->keyDown(wParam, lParam, false);
+        {
+            unsigned int virtualKeyCode = wParam;
+            unsigned int flags = 0;
+            if (HIWORD(lParam) & KF_REPEAT)
+                flags |= WKE_REPEAT;
+            if (HIWORD(lParam) & KF_EXTENDED)
+                flags |= WKE_EXTENDED;
+
+            //flags = HIWORD(lParam);
+
+            g_webView->keyDown(virtualKeyCode, flags, false);
+        }
         break;
 
     case WM_KEYUP:
-        g_webView->keyUp(wParam, lParam, false);
+        {
+            unsigned int virtualKeyCode = wParam;
+            unsigned int flags = 0;
+            if (HIWORD(lParam) & KF_REPEAT)
+                flags |= WKE_REPEAT;
+            if (HIWORD(lParam) & KF_EXTENDED)
+                flags |= WKE_EXTENDED;
+
+            //flags = HIWORD(lParam);
+
+            g_webView->keyUp(virtualKeyCode, flags, false);
+        }
         break;
 
     case WM_CHAR:
-        g_webView->keyPress(wParam, lParam, false);
+        {
+            unsigned int charCode = wParam;
+            unsigned int flags = 0;
+            if (HIWORD(lParam) & KF_REPEAT)
+                flags |= WKE_REPEAT;
+            if (HIWORD(lParam) & KF_EXTENDED)
+                flags |= WKE_EXTENDED;
+
+            //flags = HIWORD(lParam);
+
+            g_webView->keyPress(charCode, flags, false);
+        }
         break;
 
     case WM_LBUTTONDOWN:
@@ -268,15 +314,26 @@ LRESULT CALLBACK WebViewWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
             SetFocus(hWnd);
             SetCapture(hWnd);
 
-            WORD x = LOWORD(lParam);
-            WORD y = HIWORD(lParam);
+            int x = GET_X_LPARAM(lParam);
+            int y = GET_Y_LPARAM(lParam);
 
-            POINT globalPos;
-            globalPos.x = x;
-            globalPos.y = y;
-            ClientToScreen(hWnd, &globalPos);
+            unsigned int flags = 0;
 
-            g_webView->mouseEvent(message, wParam, x, y, x, y); 
+            if (wParam & MK_CONTROL)
+                flags |= WKE_CONTROL;
+            if (wParam & MK_SHIFT)
+                flags |= WKE_SHIFT;
+
+            if (wParam & MK_LBUTTON)
+                flags |= WKE_LBUTTON;
+            if (wParam & MK_MBUTTON)
+                flags |= WKE_MBUTTON;
+            if (wParam & MK_RBUTTON)
+                flags |= WKE_RBUTTON;
+
+            //flags = wParam;
+
+            g_webView->mouseEvent(message, x, y, flags);
         }
         break;
 
@@ -286,43 +343,79 @@ LRESULT CALLBACK WebViewWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
         {
             ReleaseCapture();
 
-            WORD x = LOWORD(lParam);
-            WORD y = HIWORD(lParam);
+            int x = GET_X_LPARAM(lParam);
+            int y = GET_Y_LPARAM(lParam);
 
-            POINT globalPos;
-            globalPos.x = x;
-            globalPos.y = y;
-            ClientToScreen(hWnd, &globalPos);
+            unsigned int flags = 0;
 
-            g_webView->mouseEvent(message, wParam, x, y, x, y);
+            if (wParam & MK_CONTROL)
+                flags |= WKE_CONTROL;
+            if (wParam & MK_SHIFT)
+                flags |= WKE_SHIFT;
+
+            if (wParam & MK_LBUTTON)
+                flags |= WKE_LBUTTON;
+            if (wParam & MK_MBUTTON)
+                flags |= WKE_MBUTTON;
+            if (wParam & MK_RBUTTON)
+                flags |= WKE_RBUTTON;
+
+            //flags = wParam;
+
+            g_webView->mouseEvent(message, x, y, flags);
+
         }
         break;
 
     case WM_MOUSEMOVE:
         {
-            WORD x = LOWORD(lParam);
-            WORD y = HIWORD(lParam);
+            int x = GET_X_LPARAM(lParam);
+            int y = GET_Y_LPARAM(lParam);
 
-            POINT globalPos;
-            globalPos.x = x;
-            globalPos.y = y;
-            ClientToScreen(hWnd, &globalPos);
+            unsigned int flags = 0;
 
-            g_webView->mouseEvent(message, wParam, x, y, x, y);
+            if (wParam & MK_CONTROL)
+                flags |= WKE_CONTROL;
+            if (wParam & MK_SHIFT)
+                flags |= WKE_SHIFT;
+
+            if (wParam & MK_LBUTTON)
+                flags |= WKE_LBUTTON;
+            if (wParam & MK_MBUTTON)
+                flags |= WKE_MBUTTON;
+            if (wParam & MK_RBUTTON)
+                flags |= WKE_RBUTTON;
+
+            //flags = wParam;
+
+            g_webView->mouseEvent(message, x, y, flags);
         }
         break;
 
     case WM_MOUSEWHEEL:
         {
-            WORD x = LOWORD(lParam);
-            WORD y = HIWORD(lParam);
+            int x = GET_X_LPARAM(lParam);
+            int y = GET_Y_LPARAM(lParam);
 
-            POINT globalPos;
-            globalPos.x = x;
-            globalPos.y = y;
-            ClientToScreen(hWnd, &globalPos);
+            int delta = GET_WHEEL_DELTA_WPARAM(wParam);
 
-            g_webView->mouseWheel(wParam, x, y, x, y);
+            unsigned int flags = 0;
+
+            if (wParam & MK_CONTROL)
+                flags |= WKE_CONTROL;
+            if (wParam & MK_SHIFT)
+                flags |= WKE_SHIFT;
+
+            if (wParam & MK_LBUTTON)
+                flags |= WKE_LBUTTON;
+            if (wParam & MK_MBUTTON)
+                flags |= WKE_MBUTTON;
+            if (wParam & MK_RBUTTON)
+                flags |= WKE_RBUTTON;
+
+            //flags = wParam;
+
+            g_webView->mouseWheel(x, y, delta, flags);
         }
         break;
 

@@ -181,7 +181,7 @@ namespace wke
             mainFrame()->loader()->reload();
         }
 
-        const utf8* title()
+        virtual const utf8* title()
         {
             if (mainFrame()->loader()->documentLoader())
             {
@@ -192,7 +192,7 @@ namespace wke
             return StringTable::addString("notitle");
         }
 
-        const wchar_t* titleW()
+        virtual const wchar_t* titleW()
         {
             if (mainFrame()->loader()->documentLoader())
             {
@@ -397,7 +397,7 @@ namespace wke
 
         static WebCore::MouseButton messageToButtonType(unsigned int message, unsigned int wParam)
         {
-            switch (message) 
+            switch (message)
             {
             case WM_LBUTTONDOWN:
             case WM_LBUTTONUP:
@@ -433,8 +433,11 @@ namespace wke
             }
         }
 
-        virtual bool mouseEvent(unsigned int message, unsigned int wParam, int x, int y, int globalX, int globalY)
+        virtual bool mouseEvent(unsigned int message, int x, int y, unsigned int flags)
         {
+            if (!mainFrame()->view()->didFirstLayout())
+                return true;
+
             static LONG globalClickCount;
             static WebCore::IntPoint globalPrevPoint;
             static WebCore::MouseButton globalPrevButton;
@@ -455,18 +458,18 @@ namespace wke
             }
 
             WebCore::IntPoint pos(x, y);
-            WebCore::IntPoint globalPos(globalX, globalY);
+            WebCore::IntPoint globalPos(x, y);
 
-            WebCore::MouseButton button = messageToButtonType(message, wParam);
+            WebCore::MouseButton button = messageToButtonType(message, flags);
             WebCore::MouseEventType eventType = messageToEventType(message);
 
-            int clickCount = 0;
-            bool shift = wParam & MK_SHIFT;
-            bool ctrl = wParam & MK_CONTROL;
+            bool shift = flags & WKE_SHIFT;
+            bool ctrl = flags & WKE_CONTROL;
             bool alt = GetKeyState(VK_MENU) & 0x8000;
             bool meta = alt;
             double timestamp = ::GetTickCount()*0.001;
 
+            int clickCount = 0;
             WebCore::PlatformMouseEvent mouseEvent(pos, globalPos, button, eventType, clickCount, shift, ctrl, alt, meta, timestamp);
 
             bool insideThreshold = abs(globalPrevPoint.x() - mouseEvent.pos().x()) < ::GetSystemMetrics(SM_CXDOUBLECLK) &&
@@ -515,21 +518,24 @@ namespace wke
             return handled;
         }
 
-        bool mouseWheel(unsigned int wParam, int x, int y, int globalX, int globalY)
+        virtual bool mouseWheel(int x, int y, int wheelDelta, unsigned int flags)
         {
+            if (!mainFrame()->view()->didFirstLayout())
+                return true;
+
             WebCore::IntPoint pos(x, y);
-            WebCore::IntPoint globalPos(globalX, globalY);
+            WebCore::IntPoint globalPos(x, y);
 
             static const float cScrollbarPixelsPerLine = 100.0f / 3.0f;
-            float delta = GET_WHEEL_DELTA_WPARAM(wParam) / static_cast<float>(WHEEL_DELTA);
+            float delta = wheelDelta / static_cast<float>(WHEEL_DELTA);
             float wheelTicksX = 0.f;
             float wheelTicksY = delta;
 
             float deltaX = 0.f;
             float deltaY = 0.f;
 
-            bool shiftKey = wParam & MK_SHIFT;
-            bool ctrlKey = wParam & MK_CONTROL;
+            bool shiftKey = flags & WKE_SHIFT;
+            bool ctrlKey = flags & WKE_CONTROL;
             bool altKey = GetKeyState(VK_MENU) & 0x8000;
 
             WebCore::PlatformWheelEventGranularity granularity = WebCore::ScrollByPageWheelEvent;
@@ -551,19 +557,21 @@ namespace wke
             return mainFrame()->eventHandler()->handleWheelEvent(wheelEvent);
         }
 
-        virtual bool keyUp(unsigned int virtualKeyCode, int keyData, bool systemKey)
+        virtual bool keyUp(unsigned int virtualKeyCode, unsigned int flags, bool systemKey)
         {
+            LPARAM keyData = MAKELPARAM(0, (WORD)flags);
             WebCore::PlatformKeyboardEvent keyEvent(0, virtualKeyCode, keyData, WebCore::PlatformKeyboardEvent::KeyUp, systemKey);
 
             WebCore::Frame* frame = page()->focusController()->focusedOrMainFrame();
             return frame->eventHandler()->keyEvent(keyEvent);
         }
 
-        bool keyDown(unsigned int virtualKeyCode, int keyData, bool systemKey)
+        bool keyDown(unsigned int virtualKeyCode, unsigned int flags, bool systemKey)
         {
-            WebCore::Frame* frame = page()->focusController()->focusedOrMainFrame();
-
+            LPARAM keyData = MAKELPARAM(0, (WORD)flags);
             WebCore::PlatformKeyboardEvent keyEvent(0, virtualKeyCode, keyData, WebCore::PlatformKeyboardEvent::RawKeyDown, systemKey);
+
+            WebCore::Frame* frame = page()->focusController()->focusedOrMainFrame();
             bool handled = frame->eventHandler()->keyEvent(keyEvent);
 
             // These events cannot be canceled, and we have no default handling for them.
@@ -635,15 +643,15 @@ namespace wke
             return false;
         }
 
-        virtual bool keyPress(unsigned int charCode, int keyData, bool systemKey)
+        virtual bool keyPress(unsigned int charCode, unsigned int flags, bool systemKey)
         {
-            WebCore::Frame* frame = page()->focusController()->focusedOrMainFrame();
-
+            LPARAM keyData = MAKELPARAM(0, (WORD)flags);
             WebCore::PlatformKeyboardEvent keyEvent(0, charCode, keyData, WebCore::PlatformKeyboardEvent::Char, systemKey);
-            // IE does not dispatch keypress event for WM_SYSCHAR.
+
+            WebCore::Frame* frame = page()->focusController()->focusedOrMainFrame();
             if (systemKey)
                 return frame->eventHandler()->handleAccessKey(keyEvent);
-            
+ 
             return frame->eventHandler()->keyEvent(keyEvent);
         }
 
@@ -937,29 +945,29 @@ float wkeMediaVolume(wkeWebView webView)
     return webView->mediaVolume();
 }
 
-bool wkeMouseEvent(wkeWebView webView, unsigned int message, unsigned int wParam, int x, int y, int globalX, int globalY)
+bool wkeMouseEvent(wkeWebView webView, unsigned int message, int x, int y, unsigned int flags)
 {
-    return webView->mouseEvent(message, wParam, x, y, globalX, globalY);
+    return webView->mouseEvent(message, x, y, flags);
 }
 
-bool wkeMouseWheel(wkeWebView webView, unsigned int wParam, int x, int y, int globalX, int globalY)
+bool wkeMouseWheel(wkeWebView webView, int x, int y, int delta, unsigned int flags)
 {
-    return webView->mouseWheel(wParam, x, y, globalX, globalY);
+    return webView->mouseWheel(x, y, delta, flags);
 }
 
-bool wkeKeyUp(wkeWebView webView, unsigned int virtualKeyCode, int keyData, bool systemKey)
+bool wkeKeyUp(wkeWebView webView, unsigned int virtualKeyCode, unsigned int flags, bool systemKey)
 {
-    return webView->keyUp(virtualKeyCode, keyData, systemKey);
+    return webView->keyUp(virtualKeyCode, flags, systemKey);
 }
 
-bool wkeKeyDown(wkeWebView webView, unsigned int virtualKeyCode, int keyData, bool systemKey)
+bool wkeKeyDown(wkeWebView webView, unsigned int virtualKeyCode, unsigned int flags, bool systemKey)
 {
-    return webView->keyDown(virtualKeyCode, keyData, systemKey);
+    return webView->keyDown(virtualKeyCode, flags, systemKey);
 }
 
-bool wkeKeyPress(wkeWebView webView, unsigned int charCode, int keyData, bool systemKey)
+bool wkeKeyPress(wkeWebView webView, unsigned int charCode, unsigned int flags, bool systemKey)
 {
-    return webView->keyPress(charCode, keyData, systemKey);
+    return webView->keyPress(charCode, flags, systemKey);
 }
 
 void wkeFocus(wkeWebView webView)
