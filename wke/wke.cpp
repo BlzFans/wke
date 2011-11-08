@@ -156,6 +156,39 @@ namespace wke
             mainFrame_->loader()->load(request, substituteData, false);
         }
 
+        virtual bool isLoaded() const
+        {
+            if (isLoadComplete())
+            {
+                FrameLoaderClient* client = (FrameLoaderClient*)mainFrame()->loader()->client();
+                return client->isLoaded();
+            }
+
+            return false;
+        }
+
+        virtual bool isLoadedFail() const
+        {
+            if (isLoadComplete())
+            {
+                FrameLoaderClient* client = (FrameLoaderClient*)mainFrame()->loader()->client();
+                return client->isLoadedFail();
+            }
+
+            return false;
+        }
+
+        virtual bool isLoadComplete() const
+        {
+            return mainFrame()->loader()->isComplete();
+        }
+
+        virtual bool isDocumentReady() const
+        {
+            FrameLoaderClient* client = (FrameLoaderClient*)mainFrame()->loader()->client();
+            return client->isDocumentReady();
+        }
+
         virtual bool isLoading() const
         {
             bool loading = false;
@@ -170,6 +203,7 @@ namespace wke
 
             return loading;
         }
+
 
         virtual void stopLoading()
         {
@@ -815,7 +849,27 @@ void wkeLoadHTMLW(wkeWebView webView, const wchar_t* html)
     return webView->loadHTML(html);
 }
 
-bool wkeIsLoading(wkeWebView webView)
+bool wkeIsLoaded(wkeWebView webView)
+{
+    return webView->isLoaded();
+}
+
+bool wkeIsLoadedFail(wkeWebView webView)
+{
+    return webView->isLoadedFail();
+}
+
+bool wkeIsLoadComplete(wkeWebView webView)
+{
+    return webView->isLoadComplete();
+}
+
+bool wkeIsDocumentReady(wkeWebView webView)
+{
+    return webView->isDocumentReady();
+}
+
+WKE_API bool wkeIsLoading(wkeWebView webView)
 {
     return webView->isLoading();
 }

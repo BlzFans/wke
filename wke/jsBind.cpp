@@ -220,6 +220,16 @@ jsValue jsArray(jsExecState es)
     return JSC::JSValue::encode(value);
 }
 
+jsValue jsFunction(jsExecState es, jsNativeFunction fn, unsigned int argCount)
+{
+    JSC::ExecState* exec = (JSC::ExecState*)es;
+    JSC::JSGlobalObject* globalObject = (JSC::JSGlobalObject*)exec->lexicalGlobalObject()->toThisObject(exec);
+
+    JSC::JSValue value(JSC::JSFunction::create(exec, globalObject, argCount, JSC::Identifier(), (JSC::NativeFunction)fn));
+    return JSC::JSValue::encode(value);
+}
+
+
 //return the window object
 jsValue jsGlobalObject(jsExecState es)
 {
@@ -346,7 +356,7 @@ void jsGC()
 
 
 
-static void addFunction(JSC::JSGlobalObject* globalObject, const char* name, jsFunction function, unsigned int argCount)
+static void addFunction(JSC::JSGlobalObject* globalObject, const char* name, jsNativeFunction function, unsigned int argCount)
 {
     JSC::ExecState* exec = globalObject->globalExec();
 
@@ -359,13 +369,13 @@ static void addFunction(JSC::JSGlobalObject* globalObject, const char* name, jsF
 struct jsFunctionInfo
 {
     char name[MAX_NAME_LENGTH];
-    jsFunction fn;
+    jsNativeFunction fn;
     unsigned int argCount;
 };
 
 static Vector<jsFunctionInfo> jsFunctions;
 
-void jsBindFunction(const char* name, jsFunction fn, unsigned int argCount)
+void jsBindFunction(const char* name, jsNativeFunction fn, unsigned int argCount)
 {
     for (unsigned int i = 0; i < jsFunctions.size(); ++i)
     {

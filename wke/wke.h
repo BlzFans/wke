@@ -83,6 +83,11 @@ namespace wke
         virtual void loadHTML(const utf8* html) = 0;
         virtual void loadHTML(const wchar_t* html) = 0;
 
+        virtual bool isLoaded() const = 0;       //sucess
+        virtual bool isLoadedFail() const = 0;   //fail
+        virtual bool isLoadComplete() const = 0; //fail or success
+        virtual bool isDocumentReady() const = 0; //document ready
+
         virtual bool isLoading() const = 0;
         virtual void stopLoading() = 0;
         virtual void reload() = 0;
@@ -178,6 +183,10 @@ WKE_API void wkeLoadURLW(wkeWebView webView, const wchar_t* url);
 WKE_API void wkeLoadHTML(wkeWebView webView, const utf8* html);
 WKE_API void wkeLoadHTMLW(wkeWebView webView, const wchar_t* html);
 
+WKE_API bool wkeIsLoaded(wkeWebView webView);
+WKE_API bool wkeIsLoadedFail(wkeWebView webView);
+WKE_API bool wkeIsLoadComplete(wkeWebView webView);
+WKE_API bool wkeIsDocumentReady(wkeWebView webView);
 WKE_API bool wkeIsLoading(wkeWebView webView);
 WKE_API void wkeStopLoading(wkeWebView webView);
 WKE_API void wkeReload(wkeWebView webView);
@@ -229,8 +238,10 @@ WKE_API void wkeRunJSW(wkeWebView webView, const wchar_t* script);
 WKE_API jsExecState wkeExecState(wkeWebView webView);
 
 /***JavaScript Bind***/
-
+#define JS_CALL __fastcall
 typedef __int64 jsValue;
+typedef jsValue (JS_CALL *jsNativeFunction) (jsExecState es);
+
 typedef enum
 {
 	JSTYPE_NUMBER,
@@ -240,6 +251,8 @@ typedef enum
 	JSTYPE_FUNCTION,
 	JSTYPE_UNDEFINED,
 } jsType;
+
+WKE_API void jsBindFunction(const char* name, jsNativeFunction fn, unsigned int argCount);
 
 WKE_API int jsArgCount(jsExecState es);
 WKE_API jsType jsArgType(jsExecState es, int argIdx);
@@ -279,6 +292,8 @@ WKE_API jsValue jsStringW(jsExecState es, const wchar_t* str);
 WKE_API jsValue jsObject(jsExecState es);
 WKE_API jsValue jsArray(jsExecState es);
 
+WKE_API jsValue jsFunction(jsExecState es, jsNativeFunction fn, unsigned int argCount);
+
 //return the window object
 WKE_API jsValue jsGlobalObject(jsExecState es);
 
@@ -301,10 +316,6 @@ WKE_API int jsGetLength(jsExecState es, jsValue object);
 WKE_API void jsSetLength(jsExecState es, jsValue object, int length);
 
 WKE_API void jsGC(); //garbage collect
-
-#define JS_CALL __fastcall
-typedef jsValue (JS_CALL *jsFunction) (jsExecState es);
-WKE_API void jsBindFunction(const char* name, jsFunction fn, unsigned int argCount);
 
 #ifdef __cplusplus
 }
