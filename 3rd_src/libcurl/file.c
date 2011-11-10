@@ -249,10 +249,12 @@ static CURLcode file_connect(struct connectdata *conn, bool *done)
     actual_path[2] = ':';
     actual_path++;
   }
+  /*wke++++++*/
   else if (actual_path[0] == '/')
   {
 	actual_path++;
   }
+  /*wke++++++*/
 
   /* change path separators from '/' to '\\' for DOS, Windows and OS/2 */
   for (i=0; actual_path[i] != '\0'; ++i)
