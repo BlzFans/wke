@@ -104,13 +104,12 @@ template<> struct DefaultHash<const wchar_t*> {
 HashSet<const char*> s_stringTable;
 HashSet<const wchar_t*> s_stringTableW;
 
-static const char* s_empty = "\0";
-static const wchar_t* s_emptyW = L"\0";
+static const wchar_t* s_empty = L"\0";
 
 const char* StringTable::addString(const char* str, unsigned int len/* = 0*/)
 {
     if (str == NULL || str[0] == '\0')
-        return s_empty;
+        return emptyString();
 
     if (len == 0)
         len = strlen(str);
@@ -122,7 +121,7 @@ const char* StringTable::addString(const char* str, unsigned int len/* = 0*/)
 const char* StringTable::addString(const wchar_t* str, unsigned int len/* = 0*/)
 {
     if (str == NULL || str[0] == L'\0')
-        return s_empty;
+        return emptyString();
 
     if (len == 0)
         len = wcslen(str);
@@ -131,10 +130,15 @@ const char* StringTable::addString(const wchar_t* str, unsigned int len/* = 0*/)
     return addString(s.data(), s.length());
 }
 
+const char* StringTable::emptyString()
+{
+    return (const char*)s_empty;
+}
+
 const wchar_t* StringTableW::addString(const wchar_t* str, unsigned int len/* = 0*/)
 {
     if (str == NULL || str[0] == L'\0')
-        return s_emptyW;
+        return emptyString();
 
     if (len == 0)
         len = wcslen(str);
@@ -146,13 +150,18 @@ const wchar_t* StringTableW::addString(const wchar_t* str, unsigned int len/* = 
 const wchar_t* StringTableW::addString(const char* str, unsigned int len/* = 0*/)
 {
     if (str == NULL || str[0] == '\0')
-        return s_emptyW;
+        return emptyString();
 
     if (len == 0)
         len = strlen(str);
 
     String s = String::fromUTF8(str, len);
     return addString(s.characters(), s.length());
+}
+
+const wchar_t* StringTableW::emptyString()
+{
+    return s_empty;
 }
 
 void initStringTable()

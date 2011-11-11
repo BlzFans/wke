@@ -23,7 +23,7 @@ int main(int argc, char** argv)
 
     wkeInit();
 
-    webView = wkeCreateWebView();
+    webView = wkeCreateWebView("");
 
     wkeResize(webView, VIEW_WIDTH, VIEW_HEIGHT);
 
@@ -57,7 +57,7 @@ int main(int argc, char** argv)
     saveBitmap(pixels, VIEW_WIDTH, VIEW_HEIGHT, filename);
     free(pixels);
 
-    wkeDestroy(webView);
+    wkeDestroyWebView(webView);
 
     wkeShutdown();
 

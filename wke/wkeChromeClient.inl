@@ -361,7 +361,7 @@ namespace wke
         { 
         }
 
-        virtual void* webView() const override { return 0; }
+        virtual void* webView() const override { return webView_; }
 
     protected:
         WebCore::FloatRect rect_;

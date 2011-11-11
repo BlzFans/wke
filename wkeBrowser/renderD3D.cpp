@@ -182,7 +182,6 @@ bool CRenderD3D::UpdateTexture(wkeWebView webView)
 
         if (FAILED(hr))
         {
-            SAFE_RELEASE(m_pWebViewTexture);
             return false;
         }
     }

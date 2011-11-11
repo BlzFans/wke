@@ -12,6 +12,38 @@
 #include "wkeBrowser.h"
 #include "renderD3D.h"
 
+class CTimer
+{
+public:
+    void Start()
+    {
+        QueryPerformanceCounter(&m_StartCounter);
+    }
+
+    void End()
+    {
+        QueryPerformanceCounter(&m_EndCounter);
+    }
+
+    unsigned int GetCounter()
+    {
+        return m_EndCounter.LowPart - m_StartCounter.LowPart;
+    }
+
+    unsigned int GetTime()
+    {
+        LARGE_INTEGER freq;
+        QueryPerformanceFrequency(&freq);
+
+        return unsigned int( (long double)(m_EndCounter.QuadPart - m_StartCounter.QuadPart) / (long double)freq.QuadPart * 1000.f );
+    }
+
+private:
+    LARGE_INTEGER m_StartCounter;
+    LARGE_INTEGER m_EndCounter;
+};
+
+
 #define MAX_LOADSTRING 100
 #define URLBAR_HEIGHT  24
 
@@ -69,8 +101,18 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
     wkeInit();
     jsBindFunction("msgBox", js_msgBox, 2);
 
-    g_webView = wkeCreateWebView();
+    CTimer t1, t2;
+    t1.Start();
+    g_webView = wkeCreateWebView("");
+    t1.End();
+
+    t2.Start();
+    //g_webView->loadURL("file:///test/test.html");
     g_webView->loadHTML(L"<p style=\"background-color: #00FF00\">Testing</p><img id=\"webkit logo\" src=\"http://webkit.org/images/icon-gold.png\" alt=\"Face\"><div style=\"border: solid blue; background: white;\" contenteditable=\"true\">div with blue border</div><ul><li>foo<li>bar<li>baz</ul>");
+    t2.End();
+
+    unsigned int ms1 = t1.GetTime();
+    unsigned int ms2 = t2.GetTime();
 
     hURLBarWnd = CreateWindow(L"EDIT", 0,
         WS_CHILD | WS_VISIBLE | WS_BORDER | ES_LEFT | ES_AUTOVSCROLL, 

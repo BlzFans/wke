@@ -61,6 +61,7 @@ enum wkeMouseMsg
 };
 
 typedef void* jsExecState;
+typedef __int64 jsValue;
 
 /*
  *c++ interface
@@ -76,6 +77,9 @@ namespace wke
     {
     public:
         virtual void destroy() = 0;
+
+        virtual const char* name() const = 0;
+        virtual void setName(const char* name) = 0;
 
         virtual void loadURL(const utf8* url) = 0;
         virtual void loadURL(const wchar_t* url) = 0;
@@ -134,9 +138,9 @@ namespace wke
 
         virtual void getCaret(wkeRect& rect) = 0;
 
-        virtual void runJS(const utf8* script) = 0;
-        virtual void runJS(const wchar_t* script) = 0;
-        virtual jsExecState execState() = 0;
+        virtual jsValue runJS(const utf8* script) = 0;
+        virtual jsValue runJS(const wchar_t* script) = 0;
+        virtual jsExecState globalExec() = 0;
     };
 }
 
@@ -174,8 +178,12 @@ WKE_API void wkeShutdown();
 WKE_API unsigned int wkeVersion();
 WKE_API const utf8* wkeVersionString();
 
-WKE_API wkeWebView wkeCreateWebView();
-WKE_API void wkeDestroy(wkeWebView webView);
+WKE_API wkeWebView wkeCreateWebView(const char* name); /*name can be NULL or ""*/
+WKE_API wkeWebView wkeGetWebView(const char* name);
+WKE_API void wkeDestroyWebView(wkeWebView webView);
+
+WKE_API const char* wkeWebViewName(wkeWebView webView);
+WKE_API void wkeSetWebViewName(wkeWebView webView, const char* name);
 
 WKE_API void wkeLoadURL(wkeWebView webView, const utf8* url);
 WKE_API void wkeLoadURLW(wkeWebView webView, const wchar_t* url);
@@ -232,14 +240,13 @@ WKE_API void wkeUnfocus(wkeWebView webView);
 
 WKE_API void wkeGetCaret(wkeWebView webView, wkeRect* rect);
 
-WKE_API void wkeRunJS(wkeWebView webView, const utf8* script);
-WKE_API void wkeRunJSW(wkeWebView webView, const wchar_t* script);
+WKE_API jsValue wkeRunJS(wkeWebView webView, const utf8* script);
+WKE_API jsValue wkeRunJSW(wkeWebView webView, const wchar_t* script);
 
 WKE_API jsExecState wkeExecState(wkeWebView webView);
 
 /***JavaScript Bind***/
 #define JS_CALL __fastcall
-typedef __int64 jsValue;
 typedef jsValue (JS_CALL *jsNativeFunction) (jsExecState es);
 
 typedef enum
@@ -314,6 +321,8 @@ WKE_API void jsSetAt(jsExecState es, jsValue object, int index, jsValue v);
 
 WKE_API int jsGetLength(jsExecState es, jsValue object);
 WKE_API void jsSetLength(jsExecState es, jsValue object, int length);
+
+WKE_API wkeWebView jsGetWebView(jsExecState es);
 
 WKE_API void jsGC(); //garbage collect
 

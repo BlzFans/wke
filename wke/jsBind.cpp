@@ -4,6 +4,11 @@
 #include <JavaScriptCore/SourceCode.h>
 #include <JavaScriptCore/Completion.h>
 #include <WebCore/GCController.h>
+#include <WebCore/JSDOMWindowCustom.h>
+#include <WebCore/Page.h>
+#include <WebCore/Frame.h>
+#include <WebCore/Chrome.h>
+#include <WebCore/ChromeClient.h>
 
 #include "wke.h"
 #include "wkeDebug.h"
@@ -241,8 +246,8 @@ jsValue jsGlobalObject(jsExecState es)
 
 jsValue jsEval(jsExecState es, const utf8* str)
 {
-    const wchar_t* s = String::fromUTF8(str).charactersWithNullTermination();
-    return jsEvalW(es, s);
+    String s = String::fromUTF8(str);
+    return jsEvalW(es, s.charactersWithNullTermination());
 }
 
 jsValue jsEvalW(jsExecState es, const wchar_t* str)
@@ -348,6 +353,16 @@ void jsSetLength(jsExecState es, jsValue object, int length)
     o.put(exec, JSC::Identifier(exec, "length"), JSC::jsNumber(length), slot);
 }
 
+wkeWebView jsGetWebView(jsExecState es)
+{
+    JSC::ExecState* exec = (JSC::ExecState*)es;
+    WebCore::JSDOMWindow* window = WebCore::asJSDOMWindow(exec->lexicalGlobalObject());
+    if (window)
+        return (wkeWebView)window->impl()->frame()->page()->chrome()->client()->webView();
+
+    return 0;
+}
+
 void jsGC()
 {
     WebCore::gcController().garbageCollectNow();
@@ -373,16 +388,16 @@ struct jsFunctionInfo
     unsigned int argCount;
 };
 
-static Vector<jsFunctionInfo> jsFunctions;
+static Vector<jsFunctionInfo> s_jsFunctions;
 
 void jsBindFunction(const char* name, jsNativeFunction fn, unsigned int argCount)
 {
-    for (unsigned int i = 0; i < jsFunctions.size(); ++i)
+    for (unsigned int i = 0; i < s_jsFunctions.size(); ++i)
     {
-        if (strncmp(name, jsFunctions[i].name, MAX_NAME_LENGTH) == 0)
+        if (strncmp(name, s_jsFunctions[i].name, MAX_NAME_LENGTH) == 0)
         {
-            jsFunctions[i].fn = fn;
-            jsFunctions[i].argCount = argCount;
+            s_jsFunctions[i].fn = fn;
+            s_jsFunctions[i].argCount = argCount;
             return;
         }
     }
@@ -393,7 +408,7 @@ void jsBindFunction(const char* name, jsNativeFunction fn, unsigned int argCount
     funcInfo.fn = fn;
     funcInfo.argCount = argCount;
 
-    jsFunctions.append(funcInfo);
+    s_jsFunctions.append(funcInfo);
 }
 
 jsValue JS_CALL js_outputMsg(jsExecState es)
@@ -407,15 +422,27 @@ jsValue JS_CALL js_outputMsg(jsExecState es)
     return jsUndefined();
 }
 
+jsValue JS_CALL js_webViewName(jsExecState es)
+{
+    wkeWebView webView = jsGetWebView(es);
+    if (webView)
+    {
+        return jsString(es, webView->name());
+    }
+
+    return jsUndefined();
+}
+
 void onInitScript(JSC::JSGlobalObject* globalObject)
 {
     addFunction(globalObject, "outputMsg", js_outputMsg, 1);
+    addFunction(globalObject, "webViewName", js_webViewName, 0);
 
     JSC::ExecState* exec = globalObject->globalExec();
     jsSetGlobal(exec, "wke", ::jsString(exec, wkeVersionString()));
 
-    for (int i = 0; i < jsFunctions.size(); ++i)
+    for (size_t i = 0; i < s_jsFunctions.size(); ++i)
     {
-        addFunction(globalObject, jsFunctions[i].name, jsFunctions[i].fn, jsFunctions[i].argCount);
+        addFunction(globalObject, s_jsFunctions[i].name, s_jsFunctions[i].fn, s_jsFunctions[i].argCount);
     }
 }

@@ -65,11 +65,12 @@ namespace wke
     class CWebView : public IWebView
     {
     public:
-        CWebView()
+        CWebView(const char* name)
             :dirty_(false)
             ,width_(0)
             ,height_(0)
             ,gfxContext_(NULL)
+            ,name_(StringTable::addString(name))
         {
             WebCore::Page::PageClients pageClients;
             pageClients.chromeClient = new ChromeClient(this);
@@ -106,7 +107,17 @@ namespace wke
 
         virtual void destroy()
         {
-            delete this;
+            wkeDestroyWebView(this);
+        }
+
+        virtual const char* name() const
+        {
+            return name_;
+        }
+
+        virtual void setName(const char* name)
+        {
+            name_ = StringTable::addString(name);
         }
 
         virtual void loadURL(const utf8* inUrl)
@@ -723,23 +734,30 @@ namespace wke
             rect.h = caret.height();
         }
 
-        virtual void runJS(const wchar_t* script)
+        virtual jsValue runJS(const wchar_t* script)
         {
             String string(script);
-            mainFrame_->script()->executeScript(string, true);
+            WebCore::ScriptValue value = mainFrame_->script()->executeScript(string, true);
+            if (value.hasNoValue())
+                return jsUndefined();
+
+            return JSC::JSValue::encode(value.jsValue());
         }
 
-        virtual void runJS(const utf8* script)
+        virtual jsValue runJS(const utf8* script)
         {
             String string = String::fromUTF8(script);
-            mainFrame_->script()->executeScript(string, true);
+            WebCore::ScriptValue value = mainFrame_->script()->executeScript(string, true);
+            if (value.hasNoValue())
+                return jsUndefined();
+
+            return JSC::JSValue::encode(value.jsValue());
         }
 
-        virtual jsExecState execState()
+        virtual jsExecState globalExec()
         {
             return mainFrame_->script()->globalObject(WebCore::mainThreadNormalWorld())->globalExec();
         }
-
 
         WebCore::Page* page() const { return page_.get(); }
         WebCore::Frame* mainFrame() const { return mainFrame_; }
@@ -758,6 +776,8 @@ namespace wke
         OwnPtr<HDC> hdc_;
         OwnPtr<HBITMAP> hbmp_;
         void* pixels_;
+
+        const char* name_;
     };
 }
 
@@ -819,14 +839,46 @@ const utf8* wkeVersionString()
     return s_versionString;
 }
 
-wkeWebView wkeCreateWebView()
+static Vector<wke::IWebView*> s_webViews;
+
+wkeWebView wkeCreateWebView(const char* name)
 {
-    return new wke::CWebView();
+    wke::CWebView* webView = new wke::CWebView(name);
+    s_webViews.append(webView);
+    return webView;
 }
 
-void wkeDestroy(wkeWebView webView)
+wkeWebView wkeGetWebView(const char* name)
 {
-    return webView->destroy();
+    for (size_t i = 0; i < s_webViews.size(); ++i)
+    {
+        if (strcmp(s_webViews[i]->name(), name) == 0)
+            return s_webViews[i];
+    }
+
+    return 0;
+}
+
+void wkeDestroyWebView(wkeWebView webView)
+{
+    size_t pos = s_webViews.find(webView);
+
+    ASSERT(pos != notFound);
+    if (pos != notFound)
+    {
+        s_webViews.remove(pos);
+        delete webView;
+    }
+}
+
+const char* wkeWebViewName(wkeWebView webView)
+{
+    return webView->name();
+}
+
+void wkeSetWebViewName(wkeWebView webView, const char* name)
+{
+    webView->setName(name);
 }
 
 void wkeLoadURL(wkeWebView webView, const utf8* url)
@@ -1039,19 +1091,19 @@ void wkeGetCaret(wkeWebView webView, wkeRect* rect)
     return webView->getCaret(*rect);
 }
 
-void wkeRunJS(wkeWebView webView, const utf8* script)
+jsValue wkeRunJS(wkeWebView webView, const utf8* script)
 {
     return webView->runJS(script);
 }
 
-void wkeRunJSW(wkeWebView webView, const wchar_t* script)
+jsValue wkeRunJSW(wkeWebView webView, const wchar_t* script)
 {
     return webView->runJS(script);
 }
 
-jsExecState wkeExecState(wkeWebView webView)
+jsExecState wkeGlobalExec(wkeWebView webView)
 {
-    return webView->execState();
+    return webView->globalExec();
 }
 
 //FIXME: We should consider moving this to a new file for cross-project functionality
