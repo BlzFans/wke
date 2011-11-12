@@ -867,7 +867,7 @@ void wkeDestroyWebView(wkeWebView webView)
     if (pos != notFound)
     {
         s_webViews.remove(pos);
-        delete webView;
+        delete (wke::CWebView*)webView;
     }
 }
 
