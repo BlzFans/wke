@@ -260,6 +260,8 @@ typedef enum
 } jsType;
 
 WKE_API void jsBindFunction(const char* name, jsNativeFunction fn, unsigned int argCount);
+WKE_API void jsBindGetter(const char* name, jsNativeFunction fn); /*get property*/
+WKE_API void jsBindSetter(const char* name, jsNativeFunction fn); /*set property*/
 
 WKE_API int jsArgCount(jsExecState es);
 WKE_API jsType jsArgType(jsExecState es, int argIdx);

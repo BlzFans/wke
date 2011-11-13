@@ -80,6 +80,20 @@ jsValue JS_CALL js_msgBox(jsExecState es)
     return jsUndefined();
 }
 
+static int s_testCount = 0;
+jsValue JS_CALL js_getTestCount(jsExecState es)
+{
+    return jsInt(s_testCount);
+}
+
+jsValue JS_CALL js_setTestCount(jsExecState es)
+{
+    s_testCount = jsToInt(es, jsArg(es, 0));
+
+    return jsUndefined();
+}
+
+
 int APIENTRY _tWinMain(HINSTANCE hInstance,
                      HINSTANCE hPrevInstance,
                      LPTSTR    lpCmdLine,
@@ -100,6 +114,8 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 
     wkeInit();
     jsBindFunction("msgBox", js_msgBox, 2);
+    jsBindGetter("testCount", js_getTestCount);
+    jsBindSetter("testCount", js_setTestCount);
 
     CTimer t1, t2;
     t1.Start();

@@ -455,7 +455,7 @@ namespace wke
 
         virtual String userAgent(const WebCore::KURL&) override
         {
-            return "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/534+ (KHTML, like Gecko)";
+            return "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/535.2 (KHTML, like Gecko) Safari/535.2 wke/1.0";
         }
        
         virtual void savePlatformDataToCachedFrame(WebCore::CachedFrame*) override

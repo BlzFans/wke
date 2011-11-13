@@ -376,16 +376,42 @@ static void addFunction(JSC::JSGlobalObject* globalObject, const char* name, jsN
     JSC::ExecState* exec = globalObject->globalExec();
 
     JSC::Identifier identifier(exec, name);
-    globalObject->putDirect(globalObject->globalData(), identifier, JSC::JSFunction::create(exec, globalObject, argCount, identifier, (JSC::NativeFunction)function));
+    JSC::JSFunction* funcObject = JSC::JSFunction::create(exec, globalObject, argCount, identifier, (JSC::NativeFunction)function);
+
+    globalObject->putDirect(globalObject->globalData(), identifier, funcObject);
 }
+
+static void addGetter(JSC::JSGlobalObject* globalObject, const char* name, jsNativeFunction function)
+{
+    JSC::ExecState* exec = globalObject->globalExec();
+
+    JSC::Identifier identifier(exec, name);
+    JSC::JSFunction* getterFunc = JSC::JSFunction::create(exec, globalObject, 0, identifier, (JSC::NativeFunction)function);
+    globalObject->defineGetter(exec, identifier, getterFunc, 0);
+}
+
+static void addSetter(JSC::JSGlobalObject* globalObject, const char* name, jsNativeFunction function)
+{
+    JSC::ExecState* exec = globalObject->globalExec();
+
+    JSC::Identifier identifier(exec, name);
+    JSC::JSFunction* setterFunc = JSC::JSFunction::create(exec, globalObject, 1, identifier, (JSC::NativeFunction)function);
+    globalObject->defineSetter(exec, identifier, setterFunc, 0);
+}
+
 
 #define MAX_NAME_LENGTH 32
 #define MAX_FUNCTION_COUNT 1024
+
+#define JS_FUNC   (0)
+#define JS_GETTER (1)
+#define JS_SETTER (2)
 struct jsFunctionInfo
 {
     char name[MAX_NAME_LENGTH];
     jsNativeFunction fn;
     unsigned int argCount;
+    unsigned int funcType;
 };
 
 static Vector<jsFunctionInfo> s_jsFunctions;
@@ -394,7 +420,8 @@ void jsBindFunction(const char* name, jsNativeFunction fn, unsigned int argCount
 {
     for (unsigned int i = 0; i < s_jsFunctions.size(); ++i)
     {
-        if (strncmp(name, s_jsFunctions[i].name, MAX_NAME_LENGTH) == 0)
+        if (s_jsFunctions[i].funcType == JS_FUNC 
+          &&strncmp(name, s_jsFunctions[i].name, MAX_NAME_LENGTH) == 0)
         {
             s_jsFunctions[i].fn = fn;
             s_jsFunctions[i].argCount = argCount;
@@ -407,9 +434,56 @@ void jsBindFunction(const char* name, jsNativeFunction fn, unsigned int argCount
     funcInfo.name[MAX_NAME_LENGTH - 1] = '\0';
     funcInfo.fn = fn;
     funcInfo.argCount = argCount;
+    funcInfo.funcType = JS_FUNC;
 
     s_jsFunctions.append(funcInfo);
 }
+
+void jsBindGetter(const char* name, jsNativeFunction fn)
+{
+    for (unsigned int i = 0; i < s_jsFunctions.size(); ++i)
+    {
+        if (s_jsFunctions[i].funcType == JS_GETTER 
+          &&strncmp(name, s_jsFunctions[i].name, MAX_NAME_LENGTH) == 0)
+        {
+            s_jsFunctions[i].fn = fn;
+            return;
+        }
+    }
+
+    jsFunctionInfo funcInfo;
+    strncpy(funcInfo.name, name, MAX_NAME_LENGTH - 1);
+    funcInfo.name[MAX_NAME_LENGTH - 1] = '\0';
+    funcInfo.fn = fn;
+    funcInfo.argCount = 0;
+    funcInfo.funcType = JS_GETTER;
+
+    s_jsFunctions.append(funcInfo);
+}
+
+void jsBindSetter(const char* name, jsNativeFunction fn)
+{
+    for (unsigned int i = 0; i < s_jsFunctions.size(); ++i)
+    {
+        if (s_jsFunctions[i].funcType == JS_SETTER 
+          &&strncmp(name, s_jsFunctions[i].name, MAX_NAME_LENGTH) == 0)
+        {
+            s_jsFunctions[i].fn = fn;
+            return;
+        }
+    }
+
+    jsFunctionInfo funcInfo;
+    strncpy(funcInfo.name, name, MAX_NAME_LENGTH - 1);
+    funcInfo.name[MAX_NAME_LENGTH - 1] = '\0';
+    funcInfo.fn = fn;
+    funcInfo.argCount = 1;
+    funcInfo.funcType = JS_SETTER;
+
+    s_jsFunctions.append(funcInfo);
+}
+
+
 
 jsValue JS_CALL js_outputMsg(jsExecState es)
 {
@@ -422,13 +496,17 @@ jsValue JS_CALL js_outputMsg(jsExecState es)
     return jsUndefined();
 }
 
-jsValue JS_CALL js_webViewName(jsExecState es)
+jsValue JS_CALL js_getWebViewName(jsExecState es)
 {
     wkeWebView webView = jsGetWebView(es);
-    if (webView)
-    {
-        return jsString(es, webView->name());
-    }
+    return jsString(es, webView->name());
+}
+
+jsValue JS_CALL js_setWebViewName(jsExecState es)
+{
+    const char* name = jsToString(es, jsArg(es, 0));
+    wkeWebView webView = jsGetWebView(es);
+    webView->setName(name);
 
     return jsUndefined();
 }
@@ -436,13 +514,19 @@ jsValue JS_CALL js_webViewName(jsExecState es)
 void onInitScript(JSC::JSGlobalObject* globalObject)
 {
     addFunction(globalObject, "outputMsg", js_outputMsg, 1);
-    addFunction(globalObject, "webViewName", js_webViewName, 0);
+    addGetter(globalObject, "webViewName", js_getWebViewName);
+    addSetter(globalObject, "webViewName", js_setWebViewName);
 
     JSC::ExecState* exec = globalObject->globalExec();
     jsSetGlobal(exec, "wke", ::jsString(exec, wkeVersionString()));
 
     for (size_t i = 0; i < s_jsFunctions.size(); ++i)
     {
-        addFunction(globalObject, s_jsFunctions[i].name, s_jsFunctions[i].fn, s_jsFunctions[i].argCount);
+        if (s_jsFunctions[i].funcType == JS_FUNC)
+            addFunction(globalObject, s_jsFunctions[i].name, s_jsFunctions[i].fn, s_jsFunctions[i].argCount);
+        else if (s_jsFunctions[i].funcType == JS_GETTER)
+            addGetter(globalObject, s_jsFunctions[i].name, s_jsFunctions[i].fn);
+        else if (s_jsFunctions[i].funcType == JS_SETTER)
+            addSetter(globalObject, s_jsFunctions[i].name, s_jsFunctions[i].fn);
     }
 }
