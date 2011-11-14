@@ -243,7 +243,7 @@ WKE_API void wkeGetCaret(wkeWebView webView, wkeRect* rect);
 WKE_API jsValue wkeRunJS(wkeWebView webView, const utf8* script);
 WKE_API jsValue wkeRunJSW(wkeWebView webView, const wchar_t* script);
 
-WKE_API jsExecState wkeExecState(wkeWebView webView);
+WKE_API jsExecState wkeGlobalExec(wkeWebView webView);
 
 /***JavaScript Bind***/
 #define JS_CALL __fastcall
