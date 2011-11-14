@@ -112,23 +112,28 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 	if (!InitInstance (hInstance, nCmdShow))
 		return FALSE;
 
+    CTimer t1, t2, t3;
+
+    t1.Start();
     wkeInit();
+    t1.End();
+
     jsBindFunction("msgBox", js_msgBox, 2);
     jsBindGetter("testCount", js_getTestCount);
     jsBindSetter("testCount", js_setTestCount);
 
-    CTimer t1, t2;
-    t1.Start();
-    g_webView = wkeCreateWebView("");
-    t1.End();
-
     t2.Start();
+    g_webView = wkeCreateWebView("");
+    t2.End();
+
+    t3.Start();
     //g_webView->loadURL("file:///test/test.html");
     g_webView->loadHTML(L"<p style=\"background-color: #00FF00\">Testing</p><img id=\"webkit logo\" src=\"http://webkit.org/images/icon-gold.png\" alt=\"Face\"><div style=\"border: solid blue; background: white;\" contenteditable=\"true\">div with blue border</div><ul><li>foo<li>bar<li>baz</ul>");
-    t2.End();
+    t3.End();
 
     unsigned int ms1 = t1.GetTime();
     unsigned int ms2 = t2.GetTime();
+    unsigned int ms3 = t3.GetTime();
 
     hURLBarWnd = CreateWindow(L"EDIT", 0,
         WS_CHILD | WS_VISIBLE | WS_BORDER | ES_LEFT | ES_AUTOVSCROLL, 

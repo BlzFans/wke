@@ -160,7 +160,7 @@ typedef unsigned char bool;
 #define false 0
 #endif
 
-#endif
+#endif /*__cplusplus*/
 
 /*
  *c interface
