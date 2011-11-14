@@ -124,6 +124,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 
     t2.Start();
     g_webView = wkeCreateWebView("");
+    g_webView->setTransparent(true);
     t2.End();
 
     t3.Start();

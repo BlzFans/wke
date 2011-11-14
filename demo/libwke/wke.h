@@ -81,6 +81,9 @@ namespace wke
         virtual const char* name() const = 0;
         virtual void setName(const char* name) = 0;
 
+        virtual bool transparent() const = 0;
+        virtual void setTransparent(bool transparent) = 0;
+
         virtual void loadURL(const utf8* url) = 0;
         virtual void loadURL(const wchar_t* url) = 0;
 
@@ -160,7 +163,7 @@ typedef unsigned char bool;
 #define false 0
 #endif
 
-#endif
+#endif /*__cplusplus*/
 
 /*
  *c interface
@@ -243,7 +246,7 @@ WKE_API void wkeGetCaret(wkeWebView webView, wkeRect* rect);
 WKE_API jsValue wkeRunJS(wkeWebView webView, const utf8* script);
 WKE_API jsValue wkeRunJSW(wkeWebView webView, const wchar_t* script);
 
-WKE_API jsExecState wkeExecState(wkeWebView webView);
+WKE_API jsExecState wkeGlobalExec(wkeWebView webView);
 
 /***JavaScript Bind***/
 #define JS_CALL __fastcall

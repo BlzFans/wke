@@ -131,11 +131,14 @@ void CRenderD3D::render(wkeWebView webView)
     if (!UpdateTexture(webView))
         return;
 
-    m_pDevice->Clear(0, NULL, D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER, D3DCOLOR_ARGB(0, 45, 50, 170), 1.0f, 0);
+    m_pDevice->Clear(0, NULL, D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER, D3DCOLOR_XRGB(128, 128, 64), 1.0f, 0);
     if( SUCCEEDED(m_pDevice->BeginScene()) )
     {
         m_pDevice->SetTexture(0, m_pWebViewTexture);
         m_pDevice->SetFVF(Vertex::FVF);
+        m_pDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
+        m_pDevice->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
+        m_pDevice->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
         m_pDevice->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, m_Vertex, sizeof(Vertex));
         m_pDevice->EndScene();
 
@@ -175,15 +178,15 @@ bool CRenderD3D::UpdateTexture(wkeWebView webView)
             rect.bottom - rect.top,
             1,
             D3DUSAGE_DYNAMIC,
-            D3DFMT_X8R8G8B8,
+            D3DFMT_A8R8G8B8,
             D3DPOOL_DEFAULT,
             &m_pWebViewTexture,
             NULL);
 
         if (FAILED(hr))
-        {
             return false;
-        }
+
+        webView->setDirty(true);
     }
 
     if (webView->isDirty())

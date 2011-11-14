@@ -468,8 +468,8 @@ namespace wke
 
         virtual void transitionToCommittedForNewPage() override
         {
-            bool transparent = false;
-            WebCore::Color backgroundColor = WebCore::Color::white;
+            bool transparent = webView_->transparent();
+            WebCore::Color backgroundColor = transparent ? WebCore::Color::transparent : WebCore::Color::white;
 
             WebCore::IntSize size(webView_->width(), webView_->height());
             frame_->createView(size, backgroundColor, transparent, WebCore::IntSize(), false);

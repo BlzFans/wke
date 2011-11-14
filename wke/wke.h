@@ -81,6 +81,9 @@ namespace wke
         virtual const char* name() const = 0;
         virtual void setName(const char* name) = 0;
 
+        virtual bool transparent() const = 0;
+        virtual void setTransparent(bool transparent) = 0;
+
         virtual void loadURL(const utf8* url) = 0;
         virtual void loadURL(const wchar_t* url) = 0;
 

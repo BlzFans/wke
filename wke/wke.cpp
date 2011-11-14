@@ -66,11 +66,12 @@ namespace wke
     {
     public:
         CWebView(const char* name)
-            :dirty_(false)
+            :name_(StringTable::addString(name))
+            ,transparent_(false)
+            ,dirty_(false)
             ,width_(0)
             ,height_(0)
             ,gfxContext_(NULL)
-            ,name_(StringTable::addString(name))
         {
             WebCore::Page::PageClients pageClients;
             pageClients.chromeClient = new ChromeClient(this);
@@ -96,7 +97,6 @@ namespace wke
             mainFrame_->init();
 
             hdc_ = adoptPtr(CreateCompatibleDC(0));
-            resize(100, 100);
         }
 
         virtual ~CWebView()
@@ -118,6 +118,30 @@ namespace wke
         virtual void setName(const char* name)
         {
             name_ = StringTable::addString(name);
+        }
+
+        virtual bool transparent() const
+        {
+            return transparent_;
+        }
+
+        virtual void setTransparent(bool transparent)
+        {
+            if (transparent_ == transparent)
+                return;
+
+            transparent_ = transparent;
+            dirtyArea_ = WebCore::IntRect(0, 0, width_, height_);
+            setDirty(true);
+
+            if (gfxContext_)
+            {
+                delete gfxContext_;
+                gfxContext_ = NULL;
+            }
+
+            WebCore::Color backgroundColor = transparent ? WebCore::Color::transparent : WebCore::Color::white;
+            mainFrame_->view()->updateBackgroundRecursively(backgroundColor, transparent);
         }
 
         virtual void loadURL(const utf8* inUrl)
@@ -257,24 +281,14 @@ namespace wke
                 width_ = w;
                 height_ = h;
 
-                BITMAPINFO bmp;
-                memset(&bmp, 0, sizeof(bmp));
-                bmp.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-                bmp.bmiHeader.biWidth = w;
-                bmp.bmiHeader.biHeight = -h;
-                bmp.bmiHeader.biPlanes = 1;
-                bmp.bmiHeader.biBitCount = 32;
-                bmp.bmiHeader.biCompression = BI_RGB;
-
-                HBITMAP hbmp = ::CreateDIBSection(0, &bmp, DIB_RGB_COLORS, &pixels_, NULL, 0);
-                SelectObject(hdc_.get(), hbmp);
-                hbmp_ = adoptPtr(hbmp);
-
-                delete gfxContext_;
-                gfxContext_ = new WebCore::GraphicsContext(hdc_.get());
-
                 dirtyArea_ = WebCore::IntRect(0, 0, w, h);
                 setDirty(true);
+
+                if (gfxContext_)
+                {
+                    delete gfxContext_;
+                    gfxContext_ = NULL;
+                }
             }
         }
 
@@ -310,7 +324,29 @@ namespace wke
         {
             layoutIfNeeded();
 
+            if (gfxContext_ == NULL)
+            {
+                BITMAPINFO bmp;
+                memset(&bmp, 0, sizeof(bmp));
+                bmp.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+                bmp.bmiHeader.biWidth = width_;
+                bmp.bmiHeader.biHeight = -height_;
+                bmp.bmiHeader.biPlanes = 1;
+                bmp.bmiHeader.biBitCount = 32;
+                bmp.bmiHeader.biCompression = BI_RGB;
+
+                HBITMAP hbmp = ::CreateDIBSection(0, &bmp, DIB_RGB_COLORS, &pixels_, NULL, 0);
+                SelectObject(hdc_.get(), hbmp);
+                hbmp_ = adoptPtr(hbmp);
+
+                gfxContext_ = new WebCore::GraphicsContext(hdc_.get(), transparent_);
+            }
+
             gfxContext_->save();
+
+            if (transparent_)
+                gfxContext_->clearRect(dirtyArea_);
+
             gfxContext_->clip(dirtyArea_);
 
             mainFrame_->view()->paint(gfxContext_, dirtyArea_);
@@ -766,6 +802,9 @@ namespace wke
         OwnPtr<WebCore::Page> page_;
         WebCore::Frame* mainFrame_;
 
+        const char* name_;
+        bool transparent_;
+
         int width_;
         int height_;
         
@@ -776,8 +815,6 @@ namespace wke
         OwnPtr<HDC> hdc_;
         OwnPtr<HBITMAP> hbmp_;
         void* pixels_;
-
-        const char* name_;
     };
 }
 
