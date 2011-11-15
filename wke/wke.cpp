@@ -153,6 +153,12 @@ namespace wke
             if (!url.isValid())
                 return;
 
+            if (WebCore::protocolIsJavaScript(url))
+            {
+                mainFrame_->script()->executeIfJavaScriptURL(url);
+                return;
+            }
+
             WebCore::ResourceRequest request(url);
             request.setCachePolicy(WebCore::UseProtocolCachePolicy);
             request.setTimeoutInterval(60.f);

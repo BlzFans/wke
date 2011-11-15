@@ -511,7 +511,7 @@ jsValue JS_CALL js_setWebViewName(jsExecState es)
     return jsUndefined();
 }
 
-void onInitScript(JSC::JSGlobalObject* globalObject)
+void onCreateGlobalObject(JSC::JSGlobalObject* globalObject)
 {
     addFunction(globalObject, "outputMsg", js_outputMsg, 1);
     addGetter(globalObject, "webViewName", js_getWebViewName);

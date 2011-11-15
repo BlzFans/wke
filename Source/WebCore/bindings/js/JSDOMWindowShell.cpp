@@ -78,6 +78,11 @@ void JSDOMWindowShell::setWindow(PassRefPtr<DOMWindow> domWindow)
     setWindow(*JSDOMWindow::commonJSGlobalData(), jsDOMWindow);
     ASSERT(jsDOMWindow->globalObject() == jsDOMWindow);
     ASSERT(prototype->globalObject() == jsDOMWindow);
+
+    //wke++++++
+    extern void onCreateGlobalObject(JSC::JSGlobalObject* globalObject);
+    onCreateGlobalObject(jsDOMWindow);
+    //wke++++++
 }
 
 // ----
