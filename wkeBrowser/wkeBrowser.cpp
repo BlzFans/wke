@@ -2,7 +2,7 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <windowsx.h>
-#include <stdlib.h>
+#include <stdio.h>
 #include <malloc.h>
 #include <memory.h>
 #include <tchar.h>
@@ -102,9 +102,6 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 	UNREFERENCED_PARAMETER(hPrevInstance);
 	UNREFERENCED_PARAMETER(lpCmdLine);
 
-	MSG msg;
-	HACCEL hAccelTable;
-
 	LoadString(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
 	LoadString(hInstance, IDC_WKEBROWSER, szWindowClass, MAX_LOADSTRING);
 	MyRegisterClass(hInstance);
@@ -160,8 +157,10 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
     g_render = new CRenderD3D;
     g_render->init(hViewWindow);
 
-	hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_WKEBROWSER));
 
+	HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_WKEBROWSER));
+
+    MSG msg;
     msg.message = WM_NULL;
 	while (msg.message != WM_QUIT)
 	{
@@ -316,6 +315,7 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 LRESULT CALLBACK WebViewWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+    bool handled = true;
 	switch (message)
 	{
     case WM_SIZE:
@@ -337,7 +337,7 @@ LRESULT CALLBACK WebViewWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 
             //flags = HIWORD(lParam);
 
-            g_webView->keyDown(virtualKeyCode, flags, false);
+            handled = g_webView->keyDown(virtualKeyCode, flags, false);
         }
         break;
 
@@ -352,7 +352,7 @@ LRESULT CALLBACK WebViewWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 
             //flags = HIWORD(lParam);
 
-            g_webView->keyUp(virtualKeyCode, flags, false);
+            handled = g_webView->keyUp(virtualKeyCode, flags, false);
         }
         break;
 
@@ -367,7 +367,7 @@ LRESULT CALLBACK WebViewWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 
             //flags = HIWORD(lParam);
 
-            g_webView->keyPress(charCode, flags, false);
+            handled = g_webView->keyPress(charCode, flags, false);
         }
         break;
 
@@ -397,7 +397,7 @@ LRESULT CALLBACK WebViewWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 
             //flags = wParam;
 
-            g_webView->mouseEvent(message, x, y, flags);
+            handled = g_webView->mouseEvent(message, x, y, flags);
         }
         break;
 
@@ -426,8 +426,8 @@ LRESULT CALLBACK WebViewWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 
             //flags = wParam;
 
-            g_webView->mouseEvent(message, x, y, flags);
-
+            handled = g_webView->mouseEvent(message, x, y, flags);
+            //g_webView->contextMenuEvent(x, y, flags);
         }
         break;
 
@@ -451,8 +451,34 @@ LRESULT CALLBACK WebViewWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
                 flags |= WKE_RBUTTON;
 
             //flags = wParam;
+            handled = g_webView->mouseEvent(message, x, y, flags);
+        }
+        break;
 
-            g_webView->mouseEvent(message, x, y, flags);
+    case WM_CONTEXTMENU:
+        {
+            POINT pt;
+            pt.x = GET_X_LPARAM(lParam);
+            pt.y = GET_Y_LPARAM(lParam);
+
+            if (pt.x != -1 && pt.y != -1)
+                ScreenToClient(hWnd, &pt);
+
+            unsigned int flags = 0;
+
+            if (wParam & MK_CONTROL)
+                flags |= WKE_CONTROL;
+            if (wParam & MK_SHIFT)
+                flags |= WKE_SHIFT;
+
+            if (wParam & MK_LBUTTON)
+                flags |= WKE_LBUTTON;
+            if (wParam & MK_MBUTTON)
+                flags |= WKE_MBUTTON;
+            if (wParam & MK_RBUTTON)
+                flags |= WKE_RBUTTON;
+
+            handled = g_webView->contextMenuEvent(pt.x, pt.y, flags);
         }
         break;
 
@@ -479,7 +505,7 @@ LRESULT CALLBACK WebViewWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 
             //flags = wParam;
 
-            g_webView->mouseWheel(x, y, delta, flags);
+            handled = g_webView->mouseWheel(x, y, delta, flags);
         }
         break;
 
@@ -513,9 +539,14 @@ LRESULT CALLBACK WebViewWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
         break;
 
     default:
-        return DefWindowProc(hWnd, message, wParam, lParam);
+        handled = false;
+        break;
 	}
-	return 0;
+    
+    if (!handled)
+        return DefWindowProc(hWnd, message, wParam, lParam);
+
+    return 0;
 }
 
 void resizeSubViews()

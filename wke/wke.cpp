@@ -26,6 +26,7 @@
 #include <WebCore/TextEncoding.h>
 #include <WebCore/ResourceHandleManager.h>
 #include <WebCore/Console.h>
+#include <WebCore/ContextMenuController.h>
 
 #include "wke.h"
 
@@ -605,6 +606,39 @@ namespace wke
             return handled;
         }
 
+        virtual bool contextMenuEvent(int x, int y, unsigned int flags)
+        {
+            page()->contextMenuController()->clearContextMenu();
+
+            if (x == -1 && y == -1)
+            {   
+                WebCore::Frame* focusedFrame = page()->focusController()->focusedOrMainFrame();
+                return focusedFrame->eventHandler()->sendContextMenuEventForKey();
+            }
+
+            WebCore::IntPoint pos(x, y);
+            WebCore::IntPoint globalPos(x, y);
+
+            WebCore::MouseButton button = messageToButtonType(WM_RBUTTONUP, flags);
+            WebCore::MouseEventType eventType = messageToEventType(WM_RBUTTONUP);
+
+            bool shift = flags & WKE_SHIFT;
+            bool ctrl = flags & WKE_CONTROL;
+            bool alt = GetKeyState(VK_MENU) & 0x8000;
+            bool meta = alt;
+            double timestamp = ::GetTickCount()*0.001;
+
+            int clickCount = 0;
+            WebCore::PlatformMouseEvent mouseEvent(pos, globalPos, button, eventType, clickCount, shift, ctrl, alt, meta, timestamp);
+
+            WebCore::IntPoint documentPoint(mainFrame()->view()->windowToContents(pos));
+            WebCore::HitTestResult result = mainFrame()->eventHandler()->hitTestResultAtPoint(documentPoint, false);
+            WebCore::Frame* targetFrame = result.innerNonSharedNode() ? result.innerNonSharedNode()->document()->frame() : page()->focusController()->focusedOrMainFrame();
+
+            targetFrame->view()->setCursor(WebCore::pointerCursor());
+            return targetFrame->eventHandler()->sendContextMenuEvent(mouseEvent);
+        }
+
         virtual bool mouseWheel(int x, int y, int wheelDelta, unsigned int flags)
         {
             if (!mainFrame()->view()->didFirstLayout())
@@ -924,6 +958,17 @@ void wkeSetWebViewName(wkeWebView webView, const char* name)
     webView->setName(name);
 }
 
+bool wkeIsTransparent(wkeWebView webView)
+{
+    return webView->transparent();
+}
+
+void wkeSetTransparent(wkeWebView webView, bool transparent)
+{
+    webView->setTransparent(transparent);
+}
+
+
 void wkeLoadURL(wkeWebView webView, const utf8* url)
 {
     return webView->loadURL(url);
@@ -1097,6 +1142,11 @@ float wkeMediaVolume(wkeWebView webView)
 bool wkeMouseEvent(wkeWebView webView, unsigned int message, int x, int y, unsigned int flags)
 {
     return webView->mouseEvent(message, x, y, flags);
+}
+
+bool wkeContextMenuEvent(wkeWebView webView, int x, int y, unsigned int flags)
+{
+    return webView->contextMenuEvent(x, y, flags);
 }
 
 bool wkeMouseWheel(wkeWebView webView, int x, int y, int delta, unsigned int flags)

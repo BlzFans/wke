@@ -131,6 +131,7 @@ namespace wke
         virtual float mediaVolume() const = 0;
 
         virtual bool mouseEvent(unsigned int message, int x, int y, unsigned int flags) = 0;
+        virtual bool contextMenuEvent(int x, int y, unsigned int flags) = 0;
         virtual bool mouseWheel(int x, int y, int delta, unsigned int flags) = 0;
         virtual bool keyUp(unsigned int virtualKeyCode, unsigned int flags, bool systemKey) = 0;
         virtual bool keyDown(unsigned int virtualKeyCode, unsigned int flags, bool systemKey) = 0;
@@ -188,6 +189,9 @@ WKE_API void wkeDestroyWebView(wkeWebView webView);
 WKE_API const char* wkeWebViewName(wkeWebView webView);
 WKE_API void wkeSetWebViewName(wkeWebView webView, const char* name);
 
+WKE_API bool wkeIsTransparent(wkeWebView webView);
+WKE_API void wkeSetTransparent(wkeWebView webView, bool transparent);
+
 WKE_API void wkeLoadURL(wkeWebView webView, const utf8* url);
 WKE_API void wkeLoadURLW(wkeWebView webView, const wchar_t* url);
 
@@ -233,6 +237,7 @@ WKE_API void wkeSetMediaVolume(wkeWebView webView, float volume);
 WKE_API float wkeMediaVolume(wkeWebView webView);
 
 WKE_API bool wkeMouseEvent(wkeWebView webView, unsigned int message, int x, int y, unsigned int flags);
+WKE_API bool wkeContextMenuEvent(wkeWebView webView, int x, int y, unsigned int flags);
 WKE_API bool wkeMouseWheel(wkeWebView webView, int x, int y, int delta, unsigned int flags);
 WKE_API bool wkeKeyUp(wkeWebView webView, unsigned int virtualKeyCode, unsigned int flags, bool systemKey);
 WKE_API bool wkeKeyDown(wkeWebView webView, unsigned int virtualKeyCode, unsigned int flags, bool systemKey);
