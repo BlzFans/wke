@@ -48,7 +48,7 @@ namespace wke
             :webView_(webView)
             ,page_(page)
             ,frame_(NULL)
-            ,loadedFail_(false)
+            ,loadFailed_(false)
             ,loaded_(false)
             ,documentReady_(false)
         {
@@ -198,7 +198,7 @@ namespace wke
 
         virtual void dispatchDidFailLoad(const WebCore::ResourceError&) override
         {
-            loadedFail_ = true;
+            loadFailed_ = true;
         }
 
         virtual void dispatchDidFinishDocumentLoad() override
@@ -274,6 +274,9 @@ namespace wke
 
         virtual void postProgressStartedNotification() override
         {
+            loaded_ = false;
+            loadFailed_ = false;
+            documentReady_ = false;
         }
 
         virtual void postProgressEstimateChangedNotification() override
@@ -631,9 +634,9 @@ namespace wke
             return frame_;
         }
 
-        bool isLoadedFail() const
+        bool isLoadFailed() const
         {
-            return loadedFail_;
+            return loadFailed_;
         }
 
         bool isLoaded() const
@@ -652,7 +655,7 @@ namespace wke
         WebCore::Page* page_;
         WebCore::Frame* frame_;
 
-        bool loadedFail_;
+        bool loadFailed_;
         bool loaded_;
         bool documentReady_;
     };

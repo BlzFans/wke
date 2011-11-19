@@ -5,27 +5,24 @@
 
 #include "../libwke/wke.h"
 
-#define VIEW_WIDTH (800)
-#define VIEW_HEIGHT (600)
-
+#define FILENAME_LENGTH (1024)
 void saveBitmap(void* pixels, int w, int h, const char* filename);
-void utf8ToAnsi(const char* utf8, char* ansi);
+void convertFilename(const char* utf8, char* ansi);
 
 int main(int argc, char** argv)
 {
     wkeWebView webView;
     const char* url;
-    char filename[512];
-    char title[512];
+    char filename[FILENAME_LENGTH];
+    char title[FILENAME_LENGTH];
     void* pixels;
+	int w, h;
 
     printf(wkeVersionString());
 
     wkeInit();
-
     webView = wkeCreateWebView("");
-
-    wkeResize(webView, VIEW_WIDTH, VIEW_HEIGHT);
+    wkeResize(webView, 1024, 768);
 
     url = argc >= 2 ? argv[1] : "http://www.google.com";
     printf("loading url %s ...\n", url);    
@@ -43,22 +40,30 @@ int main(int argc, char** argv)
             DispatchMessage(&msg);
         }
 
-        if (!wkeIsLoading(webView))
+        if (wkeIsLoadComplete(webView))
             break;
+			
+		Sleep(10);
     }
+	
+	/*hidden scrollbar*/
+	wkeRunJS(webView, "document.body.style.overflow='hidden'");
+	
+	w = wkeContentsWidth(webView);
+	h = wkeContentsHeight(webView);
+	wkeResize(webView, w, h);
 
-    pixels = malloc(VIEW_WIDTH*VIEW_HEIGHT*4);
+    pixels = malloc(w*h*4);
     wkePaint(webView, pixels, 0);
 
     //save bitmap
-    utf8ToAnsi(wkeTitle(webView), title);
-    
+    convertFilename(wkeTitle(webView), title);
     sprintf(filename, "%s.bmp", title);
-    saveBitmap(pixels, VIEW_WIDTH, VIEW_HEIGHT, filename);
+	printf("%s\n", filename);
+    saveBitmap(pixels, w, h, filename);
     free(pixels);
 
     wkeDestroyWebView(webView);
-
     wkeShutdown();
 
     return 0;
@@ -69,15 +74,10 @@ void saveBitmap(void* pixels, int w, int h, const char* filename)
     BITMAPFILEHEADER fileHdr = {0};
     BITMAPINFOHEADER infoHdr = {0};
     FILE * fp = NULL;
-
-    int lineWidth = (w + 3) & ~3;
-
-    printf(filename);
-
     
     fileHdr.bfType = 0x4d42; //'BM'
     fileHdr.bfOffBits = sizeof(fileHdr) + sizeof(infoHdr);
-    fileHdr.bfSize = lineWidth * h * 4 + fileHdr.bfOffBits;
+    fileHdr.bfSize = w * h * 4 + fileHdr.bfOffBits;
 
     infoHdr.biSize = sizeof(BITMAPINFOHEADER);
     infoHdr.biWidth = w;
@@ -85,7 +85,7 @@ void saveBitmap(void* pixels, int w, int h, const char* filename)
     infoHdr.biPlanes = 1;
     infoHdr.biBitCount = 32;
     infoHdr.biCompression = 0;
-    infoHdr.biSizeImage = lineWidth * h * 4;
+    infoHdr.biSizeImage = w * h * 4;
     infoHdr.biXPelsPerMeter = 3780;
     infoHdr.biYPelsPerMeter = 3780;
 
@@ -96,16 +96,31 @@ void saveBitmap(void* pixels, int w, int h, const char* filename)
     fwrite(&fileHdr, sizeof(fileHdr), 1, fp);
     fwrite(&infoHdr, sizeof(infoHdr), 1, fp);
     fwrite(pixels, infoHdr.biSizeImage, 1, fp);
-
     fclose(fp);
 }
 
-void utf8ToAnsi(const char* utf8, char* ansi)
+void convertFilename(const char* utf8, char* ansi)
 {
-    int len;
-    wchar_t wstr[512];
+    int len, i;
+    wchar_t wstr[FILENAME_LENGTH];
     
-    len = MultiByteToWideChar(CP_UTF8, 0, utf8, strlen(utf8), wstr, 512);
-    len = WideCharToMultiByte(CP_ACP, 0, wstr, len, ansi, 512, NULL, NULL);
+    len = MultiByteToWideChar(CP_UTF8, 0, utf8, strlen(utf8), wstr, FILENAME_LENGTH);
+	for (i = 0; i < len; ++i)
+	{
+		if( wstr[i] == L'\\'
+		 || wstr[i] == L'/'
+         || wstr[i] == L':'
+         || wstr[i] == L'*'
+         || wstr[i] == L'?'
+         || wstr[i] == L'\"'
+         || wstr[i] == L'<'
+         || wstr[i] == L'>'
+		 || wstr[i] == L'|' )
+		 {
+			wstr[i] = L'_';
+		 }
+	}
+	
+    len = WideCharToMultiByte(CP_ACP, 0, wstr, len, ansi, FILENAME_LENGTH - 8, NULL, NULL);
     ansi[len] = '\0';
 }

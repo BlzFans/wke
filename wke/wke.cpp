@@ -200,29 +200,19 @@ namespace wke
 
         virtual bool isLoaded() const
         {
-            if (isLoadComplete())
-            {
-                FrameLoaderClient* client = (FrameLoaderClient*)mainFrame()->loader()->client();
-                return client->isLoaded();
-            }
-
-            return false;
+            FrameLoaderClient* client = (FrameLoaderClient*)mainFrame()->loader()->client();
+            return client->isLoaded();
         }
 
-        virtual bool isLoadedFail() const
+        virtual bool isLoadFailed() const
         {
-            if (isLoadComplete())
-            {
-                FrameLoaderClient* client = (FrameLoaderClient*)mainFrame()->loader()->client();
-                return client->isLoadedFail();
-            }
-
-            return false;
+            FrameLoaderClient* client = (FrameLoaderClient*)mainFrame()->loader()->client();
+            return client->isLoadFailed();
         }
 
         virtual bool isLoadComplete() const
         {
-            return mainFrame()->loader()->isComplete();
+            return isLoaded() || isLoadFailed();
         }
 
         virtual bool isDocumentReady() const
@@ -230,22 +220,6 @@ namespace wke
             FrameLoaderClient* client = (FrameLoaderClient*)mainFrame()->loader()->client();
             return client->isDocumentReady();
         }
-
-        virtual bool isLoading() const
-        {
-            bool loading = false;
-            if (mainFrame()->loader()->documentLoader())
-                loading = mainFrame()->loader()->documentLoader()->isLoadingInAPISense();
-
-            if (loading)
-                return true;
-
-            if (mainFrame()->loader()->provisionalDocumentLoader())
-                loading = mainFrame()->loader()->provisionalDocumentLoader()->isLoadingInAPISense();
-
-            return loading;
-        }
-
 
         virtual void stopLoading()
         {
@@ -301,6 +275,16 @@ namespace wke
 
         virtual int width() const { return width_; }
         virtual int height() const { return height_; }
+        
+        virtual int contentsWidth() const
+        {
+            return mainFrame()->view()->contentsWidth();
+        }
+
+        virtual int contentsHeight() const
+        {
+            return mainFrame()->view()->contentsHeight();
+        }
 
         virtual void setDirty(bool dirty)
         {
@@ -323,8 +307,7 @@ namespace wke
 
         virtual void layoutIfNeeded()
         {
-            if (mainFrame_->view())
-                mainFrame_->view()->updateLayoutAndStyleIfNeededRecursive();
+            mainFrame_->view()->updateLayoutAndStyleIfNeededRecursive();
         }
 
         virtual void paint(void* dst, int pitch)
@@ -397,8 +380,7 @@ namespace wke
 
         virtual bool goForward()
         {
-            page()->goForward();
-            return true;
+            return page()->goForward();
         }
 
         virtual void selectAll()
@@ -428,30 +410,22 @@ namespace wke
 
         virtual void setCookieEnabled(bool enable)
         {
-            if (page_)
-                page_->setCookieEnabled(enable);
+            page()->setCookieEnabled(enable);
         }
 
         virtual bool cookieEnabled() const
         {
-            if (page_)
-                return page_->cookieEnabled();
-                
-            return true;
+            return page()->cookieEnabled();
         }
 
         virtual void setMediaVolume(float volume)
         {
-            if (page_)
-                page_->setMediaVolume(volume);
+            page()->setMediaVolume(volume);
         }
 
         virtual float mediaVolume() const
         {
-            if (page_)
-                return page_->mediaVolume();
-
-            return 1.f;
+            return page()->mediaVolume();
         }
 
         static WebCore::MouseEventType messageToEventType(unsigned int message)
@@ -788,13 +762,14 @@ namespace wke
             focusController->setFocused(false);
         }
 
-        virtual void getCaret(wkeRect& rect)
+        virtual wkeRect getCaret()
         {
+            wkeRect rect;
             rect.x = rect.y = 0;
             rect.w = rect.h = 0;
             WebCore::Frame* targetFrame = page()->focusController()->focusedOrMainFrame();
             if (!targetFrame)
-                return;
+                return rect;
 
             WebCore::IntRect caret;
             if (RefPtr<WebCore::Range> range = targetFrame->selection()->selection().toNormalizedRange()) {
@@ -808,6 +783,8 @@ namespace wke
             rect.y = caret.y();
             rect.w = caret.width();
             rect.h = caret.height();
+
+            return rect;
         }
 
         virtual jsValue runJS(const wchar_t* script)
@@ -847,7 +824,7 @@ namespace wke
 
         int width_;
         int height_;
-        
+
         bool dirty_;
         WebCore::IntRect dirtyArea_;
 
@@ -971,22 +948,22 @@ void wkeSetTransparent(wkeWebView webView, bool transparent)
 
 void wkeLoadURL(wkeWebView webView, const utf8* url)
 {
-    return webView->loadURL(url);
+    webView->loadURL(url);
 }
 
 void wkeLoadURLW(wkeWebView webView, const wchar_t* url)
 {
-    return webView->loadURL(url);
+    webView->loadURL(url);
 }
 
 void wkeLoadHTML(wkeWebView webView, const utf8* html)
 {
-    return webView->loadHTML(html);
+    webView->loadHTML(html);
 }
 
 void wkeLoadHTMLW(wkeWebView webView, const wchar_t* html)
 {
-    return webView->loadHTML(html);
+    webView->loadHTML(html);
 }
 
 bool wkeIsLoaded(wkeWebView webView)
@@ -994,9 +971,9 @@ bool wkeIsLoaded(wkeWebView webView)
     return webView->isLoaded();
 }
 
-bool wkeIsLoadedFail(wkeWebView webView)
+bool wkeIsLoadFailed(wkeWebView webView)
 {
-    return webView->isLoadedFail();
+    return webView->isLoadFailed();
 }
 
 bool wkeIsLoadComplete(wkeWebView webView)
@@ -1009,19 +986,14 @@ bool wkeIsDocumentReady(wkeWebView webView)
     return webView->isDocumentReady();
 }
 
-WKE_API bool wkeIsLoading(wkeWebView webView)
-{
-    return webView->isLoading();
-}
-
 void wkeStopLoading(wkeWebView webView)
 {
-    return webView->stopLoading();
+    webView->stopLoading();
 }
 
 void wkeReload(wkeWebView webView)
 {
-    return webView->reload();
+    webView->reload();
 }
 
 const utf8* wkeTitle(wkeWebView webView)
@@ -1036,7 +1008,7 @@ const wchar_t* wkeTitleW(wkeWebView webView)
 
 void wkeResize(wkeWebView webView, int w, int h)
 {
-    return webView->resize(w, h);
+    webView->resize(w, h);
 }
 
 int wkeWidth(wkeWebView webView)
@@ -1049,9 +1021,19 @@ int wkeHeight(wkeWebView webView)
     return webView->height();
 }
 
+int wkeContentsWidth(wkeWebView webView)
+{
+    return webView->contentsWidth();
+}
+
+int wkeContentsHeight(wkeWebView webView)
+{
+    return webView->contentsHeight();
+}
+
 void wkeSetDirty(wkeWebView webView, bool dirty)
 {
-    return webView->setDirty(dirty);
+    webView->setDirty(dirty);
 }
 
 bool wkeIsDirty(wkeWebView webView)
@@ -1061,17 +1043,17 @@ bool wkeIsDirty(wkeWebView webView)
 
 void wkeAddDirtyArea(wkeWebView webView, int x, int y, int w, int h)
 {
-    return webView->addDirtyArea(x, y, w, h);
+    webView->addDirtyArea(x, y, w, h);
 }
 
 void wkeLayoutIfNeeded(wkeWebView webView)
 {
-    return webView->layoutIfNeeded();
+    webView->layoutIfNeeded();
 }
 
 void wkePaint(wkeWebView webView, void* dst, int pitch)
 {
-    return webView->paint(dst, pitch);
+    webView->paint(dst, pitch);
 }
 
 bool wkeCanGoBack(wkeWebView webView)
@@ -1096,32 +1078,32 @@ bool wkeGoForward(wkeWebView webView)
 
 void wkeSelectAll(wkeWebView webView)
 {
-    return webView->selectAll();
+    webView->selectAll();
 }
 
 void wkeCopy(wkeWebView webView)
 {
-    return webView->copy();
+    webView->copy();
 }
 
 void wkeCut(wkeWebView webView)
 {
-    return webView->cut();
+    webView->cut();
 }
 
 void wkePaste(wkeWebView webView)
 {
-    return webView->paste();
+    webView->paste();
 }
 
 void wkeDelete(wkeWebView webView)
 {
-    return webView->delete_();
+    webView->delete_();
 }
 
 void wkeSetCookieEnabled(wkeWebView webView, bool enable)
 {
-    return webView->setCookieEnabled(enable);
+    webView->setCookieEnabled(enable);
 }
 
 bool wkeCookieEnabled(wkeWebView webView)
@@ -1131,7 +1113,7 @@ bool wkeCookieEnabled(wkeWebView webView)
 
 void wkeSetMediaVolume(wkeWebView webView, float volume)
 {
-    return webView->setMediaVolume(volume);
+    webView->setMediaVolume(volume);
 }
 
 float wkeMediaVolume(wkeWebView webView)
@@ -1171,17 +1153,17 @@ bool wkeKeyPress(wkeWebView webView, unsigned int charCode, unsigned int flags, 
 
 void wkeFocus(wkeWebView webView)
 {
-    return webView->focus();
+    webView->focus();
 }
 
 void wkeUnfocus(wkeWebView webView)
 {
-    return webView->unfocus();
+    webView->unfocus();
 }
 
-void wkeGetCaret(wkeWebView webView, wkeRect* rect)
+wkeRect wkeGetCaret(wkeWebView webView)
 {
-    return webView->getCaret(*rect);
+    return webView->getCaret();
 }
 
 jsValue wkeRunJS(wkeWebView webView, const utf8* script)

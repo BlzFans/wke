@@ -90,12 +90,10 @@ namespace wke
         virtual void loadHTML(const utf8* html) = 0;
         virtual void loadHTML(const wchar_t* html) = 0;
 
-        virtual bool isLoaded() const = 0;       //sucess
-        virtual bool isLoadedFail() const = 0;   //fail
-        virtual bool isLoadComplete() const = 0; //fail or success
-        virtual bool isDocumentReady() const = 0; //document ready
-
-        virtual bool isLoading() const = 0;
+        virtual bool isLoaded() const = 0;        /*document load sucessed*/
+        virtual bool isLoadFailed() const = 0;    /*document load failed*/
+        virtual bool isLoadComplete() const = 0;  /*document load complete*/
+        virtual bool isDocumentReady() const = 0; /*document ready*/
         virtual void stopLoading() = 0;
         virtual void reload() = 0;
 
@@ -103,8 +101,11 @@ namespace wke
         virtual const wchar_t* titleW() = 0;
 
         virtual void resize(int w, int h) = 0;
-        virtual int width() const = 0;
-        virtual int height() const = 0;
+        virtual int width() const = 0;   /*viewport width*/
+        virtual int height() const = 0;  /*viewport height*/
+
+        virtual int contentsWidth() const = 0;  /*contents width*/
+        virtual int contentsHeight() const = 0; /*contents height*/
 
         virtual void setDirty(bool dirty) = 0;
         virtual bool isDirty() const = 0;
@@ -131,6 +132,7 @@ namespace wke
         virtual float mediaVolume() const = 0;
 
         virtual bool mouseEvent(unsigned int message, int x, int y, unsigned int flags) = 0;
+        virtual bool contextMenuEvent(int x, int y, unsigned int flags) = 0;
         virtual bool mouseWheel(int x, int y, int delta, unsigned int flags) = 0;
         virtual bool keyUp(unsigned int virtualKeyCode, unsigned int flags, bool systemKey) = 0;
         virtual bool keyDown(unsigned int virtualKeyCode, unsigned int flags, bool systemKey) = 0;
@@ -139,7 +141,7 @@ namespace wke
         virtual void focus() = 0;
         virtual void unfocus() = 0;
 
-        virtual void getCaret(wkeRect& rect) = 0;
+        virtual wkeRect getCaret() = 0;
 
         virtual jsValue runJS(const utf8* script) = 0;
         virtual jsValue runJS(const wchar_t* script) = 0;
@@ -188,6 +190,9 @@ WKE_API void wkeDestroyWebView(wkeWebView webView);
 WKE_API const char* wkeWebViewName(wkeWebView webView);
 WKE_API void wkeSetWebViewName(wkeWebView webView, const char* name);
 
+WKE_API bool wkeIsTransparent(wkeWebView webView);
+WKE_API void wkeSetTransparent(wkeWebView webView, bool transparent);
+
 WKE_API void wkeLoadURL(wkeWebView webView, const utf8* url);
 WKE_API void wkeLoadURLW(wkeWebView webView, const wchar_t* url);
 
@@ -195,7 +200,7 @@ WKE_API void wkeLoadHTML(wkeWebView webView, const utf8* html);
 WKE_API void wkeLoadHTMLW(wkeWebView webView, const wchar_t* html);
 
 WKE_API bool wkeIsLoaded(wkeWebView webView);
-WKE_API bool wkeIsLoadedFail(wkeWebView webView);
+WKE_API bool wkeIsLoadFailed(wkeWebView webView);
 WKE_API bool wkeIsLoadComplete(wkeWebView webView);
 WKE_API bool wkeIsDocumentReady(wkeWebView webView);
 WKE_API bool wkeIsLoading(wkeWebView webView);
@@ -208,6 +213,9 @@ WKE_API const wchar_t* wkeTitleW(wkeWebView webView);
 WKE_API void wkeResize(wkeWebView webView, int w, int h);
 WKE_API int wkeWidth(wkeWebView webView);
 WKE_API int wkeHeight(wkeWebView webView);
+
+WKE_API int wkeContentsWidth(wkeWebView webView);
+WKE_API int wkeContentsHeight(wkeWebView webView);
 
 WKE_API void wkeSetDirty(wkeWebView webView, bool dirty);
 WKE_API bool wkeIsDirty(wkeWebView webView);
@@ -233,6 +241,7 @@ WKE_API void wkeSetMediaVolume(wkeWebView webView, float volume);
 WKE_API float wkeMediaVolume(wkeWebView webView);
 
 WKE_API bool wkeMouseEvent(wkeWebView webView, unsigned int message, int x, int y, unsigned int flags);
+WKE_API bool wkeContextMenuEvent(wkeWebView webView, int x, int y, unsigned int flags);
 WKE_API bool wkeMouseWheel(wkeWebView webView, int x, int y, int delta, unsigned int flags);
 WKE_API bool wkeKeyUp(wkeWebView webView, unsigned int virtualKeyCode, unsigned int flags, bool systemKey);
 WKE_API bool wkeKeyDown(wkeWebView webView, unsigned int virtualKeyCode, unsigned int flags, bool systemKey);
@@ -241,7 +250,7 @@ WKE_API bool wkeKeyPress(wkeWebView webView, unsigned int charCode, unsigned int
 WKE_API void wkeFocus(wkeWebView webView);
 WKE_API void wkeUnfocus(wkeWebView webView);
 
-WKE_API void wkeGetCaret(wkeWebView webView, wkeRect* rect);
+WKE_API wkeRect wkeGetCaret(wkeWebView webView);
 
 WKE_API jsValue wkeRunJS(wkeWebView webView, const utf8* script);
 WKE_API jsValue wkeRunJSW(wkeWebView webView, const wchar_t* script);

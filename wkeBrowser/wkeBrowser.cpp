@@ -519,8 +519,7 @@ LRESULT CALLBACK WebViewWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 
     case WM_IME_STARTCOMPOSITION:
         {
-            wkeRect caret;
-            g_webView->getCaret(caret);
+            wkeRect caret = g_webView->getCaret();
 
             CANDIDATEFORM form;
             form.dwIndex = 0;
