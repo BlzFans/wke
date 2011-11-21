@@ -61,8 +61,8 @@ int main(int argc, char** argv)
     sprintf(filename, "%s.bmp", title);
 	printf("%s\n", filename);
     saveBitmap(pixels, w, h, filename);
-    free(pixels);
 
+    free(pixels);
     wkeDestroyWebView(webView);
     wkeShutdown();
 
