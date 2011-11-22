@@ -97,6 +97,8 @@ namespace wke
             loader->setFrame(mainFrame_);
             mainFrame_->init();
 
+            page()->focusController()->setActive(true);
+
             hdc_ = adoptPtr(CreateCompatibleDC(0));
         }
 

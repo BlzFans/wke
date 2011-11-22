@@ -596,6 +596,7 @@ LRESULT CALLBACK UrlEditProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 
         url[len] = L'\0';
         g_webView->loadURL(url);
+        SetFocus(hViewWindow);
         return 0;
     }
     
