@@ -1,0 +1,123 @@
+#!/bin/ash
+
+#
+# Copyright (c) 2003, 2005, 2006, 2008 Jason Tishler
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# A copy of the GNU General Public License can be found at
+# http://www.gnu.org/
+#
+# Written by Jason Tishler <jason@tishler.net>
+#
+# $Id: rebaseall,v 1.27 2009/07/20 18:50:31 jt Exp $
+#
+
+# Define constants
+PATH=/bin
+ProgramName=`basename $0`
+ProgramOptions='b:o:s:T:v'
+DefaultBaseAddress=0x70000000
+DefaultOffset=0x10000
+DefaultVerbose=
+DefaultFileList=
+DefaultSuffixes='dll|so'
+
+# Define functions
+usage()
+{
+    echo "usage: $ProgramName [-b BaseAddress] [-o Offset] [-s DllSuffix] [-T FileList | -] [-v]"
+    exit 1
+}
+
+cleanup()
+{
+    rm -f "$TmpFile"
+    exit $ExitCode
+}
+
+# Set traps
+trap cleanup 1 2 15
+
+# Set defaults
+BaseAddress=$DefaultBaseAddress
+Offset=$DefaultOffset
+Verbose=$DefaultVerbose
+FileList=$DefaultFileList
+Suffixes=$DefaultSuffixes
+
+# Verify only ash or dash processes are running
+grep -E -q -i -v '/d?ash(.exe)?$' /proc/[0-9]*/exename
+if [ $? -eq 0 -a -z "$RebaseDebug" ]
+then
+    echo "$ProgramName: only ash or dash processes are allowed during rebasing"
+    echo "    Exit all Cygwin processes and stop all Cygwin services."
+    echo "    Execute ash (or dash) from Start/Run... or a cmd or command window."
+    echo "    Execute '/bin/rebaseall' from ash (or dash)."
+    exit 2
+fi
+
+# Parse command line arguments
+while getopts $ProgramOptions Option "$@"
+do
+    case $Option in
+    b)
+	BaseAddress=$OPTARG;;
+    o)
+	Offset=$OPTARG;;
+    s)
+	Suffixes="$Suffixes|$OPTARG";;
+    T)
+	FileList="$OPTARG";;
+    v)
+	Verbose=-v;;
+    \?)
+	usage;;
+    esac
+done
+
+# Set temp directory
+TmpDir="${TMP:-${TEMP:-/tmp}}"
+
+# Validate temp directory
+if [ ! -d "$TmpDir" ]
+then
+    echo "$ProgramName: '$TmpDir' is not a directory"
+    exit 2
+fi
+if [ ! -w "$TmpDir" ]
+then
+    echo "$ProgramName: '$TmpDir' is not writable"
+    exit 2
+fi
+
+# Validate user supplied file list, if necessary
+if [ -n "$FileList" -a ! -r "$FileList" -a "$FileList" != - ]
+then
+    echo "$ProgramName: '$FileList' is not readable"
+    exit 2
+fi
+
+# Set temp file
+TmpFile="$TmpDir/rebase.lst"
+
+# Create rebase list
+find /etc/setup -name '*.lst.gz' | xargs gzip -d -c |
+    grep -E "\.($Suffixes)\$" |
+    sed -e '/cygwin1\.dll$/d' -e '/cyglsa.*\.dll$/d' -e 's/^/\//' >"$TmpFile"
+
+# Append user supplied file list, if any
+if [ -n "$FileList" ]
+then
+    cat "$FileList" >>"$TmpFile"
+fi
+
+# Rebase files
+rebase $Verbose -d -b $BaseAddress -o $Offset -T "$TmpFile"
+ExitCode=$?
+
+# Clean up
+cleanup
