@@ -15,3 +15,10 @@ VS2008:
 
 Run wke
 The wkeBrowser.exe executable can be found at demo/bin/wkeBrowser.exe
+
+
+Common Build Errors:
+
+Cygwin exception::handle: Exception: STATUS_ACCESS_VIOLATION
+Close the Visual Studio, then relaunch and rebuild. This usually fixes the problem.
+http://code.google.com/p/chromium/wiki/CygwinDllRemappingFailure
