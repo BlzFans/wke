@@ -270,6 +270,7 @@ namespace wke
 
         virtual void setMainDocumentError(WebCore::DocumentLoader*, const WebCore::ResourceError&) override
         {
+            loadFailed_ = true;
         }
 
         virtual void postProgressStartedNotification() override
