@@ -194,6 +194,7 @@ namespace wke
 
         virtual void dispatchDidFailProvisionalLoad(const WebCore::ResourceError&) override
         {
+            loadFailed_ = true;
         }
 
         virtual void dispatchDidFailLoad(const WebCore::ResourceError&) override
@@ -270,7 +271,6 @@ namespace wke
 
         virtual void setMainDocumentError(WebCore::DocumentLoader*, const WebCore::ResourceError&) override
         {
-            loadFailed_ = true;
         }
 
         virtual void postProgressStartedNotification() override
