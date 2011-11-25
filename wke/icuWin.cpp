@@ -597,6 +597,9 @@ u_charType(UChar32 c)
     if (c < sizeof(s_charType)/sizeof(s_charType[0]))
         return s_charType[c];
 
+    if (iswspace(c))
+        return U_SPACE_SEPARATOR;
+
     return U_UNASSIGNED;
 }
 
