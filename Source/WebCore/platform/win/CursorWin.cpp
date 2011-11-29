@@ -51,7 +51,7 @@ static PassRefPtr<SharedCursor> createSharedCursor(Image* img, const IntPoint& h
 //wke++++++
     BitmapInfo cursorImage = BitmapInfo::createBottomUp(IntSize(img->width(), img->height()));
     if (cursorImage.bmiHeader.biWidth == 0)
-        cursorImage.bmiHeader.biWidth = -16;
+        cursorImage.bmiHeader.biWidth = 16;
 
     if (cursorImage.bmiHeader.biHeight == 0)
         cursorImage.bmiHeader.biHeight = -16;
