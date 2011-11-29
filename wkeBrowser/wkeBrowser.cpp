@@ -484,8 +484,10 @@ LRESULT CALLBACK WebViewWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 
     case WM_MOUSEWHEEL:
         {
-            int x = GET_X_LPARAM(lParam);
-            int y = GET_Y_LPARAM(lParam);
+            POINT pt;
+            pt.x = GET_X_LPARAM(lParam);
+            pt.y = GET_Y_LPARAM(lParam);
+            ScreenToClient(hWnd, &pt);
 
             int delta = GET_WHEEL_DELTA_WPARAM(wParam);
 
@@ -505,7 +507,7 @@ LRESULT CALLBACK WebViewWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 
             //flags = wParam;
 
-            handled = g_webView->mouseWheel(x, y, delta, flags);
+            handled = g_webView->mouseWheel(pt.x, pt.y, delta, flags);
         }
         break;
 
