@@ -24,24 +24,68 @@
 #include <wtf/HashMap.h>
 #include <wtf/text/StringHash.h>
 
+//wke++++++
+#include "wkeCookieJar.h"
+#include "DocumentLoader.h"
+#include "MainResourceLoader.h"
+#include "ResourceHandleInternal.h"
+CookieJar cookieJar;
+//wke++++++
+
 namespace WebCore {
 
-static HashMap<String, String> cookieJar;
+//wke++++++
+//static HashMap<String, String> cookieJar;
 
-void setCookies(Document* /*document*/, const KURL& url, const String& value)
+CURL* curlHandle(const Document* document)
 {
-    cookieJar.set(url.string(), value);
+    if (document == NULL)
+        return NULL;
+
+    DocumentLoader* docLoader = document->loader();
+    if (docLoader == NULL)
+        return NULL;
+
+    ResourceLoader* resLoader = docLoader->mainResourceLoader();
+    if (resLoader == NULL)
+        return NULL;
+
+    ResourceHandle* handle = resLoader->handle();
+    if (handle == NULL)
+        return NULL;
+
+    ResourceHandleInternal* d = handle->getInternal();
+    if (d == NULL)
+        return NULL;
+
+    return d->m_handle;
+}
+//wke++++++
+
+void setCookies(Document* document, const KURL& url, const String& value)
+{
+    //wke++++++
+    CURL* handle = curlHandle(document);
+    if (handle == NULL)
+        return;
+
+    cookieJar.set(handle, url, value); 
+    //wke++++++
 }
 
-String cookies(const Document* /*document*/, const KURL& url)
+String cookies(const Document* document, const KURL& url)
 {
-    return cookieJar.get(url.string());
+    //wke++++++
+    return cookieJar.get(url);
+    //wke++++++
 }
 
 String cookieRequestHeaderFieldValue(const Document* /*document*/, const KURL& url)
 {
     // FIXME: include HttpOnly cookie.
-    return cookieJar.get(url.string());
+    //wke++++++
+    return cookieJar.get(url);
+    //wke++++++
 }
 
 bool cookiesEnabled(const Document* /*document*/)

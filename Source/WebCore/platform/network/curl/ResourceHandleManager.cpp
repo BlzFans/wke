@@ -56,6 +56,10 @@
 #define MAX_PATH MAXPATHLEN
 #endif
 
+//wke++++++
+#include "wkeCookieJar.h"
+//wke++++++
+
 namespace WebCore {
 
 const int selectTimeoutMS = 5;
@@ -282,6 +286,9 @@ static size_t headerCallback(char* ptr, size_t size, size_t nmemb, void* data)
         if (client)
             client->didReceiveResponse(job, d->m_response);
         d->m_response.setResponseFired(true);
+        //wke++++++
+        cookieJar.set(d->m_handle);
+        //wke++++++
 
     } else {
         int splitPos = header.find(":");

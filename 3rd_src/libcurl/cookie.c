@@ -1132,4 +1132,65 @@ struct curl_slist *Curl_cookie_list(struct SessionHandle *data)
   return list;
 }
 
+/*wke++++++*/
+long curl_cookies_count(struct SessionHandle *data)
+{
+    if (data->cookies == NULL)
+        return 0;
+
+    return data->cookies->numcookies;
+}
+
+struct Cookie* curl_first_cookie(struct SessionHandle *data)
+{
+    if (data->cookies)
+        return data->cookies->cookies;
+
+    return NULL;
+}
+
+struct Cookie* curl_next_cookie(struct Cookie *c)
+{
+    return c->next;
+}
+
+const char* curl_cookie_name(struct Cookie *c)
+{
+    return c->name;
+}
+
+const char* curl_cookie_value(struct Cookie *c)
+{
+    return c->value;
+}
+
+const char* curl_cookie_domain(struct Cookie *c)
+{
+    return c->domain;
+}
+
+const char* curl_cookie_path(struct Cookie *c)
+{
+    return c->path;
+}
+
+bool curl_cookie_secure(struct Cookie *c)
+{
+    return c->secure;
+}
+
+curl_off_t curl_cookie_expires(struct Cookie *c)
+{
+    return c->expires;
+}
+
+struct Cookie* curl_cookie_add(struct SessionHandle *data, const char* value, const char* domain, const char* path)
+{
+    if(!data->cookies)
+        data->cookies = Curl_cookie_init(data, NULL, NULL, TRUE);
+
+    return Curl_cookie_add(data, data->cookies, TRUE, (char*)value, domain, path);
+}
+/*wke++++++*/
+
 #endif /* CURL_DISABLE_HTTP || CURL_DISABLE_COOKIES */
