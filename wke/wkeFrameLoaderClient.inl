@@ -6,6 +6,7 @@
 #include <WebCore/PluginView.h>
 #include <WebCore/HTMLPlugInElement.h>
 #include <WebCore/FrameNetworkingContext.h>
+#include <WebCore/Language.h>
 
 namespace wke
 {
@@ -93,8 +94,10 @@ namespace wke
         {
         }
 
-        virtual void dispatchWillSendRequest(WebCore::DocumentLoader*, unsigned long identifier, WebCore::ResourceRequest&, const WebCore::ResourceResponse& redirectResponse) override
+        virtual void dispatchWillSendRequest(WebCore::DocumentLoader*, unsigned long identifier, WebCore::ResourceRequest& request, const WebCore::ResourceResponse& redirectResponse) override
         {
+            request.addHTTPHeaderField("Accept-Language", WebCore::defaultLanguage());
+            request.addHTTPHeaderField("Accept-Charset", page_->settings()->defaultTextEncodingName() + ",utf-8;q=0.7,*;q=0.3");
         }
 
         virtual bool shouldUseCredentialStorage(WebCore::DocumentLoader*, unsigned long identifier) override
