@@ -96,7 +96,7 @@ namespace wke
 
         virtual void dispatchWillSendRequest(WebCore::DocumentLoader*, unsigned long identifier, WebCore::ResourceRequest& request, const WebCore::ResourceResponse& redirectResponse) override
         {
-            request.addHTTPHeaderField("Accept-Language", WebCore::defaultLanguage());
+            request.addHTTPHeaderField("Accept-Language", WebCore::defaultLanguage() + ",en,*");
             request.addHTTPHeaderField("Accept-Charset", page_->settings()->defaultTextEncodingName() + ",utf-8;q=0.7,*;q=0.3");
         }
 
