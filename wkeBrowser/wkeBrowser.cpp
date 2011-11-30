@@ -374,65 +374,25 @@ LRESULT CALLBACK WebViewWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
     case WM_LBUTTONDOWN:
     case WM_MBUTTONDOWN:
     case WM_RBUTTONDOWN:
-        {
-            SetFocus(hWnd);
-            SetCapture(hWnd);
-
-            int x = GET_X_LPARAM(lParam);
-            int y = GET_Y_LPARAM(lParam);
-
-            unsigned int flags = 0;
-
-            if (wParam & MK_CONTROL)
-                flags |= WKE_CONTROL;
-            if (wParam & MK_SHIFT)
-                flags |= WKE_SHIFT;
-
-            if (wParam & MK_LBUTTON)
-                flags |= WKE_LBUTTON;
-            if (wParam & MK_MBUTTON)
-                flags |= WKE_MBUTTON;
-            if (wParam & MK_RBUTTON)
-                flags |= WKE_RBUTTON;
-
-            //flags = wParam;
-
-            handled = g_webView->mouseEvent(message, x, y, flags);
-        }
-        break;
-
+    case WM_LBUTTONDBLCLK:
+    case WM_MBUTTONDBLCLK:
+    case WM_RBUTTONDBLCLK:
     case WM_LBUTTONUP:
     case WM_MBUTTONUP:
     case WM_RBUTTONUP:
-        {
-            ReleaseCapture();
-
-            int x = GET_X_LPARAM(lParam);
-            int y = GET_Y_LPARAM(lParam);
-
-            unsigned int flags = 0;
-
-            if (wParam & MK_CONTROL)
-                flags |= WKE_CONTROL;
-            if (wParam & MK_SHIFT)
-                flags |= WKE_SHIFT;
-
-            if (wParam & MK_LBUTTON)
-                flags |= WKE_LBUTTON;
-            if (wParam & MK_MBUTTON)
-                flags |= WKE_MBUTTON;
-            if (wParam & MK_RBUTTON)
-                flags |= WKE_RBUTTON;
-
-            //flags = wParam;
-
-            handled = g_webView->mouseEvent(message, x, y, flags);
-            //g_webView->contextMenuEvent(x, y, flags);
-        }
-        break;
 
     case WM_MOUSEMOVE:
         {
+            if (message == WM_LBUTTONDOWN || message == WM_MBUTTONDOWN || message == WM_RBUTTONDOWN)
+            {
+                SetFocus(hWnd);
+                SetCapture(hWnd);
+            }
+            else if (message == WM_LBUTTONUP || message == WM_MBUTTONUP || message == WM_RBUTTONUP)
+            {
+                ReleaseCapture();
+            }
+
             int x = GET_X_LPARAM(lParam);
             int y = GET_Y_LPARAM(lParam);
 
@@ -451,6 +411,7 @@ LRESULT CALLBACK WebViewWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
                 flags |= WKE_RBUTTON;
 
             //flags = wParam;
+
             handled = g_webView->mouseEvent(message, x, y, flags);
         }
         break;
