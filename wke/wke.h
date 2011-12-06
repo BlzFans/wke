@@ -146,6 +146,10 @@ namespace wke
         virtual jsValue runJS(const utf8* script) = 0;
         virtual jsValue runJS(const wchar_t* script) = 0;
         virtual jsExecState globalExec() = 0;
+
+        virtual void sleep() = 0; //moveOffscreen
+        virtual void awaken() = 0; //moveOnscreen
+        virtual bool isAwake() const = 0;
     };
 }
 
@@ -256,6 +260,10 @@ WKE_API jsValue wkeRunJS(wkeWebView webView, const utf8* script);
 WKE_API jsValue wkeRunJSW(wkeWebView webView, const wchar_t* script);
 
 WKE_API jsExecState wkeGlobalExec(wkeWebView webView);
+
+WKE_API void wkeSleep(wkeWebView webView);
+WKE_API void wkeAwaken(wkeWebView webView);
+WKE_API bool wkeIsAwake(wkeWebView webView);
 
 /***JavaScript Bind***/
 #define JS_CALL __fastcall

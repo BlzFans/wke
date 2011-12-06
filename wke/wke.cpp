@@ -27,6 +27,7 @@
 #include <WebCore/ResourceHandleManager.h>
 #include <WebCore/Console.h>
 #include <WebCore/ContextMenuController.h>
+#include <WebCore/Chrome.h>
 
 #include "wke.h"
 
@@ -73,6 +74,7 @@ namespace wke
             ,width_(0)
             ,height_(0)
             ,gfxContext_(NULL)
+            ,awake_(true)
         {
             WebCore::Page::PageClients pageClients;
             pageClients.chromeClient = new ChromeClient(this);
@@ -99,7 +101,7 @@ namespace wke
 
             page()->focusController()->setActive(true);
 
-            hdc_ = adoptPtr(CreateCompatibleDC(0));
+            hdc_ = adoptPtr(::CreateCompatibleDC(0));
         }
 
         virtual ~CWebView()
@@ -318,17 +320,9 @@ namespace wke
 
             if (gfxContext_ == NULL)
             {
-                BITMAPINFO bmp;
-                memset(&bmp, 0, sizeof(bmp));
-                bmp.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-                bmp.bmiHeader.biWidth = width_;
-                bmp.bmiHeader.biHeight = -height_;
-                bmp.bmiHeader.biPlanes = 1;
-                bmp.bmiHeader.biBitCount = 32;
-                bmp.bmiHeader.biCompression = BI_RGB;
-
+                WebCore::BitmapInfo bmp = WebCore::BitmapInfo::createBottomUp(WebCore::IntSize(width_, height_));
                 HBITMAP hbmp = ::CreateDIBSection(0, &bmp, DIB_RGB_COLORS, &pixels_, NULL, 0);
-                SelectObject(hdc_.get(), hbmp);
+                ::SelectObject(hdc_.get(), hbmp);
                 hbmp_ = adoptPtr(hbmp);
 
                 gfxContext_ = new WebCore::GraphicsContext(hdc_.get(), transparent_);
@@ -363,6 +357,10 @@ namespace wke
                     dst_pixels += pitch;
                 }
             }
+
+            //ChromeClient* client = (ChromeClient*)page()->chrome()->client();
+            //client->paintPopupMenu(dst, pitch);
+            //client->paintToolTip(dst, pitch);
         }
 
         virtual bool canGoBack() const
@@ -814,6 +812,25 @@ namespace wke
             return mainFrame_->script()->globalObject(WebCore::mainThreadNormalWorld())->globalExec();
         }
 
+        virtual void sleep()
+        {
+            awake_ = false;
+            page()->setCanStartMedia(false);
+            page()->willMoveOffscreen();
+        }
+
+        virtual void awaken()
+        {
+            awake_ = true;
+            page()->didMoveOnscreen();
+            page()->setCanStartMedia(true);
+        }
+
+        virtual bool isAwake() const
+        {
+            return awake_;
+        }
+
         WebCore::Page* page() const { return page_.get(); }
         WebCore::Frame* mainFrame() const { return mainFrame_; }
 
@@ -834,6 +851,8 @@ namespace wke
         OwnPtr<HDC> hdc_;
         OwnPtr<HBITMAP> hbmp_;
         void* pixels_;
+
+        bool awake_;
     };
 }
 
@@ -1182,6 +1201,26 @@ jsExecState wkeGlobalExec(wkeWebView webView)
 {
     return webView->globalExec();
 }
+
+void wkeSleep(wkeWebView webView)
+{
+    webView->sleep();
+}
+
+void wkeAwaken(wkeWebView webView)
+{
+    webView->awaken();
+}
+
+bool wkeIsAwake(wkeWebView webView)
+{
+    return webView->isAwake();
+}
+
+
+
+
+
 
 //FIXME: We should consider moving this to a new file for cross-project functionality
 PassRefPtr<WebCore::SharedBuffer> loadResourceIntoBuffer(const char* name)
