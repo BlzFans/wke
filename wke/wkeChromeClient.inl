@@ -23,11 +23,163 @@ namespace wke
         RefPtr<EmptyPopupMenu> m_popup;
     };
 
+    class ToolTip
+    {
+    public:
+        ToolTip(IWebView* webView)
+            :webView_(webView)
+            ,pixels_(NULL)
+        {}
+
+        void set(const String& title, const WebCore::IntPoint& point)
+        {
+            title_ = title;
+            point_ = point;
+            pixels_ = NULL;
+        }
+
+        const String& title() const
+        {
+            return title_;
+        }
+
+        void paint(void* dst, int pitch)
+        {
+            if (!pixels_)
+            {
+                if (title_.isEmpty())
+                    return;
+
+                if (!hdc_)
+                {
+                    hdc_ = adoptPtr(::CreateCompatibleDC(0));
+                    ::SelectObject(hdc_.get(), GetStockObject(DEFAULT_GUI_FONT));
+                    ::SetTextColor(hdc_.get(), RGB(0x64, 0x64, 0x64));
+                }
+
+                int width = webView_->width();
+                int height = webView_->height();
+
+                const int marginH = 4;
+                const int marginV = 4;
+                if (marginH * 2 >= width || marginV * 2 >= height)
+                    return;
+
+                RECT rcText;
+                rcText.left = marginH;
+                rcText.right = rcText.left + width / 2;
+                rcText.top = marginV;
+                rcText.bottom = rcText.top + height / 2;
+                ::DrawText(hdc_.get(), title_.characters(), title_.length(), &rcText, DT_WORDBREAK|DT_CALCRECT);
+
+                if (rcText.right > width - marginH)
+                    rcText.right = width - marginH;
+
+                if (rcText.bottom > height - marginV)
+                    rcText.bottom = height - marginV;
+
+                rect_.left = 0;
+                rect_.top = 0;
+                rect_.right = rcText.right + marginH;
+                rect_.bottom = rcText.bottom + marginV;
+
+                WebCore::BitmapInfo bmp = WebCore::BitmapInfo::createBottomUp(WebCore::IntSize(rect_.right, rect_.bottom));
+                HBITMAP hbmp = ::CreateDIBSection(0, &bmp, DIB_RGB_COLORS, &pixels_, NULL, 0);
+                SelectObject(hdc_.get(), hbmp);
+                hbmp_ = adoptPtr(hbmp);
+
+                unsigned int* ptr = (unsigned int*)pixels_;
+
+                //background
+                memset(ptr, 0xFA, rect_.right * rect_.bottom * 4);
+                
+                //top
+                memset(ptr, 0x64, rect_.right * 4);
+                
+                //bottom
+                ptr = (unsigned int*)pixels_ + rect_.right * (rect_.bottom - 1);
+                memset(ptr, 0x64, rect_.right * 4);
+
+                //left and right
+                ptr = (unsigned int*)pixels_ + rect_.right;
+                for (int i = 1; i < rect_.bottom; ++i)
+                {
+                    ptr[0] = 0x64646464;
+                    ptr[-1] = 0x64646464;
+                    ptr += rect_.right;
+                }
+
+                //corner
+                ptr = (unsigned int*)pixels_;
+                ptr[rect_.right + 1] = 0x64646464; 
+                ptr[rect_.right * 2 - 2] = 0x64646464;
+                ptr[rect_.right * (rect_.bottom - 1) - 2] = 0x64646464;
+                ptr[rect_.right * (rect_.bottom - 2) + 1] = 0x64646464;
+
+                ::DrawText(hdc_.get(), title_.characters(), title_.length(), &rcText, DT_WORDBREAK);
+
+                for (int i = 0; i < rect_.right * rect_.bottom; ++i)
+                {
+                    ((unsigned char*)pixels_)[i*4 + 3] = 255;
+                }
+
+                const int offset = 10;
+                if (point_.x() + offset + rect_.right < width)
+                    rect_.left = point_.x() + offset;
+                else if (point_.x() > rect_.right + offset)
+                    rect_.left = point_.x() - rect_.right - offset;
+                else
+                    rect_.left = width - rect_.right;
+
+                if (point_.y() + offset + rect_.bottom < height)
+                    rect_.top = point_.y() + offset;
+                else if (point_.y() > rect_.top + offset)
+                    rect_.top = point_.y() - rect_.bottom - offset;
+                else
+                    rect_.top = height - rect_.bottom;
+
+                rect_.right += rect_.left;
+                rect_.bottom += rect_.top;
+            }
+
+            //copy to dst
+            int w = rect_.right - rect_.left;
+            int h = rect_.bottom - rect_.top;
+            unsigned char* pixels = (unsigned char*)pixels_; 
+            unsigned char* dst_pixels = (unsigned char*)dst + rect_.top * pitch + rect_.left*4;
+
+            *(int*)pixels = *(int*)dst_pixels;
+            *((int*)pixels + w - 1) = *((int*)dst_pixels + w - 1);
+
+            *((int*)pixels + w * (h - 1)) = *(int*)(dst_pixels + pitch * (h - 1));
+            *((int*)pixels + w * h - 1) = *((int*)(dst_pixels + pitch * h - 4) - 1);
+
+            for (int i = 0; i < h; ++i)
+            {
+                memcpy(dst_pixels, pixels, w*4);
+                pixels += w*4;
+                dst_pixels += pitch;
+            }
+        }
+
+    private:
+        String title_;
+        WebCore::IntPoint point_;
+
+        OwnPtr<HDC> hdc_;
+        OwnPtr<HBITMAP> hbmp_;
+        void* pixels_;
+        RECT rect_;
+
+        IWebView* webView_;
+    };
+
     class ChromeClient : public WebCore::ChromeClient
     {
     public:
         ChromeClient(IWebView* webView)
             :webView_(webView)
+            ,toolTip_(webView)
         {}
 
         virtual void chromeDestroyed() override
@@ -226,7 +378,7 @@ namespace wke
         virtual PlatformPageClient platformPageClient() const override
         {
             //dbgMsg(L"platformPageClient\n");
-            return 0;
+            return GetDesktopWindow();
         }
 
         virtual void scrollbarsModeDidChange() const override
@@ -250,16 +402,20 @@ namespace wke
         {
         }
 
-        virtual void mouseDidMoveOverElement(const WebCore::HitTestResult&, unsigned modifierFlags) override
+        virtual void mouseDidMoveOverElement(const WebCore::HitTestResult& result, unsigned modifierFlags) override
         {
+            WebCore::TextDirection dir;
+            String title = result.title(dir);
+            if (title != toolTip_.title())
+            {
+                WebCore::IntPoint point = ((CWebView*)webView())->mainFrame()->eventHandler()->currentMousePosition();
+                toolTip_.set(title, point);
+                webView_->setDirty(true);
+            }
         }
 
         virtual void setToolTip(const WTF::String& toolTip, WebCore::TextDirection) override
         {
-            if (!toolTip.isEmpty())
-            {
-                dbgMsg(L"setToolTip %s\n", CSTR(toolTip));
-            }
         }
 
         virtual void print(WebCore::Frame*) override
@@ -361,10 +517,23 @@ namespace wke
         { 
         }
 
-        virtual void* webView() const override { return webView_; }
+        virtual void* webView() const override 
+        { 
+            return webView_; 
+        }
+
+        void paintPopupMenu(void* dst, int pitch)
+        {
+        }
+
+        void paintToolTip(void* dst, int pitch)
+        {
+            toolTip_.paint(dst, pitch);
+        }
 
     protected:
         WebCore::FloatRect rect_;
         IWebView* webView_;
+        ToolTip toolTip_;
     };
 }

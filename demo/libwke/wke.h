@@ -6,8 +6,8 @@
  *
  */
 
-#ifndef WKE_VIEW_H
-#define WKE_VIEW_H
+#ifndef WKE_H
+#define WKE_H
 
 
 #ifdef BUILDING_wke

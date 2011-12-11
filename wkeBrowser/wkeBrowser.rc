@@ -70,7 +70,7 @@ END
 // Dialog
 //
 
-IDD_ABOUTBOX DIALOGEX 0, 0, 170, 62
+IDD_ABOUTBOX DIALOGEX 0, 0, 170, 89
 STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "About wkeBrowser"
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
@@ -78,7 +78,8 @@ BEGIN
     ICON            128,IDC_STATIC,14,14,21,20
     LTEXT           "wkeBrowser, Version 1.0",IDC_STATIC,42,14,114,8,SS_NOPREFIX
     LTEXT           "http://wke.sf.net",IDC_STATIC,42,26,114,8
-    DEFPUSHBUTTON   "OK",IDOK,113,41,50,14,WS_GROUP
+    DEFPUSHBUTTON   "OK",IDOK,113,68,50,14,WS_GROUP
+    LTEXT           "BlzFans@hotmail.com",IDC_STATIC,42,38,114,8
 END
 
 
@@ -95,7 +96,7 @@ BEGIN
         LEFTMARGIN, 7
         RIGHTMARGIN, 163
         TOPMARGIN, 7
-        BOTTOMMARGIN, 55
+        BOTTOMMARGIN, 82
     END
 END
 #endif    // APSTUDIO_INVOKED
@@ -143,7 +144,7 @@ BEGIN
     IDC_WKEBROWSER          "WKEBROWSER"
 END
 
-#endif    // English (U.S.) resources
+#endif    // English(U.S.) resources
 /////////////////////////////////////////////////////////////////////////////
 
 

@@ -54,6 +54,14 @@
 			RelativePath="..\wke\stringTable.h"
 			>
 		</File>
+	    <File
+			RelativePath="..\wke\wkeWebView.cpp"
+			>
+		</File>
+		<File
+			RelativePath="..\wke\wkeWebView.h"
+			>
+		</File>
 		<File
 			RelativePath="..\wke\wke.cpp"
 			>
