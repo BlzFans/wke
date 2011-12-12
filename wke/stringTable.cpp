@@ -10,26 +10,22 @@ struct StringTableHash {
 
     static unsigned hash(const char* key) 
     {
-        ASSERT(false);
-        return 0;
+        return StringHasher::computeHash(key, strlen(key));
     }
 
     static bool equal(const char* a, const char* b)
     {
-        ASSERT(false);
-        return false;
+        return strcmp(a, b) == 0;
     }
 
     static unsigned hash(const wchar_t* key) 
     { 
-        ASSERT(false);
-        return 0;
+        return StringHasher::computeHash(key, wcslen(key));
     }
 
     static bool equal(const wchar_t* a, const wchar_t* b)
     {
-        ASSERT(false);
-        return false;
+        return wcscmp(a, b) == 0;
     }
 
     static const bool safeToCompareToEmptyOrDeleted = false;
