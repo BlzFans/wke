@@ -121,7 +121,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 
     t2.Start();
     g_webView = wkeCreateWebView("");
-    g_webView->setTransparent(true);
+    g_webView->setTransparent(false);
     t2.End();
 
     t3.Start();
@@ -172,7 +172,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
                 DispatchMessage(&msg);
             }
         }
-        else
+        else if (!IsIconic(hMainWnd))
         {
             g_render->render(g_webView);
         }

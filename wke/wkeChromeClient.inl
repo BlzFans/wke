@@ -1,26 +1,21 @@
 
 #include <WebCore/FileIconLoader.h>
 #include <WebCore/Icon.h>
+#include <WebCore/SearchPopupMenu.h>
+#include <WebCore/ChromeClient.h>
+#include <WebCore/HitTestResult.h>
+#include <WebCore/Frame.h>
+#include "wkeDebug.h"
+#include "wkePopupMenu.h"
 
 namespace wke
 {
-    class EmptyPopupMenu : public WebCore::PopupMenu {
-    public:
-        virtual void show(const WebCore::IntRect&, WebCore::FrameView*, int) {}
-        virtual void hide() {}
-        virtual void updateFromElement() {}
-        virtual void disconnectClient() {}
-    };
-
     class EmptySearchPopupMenu : public WebCore::SearchPopupMenu {
     public:
-        virtual WebCore::PopupMenu* popupMenu() { return m_popup.get(); }
+        virtual WebCore::PopupMenu* popupMenu() { return NULL; }
         virtual void saveRecentSearches(const AtomicString&, const Vector<String>&) {}
         virtual void loadRecentSearches(const AtomicString&, Vector<String>&) {}
         virtual bool enabled() { return false; }
-
-    private:
-        RefPtr<EmptyPopupMenu> m_popup;
     };
 
     class ToolTip
@@ -43,7 +38,7 @@ namespace wke
             return title_;
         }
 
-        void paint(void* dst, int pitch)
+        void paint(void* bits, int pitch)
         {
             if (!pixels_)
             {
@@ -145,20 +140,20 @@ namespace wke
             //copy to dst
             int w = rect_.right - rect_.left;
             int h = rect_.bottom - rect_.top;
-            unsigned char* pixels = (unsigned char*)pixels_; 
-            unsigned char* dst_pixels = (unsigned char*)dst + rect_.top * pitch + rect_.left*4;
+            unsigned char* src = (unsigned char*)pixels_; 
+            unsigned char* dst = (unsigned char*)bits + rect_.top * pitch + rect_.left*4;
 
-            *(int*)pixels = *(int*)dst_pixels;
-            *((int*)pixels + w - 1) = *((int*)dst_pixels + w - 1);
-
-            *((int*)pixels + w * (h - 1)) = *(int*)(dst_pixels + pitch * (h - 1));
-            *((int*)pixels + w * h - 1) = *((int*)(dst_pixels + pitch * h - 4) - 1);
+            //save corner
+            memcpy(src, dst, 4);
+            memcpy(src + (w - 1) * 4, dst + (w - 1) * 4, 4);
+            memcpy(src + w * (h - 1) * 4, dst + pitch * (h - 1), 4);
+            memcpy(src + w * h * 4 - 4, dst + pitch * (h - 1) + (w - 1) * 4, 4);
 
             for (int i = 0; i < h; ++i)
             {
-                memcpy(dst_pixels, pixels, w*4);
-                pixels += w*4;
-                dst_pixels += pitch;
+                memcpy(dst, src, w*4);
+                src += w*4;
+                dst += pitch;
             }
         }
 
@@ -180,6 +175,7 @@ namespace wke
         ChromeClient(IWebView* webView)
             :webView_(webView)
             ,toolTip_(webView)
+            ,popupMenu_(NULL)
         {}
 
         virtual void chromeDestroyed() override
@@ -500,7 +496,7 @@ namespace wke
 
         virtual PassRefPtr<WebCore::PopupMenu> createPopupMenu(WebCore::PopupMenuClient* client) const override
         {
-            return adoptRef(new EmptyPopupMenu);
+            return adoptRef(new PopupMenu(client, (wke::ChromeClient*)this));
         }
 
         virtual PassRefPtr<WebCore::SearchPopupMenu> createSearchPopupMenu(WebCore::PopupMenuClient* client) const override
@@ -522,18 +518,31 @@ namespace wke
             return webView_; 
         }
 
-        void paintPopupMenu(void* dst, int pitch)
+        PopupMenu* popupMenu()
         {
+            return popupMenu_;
         }
 
-        void paintToolTip(void* dst, int pitch)
+        void setPopupMenu(PopupMenu* popupMenu)
         {
-            toolTip_.paint(dst, pitch);
+            popupMenu_ = popupMenu;
+        }
+
+        void paintPopupMenu(void* bits, int pitch)
+        {
+            if (popupMenu_)
+                popupMenu_->paint(bits, pitch);
+        }
+
+        void paintToolTip(void* bits, int pitch)
+        {
+            toolTip_.paint(bits, pitch);
         }
 
     protected:
         WebCore::FloatRect rect_;
         IWebView* webView_;
         ToolTip toolTip_;
+        PopupMenu* popupMenu_;
     };
 }

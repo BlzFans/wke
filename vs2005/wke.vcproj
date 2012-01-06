@@ -71,6 +71,14 @@
 			>
 		</File>
 		<File
+			RelativePath="..\wke\wkePopupMenu.cpp"
+			>
+		</File>
+		<File
+			RelativePath="..\wke\wkePopupMenu.h"
+			>
+		</File>
+		<File
 			RelativePath="..\wke\wkeChromeClient.inl"
 			>
 		</File>
@@ -104,6 +112,10 @@
 		</File>
 		<File
 			RelativePath="..\wke\wkePlatformStrategies.inl"
+			>
+		</File>
+        <File
+			RelativePath="..\wke\wke.rc"
 			>
 		</File>
 	</Files>

@@ -112,7 +112,7 @@ namespace wke
         virtual void addDirtyArea(int x, int y, int w, int h) = 0;
 
         virtual void layoutIfNeeded() = 0;
-        virtual void paint(void* dst, int pitch) = 0;
+        virtual void paint(void* bits, int pitch) = 0;
 
         virtual bool canGoBack() const = 0;
         virtual bool goBack() = 0;
@@ -225,7 +225,7 @@ WKE_API void wkeSetDirty(wkeWebView webView, bool dirty);
 WKE_API bool wkeIsDirty(wkeWebView webView);
 WKE_API void wkeAddDirtyArea(wkeWebView webView, int x, int y, int w, int h);
 WKE_API void wkeLayoutIfNeeded(wkeWebView webView);
-WKE_API void wkePaint(wkeWebView webView, void* dst, int pitch);
+WKE_API void wkePaint(wkeWebView webView, void* bits, int pitch);
 
 WKE_API bool wkeCanGoBack(wkeWebView webView);
 WKE_API bool wkeGoBack(wkeWebView webView);

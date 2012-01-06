@@ -290,7 +290,7 @@ namespace wke
         mainFrame_->view()->updateLayoutAndStyleIfNeededRecursive();
     }
 
-    void CWebView::paint(void* dst, int pitch)
+    void CWebView::paint(void* bits, int pitch)
     {
         layoutIfNeeded();
 
@@ -320,23 +320,23 @@ namespace wke
 
         if (pitch == 0 || pitch == width_*4)
         {
-            memcpy(dst, pixels_, width_*height_*4);
+            memcpy(bits, pixels_, width_*height_*4);
         }
-        else 
+        else
         {
-            unsigned char* pixels = (unsigned char*)pixels_; 
-            unsigned char* dst_pixels = (unsigned char*)dst; 
+            unsigned char* src = (unsigned char*)pixels_; 
+            unsigned char* dst = (unsigned char*)bits; 
             for(int i = 0; i < height_; ++i) 
             {
-                memcpy(dst_pixels, pixels, width_*4);
-                pixels += width_*4;
-                dst_pixels += pitch;
+                memcpy(dst, src, width_*4);
+                src += width_*4;
+                dst += pitch;
             }
         }
 
         ChromeClient* client = (ChromeClient*)page()->chrome()->client();
-        client->paintPopupMenu(dst, pitch);
-        client->paintToolTip(dst, pitch);
+        client->paintPopupMenu(bits, pitch);
+        client->paintToolTip(bits, pitch);
     }
 
     bool CWebView::canGoBack() const
@@ -528,6 +528,10 @@ namespace wke
         int clickCount = 0;
         WebCore::PlatformMouseEvent mouseEvent(pos, globalPos, button, eventType, clickCount, shift, ctrl, alt, meta, timestamp);
 
+        ChromeClient* client = (ChromeClient*)page()->chrome()->client();
+        if (client->popupMenu() && client->popupMenu()->mouseEvent(mouseEvent))
+            return true;
+
         bool insideThreshold = abs(globalPrevPoint.x() - mouseEvent.pos().x()) < ::GetSystemMetrics(SM_CXDOUBLECLK) &&
             abs(globalPrevPoint.y() - mouseEvent.pos().y()) < ::GetSystemMetrics(SM_CYDOUBLECLK);
         LONG messageTime = ::GetMessageTime();
@@ -643,6 +647,11 @@ namespace wke
         }
 
         WebCore::PlatformWheelEvent wheelEvent(pos, globalPos, deltaX, deltaY, wheelTicksX, wheelTicksY, granularity, shiftKey, ctrlKey, altKey, altKey);
+
+        ChromeClient* client = (ChromeClient*)page()->chrome()->client();
+        if (client->popupMenu() && client->popupMenu()->mouseWheel(wheelEvent))
+            return true;
+
         return mainFrame()->eventHandler()->handleWheelEvent(wheelEvent);
     }
 
@@ -659,6 +668,10 @@ namespace wke
     {
         LPARAM keyData = MAKELPARAM(0, (WORD)flags);
         WebCore::PlatformKeyboardEvent keyEvent(0, virtualKeyCode, keyData, WebCore::PlatformKeyboardEvent::RawKeyDown, systemKey);
+
+        ChromeClient* client = (ChromeClient*)page()->chrome()->client();
+        if (client->popupMenu() && client->popupMenu()->keyDown(keyEvent))
+            return true;
 
         WebCore::Frame* frame = page()->focusController()->focusedOrMainFrame();
         bool handled = frame->eventHandler()->keyEvent(keyEvent);
@@ -744,6 +757,10 @@ namespace wke
     {
         LPARAM keyData = MAKELPARAM(0, (WORD)flags);
         WebCore::PlatformKeyboardEvent keyEvent(0, charCode, keyData, WebCore::PlatformKeyboardEvent::Char, systemKey);
+
+        ChromeClient* client = (ChromeClient*)page()->chrome()->client();
+        if (client->popupMenu() && client->popupMenu()->keyPress(keyEvent))
+            return true;
 
         WebCore::Frame* frame = page()->focusController()->focusedOrMainFrame();
         if (systemKey)

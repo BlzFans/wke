@@ -201,9 +201,9 @@ void wkeLayoutIfNeeded(wkeWebView webView)
     webView->layoutIfNeeded();
 }
 
-void wkePaint(wkeWebView webView, void* dst, int pitch)
+void wkePaint(wkeWebView webView, void* bits, int pitch)
 {
-    webView->paint(dst, pitch);
+    webView->paint(bits, pitch);
 }
 
 bool wkeCanGoBack(wkeWebView webView)
