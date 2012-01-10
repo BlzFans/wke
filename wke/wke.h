@@ -90,6 +90,9 @@ namespace wke
         virtual void loadHTML(const utf8* html) = 0;
         virtual void loadHTML(const wchar_t* html) = 0;
 
+        virtual void loadFile(const utf8* filename) = 0;
+        virtual void loadFile(const wchar_t* filename) = 0;
+
         virtual bool isLoaded() const = 0;        /*document load sucessed*/
         virtual bool isLoadFailed() const = 0;    /*document load failed*/
         virtual bool isLoadComplete() const = 0;  /*document load complete*/
@@ -187,6 +190,15 @@ WKE_API void wkeShutdown();
 WKE_API unsigned int wkeVersion();
 WKE_API const utf8* wkeVersionString();
 
+typedef void* (*FILE_OPEN) (const char* path);
+typedef void (*FILE_CLOSE) (void* handle);
+typedef size_t (*FILE_SIZE) (void* handle);
+typedef int (*FILE_READ) (void* handle, void* buffer, size_t size);
+typedef int (*FILE_SEEK) (void* handle, int offset, int origin);
+
+void wkeSetFileSystem(FILE_OPEN pfn_open, FILE_CLOSE pfn_close, FILE_SIZE pfn_size, FILE_READ pfn_read, FILE_SEEK pfn_seek);
+
+
 WKE_API wkeWebView wkeCreateWebView(const char* name); /*name can be NULL or ""*/
 WKE_API wkeWebView wkeGetWebView(const char* name);
 WKE_API void wkeDestroyWebView(wkeWebView webView);
@@ -202,6 +214,9 @@ WKE_API void wkeLoadURLW(wkeWebView webView, const wchar_t* url);
 
 WKE_API void wkeLoadHTML(wkeWebView webView, const utf8* html);
 WKE_API void wkeLoadHTMLW(wkeWebView webView, const wchar_t* html);
+
+WKE_API void wkeLoadFile(wkeWebView webView, const utf8* filename);
+WKE_API void wkeLoadFileW(wkeWebView webView, const wchar_t* filename);
 
 WKE_API bool wkeIsLoaded(wkeWebView webView);
 WKE_API bool wkeIsLoadFailed(wkeWebView webView);

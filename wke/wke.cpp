@@ -75,6 +75,13 @@ const utf8* wkeVersionString()
     return s_versionString;
 }
 
+
+extern "C" void libcurl_set_file_system(FILE_OPEN pfn_open, FILE_CLOSE pfn_close, FILE_SIZE pfn_size, FILE_READ pfn_read, FILE_SEEK  pfn_seek);
+void wkeSetFileSystem(FILE_OPEN pfn_open, FILE_CLOSE pfn_close, FILE_SIZE pfn_size, FILE_READ pfn_read, FILE_SEEK pfn_seek)
+{
+    libcurl_set_file_system(pfn_open, pfn_close, pfn_size, pfn_read, pfn_seek);
+}
+
 const char* wkeWebViewName(wkeWebView webView)
 {
     return webView->name();
@@ -114,6 +121,16 @@ void wkeLoadHTML(wkeWebView webView, const utf8* html)
 void wkeLoadHTMLW(wkeWebView webView, const wchar_t* html)
 {
     webView->loadHTML(html);
+}
+
+void wkeLoadFile(wkeWebView webView, const utf8* filename)
+{
+    return webView->loadFile(filename);
+}
+
+void wkeLoadFileW(wkeWebView webView, const wchar_t* filename)
+{
+    return webView->loadFile(filename);
 }
 
 bool wkeIsLoaded(wkeWebView webView)

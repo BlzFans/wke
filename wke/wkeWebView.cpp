@@ -171,6 +171,22 @@ namespace wke
         mainFrame_->loader()->load(request, substituteData, false);
     }
 
+    void CWebView::loadFile(const utf8* filename)
+    {
+        char url[1024];
+        _snprintf(url, 1023, "file:///%s", filename);
+        url[1023] = '\0';
+        loadURL(url);
+    }
+
+    void CWebView::loadFile(const wchar_t* filename)
+    {
+        wchar_t url[1024];
+        _snwprintf(url, 1024, L"file:///%s", filename);
+        url[1023] = L'\0';
+        loadURL(url);
+    }
+
     bool CWebView::isLoaded() const
     {
         FrameLoaderClient* client = (FrameLoaderClient*)mainFrame()->loader()->client();

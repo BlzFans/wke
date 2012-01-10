@@ -24,6 +24,9 @@ namespace wke
 
         virtual void loadHTML(const utf8* html);
         virtual void loadHTML(const wchar_t* html);
+
+        virtual void loadFile(const utf8* filename);
+        virtual void loadFile(const wchar_t* filename);
         
         virtual bool isLoaded() const;
         virtual bool isLoadFailed() const;

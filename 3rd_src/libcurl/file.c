@@ -100,6 +100,74 @@
 #  define open_readonly(p,f) open((p),(f))
 #endif
 
+#define is_valid_file(fd) ((fd) != 0 && (fd) != -1)
+
+/*wke++++++*/
+typedef void* (*FILE_OPEN) (const char* path);
+typedef void (*FILE_CLOSE) (void* handle);
+typedef size_t (*FILE_SIZE) (void* handle);
+typedef int (*FILE_READ) (void* handle, void* buffer, size_t size);
+typedef int (*FILE_SEEK) (void* handle, int offset, int origin);
+
+static void* file_open_default(const char* path)
+{
+    int fd = open(path, O_RDONLY|O_BINARY);
+    return (void*)fd;
+}
+
+static void file_close_default(void* handle)
+{
+    int fd = (int)handle;
+    if (-1 != fd)
+        close(fd);
+}
+
+static size_t file_size_default(void* handle)
+{
+    int fd = (int)handle;
+    
+    struct_stat statbuf;
+    if (-1 != fstat(fd, &statbuf)) {
+        return (size_t)statbuf.st_size;
+    }
+    
+    return 0;
+}
+
+static int file_read_default(void* handle, void* buffer, size_t size)
+{
+    int fd = (int)handle;
+    if (-1 == fd)
+        return 0;
+        
+    return read(fd, buffer, size);
+}
+
+static int file_seek_default(void* handle, int offset, int origin)
+{
+    int fd = (int)handle;
+    if (-1 == fd)
+        return 0;
+    
+    return (int)lseek(fd, offset, origin);
+}
+
+static FILE_OPEN  file_open = file_open_default;
+static FILE_CLOSE file_close = file_close_default;
+static FILE_SIZE  file_size = file_size_default;
+static FILE_READ  file_read = file_read_default;
+static FILE_SEEK  file_seek = file_seek_default;
+
+void libcurl_set_file_system(FILE_OPEN pfn_open, FILE_CLOSE pfn_close, FILE_SIZE pfn_size, FILE_READ pfn_read, FILE_SEEK  pfn_seek)
+{
+    file_open = pfn_open;
+    file_close = pfn_close;
+    file_size = pfn_size;
+    file_read = pfn_read;
+    file_seek = pfn_seek;
+}
+/*wke++++++*/
+
 /*
  * Forward declarations.
  */
@@ -219,8 +287,10 @@ static CURLcode file_connect(struct connectdata *conn, bool *done)
     /* file is not a protocol that can deal with "persistancy" */
     file = data->state.proto.file;
     Curl_safefree(file->freepath);
-    if(file->fd != -1)
-      close(file->fd);
+    
+    if(is_valid_file(file->fd))
+      file_close((void*)file->fd);
+ 
     file->path = NULL;
     file->freepath = NULL;
     file->fd = -1;
@@ -261,16 +331,16 @@ static CURLcode file_connect(struct connectdata *conn, bool *done)
     if(actual_path[i] == '/')
       actual_path[i] = '\\';
 
-  fd = open_readonly(actual_path, O_RDONLY|O_BINARY); /* no CR/LF translation */
+  fd = (int)file_open(actual_path); /* no CR/LF translation */
   file->path = actual_path;
 #else
-  fd = open_readonly(real_path, O_RDONLY);
+  fd = file_open(real_path);
   file->path = real_path;
 #endif
   file->freepath = real_path; /* free this when done */
 
   file->fd = fd;
-  if(!data->set.upload && (fd == -1)) {
+  if(!data->set.upload && !is_valid_file(fd)) {
     failf(data, "Couldn't open file %s", data->state.path);
     file_done(conn, CURLE_FILE_COULDNT_READ_FILE, FALSE);
     return CURLE_FILE_COULDNT_READ_FILE;
@@ -288,8 +358,8 @@ static CURLcode file_done(struct connectdata *conn,
   (void)premature; /* not used */
   Curl_safefree(file->freepath);
 
-  if(file->fd != -1)
-    close(file->fd);
+  if(is_valid_file(file->fd))
+    file_close((void*)file->fd);
 
   return CURLE_OK;
 }
@@ -459,16 +529,14 @@ static CURLcode file_do(struct connectdata *conn, bool *done)
 
   /* get the fd from the connection phase */
   fd = conn->data->state.proto.file->fd;
-
-  /* VMS: This only works reliable for STREAMLF files */
-  if( -1 != fstat(fd, &statbuf)) {
-    /* we could stat it, then read out the size */
-    expected_size = statbuf.st_size;
-    /* and store the modification time */
-    data->info.filetime = (long)statbuf.st_mtime;
-    fstated = TRUE;
-  }
-
+   
+  statbuf.st_mtime = time(NULL);
+  statbuf.st_size = file_size((void*)fd);
+  
+  expected_size = statbuf.st_size;
+  data->info.filetime = (long)statbuf.st_mtime;
+  fstated = TRUE;
+  
   /* If we have selected NOBODY and HEADER, it means that we only want file
      information. Which for FILE can't be much more than the file size and
      date. */
@@ -550,7 +618,7 @@ static CURLcode file_do(struct connectdata *conn, bool *done)
 
   if(data->state.resume_from) {
     if(data->state.resume_from !=
-       lseek(fd, data->state.resume_from, SEEK_SET))
+       file_seek((void*)fd, (int)data->state.resume_from, SEEK_SET))
       return CURLE_BAD_DOWNLOAD_RESUME;
   }
 
@@ -559,7 +627,7 @@ static CURLcode file_do(struct connectdata *conn, bool *done)
   while(res == CURLE_OK) {
     /* Don't fill a whole buffer if we want less than all data */
     bytestoread = (expected_size < BUFSIZE-1)?(size_t)expected_size:BUFSIZE-1;
-    nread = read(fd, buf, bytestoread);
+    nread = file_read((void*)fd, buf, bytestoread);
 
     if( nread > 0)
       buf[nread] = 0;
