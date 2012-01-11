@@ -2,7 +2,6 @@
 
 #include <windows.h>
 #include <stdio.h>
-
 #include "../libwke/wke.h"
 
 #define FILENAME_LENGTH (1024)
@@ -30,16 +29,7 @@ int main(int argc, char** argv)
 
     while (1)
     {
-        MSG msg;
-        while(PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
-        {
-            if(msg.message == WM_QUIT)
-                break;
-
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
-        }
-
+        wkeUpdate();
         if (wkeIsLoadComplete(webView))
             break;
 			

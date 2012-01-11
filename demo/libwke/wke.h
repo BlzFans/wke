@@ -187,6 +187,7 @@ extern "C"
 
 WKE_API void wkeInit();
 WKE_API void wkeShutdown();
+WKE_API void wkeUpdate();
 WKE_API unsigned int wkeVersion();
 WKE_API const utf8* wkeVersionString();
 

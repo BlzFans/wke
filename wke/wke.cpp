@@ -34,7 +34,22 @@ void wkeInit()
 
 void wkeShutdown()
 {
-    HWND hTimer = FindWindow(L"TimerWindowClass", NULL);
+    wkeUpdate();
+
+    WebCore::iconDatabase().close();
+    WebCore::PageGroup::closeLocalStorage();
+
+    destroyStringTable();
+
+    CoUninitialize();
+}
+
+void wkeUpdate()
+{
+    static HWND hTimer = NULL;
+    if (!hTimer)
+        hTimer = FindWindow(L"TimerWindowClass", NULL);
+
     if (hTimer)
     {
         MSG msg;
@@ -44,14 +59,8 @@ void wkeShutdown()
             DispatchMessage(&msg);
         }
     }
-
-    WebCore::iconDatabase().close();
-    WebCore::PageGroup::closeLocalStorage();
-
-    destroyStringTable();
-
-    CoUninitialize();
 }
+
 
 #define MAJOR_VERSION   (1)
 #define MINOR_VERSION   (0)
