@@ -34,6 +34,10 @@
 #include "WEBPImageDecoder.h"
 #include "SharedBuffer.h"
 
+//wke++++++
+#include "DDSImageDecoder.h"
+//wke++++++
+
 using namespace std;
 
 namespace WebCore {
@@ -92,6 +96,13 @@ bool matchesCURSignature(char* contents)
     return !memcmp(contents, "\x00\x00\x02\x00", 4);
 }
 
+//wke++++++
+bool matchesDDSSignature(char* contents)
+{
+    return !memcmp(contents, "DDS ", 4);
+}
+//wke++++++
+
 }
 
 ImageDecoder* ImageDecoder::create(const SharedBuffer& data, ImageSource::AlphaOption alphaOption, ImageSource::GammaAndColorProfileOption gammaAndColorProfileOption)
@@ -121,6 +132,11 @@ ImageDecoder* ImageDecoder::create(const SharedBuffer& data, ImageSource::AlphaO
 
     if (matchesICOSignature(contents) || matchesCURSignature(contents))
         return new ICOImageDecoder(alphaOption, gammaAndColorProfileOption);
+
+    //wke++++++
+    if (matchesDDSSignature(contents))
+        return new DDSImageDecoder(alphaOption, gammaAndColorProfileOption);
+    //wke++++++
 
     return 0;
 }
