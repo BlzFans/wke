@@ -6,6 +6,7 @@
 #include <malloc.h>
 #include <memory.h>
 #include <tchar.h>
+#include <time.h>
 
 #include <wke.h>
 
@@ -222,6 +223,136 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    return TRUE;
 }
 
+static int s_currentZoom = 100;
+static int s_zoomLevels[] = {30, 50, 67, 80, 90, 100, 110, 120, 133, 150, 170, 200, 240, 300};
+
+void zoom(bool zoomIn)
+{
+    if (!g_webView)
+        return;
+
+    int count = sizeof(s_zoomLevels) / sizeof(int);
+
+    int i = 0;
+    for (i = 0; i < count; ++i)
+    {
+        if (s_zoomLevels[i] == s_currentZoom)
+            break;
+    }
+
+    if (zoomIn)
+        i = i + 1;
+    else
+        i = i - 1;
+
+    if (i < 0)
+        i = 0;
+
+    if (i >= count)
+        i = count -1;
+
+    s_currentZoom = s_zoomLevels[i];
+
+    g_webView->setZoomFactor(s_currentZoom / 100.f);
+}
+
+void resetZoom()
+{
+    s_currentZoom = 100;
+    if (g_webView)
+        g_webView->setZoomFactor(s_currentZoom / 100.f);
+}
+
+void convertFilename(wchar_t* filename)
+{
+    int i;
+    for (i = 0; filename[i]; ++i)
+    {
+        if( filename[i] == L'\\'
+         || filename[i] == L'/'
+         || filename[i] == L':'
+         || filename[i] == L'*'
+         || filename[i] == L'?'
+         || filename[i] == L'\"'
+         || filename[i] == L'<'
+         || filename[i] == L'>'
+         || filename[i] == L'|' )
+         {
+            filename[i] = L'_';
+         }
+    }
+}
+
+void saveBitmap(void* pixels, int w, int h, const wchar_t* title)
+{
+    BITMAPFILEHEADER fileHdr = {0};
+    BITMAPINFOHEADER infoHdr = {0};
+    FILE * fp = NULL;
+    
+    fileHdr.bfType = 0x4d42; //'BM'
+    fileHdr.bfOffBits = sizeof(fileHdr) + sizeof(infoHdr);
+    fileHdr.bfSize = w * h * 4 + fileHdr.bfOffBits;
+
+    infoHdr.biSize = sizeof(BITMAPINFOHEADER);
+    infoHdr.biWidth = w;
+    infoHdr.biHeight = -h;
+    infoHdr.biPlanes = 1;
+    infoHdr.biBitCount = 32;
+    infoHdr.biCompression = 0;
+    infoHdr.biSizeImage = w * h * 4;
+    infoHdr.biXPelsPerMeter = 3780;
+    infoHdr.biYPelsPerMeter = 3780;
+
+    struct tm t;
+    time_t utc_time;
+    time(&utc_time);
+    localtime_s(&t, &utc_time);
+
+    wchar_t name[1024];
+    swprintf(name, 1024, L"%s_%4d%02d%02d_%02d%02d%02d.bmp", title,
+        t.tm_year + 1900, t.tm_mon + 1, t.tm_mday, t.tm_hour, t.tm_min, t.tm_sec);
+
+    convertFilename(name);
+
+    wchar_t pathname[1024];
+    swprintf(pathname, 1024, L"screenshots\\%s", name);
+    _wmkdir(L"screenshots");
+    _wfopen_s(&fp, pathname, L"wb");
+    if (fp == NULL)
+        return;
+
+    fwrite(&fileHdr, sizeof(fileHdr), 1, fp);
+    fwrite(&infoHdr, sizeof(infoHdr), 1, fp);
+    fwrite(pixels, infoHdr.biSizeImage, 1, fp);
+    fclose(fp);
+}
+
+void takeScreenshot()
+{
+    if (g_webView == NULL)
+        return;
+
+    g_webView->runJS("document.body.style.overflow='hidden'");	
+	int w = g_webView->contentsWidth();
+	int h = g_webView->contentsHeight();
+    
+    int oldwidth = g_webView->width();
+    int oldheight = g_webView->height();
+    g_webView->resize(w, h);
+    wkeUpdate();
+
+    void* pixels = malloc(w*h*4);
+    g_webView->paint(pixels, 0);
+
+    //save bitmap
+    saveBitmap(pixels, w, h, g_webView->titleW());
+
+    free(pixels);
+
+    g_webView->resize(oldwidth, oldheight);
+    g_webView->runJS("document.body.style.overflow='visible'");
+}
+
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	int wmId, wmEvent;
@@ -247,6 +378,40 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         case ID_FILE_GOFORWARD:
             if (g_webView)
                 g_webView->goForward();
+            break;
+
+        case ID_ZOOM_IN:
+            zoom(true);
+            break;
+
+        case ID_ZOOM_OUT:
+            zoom(false);
+            break;
+
+        case ID_RESET_ZOOM:
+            resetZoom();
+            break;
+
+        case ID_TAKE_SCREENSHOT:
+            takeScreenshot();
+            break;
+
+        case ID_SET_EDITABLE:
+            if (g_webView)
+            {
+                HMENU hMenu = GetMenu(hWnd);
+                UINT state = GetMenuState(hMenu, ID_SET_EDITABLE, MF_BYCOMMAND);
+                if (state & MF_CHECKED)
+                {
+                    g_webView->setEditable(false);
+                    CheckMenuItem(hMenu, ID_SET_EDITABLE, MF_BYCOMMAND | MF_UNCHECKED); 
+                }
+                else
+                {
+                    g_webView->setEditable(true);
+                    CheckMenuItem(hMenu, ID_SET_EDITABLE, MF_BYCOMMAND | MF_CHECKED); 
+                }
+            }
             break;
 
 		case IDM_EXIT:
@@ -318,6 +483,10 @@ LRESULT CALLBACK WebViewWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
     bool handled = true;
 	switch (message)
 	{
+    case WM_COMMAND:
+        SendMessage(GetParent(hWnd), message, wParam, lParam);
+        return 0;
+
     case WM_SIZE:
         if (g_webView && g_render)
         {

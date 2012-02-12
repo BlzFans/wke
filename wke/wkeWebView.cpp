@@ -865,6 +865,27 @@ namespace wke
     {
         return awake_;
     }
+
+    void CWebView::setZoomFactor(float factor)
+    {
+        mainFrame_->setPageZoomFactor(factor);
+    }
+
+    float CWebView::zoomFactor() const
+    {
+        return mainFrame_->pageZoomFactor();
+    }
+
+    void CWebView::setEditable(bool editable)
+    {
+        if (page()->isEditable() != editable)
+        {
+            page()->setEditable(editable);
+            page()->setTabKeyCyclesThroughElements(!editable);
+            if (editable)
+                mainFrame_->editor()->applyEditingStyleToBodyElement();
+        }
+    }
 }
 
 static Vector<wke::IWebView*> s_webViews;

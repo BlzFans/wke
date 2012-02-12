@@ -66,10 +66,7 @@ void setCookies(Document* document, const KURL& url, const String& value)
 {
     //wke++++++
     CURL* handle = curlHandle(document);
-    if (handle == NULL)
-        return;
-
-    cookieJar.set(handle, url, value); 
+    cookieJar.set(handle, url, value);
     //wke++++++
 }
 

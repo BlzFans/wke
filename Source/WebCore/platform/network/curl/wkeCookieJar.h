@@ -126,7 +126,7 @@ private:
 inline bool isParentDomain(const String& domain, const String& reference)
 {
     if (reference.isEmpty())
-        return false;
+        return reference.isEmpty();
 
     if (domain.endsWith(reference))
         return true;
@@ -167,14 +167,34 @@ public:
     {
         String host = url.host();
         String path = url.path();
-        void* cookie = curl_cookie_add(handle, value.utf8().data(), host.utf8().data(), path.utf8().data());
-        if (cookie)
+        
+        if (handle)
         {
+            void* cookie = curl_cookie_add(handle, value.utf8().data(), host.utf8().data(), path.utf8().data());
+            if (cookie)
+            {
+                HttpCookie c;
+                c.setName(curl_cookie_name(cookie));
+                c.setValue(curl_cookie_value(cookie));
+                c.setDomain(curl_cookie_domain(cookie));
+                c.setPath(curl_cookie_path(cookie));
+                add(c);
+                return;
+            }
+        }
+
+        size_t pos = value.find(L'=');
+        if (pos != notFound)
+        {
+            size_t end = value.find(L';');
+            if (end == notFound)
+                end = value.length();
+
             HttpCookie c;
-            c.setName(curl_cookie_name(cookie));
-            c.setValue(curl_cookie_value(cookie));
-            c.setDomain(curl_cookie_domain(cookie));
-            c.setPath(curl_cookie_path(cookie));
+            c.setName(value.substring(0, pos));
+            c.setValue(value.substring(pos + 1, end - pos - 1));
+            c.setDomain(host);
+            c.setPath(path);
             add(c);
         }
     }

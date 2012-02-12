@@ -21,11 +21,6 @@ typedef char utf8;
 typedef struct {
     int x;
     int y;
-} wkePoint;
-
-typedef struct {
-    int x;
-    int y;
     int w;
     int h;
 } wkeRect;
@@ -153,6 +148,11 @@ namespace wke
         virtual void sleep() = 0; //moveOffscreen
         virtual void awaken() = 0; //moveOnscreen
         virtual bool isAwake() const = 0;
+
+        virtual void setZoomFactor(float factor) = 0;
+        virtual float zoomFactor() const = 0;
+
+        virtual void setEditable(bool editable) = 0;
     };
 }
 
@@ -280,6 +280,12 @@ WKE_API jsExecState wkeGlobalExec(wkeWebView webView);
 WKE_API void wkeSleep(wkeWebView webView);
 WKE_API void wkeAwaken(wkeWebView webView);
 WKE_API bool wkeIsAwake(wkeWebView webView);
+
+WKE_API void wkeSetZoomFactor(wkeWebView webView, float factor);
+WKE_API float wkeZoomFactor(wkeWebView webView);
+
+WKE_API void wkeSetEditable(wkeWebView webView, bool editable);
+
 
 /***JavaScript Bind***/
 #define JS_CALL __fastcall

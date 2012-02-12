@@ -372,6 +372,20 @@ bool wkeIsAwake(wkeWebView webView)
     return webView->isAwake();
 }
 
+void wkeSetZoomFactor(wkeWebView webView, float factor)
+{
+    webView->setZoomFactor(factor);
+}
+
+float wkeZoomFactor(wkeWebView webView)
+{
+    return webView->zoomFactor();
+}
+
+void wkeSetEditable(wkeWebView webView, bool editable)
+{
+    webView->setEditable(editable);
+}
 
 
 

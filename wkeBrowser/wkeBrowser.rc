@@ -46,6 +46,15 @@ BEGIN
         MENUITEM "Go &Forward        Ctrl + Right", ID_FILE_GOFORWARD
         MENUITEM "E&xit",                       IDM_EXIT
     END
+    POPUP "&Tools"
+    BEGIN
+        MENUITEM "Zoom In             Ctrl + +", ID_ZOOM_IN
+        MENUITEM "Zoom Out          Ctrl + -", ID_ZOOM_OUT
+        MENUITEM "Reset Zoom        Ctrl + 0",  ID_RESET_ZOOM
+        MENUITEM SEPARATOR
+        MENUITEM "Set Editable        Ctrl + E", ID_SET_EDITABLE
+        MENUITEM "Screenshot         Ctrl + S", ID_TAKE_SCREENSHOT
+    END
     POPUP "&Help"
     BEGIN
         MENUITEM "&About ...",                  IDM_ABOUT
@@ -62,6 +71,15 @@ IDC_WKEBROWSER ACCELERATORS
 BEGIN
     "?",            IDM_ABOUT,              ASCII,  ALT
     "/",            IDM_ABOUT,              ASCII,  ALT
+    VK_OEM_PLUS,    ID_ZOOM_IN,             CONTROL, VIRTKEY
+    VK_OEM_MINUS,   ID_ZOOM_OUT,            CONTROL, VIRTKEY
+    48,             ID_RESET_ZOOM,          CONTROL, VIRTKEY
+    "E",            ID_SET_EDITABLE,        CONTROL, VIRTKEY
+    "S",            ID_TAKE_SCREENSHOT,     CONTROL, VIRTKEY
+
+    VK_ADD,         ID_ZOOM_IN,             CONTROL, VIRTKEY
+    VK_SUBTRACT,    ID_ZOOM_OUT,            CONTROL, VIRTKEY
+    VK_NUMPAD0,     ID_RESET_ZOOM,          CONTROL, VIRTKEY
 END
 
 

@@ -89,6 +89,11 @@ namespace wke
         virtual void awaken();
         virtual bool isAwake() const;
 
+        void setZoomFactor(float factor);
+        float zoomFactor() const;
+
+        void setEditable(bool editable);
+
         WebCore::Page* page() const { return page_.get(); }
         WebCore::Frame* mainFrame() const { return mainFrame_; }
 

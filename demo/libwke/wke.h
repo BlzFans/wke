@@ -21,11 +21,6 @@ typedef char utf8;
 typedef struct {
     int x;
     int y;
-} wkePoint;
-
-typedef struct {
-    int x;
-    int y;
     int w;
     int h;
 } wkeRect;
@@ -153,6 +148,11 @@ namespace wke
         virtual void sleep() = 0; //moveOffscreen
         virtual void awaken() = 0; //moveOnscreen
         virtual bool isAwake() const = 0;
+
+        virtual void setZoomFactor(float factor) = 0;
+        virtual float zoomFactor() const = 0;
+
+        virtual void setEditable(bool editable) = 0;
     };
 }
 
@@ -197,7 +197,7 @@ typedef size_t (*FILE_SIZE) (void* handle);
 typedef int (*FILE_READ) (void* handle, void* buffer, size_t size);
 typedef int (*FILE_SEEK) (void* handle, int offset, int origin);
 
-void wkeSetFileSystem(FILE_OPEN pfn_open, FILE_CLOSE pfn_close, FILE_SIZE pfn_size, FILE_READ pfn_read, FILE_SEEK pfn_seek);
+WKE_API void wkeSetFileSystem(FILE_OPEN pfn_open, FILE_CLOSE pfn_close, FILE_SIZE pfn_size, FILE_READ pfn_read, FILE_SEEK pfn_seek);
 
 
 WKE_API wkeWebView wkeCreateWebView(const char* name); /*name can be NULL or ""*/
@@ -280,6 +280,12 @@ WKE_API jsExecState wkeGlobalExec(wkeWebView webView);
 WKE_API void wkeSleep(wkeWebView webView);
 WKE_API void wkeAwaken(wkeWebView webView);
 WKE_API bool wkeIsAwake(wkeWebView webView);
+
+WKE_API void wkeSetZoomFactor(wkeWebView webView, float factor);
+WKE_API float wkeZoomFactor(wkeWebView webView);
+
+WKE_API void wkeSetEditable(wkeWebView webView, bool editable);
+
 
 /***JavaScript Bind***/
 #define JS_CALL __fastcall
