@@ -12,6 +12,7 @@
 
 #include "wkeBrowser.h"
 #include "renderD3D.h"
+#include "renderGDI.h"
 
 class CTimer
 {
@@ -155,7 +156,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
     SetWindowLongPtr(hURLBarWnd, GWL_WNDPROC, reinterpret_cast<LONG_PTR>(UrlEditProc));
     SetFocus(hURLBarWnd);
 
-    g_render = new CRenderD3D;
+    g_render = new CRenderGDI;
     g_render->init(hViewWindow);
 
 
@@ -173,9 +174,13 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
                 DispatchMessage(&msg);
             }
         }
-        else if (!IsIconic(hMainWnd))
+        else if (!IsIconic(hMainWnd) && g_webView->isDirty())
         {
             g_render->render(g_webView);
+        }
+        else
+        {
+            Sleep(10);
         }
     }
 

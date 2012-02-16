@@ -8,11 +8,11 @@ class CRenderD3D : public CRender
 {
 public:
     CRenderD3D();
-    virtual ~CRenderD3D();
+    ~CRenderD3D();
 
     virtual bool init(HWND hView);
     virtual void destroy();
-    virtual void resize(unsigned int h, unsigned int w);
+    virtual void resize(unsigned int w, unsigned int h);
     virtual void render(wkeWebView webView);
 
     bool LostDeviceRestore();

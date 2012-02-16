@@ -193,7 +193,7 @@ bool CRenderD3D::UpdateTexture(wkeWebView webView)
     {
         D3DLOCKED_RECT rect;
         m_pWebViewTexture->LockRect(0, &rect, NULL, D3DLOCK_DISCARD);
-        webView->paint((unsigned char*)rect.pBits, rect.Pitch);
+        webView->paint(rect.pBits, rect.Pitch);
         m_pWebViewTexture->UnlockRect(0);
     }
 
