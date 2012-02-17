@@ -180,6 +180,14 @@
 				RelativePath="..\wkeBrowser\render.h"
 				>
 			</File>
+            <File
+				RelativePath="..\wkeBrowser\render.cpp"
+				>
+			</File>
+            <File
+				RelativePath="..\wkeBrowser\renderGDI.h"
+				>
+			</File>
 			<File
 				RelativePath="..\wkeBrowser\renderD3D.cpp"
 				>

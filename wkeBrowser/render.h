@@ -8,6 +8,13 @@
 class CRender
 {
 public:
+    enum RenderType
+    {
+        GDI_RENDER,
+        D3D_RENDER,
+    };
+    static CRender* create(RenderType type);
+
     virtual bool init(HWND hView) = 0;
     virtual void destroy() = 0;
     virtual void resize(unsigned int w, unsigned int h) = 0;

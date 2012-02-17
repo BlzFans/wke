@@ -11,8 +11,7 @@
 #include <wke.h>
 
 #include "wkeBrowser.h"
-#include "renderD3D.h"
-#include "renderGDI.h"
+#include "render.h"
 
 class CTimer
 {
@@ -156,7 +155,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
     SetWindowLongPtr(hURLBarWnd, GWL_WNDPROC, reinterpret_cast<LONG_PTR>(UrlEditProc));
     SetFocus(hURLBarWnd);
 
-    g_render = new CRenderGDI;
+    g_render = CRender::create(CRender::GDI_RENDER);
     g_render->init(hViewWindow);
 
 
