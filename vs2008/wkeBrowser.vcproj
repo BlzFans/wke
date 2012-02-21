@@ -196,6 +196,10 @@
 				RelativePath="..\wkeBrowser\renderD3D.h"
 				>
 			</File>
+            <File
+				RelativePath="..\wkeBrowser\hyperlink.h"
+				>
+			</File>
 			<File
 				RelativePath="..\wkeBrowser\Resource.h"
 				>

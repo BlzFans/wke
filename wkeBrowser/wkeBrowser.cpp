@@ -12,6 +12,7 @@
 
 #include "wkeBrowser.h"
 #include "render.h"
+#include "hyperlink.h"
 
 class CTimer
 {
@@ -418,6 +419,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             }
             break;
 
+        case ID_URL_SF:
+            SetWindowText(hURLBarWnd, L"http://wke.sf.net");
+            SendMessage(hURLBarWnd, WM_CHAR, L'\r', 0);
+            break;
+
 		case IDM_EXIT:
 			DestroyWindow(hWnd);
 			break;
@@ -469,7 +475,15 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 	switch (message)
 	{
 	case WM_INITDIALOG:
-		return (INT_PTR)TRUE;
+        {
+            RECT rect;
+            rect.left = 63;
+            rect.top = 40;
+            rect.right = 166;
+            rect.bottom = 58;
+            CHyperlink::create(hDlg, rect, L"http://wke.sf.net", ID_URL_SF);
+        }
+        return (INT_PTR)TRUE;
 
 	case WM_COMMAND:
 		if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL)
