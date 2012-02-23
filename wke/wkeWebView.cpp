@@ -36,8 +36,8 @@
 namespace wke
 {
 
-    CWebView::CWebView(const char* name)
-        :name_(StringTable::addString(name))
+    CWebView::CWebView()
+        :name_(StringTable::emptyString())
         ,transparent_(false)
         ,dirty_(false)
         ,width_(0)
@@ -890,9 +890,9 @@ namespace wke
 
 static Vector<wke::IWebView*> s_webViews;
 
-wkeWebView wkeCreateWebView(const char* name)
+wkeWebView wkeCreateWebView()
 {
-    wke::CWebView* webView = new wke::CWebView(name);
+    wke::CWebView* webView = new wke::CWebView;
     s_webViews.append(webView);
     return webView;
 }

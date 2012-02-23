@@ -88,20 +88,20 @@ END
 // Dialog
 //
 
-IDD_ABOUTBOX DIALOGEX 0, 0, 170, 89
+IDD_ABOUTBOX DIALOGEX 0, 0, 200, 89
 STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "About wkeBrowser"
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     ICON            128,IDC_STATIC,14,14,21,20
-    LTEXT           "wkeBrowser, Version 1.0",IDC_STATIC,42,14,114,8,SS_NOPREFIX
-    DEFPUSHBUTTON   "OK",IDOK,113,68,50,14,WS_GROUP
-    LTEXT           "BlzFans@hotmail.com",IDC_STATIC,42,38,114,8
+    LTEXT           "wkeBrowser 1.2",IDC_STATIC,42,14,114,8,SS_NOPREFIX
+    DEFPUSHBUTTON   "OK",IDOK,140,68,50,14,WS_GROUP
+    LTEXT           "BlzFans@hotmail.com",IDC_STATIC,42,50,114,8
 END
 
 VS_VERSION_INFO     VERSIONINFO
-    FILEVERSION       1,0,0,0
-    PRODUCTVERSION    1,0,0,0
+    FILEVERSION       1,2,0,0
+    PRODUCTVERSION    1,2,0,0
     FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
     FILEFLAGS 0x1L
@@ -118,13 +118,13 @@ BEGIN
 		BEGIN 
 			VALUE "CompanyName",     "wke.sf.net\0"
 			VALUE "FileDescription", "wkeBrowser\0"
-			VALUE "FileVersion",     "1, 0, 0, 0\0"
+			VALUE "FileVersion",     "1, 2, 0, 0\0"
 			VALUE "InternalName",    "wkeBrowser\0"
 			VALUE "LegalCopyright",  "BlzFans@hotmail.com Copyright (C) 2012\0"
 			VALUE "LegalTrademarks", "wke.sf.net\0"
 			VALUE "OriginalFilename","wkeBrowser.exe\0"
 			VALUE "ProductName",     "wkeBrowser\0"
-			VALUE "ProductVersion",  "1, 0, 0, 0\0"
+			VALUE "ProductVersion",  "1, 2, 0, 0\0"
 		END
 	END
 	BLOCK "VarFileInfo" 

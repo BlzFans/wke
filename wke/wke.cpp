@@ -63,7 +63,7 @@ void wkeUpdate()
 
 
 #define MAJOR_VERSION   (1)
-#define MINOR_VERSION   (0)
+#define MINOR_VERSION   (2)
 #define WEBKIT_BUILD    (98096)
 
 unsigned int wkeVersion()

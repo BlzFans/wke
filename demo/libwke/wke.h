@@ -2,6 +2,7 @@
  * 
  * BlzFans@hotmail.com
  * http://wke.sf.net
+ * http://www.github.com/BlzFans/wke
  * licence LGPL
  *
  */
@@ -200,7 +201,7 @@ typedef int (*FILE_SEEK) (void* handle, int offset, int origin);
 WKE_API void wkeSetFileSystem(FILE_OPEN pfn_open, FILE_CLOSE pfn_close, FILE_SIZE pfn_size, FILE_READ pfn_read, FILE_SEEK pfn_seek);
 
 
-WKE_API wkeWebView wkeCreateWebView(const char* name); /*name can be NULL or ""*/
+WKE_API wkeWebView wkeCreateWebView();
 WKE_API wkeWebView wkeGetWebView(const char* name);
 WKE_API void wkeDestroyWebView(wkeWebView webView);
 

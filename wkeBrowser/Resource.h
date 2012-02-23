@@ -20,6 +20,7 @@
 #define ID_TAKE_SCREENSHOT              32803
 #define ID_SET_EDITABLE                 32804
 #define ID_URL_SF                       32805
+#define ID_URL_GITHUB                   32806
 #define IDC_STATIC                      -1
 
 // Next default values for new objects

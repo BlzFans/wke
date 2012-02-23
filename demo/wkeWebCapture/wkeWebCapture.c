@@ -18,7 +18,7 @@ int main(int argc, char** argv)
     printf(wkeVersionString());
 
     wkeInit();
-    webView = wkeCreateWebView("");
+    webView = wkeCreateWebView();
     wkeResize(webView, 1024, 768);
 
     url = argc >= 2 ? argv[1] : "http://www.google.com";

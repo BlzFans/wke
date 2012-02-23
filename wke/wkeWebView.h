@@ -8,7 +8,7 @@ namespace wke
     class CWebView : public IWebView
     {
     public:
-        CWebView(const char* name);
+        CWebView();
         ~CWebView();
 
         virtual void destroy();

@@ -122,7 +122,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
     jsBindSetter("testCount", js_setTestCount);
 
     t2.Start();
-    g_webView = wkeCreateWebView("");
+    g_webView = wkeCreateWebView();
     g_webView->setTransparent(false);
     t2.End();
 
@@ -424,6 +424,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             SendMessage(hURLBarWnd, WM_CHAR, L'\r', 0);
             break;
 
+        case ID_URL_GITHUB:
+            SetWindowText(hURLBarWnd, L"http://www.github.com/BlzFans/wke");
+            SendMessage(hURLBarWnd, WM_CHAR, L'\r', 0);
+            break;
+
 		case IDM_EXIT:
 			DestroyWindow(hWnd);
 			break;
@@ -482,6 +487,12 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             rect.right = 166;
             rect.bottom = 58;
             CHyperlink::create(hDlg, rect, L"http://wke.sf.net", ID_URL_SF);
+
+            rect.left = 63;
+            rect.top = 60;
+            rect.right = 290;
+            rect.bottom = 78;
+            CHyperlink::create(hDlg, rect, L"http://www.github.com/BlzFans/wke", ID_URL_GITHUB);
         }
         return (INT_PTR)TRUE;
 
