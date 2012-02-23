@@ -668,9 +668,23 @@ void PluginView::handleKeyboardEvent(KeyboardEvent* event)
     } else
         return;
 
+//wke++++++
+    if (m_parentFrame->document()->focusedNode() != m_element)
+        return;
+
+    HWND hFocus = GetFocus();
+    if (hFocus)
+        SetFocus(0);
+//wke++++++
+
     JSC::JSLock::DropAllLocks dropAllLocks(JSC::SilenceAssertionsOnly);
     if (dispatchNPEvent(npEvent))
         event->setDefaultHandled();
+
+//wke++++++
+    if (hFocus)
+        SetFocus(hFocus);
+//wke++++++
 }
 
 #if !OS(WINCE)
