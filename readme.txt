@@ -1,5 +1,5 @@
 
-Web and Flash Embbedded in 3D games, based on WebKit
+Web and Flash Embedded in 3D games, based on WebKit
 
 
 
