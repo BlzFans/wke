@@ -24,5 +24,6 @@ The wkeBrowser.exe executable can be found at demo/bin/wkeBrowser.exe
 
 Common Build Errors:
 
-Cygwin exception::handle: Exception: STATUS_ACCESS_VIOLATION
-Close the Visual Studio, then relaunch and rebuild. This usually fixes the problem.
+1. Cygwin exception::handle: Exception: STATUS_ACCESS_VIOLATION
+
+   Close the Visual Studio, then relaunch and rebuild. This usually fixes the problem.
