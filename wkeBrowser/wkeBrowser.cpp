@@ -59,10 +59,10 @@ TCHAR szWindowClass[MAX_LOADSTRING];
 wkeWebView g_webView = NULL;
 CRender* g_render = NULL;
 
-ATOM				MyRegisterClass(HINSTANCE hInstance);
-BOOL				InitInstance(HINSTANCE, int);
-LRESULT CALLBACK	WndProc(HWND, UINT, WPARAM, LPARAM);
-INT_PTR CALLBACK	About(HWND, UINT, WPARAM, LPARAM);
+ATOM                MyRegisterClass(HINSTANCE hInstance);
+BOOL                InitInstance(HINSTANCE, int);
+LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
+INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 
 WNDPROC DefEditProc = NULL;
 LRESULT CALLBACK UrlEditProc(HWND, UINT, WPARAM, LPARAM);
@@ -101,15 +101,15 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
                      LPTSTR    lpCmdLine,
                      int       nCmdShow)
 {
-	UNREFERENCED_PARAMETER(hPrevInstance);
-	UNREFERENCED_PARAMETER(lpCmdLine);
+    UNREFERENCED_PARAMETER(hPrevInstance);
+    UNREFERENCED_PARAMETER(lpCmdLine);
 
-	LoadString(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
-	LoadString(hInstance, IDC_WKEBROWSER, szWindowClass, MAX_LOADSTRING);
-	MyRegisterClass(hInstance);
+    LoadString(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
+    LoadString(hInstance, IDC_WKEBROWSER, szWindowClass, MAX_LOADSTRING);
+    MyRegisterClass(hInstance);
 
-	if (!InitInstance (hInstance, nCmdShow))
-		return FALSE;
+    if (!InitInstance (hInstance, nCmdShow))
+        return FALSE;
 
     CTimer t1, t2, t3;
 
@@ -160,12 +160,12 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
     g_render->init(hViewWindow);
 
 
-	HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_WKEBROWSER));
+    HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_WKEBROWSER));
 
     MSG msg;
     msg.message = WM_NULL;
-	while (msg.message != WM_QUIT)
-	{
+    while (msg.message != WM_QUIT)
+    {
         if (PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE))
         {
             if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
@@ -188,28 +188,28 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
     g_webView->destroy();
     wkeShutdown();
 
-	return (int) msg.wParam;
+    return (int) msg.wParam;
 }
 
 ATOM MyRegisterClass(HINSTANCE hInstance)
 {
-	WNDCLASSEX wcex;
+    WNDCLASSEX wcex;
 
-	wcex.cbSize = sizeof(WNDCLASSEX);
+    wcex.cbSize = sizeof(WNDCLASSEX);
 
-	wcex.style			= CS_HREDRAW | CS_VREDRAW;
-	wcex.lpfnWndProc	= WndProc;
-	wcex.cbClsExtra		= 0;
-	wcex.cbWndExtra		= 0;
-	wcex.hInstance		= hInstance;
-	wcex.hIcon			= LoadIcon(hInstance, MAKEINTRESOURCE(IDI_WKEBROWSER));
-	wcex.hCursor		= LoadCursor(NULL, IDC_ARROW);
-	wcex.hbrBackground	= (HBRUSH)(COLOR_WINDOW+1);
-	wcex.lpszMenuName	= MAKEINTRESOURCE(IDC_WKEBROWSER);
-	wcex.lpszClassName	= szWindowClass;
-	wcex.hIconSm		= LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
+    wcex.style          = CS_HREDRAW | CS_VREDRAW;
+    wcex.lpfnWndProc    = WndProc;
+    wcex.cbClsExtra     = 0;
+    wcex.cbWndExtra     = 0;
+    wcex.hInstance      = hInstance;
+    wcex.hIcon          = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_WKEBROWSER));
+    wcex.hCursor        = LoadCursor(NULL, IDC_ARROW);
+    wcex.hbrBackground  = (HBRUSH)(COLOR_WINDOW+1);
+    wcex.lpszMenuName   = MAKEINTRESOURCE(IDC_WKEBROWSER);
+    wcex.lpszClassName  = szWindowClass;
+    wcex.hIconSm        = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
 
-	return RegisterClassEx(&wcex);
+    return RegisterClassEx(&wcex);
 }
 
 BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
@@ -338,8 +338,8 @@ void takeScreenshot()
         return;
 
     g_webView->runJS("document.body.style.overflow='hidden'");	
-	int w = g_webView->contentsWidth();
-	int h = g_webView->contentsHeight();
+    int w = g_webView->contentsWidth();
+    int h = g_webView->contentsHeight();
     
     int oldwidth = g_webView->width();
     int oldheight = g_webView->height();
@@ -360,20 +360,20 @@ void takeScreenshot()
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-	int wmId, wmEvent;
-	PAINTSTRUCT ps;
-	HDC hdc;
+    int wmId, wmEvent;
+    PAINTSTRUCT ps;
+    HDC hdc;
 
-	switch (message)
-	{
-	case WM_COMMAND:
-		wmId    = LOWORD(wParam);
-		wmEvent = HIWORD(wParam);
-		switch (wmId)
-		{
-		case IDM_ABOUT:
-			DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
-			break;
+    switch (message)
+    {
+    case WM_COMMAND:
+        wmId    = LOWORD(wParam);
+        wmEvent = HIWORD(wParam);
+        switch (wmId)
+        {
+        case IDM_ABOUT:
+            DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
+            break;
 
         case ID_FILE_GOBACK:
             if (g_webView)
@@ -429,14 +429,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             SendMessage(hURLBarWnd, WM_CHAR, L'\r', 0);
             break;
 
-		case IDM_EXIT:
-			DestroyWindow(hWnd);
-			break;
+        case IDM_EXIT:
+            DestroyWindow(hWnd);
+            break;
 
-		default:
-			return DefWindowProc(hWnd, message, wParam, lParam);
-		}
-		break;
+        default:
+            return DefWindowProc(hWnd, message, wParam, lParam);
+        }
+        break;
 
     case WM_INITMENU:
         {
@@ -455,31 +455,33 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         break;
 
 
-	case WM_PAINT:
-		hdc = BeginPaint(hWnd, &ps);
-		EndPaint(hWnd, &ps);
-		break;
+    case WM_PAINT:
+        hdc = BeginPaint(hWnd, &ps);
+        if (g_webView)
+            g_webView->setDirty(true);
+        EndPaint(hWnd, &ps);
+        break;
 
-	case WM_DESTROY:
-		PostQuitMessage(0);
-		break;
+    case WM_DESTROY:
+        PostQuitMessage(0);
+        break;
 
     case WM_SIZE:
         resizeSubViews();
         break;
 
-	default:
-		return DefWindowProc(hWnd, message, wParam, lParam);
-	}
-	return 0;
+    default:
+        return DefWindowProc(hWnd, message, wParam, lParam);
+    }
+    return 0;
 }
 
 INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
-	UNREFERENCED_PARAMETER(lParam);
-	switch (message)
-	{
-	case WM_INITDIALOG:
+    UNREFERENCED_PARAMETER(lParam);
+    switch (message)
+    {
+    case WM_INITDIALOG:
         {
             RECT rect;
             rect.left = 63;
@@ -496,22 +498,22 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         }
         return (INT_PTR)TRUE;
 
-	case WM_COMMAND:
-		if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL)
-		{
-			EndDialog(hDlg, LOWORD(wParam));
-			return (INT_PTR)TRUE;
-		}
-		break;
-	}
-	return (INT_PTR)FALSE;
+    case WM_COMMAND:
+        if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL)
+        {
+            EndDialog(hDlg, LOWORD(wParam));
+            return (INT_PTR)TRUE;
+        }
+        break;
+    }
+    return (INT_PTR)FALSE;
 }
 
 LRESULT CALLBACK WebViewWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     bool handled = true;
-	switch (message)
-	{
+    switch (message)
+    {
     case WM_COMMAND:
         SendMessage(GetParent(hWnd), message, wParam, lParam);
         return 0;
@@ -701,7 +703,7 @@ LRESULT CALLBACK WebViewWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
     default:
         handled = false;
         break;
-	}
+    }
     
     if (!handled)
         return DefWindowProc(hWnd, message, wParam, lParam);
