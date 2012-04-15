@@ -156,7 +156,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
     SetWindowLongPtr(hURLBarWnd, GWL_WNDPROC, reinterpret_cast<LONG_PTR>(UrlEditProc));
     SetFocus(hURLBarWnd);
 
-    g_render = CRender::create(CRender::GDI_RENDER);
+    g_render = CRender::create(CRender::D3D_RENDER);
     g_render->init(hViewWindow);
 
 
