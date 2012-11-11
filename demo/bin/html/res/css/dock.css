@@ -1,0 +1,129 @@
+/*-----------------------------------------------------------------------------------*/
+/*	01.	Dock
+/*-----------------------------------------------------------------------------------*/
+
+.dock {
+	position: absolute;
+	bottom: 0;
+	z-index: 9999;
+	width: 100%;
+	text-align: center;
+}
+.dock ul {
+	position: relative;
+	display: inline-block;
+	padding: 0 5px;
+	margin: 0;
+	background:url(../img/dock-bg.png) repeat-x bottom;
+}
+.dock ul:before, .dock ul:after {
+	content: "";
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	width: 38px;
+}
+.dock ul:before {
+	left: -38px;
+	background: url(../img/dock-bg-left.png) no-repeat left bottom;
+}
+.dock ul:after {
+	right: -38px;
+	background: url(../img/dock-bg-right.png) no-repeat right bottom;
+}
+.dock li {
+	display: inline-block;
+	position: relative;
+	margin: 0 0 15px 0;
+	-webkit-box-reflect: below -16px -webkit-gradient(linear, left top, left bottom, from(transparent), color-stop(91%, rgba(255, 255, 255, .1)), color-stop(91.01%, transparent), to(transparent));
+}
+.dock a {
+	display: block;
+	cursor: default;
+	outline: none;
+}
+.dock em {
+	position: absolute;
+	top: -34px;
+	left: 50%;
+	display: none;
+	width: 150px;
+	margin-left: -75px;
+	text-align: center;
+}
+.dock em:after {
+	content: " ";
+	position: absolute;
+	bottom: -6px;
+	left: 50%;
+	margin-left: -6px;
+	width: 0;
+	height: 0;
+	border-left: 6px solid transparent;
+	border-right: 6px solid transparent;
+	border-top: 6px solid rgba(0, 0, 0, 0.6);
+	border-bottom: none;
+}
+.dock em span {
+	display: inline-block;
+	padding: 5px 12px;
+	background: rgba(0, 0, 0, 0.6);
+	font-style:normal;
+	font-size:12px;
+	color:#fff;
+	text-shadow:0 1px 1px #000;
+	border-radius: 10px;
+}
+.dock li:hover em {
+	display: block;
+}
+.dock img {
+	width: 48px;
+	height: auto;
+	border: none;
+	-webkit-transition:all 0.1s linear;
+	-moz-transition:all 0.1s linear;
+}
+.dock li.ok:hover img {
+	width: 128px;
+	-webkit-transition:all 0.15s linear;
+	-moz-transition:all 0.15s linear;
+}
+.dock li.prev img, .dock li.next img {
+	width:96px;
+	-webkit-transition:all 0.15s linear;
+	-moz-transition:all 0.15s linear;
+}
+.dock li.prev-ancor img, .dock li.next-ancor img {
+	width:72px;
+	-webkit-transition:all 0.15s linear;
+	-moz-transition:all 0.15s linear;
+}
+.dock li a .fresh {
+	content: " ";
+	position: absolute;
+	bottom: -8px;
+	left: 50%;
+	width: 8px;
+	height: 6px;
+	opacity:1;
+	background-color: rgba(255, 255, 255, .8);
+	margin-left: -2px;
+	border-radius:100%;
+	box-shadow: inset 0 1px 3px rgba(75, 255, 255, .4), 0 0 4px rgba(75, 255, 255, .5), 0 -1px 7px rgb(75, 255, 255);
+	-webkit-box-reflect: below 5px -webkit-gradient(linear, left top, left bottom, from(transparent), color-stop(91%, rgba(255, 255, 255, 0.5)), color-stop(91.01%, transparent), to(transparent));
+}
+
+.bounce {
+	-webkit-animation: bounce 0.4s 4 alternate ease-out;
+	-moz-animation: bounce 0.4s 4 alternate ease-out;
+}
+@-webkit-keyframes bounce {
+	  0% { -webkit-transform: translateY(0); }
+	100% { -webkit-transform: translateY(-20px); }
+}
+
+@-moz-keyframes bounce {
+	  0% { -moz-transform: translateY(0); }
+	100% { -moz-transform: translateY(-20px); }
+}

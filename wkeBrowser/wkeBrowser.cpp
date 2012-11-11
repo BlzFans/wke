@@ -127,8 +127,9 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
     t2.End();
 
     t3.Start();
-    //g_webView->loadURL("file:///test/test.html");
-    g_webView->loadHTML(L"<p style=\"background-color: #00FF00\">Testing</p><img id=\"webkit logo\" src=\"http://webkit.org/images/icon-gold.png\" alt=\"Face\"><div style=\"border: solid blue; background: white;\" contenteditable=\"true\">div with blue border</div><ul><li>foo<li>bar<li>baz</ul>");
+    //g_webView->loadURL("file:///html/mac-osx-lion.html");
+    //g_webView->loadHTML(L"<p style=\"background-color: #00FF00\">Testing</p><img id=\"webkit logo\" src=\"http://webkit.org/images/icon-gold.png\" alt=\"Face\"><div style=\"border: solid blue; background: white;\" contenteditable=\"true\">div with blue border</div><ul><li>foo<li>bar<li>baz</ul>");
+    g_webView->loadFile("html/mac-osx-lion.html");
     t3.End();
 
     unsigned int ms1 = t1.GetTime();
