@@ -545,7 +545,8 @@ namespace wke
                 newParamValues.append("opaque");
             }
 
-            if (equalIgnoringCase(newParamValues[i], "window")) {
+            if (!equalIgnoringCase(newParamValues[i], "opaque") &&
+                !equalIgnoringCase(newParamValues[i], "transparent")) {
                 newParamValues[i] = "opaque";
             }
 
