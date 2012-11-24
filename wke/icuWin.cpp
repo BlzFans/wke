@@ -3,6 +3,10 @@
 #include <stdio.h>
 #include <wchar.h>
 
+#define USE_ICU_WIN 1
+
+#if USE_ICU_WIN
+
 #include <unicode/uchar.h>
 #include <unicode/ustring.h>
 #include <unicode/utf16.h>
@@ -1122,6 +1126,74 @@ ucnv_getAlias(const char *name, uint16_t n, UErrorCode *pErrorCode)
     return pCharsetInfo->aliases[n];
 }
 
+static const char trailingBytesForUTF8[256] = {
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+    2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2, 3,3,3,3,3,3,3,3,4,4,4,4,5,5,5,5
+};
+
+/* returns length of next utf-8 sequence */
+int u8_seqlen(unsigned char c)
+{
+    return trailingBytesForUTF8[c] + 1;
+}
+
+#define UCNV_MAX_CHAR_LEN (10)
+struct UConverter
+{
+    const CharsetInfo* charset;
+    char bytes[UCNV_MAX_CHAR_LEN];
+    int bytes_len;
+
+    UConverter()
+        :charset(0)
+        ,bytes_len(0)
+    {
+    }
+
+    bool hasValidChar()
+    {
+        if (bytes_len == 0)
+            return false;
+
+        if (charset->codePage != CP_UTF8)
+        {
+            bytes[bytes_len] = 'A';
+            bytes[bytes_len + 1] = '\0';
+            char* ptr = CharNextExA(charset->codePage, bytes, 0);
+            if (ptr > bytes + bytes_len)
+                return false;
+
+            return true;
+        }
+
+        //utf8
+        if (u8_seqlen(bytes[0]) <= bytes_len)
+            return true;
+
+        return false;
+    }
+
+    bool conv(unsigned char c, UChar& uc)
+    {
+        bytes[bytes_len++] = c;
+        if (bytes_len + 2 >= UCNV_MAX_CHAR_LEN || hasValidChar())
+        {
+            int ret = MultiByteToWideChar(charset->codePage, 0, bytes, bytes_len, &uc, 1);
+            bytes_len = 0;
+
+            return ret == 1 ? true : false;
+        }
+
+        return false;
+    }
+};
+
 UConverter*
 ucnv_open (const char *name, UErrorCode * err)
 {
@@ -1131,35 +1203,26 @@ ucnv_open (const char *name, UErrorCode * err)
     if(charset == NULL)
         charset = getCharset("NULL", true);
 
-    return (UConverter*)charset;
+    UConverter* conv = new UConverter;
+    conv->charset = charset;
+    return conv;
 }
 
 void
 ucnv_close (UConverter * converter)
 {
+    delete converter;
 }
 
 const char*
 ucnv_getName (const UConverter * converter, UErrorCode * err)
 {
-    return ((CharsetInfo*)converter)->name;
+    return converter->charset->name;
 }
 
 void
 ucnv_setFallback(UConverter *cnv, UBool usesFallback)
 {
-}
-
-const char* NextUTF8(const char* str, const char* end)
-{
-    while(str < end)
-    {
-        ++str;
-        if( (*str & 0xC0) != 0x80 )
-            break;
-    }
-
-    return str;
 }
 
 void
@@ -1170,51 +1233,20 @@ ucnv_toUnicode(UConverter *cnv,
                UBool flush,
                UErrorCode *err)
 {
-    unsigned int codePage = ((CharsetInfo*)cnv)->codePage;
-    const char* start_source = *source;
-    int ret;
-    const char* limit;
-    while(*source < sourceLimit && *target < targetLimit)
+    while (*source < sourceLimit && *target < targetLimit)
     {
-        if(codePage != CP_UTF8)
-            limit = CharNextExA(codePage, *source, 0);
-        else
-            limit = NextUTF8(*source, sourceLimit);
-        
-        if (limit <= *source)
+        char c = *((*source)++);
+        UChar uc;
+        if (cnv->conv(c, uc))
         {
-            ++*source;
-            continue;
-        }
-
-        if(limit > sourceLimit)
-            limit = sourceLimit;
-
-        ret = MultiByteToWideChar(codePage, 0, *source, limit - *source, *target, targetLimit - *target);
-        if(ret == 0)
-        {
-            *source = limit;
-
-            **target = '?';
-            ++*target;
-        }
-        else if(*target + ret <= targetLimit)
-        {
-            *source = limit;
-            *target = *target + ret;
-        }
-        else
-        {
-            break;
+            *((*target)++) = uc;
         }
     }
-    
-    if(*source < sourceLimit)
+
+    if (*source < sourceLimit)
         *err = U_BUFFER_OVERFLOW_ERROR;
-    else if(start_source < *source)
-        *err = U_ZERO_ERROR;
     else
-        *err = U_ILLEGAL_ARGUMENT_ERROR;
+        *err = U_ZERO_ERROR;
 }
 
 void
@@ -1237,7 +1269,7 @@ ucnv_fromUnicode(UConverter *cnv,
                  UErrorCode *err)
 {
     const UChar* start_source = *source;
-    unsigned int codePage = ((CharsetInfo*)cnv)->codePage;
+    unsigned int codePage = cnv->charset->codePage;
 
     int ret;
     while(*source < sourceLimit && *target < targetLimit)
@@ -1957,3 +1989,25 @@ const char* icuwin_getDefaultEncoding()
         
     return ""; 
 }
+
+#else
+
+#ifdef _DEBUG
+#pragma comment(lib, "icuind.lib")
+#pragma comment(lib, "icuucd.lib")
+#else
+#pragma comment(lib, "icuin.lib")
+#pragma comment(lib, "icuuc.lib")
+#endif
+
+
+void icuwin_init()
+{
+}
+
+const char* icuwin_getDefaultEncoding()
+{
+    return "";
+}
+
+#endif

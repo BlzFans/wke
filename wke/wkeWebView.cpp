@@ -62,6 +62,21 @@ namespace wke
         settings->setPluginsEnabled(true);
         settings->setLoadsImagesAutomatically(true);
         settings->setDefaultTextEncodingName(icuwin_getDefaultEncoding());
+        
+        settings->setStandardFontFamily("Times New Roman");
+        settings->setFixedFontFamily("Courier New");
+        settings->setSerifFontFamily("Times New Roman");
+        settings->setSansSerifFontFamily("Arial");
+        settings->setCursiveFontFamily("Comic Sans MS");
+        settings->setFantasyFontFamily("Times New Roman");
+        settings->setPictographFontFamily("Times New Roman");
+
+        settings->setAllowUniversalAccessFromFileURLs(true);
+        settings->setAllowFileAccessFromFileURLs(true);
+
+        settings->setJavaScriptCanAccessClipboard(true);
+        settings->setShouldPrintBackgrounds(true);
+        settings->setTextAreasAreResizable(true);
 
         FrameLoaderClient* loader = new FrameLoaderClient(this, page_.get());
         mainFrame_ = WebCore::Frame::create(page_.get(), NULL, loader).get();
