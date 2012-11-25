@@ -95,6 +95,15 @@ jsValue JS_CALL js_setTestCount(jsExecState es)
     return jsUndefined();
 }
 
+void onTileChanged(const wkeClientHandler*, wkeString title)
+{
+    SetWindowText(hMainWnd, wkeToStringW(title));
+}
+
+void onURLChanged(const wkeClientHandler*, wkeString url)
+{
+    SetWindowText(hURLBarWnd, wkeToStringW(url));
+}
 
 int APIENTRY _tWinMain(HINSTANCE hInstance,
                      HINSTANCE hPrevInstance,
@@ -125,6 +134,11 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
     g_webView = wkeCreateWebView();
     g_webView->setTransparent(false);
     t2.End();
+
+    wkeClientHandler handler;
+    handler.onTitleChanged = onTileChanged;
+    handler.onURLChanged = onURLChanged;
+    g_webView->setClientHandler(&handler);
 
     t3.Start();
     //g_webView->loadURL("file:///html/mac-osx-lion.html");

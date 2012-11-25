@@ -185,6 +185,12 @@ namespace wke
 
         virtual void dispatchDidReceiveTitle(const WebCore::StringWithDirection& title) override
         {
+            if (frame_ == page_->mainFrame())
+            {
+                const wkeClientHandler* handler = webView_->getClientHandler();
+                if (handler && handler->onTitleChanged)
+                    handler->onTitleChanged(handler, (const wkeString)&title.string());
+            }
         }
 
         virtual void dispatchDidChangeIcons(WebCore::IconType type) override
@@ -193,6 +199,21 @@ namespace wke
 
         virtual void dispatchDidCommitLoad() override
         {
+            if (frame_ == NULL || frame_ != page_->mainFrame())
+                return;
+
+            const wkeClientHandler* handler = webView_->getClientHandler();
+            if (handler == NULL || handler->onURLChanged == NULL)
+                return;
+
+            WebCore::DocumentLoader* loader = frame_->loader()->documentLoader();
+            if (loader == NULL)
+                return;
+
+            const WebCore::ResourceRequest& request = loader->request();
+            const WebCore::KURL& url = request.firstPartyForCookies();
+
+            handler->onURLChanged(handler, (const wkeString)&url.string());
         }
 
         virtual void dispatchDidFailProvisionalLoad(const WebCore::ResourceError&) override

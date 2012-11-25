@@ -227,7 +227,7 @@ namespace wke
         virtual WebCore::Page* createWindow(WebCore::Frame*, const WebCore::FrameLoadRequest&, const WebCore::WindowFeatures&, const WebCore::NavigationAction&) override
         {
             dbgMsg(L"createWindow\n");
-            return NULL;
+            return ((CWebView*)webView_)->page();
         }
 
         virtual void show() override

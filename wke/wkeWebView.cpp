@@ -44,6 +44,7 @@ namespace wke
         ,height_(0)
         ,gfxContext_(NULL)
         ,awake_(true)
+        ,clientHandler_(NULL)
     {
         WebCore::Page::PageClients pageClients;
         pageClients.chromeClient = new ChromeClient(this);
@@ -900,6 +901,16 @@ namespace wke
             if (editable)
                 mainFrame_->editor()->applyEditingStyleToBodyElement();
         }
+    }
+
+    void CWebView::setClientHandler(const wkeClientHandler* handler)
+    {
+        clientHandler_ = handler;
+    }
+
+    const wkeClientHandler* CWebView::getClientHandler() const
+    {
+        return clientHandler_;
     }
 }
 

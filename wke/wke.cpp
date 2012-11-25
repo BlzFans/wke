@@ -387,6 +387,27 @@ void wkeSetEditable(wkeWebView webView, bool editable)
     webView->setEditable(editable);
 }
 
+WKE_API void wkeSetClientHandler(wkeWebView webView, const wkeClientHandler* handler)
+{
+    webView->setClientHandler(handler);
+}
+
+WKE_API const wkeClientHandler* wkeGetClientHandler(wkeWebView webView)
+{
+    return webView->getClientHandler();
+}
+
+WKE_API const utf8* wkeToString(const wkeString string)
+{
+    const String* str = (const String*)string;
+    return StringTable::addString(str->characters(), str->length());
+}
+
+WKE_API const wchar_t* wkeToStringW(const wkeString string)
+{
+    const String* str = (const String*)string;
+    return StringTableW::addString(str->characters(), str->length());
+}
 
 
 

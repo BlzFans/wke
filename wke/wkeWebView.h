@@ -94,6 +94,9 @@ namespace wke
 
         void setEditable(bool editable);
 
+        virtual void setClientHandler(const wkeClientHandler* handler);
+        virtual const wkeClientHandler* getClientHandler() const;
+
         WebCore::Page* page() const { return page_.get(); }
         WebCore::Frame* mainFrame() const { return mainFrame_; }
 
@@ -116,6 +119,8 @@ namespace wke
         void* pixels_;
 
         bool awake_;
+
+        const wkeClientHandler* clientHandler_;
     };
 }
 
