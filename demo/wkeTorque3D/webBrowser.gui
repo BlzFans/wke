@@ -1,0 +1,81 @@
+
+if(!isObject(WebCtrlProfile))
+new GuiControlProfile( WebCtrlProfile )
+{
+   tab = true;
+   canKeyFocus = true;
+};
+
+new GuiControl(WebBrowserDlg) {
+   Profile = "GuiDefaultProfile";
+   HorizSizing = "right";
+   VertSizing = "bottom";
+   position = "0 0";
+   Extent = "1024 768";
+
+   new GuiWindowCtrl() {
+      isContainer = "1";
+      Profile = "GuiWindowProfile";
+      HorizSizing = "width";
+      VertSizing = "height";
+      position = "0 0";
+      Extent = "1024 768";
+      resizeWidth = "1";
+      resizeHeight = "1";
+      canMove = "1";
+      canClose = "1";
+      canMinimize = "1";
+      canMaximize = "1";
+      minSize = "256 128";
+      closeCommand = "toggleWebBrowser();";
+      EdgeSnap = "1";
+      text = "Web Browser";
+
+      new GuiTextEditCtrl(WebUrl) {
+         Profile = "GuiTextEditProfile";
+         HorizSizing = "width";
+         VertSizing = "bottom";
+         position = "2 24";
+         Extent = "1020 18";
+         text = "";
+         altCommand = "loadURL();";
+      };
+      new guiWebCtrl(WebBrowser) {
+         profile = "WebCtrlProfile";
+         HorizSizing = "width";
+         VertSizing = "height";
+         position = "2 46";
+         Extent = "1020 718";
+      };
+   };
+};
+
+function WebBrowser::onTitleChanged(%this, %title)
+{
+    %this.getParent().text = %title;
+}
+
+function WebBrowser::onURLChanged(%this, %url)
+{
+    WebUrl.setText(%url);
+}
+
+function loadURL()
+{
+    WebBrowser.loadURL(WebUrl.getText());
+    WebBrowser.setFirstResponder();
+}
+
+function toggleWebBrowser()
+{
+    if( WebBrowserDlg.isAwake() )
+    {
+        WebBrowser.loadHTML("");
+        Canvas.popDialog(WebBrowserDlg);
+    }
+    else
+    {
+        Canvas.pushDialog(WebBrowserDlg);
+        WebBrowser.loadFile("html/mac-osx-lion.html");
+    }
+}
