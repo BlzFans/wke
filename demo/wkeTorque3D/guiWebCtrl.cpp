@@ -374,6 +374,25 @@ bool guiWebCtrl::getCaretPos(Point2I& pos)
     return true;
 }
 
+void guiWebCtrl::getCursor(GuiCursor *&cursor, bool &showCursor, const GuiEvent &lastGuiEvent)
+{
+    GuiCanvas *pRoot = getRoot();
+    if( !pRoot )
+        return;
+
+    const int invalid_cur = 999;
+    if (pRoot->mCursorChanged == invalid_cur)
+        return;
+
+    PlatformWindow *pWindow = static_cast<GuiCanvas*>(getRoot())->getPlatformWindow();
+    PlatformCursorController *pController = pWindow->getCursorController();
+
+    // Now change the cursor shape
+    pController->popCursor();
+    pController->pushCursor(invalid_cur);
+    pRoot->mCursorChanged = invalid_cur;
+}
+
 
 void guiWebCtrl::loadURL(const char* url)
 {

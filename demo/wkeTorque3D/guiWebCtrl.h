@@ -55,6 +55,8 @@ public:
 
     virtual bool getCaretPos(Point2I& pos);
 
+    virtual void getCursor(GuiCursor *&cursor, bool &showCursor, const GuiEvent &lastGuiEvent);
+
     void loadURL(const char* url);
     void loadFile(const char* filename);
     void loadHTML(const char* string);
