@@ -62,9 +62,11 @@
 
 namespace WebCore {
 
-const int selectTimeoutMS = 5;
-const double pollTimeSeconds = 0.05;
+//wke++++++
+const int selectTimeoutMS = 1;
+const double pollTimeSeconds = 0.01;
 const int maxRunningJobs = 5;
+//wke++++++
 
 static const bool ignoreSSLErrors = getenv("WEBKIT_IGNORE_SSL_ERRORS");
 

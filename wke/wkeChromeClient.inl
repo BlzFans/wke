@@ -5,6 +5,7 @@
 #include <WebCore/ChromeClient.h>
 #include <WebCore/HitTestResult.h>
 #include <WebCore/Frame.h>
+#include <WebCore/DatabaseTracker.h>
 #include "wkeDebug.h"
 #include "wkePopupMenu.h"
 
@@ -418,8 +419,10 @@ namespace wke
         }
 
 #if ENABLE(SQL_DATABASE)
-        virtual void exceededDatabaseQuota(WebCore::Frame*, const WTF::String& databaseName) override
+        virtual void exceededDatabaseQuota(WebCore::Frame* frame, const WTF::String& databaseName) override
         {
+            const unsigned long long defaultQuota = 5 * 1024 * 1024;
+            WebCore::DatabaseTracker::tracker().setQuota(frame->document()->securityOrigin(), defaultQuota);
         }
 #endif
 

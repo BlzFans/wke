@@ -79,6 +79,14 @@ namespace wke
         settings->setShouldPrintBackgrounds(true);
         settings->setTextAreasAreResizable(true);
 
+        settings->setLocalStorageEnabled(true);
+        
+        UChar dir[256];
+        GetCurrentDirectory(256, dir);
+        wcscat(dir, L"\\localStorage");
+        settings->setLocalStorageDatabasePath(dir);
+        WebCore::DatabaseTracker::tracker().setDatabaseDirectoryPath(dir);
+
         FrameLoaderClient* loader = new FrameLoaderClient(this, page_.get());
         mainFrame_ = WebCore::Frame::create(page_.get(), NULL, loader).get();
         loader->setFrame(mainFrame_);
