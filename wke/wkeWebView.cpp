@@ -55,7 +55,7 @@ namespace wke
 
         page_ = adoptPtr(new WebCore::Page(pageClients));
         WebCore::Settings* settings = page_->settings();
-        settings->setMinimumFontSize(1);
+        settings->setMinimumFontSize(0);
         settings->setMinimumLogicalFontSize(9);
         settings->setDefaultFontSize(16);
         settings->setDefaultFixedFontSize(13);

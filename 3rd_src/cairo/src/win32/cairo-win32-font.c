@@ -2243,6 +2243,12 @@ cairo_win32_scaled_font_get_metrics_factor (cairo_scaled_font_t *scaled_font)
 	_cairo_error_throw (CAIRO_STATUS_FONT_TYPE_MISMATCH);
 	return 1.;
     }
+    
+    /*wke++++++*/
+    if (((cairo_win32_scaled_font_t *)scaled_font)->logical_scale == 0.f)
+        return 1.;
+    /*wke++++++*/
+
     return 1. / ((cairo_win32_scaled_font_t *)scaled_font)->logical_scale;
 }
 
