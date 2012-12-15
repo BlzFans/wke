@@ -37,8 +37,10 @@
 
 #include "cairoint.h"
 
+#include "cairo-clip-inline.h"
 #include "cairo-clip-private.h"
 #include "cairo-error-private.h"
+#include "cairo-list-inline.h"
 #include "cairo-gstate-private.h"
 #include "cairo-pattern-private.h"
 #include "cairo-traps-private.h"
@@ -328,7 +330,7 @@ _cairo_gstate_redirect_target (cairo_gstate_t *gstate, cairo_surface_t *child)
 }
 
 /**
- * _cairo_gstate_is_group
+ * _cairo_gstate_is_group:
  * @gstate: a #cairo_gstate_t
  *
  * Check if _cairo_gstate_redirect_target has been called on the head
@@ -382,7 +384,7 @@ _cairo_gstate_get_original_target (cairo_gstate_t *gstate)
  * This space left intentionally blank.
  *
  * Return value: a pointer to the gstate's #cairo_clip_t structure.
- */
+ **/
 cairo_clip_t *
 _cairo_gstate_get_clip (cairo_gstate_t *gstate)
 {
@@ -516,8 +518,8 @@ _cairo_gstate_get_line_join (cairo_gstate_t *gstate)
 cairo_status_t
 _cairo_gstate_set_dash (cairo_gstate_t *gstate, const double *dash, int num_dashes, double offset)
 {
-    unsigned int i;
-    double dash_total;
+    double dash_total, on_total, off_total;
+    int i, j;
 
     free (gstate->stroke_style.dash);
 
@@ -535,14 +537,27 @@ _cairo_gstate_set_dash (cairo_gstate_t *gstate, const double *dash, int num_dash
 	return _cairo_error (CAIRO_STATUS_NO_MEMORY);
     }
 
-    memcpy (gstate->stroke_style.dash, dash, gstate->stroke_style.num_dashes * sizeof (double));
-
-    dash_total = 0.0;
-    for (i = 0; i < gstate->stroke_style.num_dashes; i++) {
-	if (gstate->stroke_style.dash[i] < 0)
+    on_total = off_total = dash_total = 0.0;
+    for (i = j = 0; i < num_dashes; i++) {
+	if (dash[i] < 0)
 	    return _cairo_error (CAIRO_STATUS_INVALID_DASH);
 
-	dash_total += gstate->stroke_style.dash[i];
+	if (dash[i] == 0 && i > 0 && i < num_dashes - 1) {
+	    if (dash[++i] < 0)
+		return _cairo_error (CAIRO_STATUS_INVALID_DASH);
+
+	    gstate->stroke_style.dash[j-1] += dash[i];
+	    gstate->stroke_style.num_dashes -= 2;
+	} else
+	    gstate->stroke_style.dash[j++] = dash[i];
+
+	if (dash[i]) {
+	    dash_total += dash[i];
+	    if ((i & 1) == 0)
+		on_total += dash[i];
+	    else
+		off_total += dash[i];
+	}
     }
 
     if (dash_total == 0.0)
@@ -550,8 +565,19 @@ _cairo_gstate_set_dash (cairo_gstate_t *gstate, const double *dash, int num_dash
 
     /* An odd dash value indicate symmetric repeating, so the total
      * is twice as long. */
-    if (gstate->stroke_style.num_dashes & 1)
+    if (gstate->stroke_style.num_dashes & 1) {
 	dash_total *= 2;
+	on_total += off_total;
+    }
+
+    if (dash_total - on_total < CAIRO_FIXED_ERROR_DOUBLE) {
+	/* Degenerate dash -> solid line */
+	free (gstate->stroke_style.dash);
+	gstate->stroke_style.dash = NULL;
+	gstate->stroke_style.num_dashes = 0;
+	gstate->stroke_style.dash_offset = 0.0;
+	return CAIRO_STATUS_SUCCESS;
+    }
 
     /* The dashing code doesn't like a negative offset or a big positive
      * offset, so we compute an equivalent offset which is guaranteed to be
@@ -788,10 +814,24 @@ _do_cairo_gstate_user_to_backend (cairo_gstate_t *gstate, double *x, double *y)
 }
 
 void
+_do_cairo_gstate_user_to_backend_distance (cairo_gstate_t *gstate, double *x, double *y)
+{
+    cairo_matrix_transform_distance (&gstate->ctm, x, y);
+    cairo_matrix_transform_distance (&gstate->target->device_transform, x, y);
+}
+
+void
 _do_cairo_gstate_backend_to_user (cairo_gstate_t *gstate, double *x, double *y)
 {
     cairo_matrix_transform_point (&gstate->target->device_transform_inverse, x, y);
     cairo_matrix_transform_point (&gstate->ctm_inverse, x, y);
+}
+
+void
+_do_cairo_gstate_backend_to_user_distance (cairo_gstate_t *gstate, double *x, double *y)
+{
+    cairo_matrix_transform_distance (&gstate->target->device_transform_inverse, x, y);
+    cairo_matrix_transform_distance (&gstate->ctm_inverse, x, y);
 }
 
 void

@@ -50,7 +50,7 @@
 #include "cairo-analysis-surface-private.h"
 #include "cairo-error-private.h"
 #include "cairo-image-surface-private.h"
-#include "cairo-surface-subsurface-private.h"
+#include "cairo-surface-subsurface-inline.h"
 
 static const cairo_surface_backend_t cairo_paginated_surface_backend;
 

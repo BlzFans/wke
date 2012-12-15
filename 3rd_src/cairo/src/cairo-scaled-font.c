@@ -41,6 +41,7 @@
 #include "cairoint.h"
 #include "cairo-error-private.h"
 #include "cairo-image-surface-private.h"
+#include "cairo-list-inline.h"
 #include "cairo-pattern-private.h"
 #include "cairo-scaled-font-private.h"
 #include "cairo-surface-backend-private.h"
@@ -59,7 +60,7 @@
  *
  * #cairo_scaled_font_t represents a realization of a font face at a particular
  * size and transformation and a certain set of font options.
- */
+ **/
 
 static uint32_t
 _cairo_scaled_font_compute_hash (cairo_scaled_font_t *scaled_font);
@@ -211,6 +212,8 @@ _cairo_scaled_glyph_fini (cairo_scaled_font_t *scaled_font,
 	private->destroy (private, scaled_glyph, scaled_font);
     }
 
+    _cairo_image_scaled_glyph_fini (scaled_font, scaled_glyph);
+
     if (scaled_glyph->surface != NULL)
 	cairo_surface_destroy (&scaled_glyph->surface->base);
 
@@ -317,6 +320,8 @@ cairo_scaled_font_get_type (cairo_scaled_font_t *scaled_font)
  *
  * Return value: %CAIRO_STATUS_SUCCESS or another error such as
  *   %CAIRO_STATUS_NO_MEMORY.
+ *
+ * Since: 1.0
  **/
 cairo_status_t
 cairo_scaled_font_status (cairo_scaled_font_t *scaled_font)
@@ -959,6 +964,8 @@ _cairo_scaled_glyph_find_private (cairo_scaled_glyph_t *scaled_glyph,
  *
  * Return value: a newly created #cairo_scaled_font_t. Destroy with
  *  cairo_scaled_font_destroy()
+ *
+ * Since: 1.0
  **/
 cairo_scaled_font_t *
 cairo_scaled_font_create (cairo_font_face_t          *font_face,
@@ -1236,6 +1243,8 @@ _cairo_scaled_font_reset_static_data (void)
  * cairo_scaled_font_get_reference_count().
  *
  * Returns: the referenced #cairo_scaled_font_t
+ *
+ * Since: 1.0
  **/
 cairo_scaled_font_t *
 cairo_scaled_font_reference (cairo_scaled_font_t *scaled_font)
@@ -1259,6 +1268,8 @@ slim_hidden_def (cairo_scaled_font_reference);
  * Decreases the reference count on @font by one. If the result
  * is zero, then @font and all associated resources are freed.
  * See cairo_scaled_font_reference().
+ *
+ * Since: 1.0
  **/
 void
 cairo_scaled_font_destroy (cairo_scaled_font_t *scaled_font)
@@ -1415,6 +1426,8 @@ slim_hidden_def (cairo_scaled_font_set_user_data);
  * @extents: a #cairo_font_extents_t which to store the retrieved extents.
  *
  * Gets the metrics for a #cairo_scaled_font_t.
+ *
+ * Since: 1.0
  **/
 void
 cairo_scaled_font_extents (cairo_scaled_font_t  *scaled_font,
@@ -1512,6 +1525,8 @@ ZERO_EXTENTS:
  *
  * Note that whitespace glyphs do not contribute to the size of the
  * rectangle (extents.width and extents.height).
+ *
+ * Since: 1.0
  **/
 void
 cairo_scaled_font_glyph_extents (cairo_scaled_font_t   *scaled_font,
@@ -2239,7 +2254,7 @@ _cairo_scaled_font_glyph_device_extents (cairo_scaled_font_t	 *scaled_font,
     return CAIRO_STATUS_SUCCESS;
 }
 
-void
+cairo_bool_t
 _cairo_scaled_font_glyph_approximate_extents (cairo_scaled_font_t	 *scaled_font,
 					      const cairo_glyph_t	 *glyphs,
 					      int                      num_glyphs,
@@ -2247,6 +2262,14 @@ _cairo_scaled_font_glyph_approximate_extents (cairo_scaled_font_t	 *scaled_font,
 {
     double x0, x1, y0, y1, pad;
     int i;
+
+    /* If any of the factors are suspect (i.e. the font is broken), bail */
+    if (scaled_font->fs_extents.max_x_advance == 0 ||
+	scaled_font->fs_extents.height == 0 ||
+	scaled_font->max_scale == 0)
+    {
+	return FALSE;
+    }
 
     assert (num_glyphs);
 
@@ -2272,6 +2295,7 @@ _cairo_scaled_font_glyph_approximate_extents (cairo_scaled_font_t	 *scaled_font,
     extents->width = ceil (x1 + pad) - extents->x;
     extents->y = floor (y0 - pad);
     extents->height = ceil (y1 + pad) - extents->y;
+    return TRUE;
 }
 
 #if 0
@@ -2848,8 +2872,10 @@ _cairo_scaled_font_free_last_glyph (cairo_scaled_font_t *scaled_font,
     _cairo_scaled_glyph_fini (scaled_font, scaled_glyph);
 
     if (--page->num_glyphs == 0) {
+	CAIRO_MUTEX_LOCK (_cairo_scaled_glyph_page_cache_mutex);
 	_cairo_cache_remove (&cairo_scaled_glyph_page_cache,
 		             &page->cache_entry);
+	CAIRO_MUTEX_UNLOCK (_cairo_scaled_glyph_page_cache_mutex);
     }
 }
 

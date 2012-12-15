@@ -69,6 +69,9 @@ _cairo_damage_destroy (cairo_damage_t *damage)
 {
     struct _cairo_damage_chunk *chunk, *next;
 
+    if (damage == (cairo_damage_t *) &__cairo_damage__nil)
+	return;
+
     for (chunk = damage->chunks.next; chunk != NULL; chunk = next) {
 	next = chunk->next;
 	free (chunk);
@@ -89,6 +92,8 @@ _cairo_damage_add_boxes(cairo_damage_t *damage,
 
     if (damage == NULL)
 	damage = _cairo_damage_create ();
+    if (damage->status)
+	return damage;
 
     damage->dirty += count;
 
@@ -122,10 +127,11 @@ _cairo_damage_add_boxes(cairo_damage_t *damage,
     chunk->count = count;
 
     damage->tail->next = chunk;
-    damage->remain = size - count;
+    damage->tail = chunk;
 
     memcpy (damage->tail->base, boxes + n,
 	    count * sizeof (cairo_box_t));
+    damage->remain = size - count;
 
     return damage;
 }
@@ -179,7 +185,7 @@ _cairo_damage_reduce (cairo_damage_t *damage)
 
     TRACE ((stderr, "%s: dirty=%d\n", __FUNCTION__,
 	    damage ? damage->dirty : -1));
-    if (damage == NULL || !damage->dirty)
+    if (damage == NULL || damage->status || !damage->dirty)
 	return damage;
 
     if (damage->region) {

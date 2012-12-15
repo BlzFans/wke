@@ -159,7 +159,7 @@ _cairo_traps_add_trap (cairo_traps_t *traps,
 }
 
 /**
- * _cairo_traps_init_box:
+ * _cairo_traps_init_boxes:
  * @traps: a #cairo_traps_t
  * @box: an array box that will each be converted to a single trapezoid
  *       to store in @traps.

@@ -52,6 +52,8 @@
 #define CAIRO_FIXED_ONE_DOUBLE ((double)(1 << CAIRO_FIXED_FRAC_BITS))
 #define CAIRO_FIXED_EPSILON    ((cairo_fixed_t)(1))
 
+#define CAIRO_FIXED_ERROR_DOUBLE (1. / (2 * CAIRO_FIXED_ONE_DOUBLE))
+
 #define CAIRO_FIXED_FRAC_MASK  ((cairo_fixed_t)(((cairo_fixed_unsigned_t)(-1)) >> (CAIRO_FIXED_BITS - CAIRO_FIXED_FRAC_BITS)))
 #define CAIRO_FIXED_WHOLE_MASK (~CAIRO_FIXED_FRAC_MASK)
 

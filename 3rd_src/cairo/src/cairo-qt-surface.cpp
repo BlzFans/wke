@@ -136,9 +136,9 @@ struct cairo_qt_surface_t {
  */
 static cairo_bool_t _qpixmaps_have_no_alpha = FALSE;
 
-/**
- ** Helper methods
- **/
+/*
+ * Helper methods
+ */
 
 static QPainter::CompositionMode
 _qpainter_compositionmode_from_cairo_op (cairo_operator_t op)
@@ -313,7 +313,7 @@ _qmatrix_from_cairo_matrix (const cairo_matrix_t& m)
     return QMatrix(m.xx, m.yx, m.xy, m.yy, m.x0, m.y0);
 }
 
-/** Path conversion **/
+/* Path conversion */
 typedef struct _qpainter_path_transform {
     QPainterPath path;
     const cairo_matrix_t *ctm_inverse;
@@ -418,9 +418,9 @@ path_to_qt (const cairo_path_fixed_t *path,
     return qpath;
 }
 
-/**
- ** Surface backend methods
- **/
+/*
+ * Surface backend methods
+ */
 static cairo_surface_t *
 _cairo_qt_surface_create_similar (void *abstract_surface,
 				  cairo_content_t content,
@@ -775,9 +775,9 @@ _cairo_qt_surface_set_clip (cairo_qt_surface_t *qs,
     return status;
 }
 
-/**
- ** Brush conversion
- **/
+/*
+ * Brush conversion
+ */
 
 struct PatternToBrushConverter {
     PatternToBrushConverter (const cairo_pattern_t *pattern) :
@@ -1082,9 +1082,9 @@ struct PatternToPenConverter {
     PatternToBrushConverter mBrushConverter;
 };
 
-/**
- ** Core drawing operations
- **/
+/*
+ * Core drawing operations
+ */
 
 static bool
 _cairo_qt_fast_fill (cairo_qt_surface_t *qs,
@@ -1422,9 +1422,9 @@ _cairo_qt_surface_mark_dirty (void *abstract_surface,
     return CAIRO_STATUS_SUCCESS;
 }
 
-/**
- ** Backend struct
- **/
+/*
+ * Backend struct
+ */
 
 static const cairo_surface_backend_t cairo_qt_surface_backend = {
     CAIRO_SURFACE_TYPE_QT,

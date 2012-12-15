@@ -41,18 +41,19 @@
 
 #include "cairoint.h"
 
-#include "cairo-box-private.h"
+#include "cairo-box-inline.h"
 #include "cairo-boxes-private.h"
+#include "cairo-clip-inline.h"
 #include "cairo-clip-private.h"
 #include "cairo-composite-rectangles-private.h"
 #include "cairo-compositor-private.h"
 #include "cairo-error-private.h"
 #include "cairo-image-surface-private.h"
-#include "cairo-pattern-private.h"
+#include "cairo-pattern-inline.h"
 #include "cairo-paginated-private.h"
-#include "cairo-recording-surface-private.h"
+#include "cairo-recording-surface-inline.h"
 #include "cairo-surface-subsurface-private.h"
-#include "cairo-surface-snapshot-private.h"
+#include "cairo-surface-snapshot-inline.h"
 #include "cairo-surface-observer-private.h"
 #include "cairo-region-private.h"
 #include "cairo-spans-private.h"
@@ -218,8 +219,13 @@ combine_clip_as_traps (const cairo_traps_compositor_t *compositor,
     _cairo_traps_fini (&traps);
     cairo_surface_destroy (src);
 
-    if (status == CAIRO_INT_STATUS_SUCCESS &&
-	(fixup.width < extents->width || fixup.height < extents->height)) {
+    if (unlikely (status))
+	return status;
+
+    if (! _cairo_rectangle_intersect (&fixup, extents))
+	return CAIRO_STATUS_SUCCESS;
+
+    if (fixup.width < extents->width || fixup.height < extents->height) {
 	cairo_boxes_t clear;
 
 	_cairo_boxes_init (&clear);
@@ -1121,10 +1127,7 @@ is_recording_pattern (const cairo_pattern_t *pattern)
 	return FALSE;
 
     surface = ((const cairo_surface_pattern_t *) pattern)->surface;
-    if (_cairo_surface_is_paginated (surface))
-	surface = _cairo_paginated_surface_get_recording (surface);
-    if (_cairo_surface_is_snapshot (surface))
-	surface = _cairo_surface_snapshot_get_target (surface);
+    surface = _cairo_surface_get_source (surface, NULL);
     return _cairo_surface_is_recording (surface);
 }
 
@@ -1134,11 +1137,7 @@ recording_pattern_get_surface (const cairo_pattern_t *pattern)
     cairo_surface_t *surface;
 
     surface = ((const cairo_surface_pattern_t *) pattern)->surface;
-    if (_cairo_surface_is_paginated (surface))
-	surface = _cairo_paginated_surface_get_recording (surface);
-    if (_cairo_surface_is_snapshot (surface))
-	surface = _cairo_surface_snapshot_get_target (surface);
-    return surface;
+    return _cairo_surface_get_source (surface, NULL);
 }
 
 static cairo_bool_t
@@ -1179,7 +1178,7 @@ composite_aligned_boxes (const cairo_traps_compositor_t *compositor,
 {
     cairo_surface_t *dst = extents->surface;
     cairo_operator_t op = extents->op;
-    cairo_bool_t need_clip_mask = extents->clip->path != NULL;
+    cairo_bool_t need_clip_mask = ! _cairo_clip_is_region (extents->clip);
     cairo_bool_t op_is_source;
     cairo_status_t status;
 

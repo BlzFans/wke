@@ -38,8 +38,9 @@
 
 #include "cairoint.h"
 
-#include "cairo-box-private.h"
+#include "cairo-box-inline.h"
 #include "cairo-error-private.h"
+#include "cairo-list-inline.h"
 #include "cairo-path-fixed-private.h"
 #include "cairo-slope-private.h"
 
@@ -418,6 +419,7 @@ _cairo_path_fixed_move_to (cairo_path_fixed_t  *path,
     path->has_current_point = TRUE;
     path->current_point.x = x;
     path->current_point.y = y;
+    path->last_move_point = path->current_point;
 
     return CAIRO_STATUS_SUCCESS;
 }

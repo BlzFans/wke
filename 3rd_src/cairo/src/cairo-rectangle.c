@@ -39,7 +39,7 @@
 
 #include "cairoint.h"
 
-#include "cairo-box-private.h"
+#include "cairo-box-inline.h"
 
 const cairo_rectangle_int_t _cairo_empty_rectangle = { 0, 0, 0, 0 };
 const cairo_rectangle_int_t _cairo_unbounded_rectangle = {
@@ -85,22 +85,10 @@ _cairo_boxes_get_extents (const cairo_box_t *boxes,
 			  int num_boxes,
 			  cairo_box_t *extents)
 {
-    int n;
-
     assert (num_boxes > 0);
     *extents = *boxes;
-
-    for (n = 1; n < num_boxes; n++) {
-	if (boxes[n].p1.x < extents->p1.x)
-	    extents->p1.x = boxes[n].p1.x;
-	if (boxes[n].p2.x > extents->p2.x)
-	    extents->p2.x = boxes[n].p2.x;
-
-	if (boxes[n].p1.y < extents->p1.y)
-	    extents->p1.y = boxes[n].p1.y;
-	if (boxes[n].p2.y > extents->p2.y)
-	    extents->p2.y = boxes[n].p2.y;
-    }
+    while (--num_boxes)
+	_cairo_box_add_box (extents, ++boxes);
 }
 
 /* XXX We currently have a confusing mix of boxes and rectangles as

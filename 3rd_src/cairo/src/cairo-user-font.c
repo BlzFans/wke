@@ -49,7 +49,7 @@
  * in a font.  This is most useful in implementing fonts in non-standard
  * formats, like SVG fonts and Flash fonts, but can also be used by games and
  * other application to draw "funky" fonts.
- */
+ **/
 
 /**
  * CAIRO_HAS_USER_FONT:
@@ -59,8 +59,8 @@
  * The user font backend is always built in versions of cairo that support
  * this feature (1.8 and later).
  *
- * @Since: 1.8
- */
+ * Since: 1.8
+ **/
 
 typedef struct _cairo_user_scaled_font_methods {
     cairo_user_scaled_font_init_func_t			init;

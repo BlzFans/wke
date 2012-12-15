@@ -62,7 +62,7 @@
  * cairo_image_surface_get_data() or a backend-specific access
  * function, and process it with another library, e.g. gdk-pixbuf or
  * libpng.
- */
+ **/
 
 /**
  * CAIRO_HAS_PNG_FUNCTIONS:
@@ -70,7 +70,9 @@
  * Defined if the PNG functions are available.
  * This macro can be used to conditionally compile code using the cairo
  * PNG functions.
- */
+ *
+ * Since: 1.0
+ **/
 
 struct png_read_closure_t {
     cairo_read_func_t		 read_func;
@@ -348,6 +350,8 @@ stdio_write_func (png_structp png, png_bytep data, png_size_t size)
  * %CAIRO_STATUS_SURFACE_TYPE_MISMATCH if the surface does not have
  * pixel contents, or %CAIRO_STATUS_WRITE_ERROR if an I/O error occurs
  * while attempting to write the file.
+ *
+ * Since: 1.0
  **/
 cairo_status_t
 cairo_surface_write_to_png (cairo_surface_t	*surface,
@@ -414,6 +418,8 @@ stream_write_func (png_structp png, png_bytep data, png_size_t size)
  * memory could not be allocated for the operation,
  * %CAIRO_STATUS_SURFACE_TYPE_MISMATCH if the surface does not have
  * pixel contents.
+ *
+ * Since: 1.0
  **/
 cairo_status_t
 cairo_surface_write_to_png_stream (cairo_surface_t	*surface,
@@ -742,6 +748,8 @@ read_png (struct png_read_closure_t *png_closure)
  * Alternatively, you can allow errors to propagate through the drawing
  * operations and check the status on the context upon completion
  * using cairo_status().
+ *
+ * Since: 1.0
  **/
 cairo_surface_t *
 cairo_image_surface_create_from_png (const char *filename)
@@ -795,6 +803,8 @@ cairo_image_surface_create_from_png (const char *filename)
  * Alternatively, you can allow errors to propagate through the drawing
  * operations and check the status on the context upon completion
  * using cairo_status().
+ *
+ * Since: 1.0
  **/
 cairo_surface_t *
 cairo_image_surface_create_from_png_stream (cairo_read_func_t	read_func,

@@ -65,7 +65,7 @@
  * #cairo_t<!-- -->'s can be pushed to a stack via cairo_save().
  * They may then safely be changed, without losing the current state.
  * Use cairo_restore() to restore to the saved state.
- */
+ **/
 
 /**
  * SECTION:cairo-text
@@ -92,7 +92,7 @@
  * the pangocairo that is part of the Pango text layout and rendering library.
  * Pango is available from <ulink
  * url="http://www.pango.org/">http://www.pango.org/</ulink>.
- */
+ **/
 
 /**
  * SECTION:cairo-transforms
@@ -105,7 +105,7 @@
  * drawing instruments from the <firstterm>user space</firstterm> into the
  * surface's canonical coordinate system, also known as the <firstterm>device
  * space</firstterm>.
- */
+ **/
 
 #define DEFINE_NIL_CONTEXT(status)					\
     {									\
@@ -218,6 +218,8 @@ _cairo_create_in_error (cairo_status_t status)
  *  writing (such as #cairo_mime_surface_t) then a
  *  %CAIRO_STATUS_WRITE_ERROR will be raised.  You can use this
  *  object normally, but no drawing will be done.
+ *
+ * Since: 1.0
  **/
 cairo_t *
 cairo_create (cairo_surface_t *target)
@@ -258,6 +260,8 @@ _cairo_init (cairo_t *cr,
  * cairo_get_reference_count().
  *
  * Return value: the referenced #cairo_t.
+ *
+ * Since: 1.0
  **/
 cairo_t *
 cairo_reference (cairo_t *cr)
@@ -285,6 +289,8 @@ _cairo_fini (cairo_t *cr)
  * Decreases the reference count on @cr by one. If the result
  * is zero, then @cr and all associated resources are freed.
  * See cairo_reference().
+ *
+ * Since: 1.0
  **/
 void
 cairo_destroy (cairo_t *cr)
@@ -388,6 +394,8 @@ cairo_get_reference_count (cairo_t *cr)
  * a #cairo_t is freed. If the reference count of a #cairo_t
  * drops to zero in response to a call to cairo_destroy(),
  * any saved states will be freed along with the #cairo_t.
+ *
+ * Since: 1.0
  **/
 void
 cairo_save (cairo_t *cr)
@@ -410,6 +418,8 @@ slim_hidden_def(cairo_save);
  * Restores @cr to the state saved by a preceding call to
  * cairo_save() and removes that state from the stack of
  * saved states.
+ *
+ * Since: 1.0
  **/
 void
 cairo_restore (cairo_t *cr)
@@ -468,7 +478,7 @@ slim_hidden_def(cairo_restore);
  * </programlisting></informalexample>
  *
  * Since: 1.2
- */
+ **/
 void
 cairo_push_group (cairo_t *cr)
 {
@@ -493,7 +503,7 @@ cairo_push_group (cairo_t *cr)
  * detailed description of group rendering.
  *
  * Since: 1.2
- */
+ **/
 void
 cairo_push_group_with_content (cairo_t *cr, cairo_content_t content)
 {
@@ -592,6 +602,8 @@ cairo_pop_group_to_source (cairo_t *cr)
  * each available compositing operator.
  *
  * The default operator is %CAIRO_OPERATOR_OVER.
+ *
+ * Since: 1.0
  **/
 void
 cairo_set_operator (cairo_t *cr, cairo_operator_t op)
@@ -619,6 +631,8 @@ slim_hidden_def (cairo_set_operator);
  * using the alpha value.
  *
  * The default opacity is 1.
+ *
+ * Since: TBD
  **/
 void
 cairo_set_opacity (cairo_t *cr, double opacity)
@@ -635,7 +649,7 @@ cairo_set_opacity (cairo_t *cr, double opacity)
 #endif
 
 /**
- * cairo_set_source_rgb
+ * cairo_set_source_rgb:
  * @cr: a cairo context
  * @red: red component of color
  * @green: green component of color
@@ -651,6 +665,8 @@ cairo_set_opacity (cairo_t *cr, double opacity)
  *
  * The default source pattern is opaque black, (that is, it is
  * equivalent to cairo_set_source_rgb(cr, 0.0, 0.0, 0.0)).
+ *
+ * Since: 1.0
  **/
 void
 cairo_set_source_rgb (cairo_t *cr, double red, double green, double blue)
@@ -684,6 +700,8 @@ slim_hidden_def (cairo_set_source_rgb);
  *
  * The default source pattern is opaque black, (that is, it is
  * equivalent to cairo_set_source_rgba(cr, 0.0, 0.0, 0.0, 1.0)).
+ *
+ * Since: 1.0
  **/
 void
 cairo_set_source_rgba (cairo_t *cr,
@@ -722,6 +740,8 @@ cairo_set_source_rgba (cairo_t *cr,
  * The resulting pattern can be queried with cairo_get_source() so
  * that these attributes can be modified if desired, (eg. to create a
  * repeating pattern with cairo_pattern_set_extend()).
+ *
+ * Since: 1.0
  **/
 void
 cairo_set_source_surface (cairo_t	  *cr,
@@ -746,7 +766,7 @@ cairo_set_source_surface (cairo_t	  *cr,
 slim_hidden_def (cairo_set_source_surface);
 
 /**
- * cairo_set_source
+ * cairo_set_source:
  * @cr: a cairo context
  * @source: a #cairo_pattern_t to be used as the source for
  * subsequent drawing operations.
@@ -763,6 +783,8 @@ slim_hidden_def (cairo_set_source_surface);
  * The default source pattern is a solid pattern that is opaque black,
  * (that is, it is equivalent to cairo_set_source_rgb(cr, 0.0, 0.0,
  * 0.0)).
+ *
+ * Since: 1.0
  **/
 void
 cairo_set_source (cairo_t *cr, cairo_pattern_t *source)
@@ -797,6 +819,8 @@ slim_hidden_def (cairo_set_source);
  * Return value: the current source pattern. This object is owned by
  * cairo. To keep a reference to it, you must call
  * cairo_pattern_reference().
+ *
+ * Since: 1.0
  **/
 cairo_pattern_t *
 cairo_get_source (cairo_t *cr)
@@ -822,6 +846,8 @@ cairo_get_source (cairo_t *cr)
  * within Cairo is limited by the precision of its internal arithmetic, and
  * the prescribed @tolerance is restricted to the smallest
  * representable internal value.
+ *
+ * Since: 1.0
  **/
 void
 cairo_set_tolerance (cairo_t *cr, double tolerance)
@@ -849,6 +875,8 @@ slim_hidden_def (cairo_set_tolerance);
  *
  * Note that this option does not affect text rendering, instead see
  * cairo_font_options_set_antialias().
+ *
+ * Since: 1.0
  **/
 void
 cairo_set_antialias (cairo_t *cr, cairo_antialias_t antialias)
@@ -875,6 +903,8 @@ cairo_set_antialias (cairo_t *cr, cairo_antialias_t antialias)
  * on the semantics of each available fill rule.
  *
  * The default fill rule is %CAIRO_FILL_RULE_WINDING.
+ *
+ * Since: 1.0
  **/
 void
 cairo_set_fill_rule (cairo_t *cr, cairo_fill_rule_t fill_rule)
@@ -914,6 +944,8 @@ cairo_set_fill_rule (cairo_t *cr, cairo_fill_rule_t fill_rule)
  * construction.
  *
  * The default line width value is 2.0.
+ *
+ * Since: 1.0
  **/
 void
 cairo_set_line_width (cairo_t *cr, double width)
@@ -947,6 +979,8 @@ slim_hidden_def (cairo_set_line_width);
  * construction.
  *
  * The default line cap style is %CAIRO_LINE_CAP_BUTT.
+ *
+ * Since: 1.0
  **/
 void
 cairo_set_line_cap (cairo_t *cr, cairo_line_cap_t line_cap)
@@ -977,6 +1011,8 @@ slim_hidden_def (cairo_set_line_cap);
  * construction.
  *
  * The default line join style is %CAIRO_LINE_JOIN_MITER.
+ *
+ * Since: 1.0
  **/
 void
 cairo_set_line_join (cairo_t *cr, cairo_line_join_t line_join)
@@ -1023,6 +1059,8 @@ slim_hidden_def (cairo_set_line_join);
  * If any value in @dashes is negative, or if all values are 0, then
  * @cr will be put into an error state with a status of
  * %CAIRO_STATUS_INVALID_DASH.
+ *
+ * Since: 1.0
  **/
 void
 cairo_set_dash (cairo_t	     *cr,
@@ -1052,7 +1090,7 @@ cairo_set_dash (cairo_t	     *cr,
  * Return value: the length of the dash array, or 0 if no dash array set.
  *
  * Since: 1.4
- */
+ **/
 int
 cairo_get_dash_count (cairo_t *cr)
 {
@@ -1116,6 +1154,8 @@ cairo_get_dash (cairo_t *cr,
  *
  * A miter limit for a desired angle can be computed as: miter limit =
  * 1/sin(angle/2)
+ *
+ * Since: 1.0
  **/
 void
 cairo_set_miter_limit (cairo_t *cr, double limit)
@@ -1141,6 +1181,8 @@ cairo_set_miter_limit (cairo_t *cr, double limit)
  * user-space coordinate according to the CTM in place before the new
  * call to cairo_translate(). In other words, the translation of the
  * user-space origin takes place after any existing transformation.
+ *
+ * Since: 1.0
  **/
 void
 cairo_translate (cairo_t *cr, double tx, double ty)
@@ -1166,6 +1208,8 @@ slim_hidden_def (cairo_translate);
  * and Y user-space axes by @sx and @sy respectively. The scaling of
  * the axes takes place after any existing transformation of user
  * space.
+ *
+ * Since: 1.0
  **/
 void
 cairo_scale (cairo_t *cr, double sx, double sy)
@@ -1192,6 +1236,8 @@ slim_hidden_def (cairo_scale);
  * places after any existing transformation of user space. The
  * rotation direction for positive angles is from the positive X axis
  * toward the positive Y axis.
+ *
+ * Since: 1.0
  **/
 void
 cairo_rotate (cairo_t *cr, double angle)
@@ -1214,6 +1260,8 @@ cairo_rotate (cairo_t *cr, double angle)
  * Modifies the current transformation matrix (CTM) by applying
  * @matrix as an additional transformation. The new transformation of
  * user space takes place after any existing transformation.
+ *
+ * Since: 1.0
  **/
 void
 cairo_transform (cairo_t	      *cr,
@@ -1237,6 +1285,8 @@ slim_hidden_def (cairo_transform);
  *
  * Modifies the current transformation matrix (CTM) by setting it
  * equal to @matrix.
+ *
+ * Since: 1.0
  **/
 void
 cairo_set_matrix (cairo_t	       *cr,
@@ -1261,6 +1311,8 @@ slim_hidden_def (cairo_set_matrix);
  * to the identity matrix. That is, the user-space and device-space
  * axes will be aligned and one user-space unit will transform to one
  * device-space unit.
+ *
+ * Since: 1.0
  **/
 void
 cairo_identity_matrix (cairo_t *cr)
@@ -1284,6 +1336,8 @@ cairo_identity_matrix (cairo_t *cr)
  * Transform a coordinate from user space to device space by
  * multiplying the given point by the current transformation matrix
  * (CTM).
+ *
+ * Since: 1.0
  **/
 void
 cairo_user_to_device (cairo_t *cr, double *x, double *y)
@@ -1305,6 +1359,8 @@ slim_hidden_def (cairo_user_to_device);
  * function is similar to cairo_user_to_device() except that the
  * translation components of the CTM will be ignored when transforming
  * (@dx,@dy).
+ *
+ * Since: 1.0
  **/
 void
 cairo_user_to_device_distance (cairo_t *cr, double *dx, double *dy)
@@ -1325,6 +1381,8 @@ slim_hidden_def (cairo_user_to_device_distance);
  * Transform a coordinate from device space to user space by
  * multiplying the given point by the inverse of the current
  * transformation matrix (CTM).
+ *
+ * Since: 1.0
  **/
 void
 cairo_device_to_user (cairo_t *cr, double *x, double *y)
@@ -1346,6 +1404,8 @@ slim_hidden_def (cairo_device_to_user);
  * function is similar to cairo_device_to_user() except that the
  * translation components of the inverse CTM will be ignored when
  * transforming (@dx,@dy).
+ *
+ * Since: 1.0
  **/
 void
 cairo_device_to_user_distance (cairo_t *cr, double *dx, double *dy)
@@ -1362,6 +1422,8 @@ cairo_device_to_user_distance (cairo_t *cr, double *dx, double *dy)
  *
  * Clears the current path. After this call there will be no path and
  * no current point.
+ *
+ * Since: 1.0
  **/
 void
 cairo_new_path (cairo_t *cr)
@@ -1416,6 +1478,8 @@ cairo_new_sub_path (cairo_t *cr)
  *
  * Begin a new sub-path. After this call the current point will be (@x,
  * @y).
+ *
+ * Since: 1.0
  **/
 void
 cairo_move_to (cairo_t *cr, double x, double y)
@@ -1444,6 +1508,8 @@ slim_hidden_def(cairo_move_to);
  *
  * If there is no current point before the call to cairo_line_to()
  * this function will behave as cairo_move_to(@cr, @x, @y).
+ *
+ * Since: 1.0
  **/
 void
 cairo_line_to (cairo_t *cr, double x, double y)
@@ -1477,6 +1543,8 @@ slim_hidden_def (cairo_line_to);
  * If there is no current point before the call to cairo_curve_to()
  * this function will behave as if preceded by a call to
  * cairo_move_to(@cr, @x1, @y1).
+ *
+ * Since: 1.0
  **/
 void
 cairo_curve_to (cairo_t *cr,
@@ -1545,6 +1613,8 @@ slim_hidden_def (cairo_curve_to);
  * cairo_arc (cr, 0., 0., 1., 0., 2 * M_PI);
  * cairo_restore (cr);
  * </programlisting></informalexample>
+ *
+ * Since: 1.0
  **/
 void
 cairo_arc (cairo_t *cr,
@@ -1588,6 +1658,8 @@ cairo_arc (cairo_t *cr,
  *
  * See cairo_arc() for more details. This function differs only in the
  * direction of the arc between the two angles.
+ *
+ * Since: 1.0
  **/
 void
 cairo_arc_negative (cairo_t *cr,
@@ -1663,6 +1735,8 @@ cairo_rel_arc_to (cairo_t *cr,
  * It is an error to call this function with no current point. Doing
  * so will cause @cr to shutdown with a status of
  * %CAIRO_STATUS_NO_CURRENT_POINT.
+ *
+ * Since: 1.0
  **/
 void
 cairo_rel_move_to (cairo_t *cr, double dx, double dy)
@@ -1694,6 +1768,8 @@ cairo_rel_move_to (cairo_t *cr, double dx, double dy)
  * It is an error to call this function with no current point. Doing
  * so will cause @cr to shutdown with a status of
  * %CAIRO_STATUS_NO_CURRENT_POINT.
+ *
+ * Since: 1.0
  **/
 void
 cairo_rel_line_to (cairo_t *cr, double dx, double dy)
@@ -1733,6 +1809,8 @@ slim_hidden_def(cairo_rel_line_to);
  * It is an error to call this function with no current point. Doing
  * so will cause @cr to shutdown with a status of
  * %CAIRO_STATUS_NO_CURRENT_POINT.
+ *
+ * Since: 1.0
  **/
 void
 cairo_rel_curve_to (cairo_t *cr,
@@ -1772,6 +1850,8 @@ cairo_rel_curve_to (cairo_t *cr,
  * cairo_rel_line_to (cr, -width, 0);
  * cairo_close_path (cr);
  * </programlisting></informalexample>
+ *
+ * Since: 1.0
  **/
 void
 cairo_rectangle (cairo_t *cr,
@@ -1831,6 +1911,8 @@ cairo_stroke_to_path (cairo_t *cr)
  * not be necessary to save the "last move_to point" during processing
  * as the MOVE_TO immediately after the CLOSE_PATH will provide that
  * point.
+ *
+ * Since: 1.0
  **/
 void
 cairo_close_path (cairo_t *cr)
@@ -1903,6 +1985,8 @@ cairo_path_extents (cairo_t *cr,
  *
  * A drawing operator that paints the current source everywhere within
  * the current clip region.
+ *
+ * Since: 1.0
  **/
 void
 cairo_paint (cairo_t *cr)
@@ -1927,6 +2011,8 @@ slim_hidden_def (cairo_paint);
  * the current clip region using a mask of constant alpha value
  * @alpha. The effect is similar to cairo_paint(), but the drawing
  * is faded out using the alpha value.
+ *
+ * Since: 1.0
  **/
 void
 cairo_paint_with_alpha (cairo_t *cr,
@@ -1951,7 +2037,9 @@ cairo_paint_with_alpha (cairo_t *cr,
  * using the alpha channel of @pattern as a mask. (Opaque
  * areas of @pattern are painted with the source, transparent
  * areas are not painted.)
- */
+ *
+ * Since: 1.0
+ **/
 void
 cairo_mask (cairo_t         *cr,
 	    cairo_pattern_t *pattern)
@@ -1988,7 +2076,9 @@ slim_hidden_def (cairo_mask);
  * using the alpha channel of @surface as a mask. (Opaque
  * areas of @surface are painted with the source, transparent
  * areas are not painted.)
- */
+ *
+ * Since: 1.0
+ **/
 void
 cairo_mask_surface (cairo_t         *cr,
 		    cairo_surface_t *surface,
@@ -2042,6 +2132,8 @@ cairo_mask_surface (cairo_t         *cr,
  *
  * In no case will a cap style of %CAIRO_LINE_CAP_BUTT cause anything
  * to be drawn in the case of either degenerate segments or sub-paths.
+ *
+ * Since: 1.0
  **/
 void
 cairo_stroke (cairo_t *cr)
@@ -2069,6 +2161,8 @@ slim_hidden_def(cairo_stroke);
  * See cairo_set_line_width(), cairo_set_line_join(),
  * cairo_set_line_cap(), cairo_set_dash(), and
  * cairo_stroke_preserve().
+ *
+ * Since: 1.0
  **/
 void
 cairo_stroke_preserve (cairo_t *cr)
@@ -2093,6 +2187,8 @@ slim_hidden_def(cairo_stroke_preserve);
  * filled). After cairo_fill(), the current path will be cleared from
  * the cairo context. See cairo_set_fill_rule() and
  * cairo_fill_preserve().
+ *
+ * Since: 1.0
  **/
 void
 cairo_fill (cairo_t *cr)
@@ -2117,6 +2213,8 @@ cairo_fill (cairo_t *cr)
  * path within the cairo context.
  *
  * See cairo_set_fill_rule() and cairo_fill().
+ *
+ * Since: 1.0
  **/
 void
 cairo_fill_preserve (cairo_t *cr)
@@ -2143,6 +2241,8 @@ slim_hidden_def(cairo_fill_preserve);
  *
  * This is a convenience function that simply calls
  * cairo_surface_copy_page() on @cr's target.
+ *
+ * Since: 1.0
  **/
 void
 cairo_copy_page (cairo_t *cr)
@@ -2166,6 +2266,8 @@ cairo_copy_page (cairo_t *cr)
  *
  * This is a convenience function that simply calls
  * cairo_surface_show_page() on @cr's target.
+ *
+ * Since: 1.0
  **/
 void
 cairo_show_page (cairo_t *cr)
@@ -2197,6 +2299,8 @@ cairo_show_page (cairo_t *cr)
  *
  * Return value: A non-zero value if the point is inside, or zero if
  * outside.
+ *
+ * Since: 1.0
  **/
 cairo_bool_t
 cairo_in_stroke (cairo_t *cr, double x, double y)
@@ -2229,6 +2333,8 @@ cairo_in_stroke (cairo_t *cr, double x, double y)
  *
  * Return value: A non-zero value if the point is inside, or zero if
  * outside.
+ *
+ * Since: 1.0
  **/
 cairo_bool_t
 cairo_in_fill (cairo_t *cr, double x, double y)
@@ -2273,6 +2379,8 @@ cairo_in_fill (cairo_t *cr, double x, double y)
  * See cairo_stroke(), cairo_set_line_width(), cairo_set_line_join(),
  * cairo_set_line_cap(), cairo_set_dash(), and
  * cairo_stroke_preserve().
+ *
+ * Since: 1.0
  **/
 void
 cairo_stroke_extents (cairo_t *cr,
@@ -2322,6 +2430,8 @@ cairo_stroke_extents (cairo_t *cr,
  * if the non-inked path extents are desired.
  *
  * See cairo_fill(), cairo_set_fill_rule() and cairo_fill_preserve().
+ *
+ * Since: 1.0
  **/
 void
 cairo_fill_extents (cairo_t *cr,
@@ -2368,6 +2478,8 @@ cairo_fill_extents (cairo_t *cr,
  * calling cairo_clip() within a cairo_save()/cairo_restore()
  * pair. The only other means of increasing the size of the clip
  * region is cairo_reset_clip().
+ *
+ * Since: 1.0
  **/
 void
 cairo_clip (cairo_t *cr)
@@ -2403,6 +2515,8 @@ cairo_clip (cairo_t *cr)
  * calling cairo_clip_preserve() within a cairo_save()/cairo_restore()
  * pair. The only other means of increasing the size of the clip
  * region is cairo_reset_clip().
+ *
+ * Since: 1.0
  **/
 void
 cairo_clip_preserve (cairo_t *cr)
@@ -2433,6 +2547,8 @@ slim_hidden_def(cairo_clip_preserve);
  * higher-level code which calls cairo_clip(). Consider using
  * cairo_save() and cairo_restore() around cairo_clip() as a more
  * robust means of temporarily restricting the clip region.
+ *
+ * Since: 1.0
  **/
 void
 cairo_reset_clip (cairo_t *cr)
@@ -2593,6 +2709,8 @@ cairo_copy_clip_rectangle_list (cairo_t *cr)
  *
  * This function is equivalent to a call to cairo_toy_font_face_create()
  * followed by cairo_set_font_face().
+ *
+ * Since: 1.0
  **/
 void
 cairo_select_font_face (cairo_t              *cr,
@@ -2626,6 +2744,8 @@ cairo_select_font_face (cairo_t              *cr,
  * will be stored.
  *
  * Gets the font extents for the currently selected font.
+ *
+ * Since: 1.0
  **/
 void
 cairo_font_extents (cairo_t              *cr,
@@ -2655,6 +2775,8 @@ cairo_font_extents (cairo_t              *cr,
  * Replaces the current #cairo_font_face_t object in the #cairo_t with
  * @font_face. The replaced font face in the #cairo_t will be
  * destroyed if there are no other references to it.
+ *
+ * Since: 1.0
  **/
 void
 cairo_set_font_face (cairo_t           *cr,
@@ -2687,6 +2809,8 @@ cairo_set_font_face (cairo_t           *cr,
  * objects it is passed to, (for example, calling
  * cairo_set_font_face() with a nil font will trigger an error that
  * will shutdown the #cairo_t object).
+ *
+ * Since: 1.0
  **/
 cairo_font_face_t *
 cairo_get_font_face (cairo_t *cr)
@@ -2711,6 +2835,8 @@ cairo_get_font_face (cairo_t *cr)
  * If text is drawn without a call to cairo_set_font_size(), (nor
  * cairo_set_font_matrix() nor cairo_set_scaled_font()), the default
  * font size is 10.0.
+ *
+ * Since: 1.0
  **/
 void
 cairo_set_font_size (cairo_t *cr, double size)
@@ -2727,7 +2853,7 @@ cairo_set_font_size (cairo_t *cr, double size)
 slim_hidden_def (cairo_set_font_size);
 
 /**
- * cairo_set_font_matrix
+ * cairo_set_font_matrix:
  * @cr: a #cairo_t
  * @matrix: a #cairo_matrix_t describing a transform to be applied to
  * the current font.
@@ -2738,6 +2864,8 @@ slim_hidden_def (cairo_set_font_size);
  * simple scale is used (see cairo_set_font_size()), but a more
  * complex font matrix can be used to shear the font
  * or stretch it unequally along the two axes
+ *
+ * Since: 1.0
  **/
 void
 cairo_set_font_matrix (cairo_t		    *cr,
@@ -2755,12 +2883,14 @@ cairo_set_font_matrix (cairo_t		    *cr,
 slim_hidden_def (cairo_set_font_matrix);
 
 /**
- * cairo_get_font_matrix
+ * cairo_get_font_matrix:
  * @cr: a #cairo_t
  * @matrix: return value for the matrix
  *
  * Stores the current font matrix into @matrix. See
  * cairo_set_font_matrix().
+ *
+ * Since: 1.0
  **/
 void
 cairo_get_font_matrix (cairo_t *cr, cairo_matrix_t *matrix)
@@ -2783,6 +2913,8 @@ cairo_get_font_matrix (cairo_t *cr, cairo_matrix_t *matrix)
  * options derived from underlying surface; if the value in @options
  * has a default value (like %CAIRO_ANTIALIAS_DEFAULT), then the value
  * from the surface is used.
+ *
+ * Since: 1.0
  **/
 void
 cairo_set_font_options (cairo_t                    *cr,
@@ -2815,6 +2947,8 @@ slim_hidden_def (cairo_set_font_options);
  * Note that the returned options do not include any options derived
  * from the underlying surface; they are literally the options
  * passed to cairo_set_font_options().
+ *
+ * Since: 1.0
  **/
 void
 cairo_get_font_options (cairo_t              *cr,
@@ -2919,6 +3053,8 @@ slim_hidden_def (cairo_get_scaled_font);
  * characters. In particular, trailing whitespace characters are
  * likely to not affect the size of the rectangle, though they will
  * affect the x_advance and y_advance values.
+ *
+ * Since: 1.0
  **/
 void
 cairo_text_extents (cairo_t              *cr,
@@ -2985,6 +3121,8 @@ cairo_text_extents (cairo_t              *cr,
  *
  * Note that whitespace glyphs do not contribute to the size of the
  * rectangle (extents.width and extents.height).
+ *
+ * Since: 1.0
  **/
 void
 cairo_glyph_extents (cairo_t                *cr,
@@ -3048,6 +3186,8 @@ cairo_glyph_extents (cairo_t                *cr,
  * and simple programs, but it is not expected to be adequate for
  * serious text-using applications. See cairo_show_glyphs() for the
  * "real" text display API in cairo.
+ *
+ * Since: 1.0
  **/
 void
 cairo_show_text (cairo_t *cr, const char *utf8)
@@ -3148,6 +3288,8 @@ cairo_show_text (cairo_t *cr, const char *utf8)
  * A drawing operator that generates the shape from an array of glyphs,
  * rendered according to the current font face, font size
  * (font matrix), and font options.
+ *
+ * Since: 1.0
  **/
 void
 cairo_show_glyphs (cairo_t *cr, const cairo_glyph_t *glyphs, int num_glyphs)
@@ -3307,6 +3449,8 @@ cairo_show_text_glyphs (cairo_t			   *cr,
  * and simple programs, but it is not expected to be adequate for
  * serious text-using applications. See cairo_glyph_path() for the
  * "real" text path API in cairo.
+ *
+ * Since: 1.0
  **/
 void
 cairo_text_path (cairo_t *cr, const char *utf8)
@@ -3377,6 +3521,8 @@ cairo_text_path (cairo_t *cr, const char *utf8)
  * Adds closed paths for the glyphs to the current path.  The generated
  * path if filled, achieves an effect similar to that of
  * cairo_show_glyphs().
+ *
+ * Since: 1.0
  **/
 void
 cairo_glyph_path (cairo_t *cr, const cairo_glyph_t *glyphs, int num_glyphs)
@@ -3411,6 +3557,8 @@ cairo_glyph_path (cairo_t *cr, const cairo_glyph_t *glyphs, int num_glyphs)
  * Gets the current compositing operator for a cairo context.
  *
  * Return value: the current compositing operator.
+ *
+ * Since: 1.0
  **/
 cairo_operator_t
 cairo_get_operator (cairo_t *cr)
@@ -3429,6 +3577,8 @@ cairo_get_operator (cairo_t *cr)
  * Gets the current compositing opacity for a cairo context.
  *
  * Return value: the current compositing opacity.
+ *
+ * Since: TBD
  **/
 double
 cairo_get_opacity (cairo_t *cr)
@@ -3447,6 +3597,8 @@ cairo_get_opacity (cairo_t *cr)
  * Gets the current tolerance value, as set by cairo_set_tolerance().
  *
  * Return value: the current tolerance value.
+ *
+ * Since: 1.0
  **/
 double
 cairo_get_tolerance (cairo_t *cr)
@@ -3466,6 +3618,8 @@ slim_hidden_def (cairo_get_tolerance);
  * cairo_set_antialias().
  *
  * Return value: the current shape antialiasing mode.
+ *
+ * Since: 1.0
  **/
 cairo_antialias_t
 cairo_get_antialias (cairo_t *cr)
@@ -3525,6 +3679,8 @@ cairo_has_current_point (cairo_t *cr)
  *
  * Some functions unset the current path and as a result, current point:
  * cairo_fill(), cairo_stroke().
+ *
+ * Since: 1.0
  **/
 void
 cairo_get_current_point (cairo_t *cr, double *x_ret, double *y_ret)
@@ -3552,6 +3708,8 @@ slim_hidden_def(cairo_get_current_point);
  * Gets the current fill rule, as set by cairo_set_fill_rule().
  *
  * Return value: the current fill rule.
+ *
+ * Since: 1.0
  **/
 cairo_fill_rule_t
 cairo_get_fill_rule (cairo_t *cr)
@@ -3572,6 +3730,8 @@ cairo_get_fill_rule (cairo_t *cr)
  * cairo_get_line_width().
  *
  * Return value: the current line width.
+ *
+ * Since: 1.0
  **/
 double
 cairo_get_line_width (cairo_t *cr)
@@ -3590,6 +3750,8 @@ slim_hidden_def (cairo_get_line_width);
  * Gets the current line cap style, as set by cairo_set_line_cap().
  *
  * Return value: the current line cap style.
+ *
+ * Since: 1.0
  **/
 cairo_line_cap_t
 cairo_get_line_cap (cairo_t *cr)
@@ -3607,6 +3769,8 @@ cairo_get_line_cap (cairo_t *cr)
  * Gets the current line join style, as set by cairo_set_line_join().
  *
  * Return value: the current line join style.
+ *
+ * Since: 1.0
  **/
 cairo_line_join_t
 cairo_get_line_join (cairo_t *cr)
@@ -3624,6 +3788,8 @@ cairo_get_line_join (cairo_t *cr)
  * Gets the current miter limit, as set by cairo_set_miter_limit().
  *
  * Return value: the current miter limit.
+ *
+ * Since: 1.0
  **/
 double
 cairo_get_miter_limit (cairo_t *cr)
@@ -3640,6 +3806,8 @@ cairo_get_miter_limit (cairo_t *cr)
  * @matrix: return value for the matrix
  *
  * Stores the current transformation matrix (CTM) into @matrix.
+ *
+ * Since: 1.0
  **/
 void
 cairo_get_matrix (cairo_t *cr, cairo_matrix_t *matrix)
@@ -3668,6 +3836,8 @@ slim_hidden_def (cairo_get_matrix);
  *
  * Return value: the target surface. This object is owned by cairo. To
  * keep a reference to it, you must call cairo_surface_reference().
+ *
+ * Since: 1.0
  **/
 cairo_surface_t *
 cairo_get_target (cairo_t *cr)
@@ -3733,6 +3903,8 @@ cairo_get_group_target (cairo_t *cr)
  * Return value: the copy of the current path. The caller owns the
  * returned object and should call cairo_path_destroy() when finished
  * with it.
+ *
+ * Since: 1.0
  **/
 cairo_path_t *
 cairo_copy_path (cairo_t *cr)
@@ -3775,6 +3947,8 @@ cairo_copy_path (cairo_t *cr)
  * Return value: the copy of the current path. The caller owns the
  * returned object and should call cairo_path_destroy() when finished
  * with it.
+ *
+ * Since: 1.0
  **/
 cairo_path_t *
 cairo_copy_path_flat (cairo_t *cr)
@@ -3796,6 +3970,8 @@ cairo_copy_path_flat (cairo_t *cr)
  * #cairo_path_t for details on how the path data structure should be
  * initialized, and note that <literal>path->status</literal> must be
  * initialized to %CAIRO_STATUS_SUCCESS.
+ *
+ * Since: 1.0
  **/
 void
 cairo_append_path (cairo_t		*cr,
@@ -3840,6 +4016,8 @@ cairo_append_path (cairo_t		*cr,
  * Checks whether an error has previously occurred for this context.
  *
  * Returns: the current status of this context, see #cairo_status_t
+ *
+ * Since: 1.0
  **/
 cairo_status_t
 cairo_status (cairo_t *cr)
