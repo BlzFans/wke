@@ -1,4 +1,4 @@
-/* cairo - a vector graphics library with display and print output
+﻿/* cairo - a vector graphics library with display and print output
  *
  * Copyright © 2002 University of Southern California
  * Copyright © 2005 Red Hat, Inc.
@@ -51,7 +51,7 @@
 #endif
 
 #ifdef _MSC_VER
-#define cairo_public __declspec(dllexport)
+#define cairo_public /*wke+++ __declspec(dllexport) wke+++*/
 #endif
 
 #include <assert.h>
