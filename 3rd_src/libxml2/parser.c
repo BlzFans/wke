@@ -9955,12 +9955,15 @@ xmlParseEncodingDecl(xmlParserCtxtPtr ctxt) {
 	    ctxt->encoding = encoding;
 	}
 	else if (encoding != NULL) {
-	    xmlCharEncodingHandlerPtr handler;
+	    /*wke++++++
+        xmlCharEncodingHandlerPtr handler;
+        ++++++wke*/
 
 	    if (ctxt->input->encoding != NULL)
 		xmlFree((xmlChar *) ctxt->input->encoding);
 	    ctxt->input->encoding = encoding;
 
+        /*wke++++++
             handler = xmlFindCharEncodingHandler((const char *) encoding);
 	    if (handler != NULL) {
 		xmlSwitchToEncoding(ctxt, handler);
@@ -9969,6 +9972,7 @@ xmlParseEncodingDecl(xmlParserCtxtPtr ctxt) {
 			"Unsupported encoding %s\n", encoding);
 		return(NULL);
 	    }
+        ++++++wke*/
 	}
     }
     return(encoding);
