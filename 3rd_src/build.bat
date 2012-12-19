@@ -11,3 +11,9 @@ call build.bat
 
 cd ..\libpng
 call build.bat
+
+cd ..\libxml2
+call build.bat
+
+cd ..\libxslt
+call build.bat
