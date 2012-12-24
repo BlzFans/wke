@@ -491,7 +491,7 @@ jsValue JS_CALL js_outputMsg(jsExecState es)
     //ASSERT(jsArgType(es, 0) == JSTYPE_STRING);
 
     jsValue value = jsArg(es, 0);
-    outputMsg(jsToString(es, value));
+    OutputDebugStringW(jsToStringW(es, value));
 
     return jsUndefined();
 }

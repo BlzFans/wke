@@ -89,29 +89,29 @@ void CRenderD3D::resize(unsigned int w, unsigned int h)
     2        3
     */
 
-    m_Vertex[0].x = 0.f;
-    m_Vertex[0].y = 0.f;
+    m_Vertex[0].x = -0.5f;
+    m_Vertex[0].y = -0.5f;
     m_Vertex[0].z = 0.f;
     m_Vertex[0].w = 1.f;
     m_Vertex[0].u = 0.f;
     m_Vertex[0].v = 0.f;
 
-    m_Vertex[1].x = float(w - 1);
-    m_Vertex[1].y = 0.f;
+    m_Vertex[1].x = w - 0.5f;
+    m_Vertex[1].y = -0.5f;
     m_Vertex[1].z = 0.f;
     m_Vertex[1].w = 1.f;
     m_Vertex[1].u = 1.f;
     m_Vertex[1].v = 0.f;
 
-    m_Vertex[2].x = 0.f;
-    m_Vertex[2].y = float(h - 1);
+    m_Vertex[2].x = -0.5f;
+    m_Vertex[2].y = h - 0.5f;
     m_Vertex[2].z = 0.f;
     m_Vertex[2].w = 1.f;
     m_Vertex[2].u = 0.f;
     m_Vertex[2].v = 1.f;
 
-    m_Vertex[3].x = float(w - 1);
-    m_Vertex[3].y = float(h - 1);
+    m_Vertex[3].x = w - 0.5f;
+    m_Vertex[3].y = h - 0.5f;
     m_Vertex[3].z = 0.f;
     m_Vertex[3].w = 1.f;
     m_Vertex[3].u = 1.f;
