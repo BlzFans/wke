@@ -51,7 +51,7 @@ void WebPanelOverlayElement::resize(int w, int h)
         (Ogre::uint)w, // Width
         (Ogre::uint)h, // Height
         1, // Depth (Must be 1 for two dimensional textures)
-        1, // Number of mipmaps
+        0, // Number of mipmaps
         Ogre::PF_A8R8G8B8, // Pixel format
         Ogre::TU_DYNAMIC // usage
         );

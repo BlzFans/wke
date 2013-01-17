@@ -6,7 +6,7 @@ void* fileOpen(const char* path)
 {
     Ogre::String name = path;
     std::replace(name.begin(), name.end(), '\\', '/' );
-    Ogre::DataStreamPtr stream = Ogre::ResourceGroupManager::getSingleton().openResource(name, "html", false);
+    Ogre::DataStreamPtr stream = Ogre::ResourceGroupManager::getSingleton().openResource(name);
     if (stream.isNull())
         return NULL;
 

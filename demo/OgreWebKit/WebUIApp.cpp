@@ -147,6 +147,8 @@ void WebUIApp::go(void)
     // Look back along -Z
     mCamera->lookAt(Ogre::Vector3(0,0,-300));
     mCamera->setNearClipDistance(5);
+
+    mCameraMan = new OgreBites::SdkCameraMan(mCamera);
     //-------------------------------------------------------------------------------------
     // create viewports
     // Create one viewport, entire window
@@ -162,6 +164,27 @@ void WebUIApp::go(void)
     //-------------------------------------------------------------------------------------
     // load resources
     Ogre::ResourceGroupManager::getSingleton().initialiseAllResourceGroups();
+
+    mSceneMgr->setSkyBox(true, "Examples/EveningSkyBox");
+
+    // dim orange ambient and two bright orange lights to match the skybox
+    mSceneMgr->setAmbientLight(Ogre::ColourValue(0.3f, 0.2f, 0));
+    Ogre::Light* light = mSceneMgr->createLight();
+    light->setPosition(2000, 1000, -1000);
+    light->setDiffuseColour(1, 0.5f, 0);
+    light = mSceneMgr->createLight();
+    light->setPosition(-2000, 1000, 1000);
+    light->setDiffuseColour(1, 0.5, 0);
+
+    mPivot = mSceneMgr->getRootSceneNode()->createChildSceneNode();  // create a pivot node
+
+    // create a child node and attach an ogre head and some smoke to it
+    Ogre::SceneNode* headNode = mPivot->createChildSceneNode(Ogre::Vector3(100, 0, 0));
+    headNode->attachObject(mSceneMgr->createEntity("Head", "ogrehead.mesh"));
+    headNode->attachObject(mSceneMgr->createParticleSystem("Smoke", "Examples/Smoke"));
+
+    mCamera->setPosition(0, 30, 350);
+
     //-------------------------------------------------------------------------------------
     //create FrameListener
     Ogre::LogManager::getSingletonPtr()->logMessage("*** Initializing OIS ***");
@@ -195,6 +218,7 @@ void WebUIApp::go(void)
     mAddressBar->loadFile("html/addressbar.html");
     
     mWebView = getWebView();
+    mWebView->setWebTransparent(true);
     mWebView->loadFile("html/mac-osx-lion.html");
 
     clientHandler.onTitleChanged = onTitleChanged;
@@ -225,6 +249,12 @@ bool WebUIApp::frameRenderingQueued(const Ogre::FrameEvent& evt)
         mFocusCtrl->keyReleased(arg);
         mFocusCtrl->keyPressed(arg);
     }
+
+    // spin the head around and make it float up and down
+    mPivot->setPosition(0, Ogre::Math::Sin(mRoot->getTimer()->getMilliseconds() / 150.0f) * 10, 0);
+    mPivot->yaw(Ogre::Radian(-evt.timeSinceLastFrame * 1.5f));
+
+    mCameraMan->frameRenderingQueued(evt);
 
     return true;
 }
@@ -261,10 +291,16 @@ bool WebUIApp::mouseMoved( const OIS::MouseEvent &arg )
     if (arg.state.X.abs >= arg.state.width || arg.state.Y.abs >= arg.state.height)
         return true;
 
+    bool handled = false;
     if (mAddressBar->isCursorOver(arg))
-        mAddressBar->mouseMoved(arg);
+        handled = mAddressBar->mouseMoved(arg);
     else if (mWebView->isCursorOver(arg))
-        mWebView->mouseMoved(arg);
+        handled = mWebView->mouseMoved(arg);
+
+    if (!handled && arg.state.buttonDown(OIS::MB_Right))
+    {
+        mCameraMan->injectMouseMove(arg);
+    }
 
     return true;
 }
@@ -277,15 +313,27 @@ bool WebUIApp::mousePressed( const OIS::MouseEvent &arg, OIS::MouseButtonID id )
     if (arg.state.X.abs >= arg.state.width || arg.state.Y.abs >= arg.state.height)
         return true;
 
+    bool handled = false;
     if (mAddressBar->isCursorOver(arg))
     {
         if (mAddressBar->mousePressed(arg, id))
-            setFocusCtrl(mAddressBar);
+        {
+             setFocusCtrl(mAddressBar);
+             handled = true;
+        }
     }
     else if (mWebView->isCursorOver(arg))
     {
         if (mWebView->mousePressed(arg, id))
+        {
             setFocusCtrl(mWebView);
+            handled = true;
+        }
+    }
+
+    if (!handled)
+    {
+        mCameraMan->injectMouseDown(arg, id);
     }
 
     return true;
@@ -299,10 +347,16 @@ bool WebUIApp::mouseReleased( const OIS::MouseEvent &arg, OIS::MouseButtonID id 
     if (arg.state.X.abs >= arg.state.width || arg.state.Y.abs >= arg.state.height)
         return true;
 
+    bool handled = false;
     if (mAddressBar->isCursorOver(arg))
-        mAddressBar->mouseReleased(arg, id);
+        handled = mAddressBar->mouseReleased(arg, id);
     else if (mWebView->isCursorOver(arg))
-        mWebView->mouseReleased(arg, id);
+        handled = mWebView->mouseReleased(arg, id);
+
+    if (!handled)
+    {
+        mCameraMan->injectMouseUp(arg, id);
+    }
 
     return true;
 }

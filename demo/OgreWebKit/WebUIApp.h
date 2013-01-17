@@ -11,11 +11,14 @@
 #include <OgreConfigFile.h>
 #include <OgreWindowEventUtilities.h>
 #include <OgreOverlayManager.h>
+#include <OgreParticleSystem.h>
 
 #include <OISEvents.h>
 #include <OISInputManager.h>
 #include <OISKeyboard.h>
 #include <OISMouse.h>
+
+#include <SdkCameraMan.h>
 
 class WebPanelOverlayElement;
 class WebPanelOverlayElementFactory;
@@ -49,6 +52,7 @@ protected:
 
     Ogre::Root *mRoot;
     Ogre::Camera* mCamera;
+    OgreBites::SdkCameraMan* mCameraMan;
     Ogre::SceneManager* mSceneMgr;
     Ogre::RenderWindow* mWindow;
     Ogre::String mResourcesCfg;
@@ -65,6 +69,8 @@ protected:
     WebPanelOverlayElementFactory* mWebPanelFactory;
 
     WebPanelOverlayElement* mFocusCtrl;
+
+    Ogre::SceneNode* mPivot;
 
     //Key auto repeat
     OIS::KeyCode m_nKey;
