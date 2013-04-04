@@ -19,6 +19,9 @@
 
 void wkeInit()
 {
+    //double-precision float
+    _controlfp(_PC_53, _MCW_PC);
+
     CoInitialize(NULL);
 
     icuwin_init();
