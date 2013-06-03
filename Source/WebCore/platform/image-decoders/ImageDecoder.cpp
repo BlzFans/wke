@@ -36,6 +36,7 @@
 
 //wke++++++
 #include "DDSImageDecoder.h"
+#include "TGAImageDecoder.h"
 //wke++++++
 
 using namespace std;
@@ -93,13 +94,20 @@ bool matchesICOSignature(char* contents)
 
 bool matchesCURSignature(char* contents)
 {
-    return !memcmp(contents, "\x00\x00\x02\x00", 4);
+	//wke++++++
+    return !memcmp(contents, "\x00\x00\x02\x00", 4) && (contents[4] > 0 || contents[5] > 0);
+	//wke++++++
 }
 
 //wke++++++
 bool matchesDDSSignature(char* contents)
 {
     return !memcmp(contents, "DDS ", 4);
+}
+
+bool matchesTGASignature(char* contents)
+{
+	return !memcmp(contents, "\x00\x00\x02\x00", 4);
 }
 //wke++++++
 
@@ -136,6 +144,9 @@ ImageDecoder* ImageDecoder::create(const SharedBuffer& data, ImageSource::AlphaO
     //wke++++++
     if (matchesDDSSignature(contents))
         return new DDSImageDecoder(alphaOption, gammaAndColorProfileOption);
+
+	if (matchesTGASignature(contents))
+		return new TGAImageDecoder(alphaOption, gammaAndColorProfileOption);
     //wke++++++
 
     return 0;
