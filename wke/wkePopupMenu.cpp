@@ -50,6 +50,7 @@ void PopupMenu::disconnectClient()
 
 void PopupMenu::show(const WebCore::IntRect& r, WebCore::FrameView* view, int index)
 {
+	showPopup_ = true;
     calculatePositionAndSize(r, view);
     if (clientRect().isEmpty())
         return;
@@ -75,8 +76,6 @@ void PopupMenu::show(const WebCore::IntRect& r, WebCore::FrameView* view, int in
     }
 
     chromeClient_->setPopupMenu(this);
-
-    showPopup_ = true;
 }
 
 void PopupMenu::hide()
