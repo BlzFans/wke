@@ -40,6 +40,7 @@ namespace WebCore {
             : m_parent(decoder)
             , m_readOffset(0)
 			, m_flipVert(false)
+			, m_bytesPerPixel(0)
         {
         }
 
@@ -72,6 +73,11 @@ namespace WebCore {
 
             return result;
         }
+
+		bool hasMoreData(size_t count)
+		{
+			return (m_data->size() >= m_readOffset + count) ? true : false;
+		}
 
         enum 
         {
@@ -154,10 +160,7 @@ namespace WebCore {
                     return false;
             }
             
-            if (colormapped || rle)
-                return false;
-                
-            if (pixelSize != 32 && pixelSize != 24)
+            if (colormapped)
                 return false;
                 
             // Initialize the framebuffer if needed.
@@ -175,81 +178,139 @@ namespace WebCore {
                 //the frame always fills the entire image.
                 m_buffer->setOriginalFrameRect(IntRect(0, 0, width, height));
             }
-            
-            if (pixelSize == 32)
-            {
-                if (!decode32Bit())
-                    return false;
-            }
-            else
-            {
-                if (!decode24Bit())
-                    return false;
-            }
-                
+
+			if (pixelSize == 32)
+				m_buffer->setHasAlpha(true);
+			else if (pixelSize == 24)
+				m_buffer->setHasAlpha(false);
+			else
+				return false;
+
+			m_bytesPerPixel = pixelSize / 8;
+
+			if (rle)
+			{
+				if (!decodeRLEPixels())
+					return false;
+			}
+			else
+			{
+				if (!decodePixels())
+					return false;
+			}
+                            
             // Done!
             m_buffer->setStatus(ImageFrame::FrameComplete);
             return true;
         }
         
-        bool decode32Bit()
+        bool decodePixels()
         {
             int width = m_parent->size().width();
             int height = m_parent->size().height();
 
-            if (m_data->size() < m_readOffset + width * height * 4)
-                return false;
+			if (!hasMoreData(width * height * m_bytesPerPixel))
+				return false;
 
-            m_buffer->setHasAlpha(true);
+			unsigned char r, g, b, a;
+			for (int y = 0; y < height; ++y)
+			{
+				for (int x = 0; x < width; ++x)
+				{
+					b = readUint8();
+					g = readUint8();
+					r = readUint8();
 
-            unsigned char r, g, b, a;
-            for (int y = 0; y < height; ++y)
-            {
-                for (int x = 0; x < width; ++x)
-                {
-                    b = readUint8();
-                    g = readUint8();
-                    r = readUint8();
-                    a = readUint8();
+					if (m_bytesPerPixel == 4)
+						a = readUint8();
+					else
+						a = 255;
 
 					if (m_flipVert)
 						m_buffer->setRGBA(x, height - y - 1, r, g, b, a);
 					else
 						m_buffer->setRGBA(x, y, r, g, b, a);
-                }
-            }
+				}
+			}
 
             return true;
         }
 
-        bool decode24Bit()
-        {
+		bool decodeRLEPixels()
+		{
             int width = m_parent->size().width();
             int height = m_parent->size().height();
 
-            if (m_data->size() < m_readOffset + width * height * 3)
-                return false;
 
-            m_buffer->setHasAlpha(false);
+			int pixel = 0;
+			unsigned count;
+			unsigned char r, g, b, a;
+			int x, y;
+			while (pixel < width * height)
+			{
+				if (!hasMoreData(1))
+					return false;
 
-            unsigned char r, g, b;
-            for (int y = 0; y < height; ++y)
-            {
-                for (int x = 0; x < width; ++x)
-                {
-                    b = readUint8();
-                    g = readUint8();
-                    r = readUint8();
+				count = readUint8();
+				if (count & 0x80)
+				{
+					count -= 127;
 
-					if (m_flipVert)
-						m_buffer->setRGBA(x, height - y - 1, r, g, b, 255);
+					if (!hasMoreData(m_bytesPerPixel))
+						return false;
+
+					b = readUint8();
+					g = readUint8();
+					r = readUint8();
+
+					if (m_bytesPerPixel == 4)
+						a = readUint8();
 					else
-						m_buffer->setRGBA(x, y, r, g, b, 255);
-                }
-            }
+						a = 255;
 
-            return true;
-        }
+					for (int i = 0; i < count; ++i)
+					{
+						x = pixel % width;
+						if (m_flipVert)
+							y = height - (pixel / width) - 1;
+						else
+							y = pixel / width;
+						++pixel;
+						
+						m_buffer->setRGBA(x, y, r, g, b, a);
+					}
+				}
+				else
+				{
+					++count;
+					if (!hasMoreData(count*m_bytesPerPixel))
+						return false;
+
+					for (int i = 0; i < count; ++i)
+					{
+						b = readUint8();
+						g = readUint8();
+						r = readUint8();
+
+						if (m_bytesPerPixel == 4)
+							a = readUint8();
+						else
+							a = 255;
+
+						x = pixel % width;
+						if (m_flipVert)
+							y = height - (pixel / width) - 1;
+						else
+							y = pixel / width;
+						++pixel;
+						
+						m_buffer->setRGBA(x, y, r, g, b, a);
+					}
+				}
+			}
+
+			return true;
+		}
 
     private:
         // The decoder that owns us.
@@ -265,6 +326,8 @@ namespace WebCore {
         RefPtr<SharedBuffer> m_data;
 
 		bool m_flipVert;
+
+		unsigned char m_bytesPerPixel;
     };
 
     void TGAImageDecoder::setData(SharedBuffer* data, bool allDataReceived)

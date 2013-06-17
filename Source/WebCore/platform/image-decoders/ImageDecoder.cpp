@@ -107,7 +107,7 @@ bool matchesDDSSignature(char* contents)
 
 bool matchesTGASignature(char* contents)
 {
-	return !memcmp(contents, "\x00\x00\x02\x00", 4);
+	return !memcmp(contents, "\x00\x00\x02\x00", 4) || !memcmp(contents, "\x00\x00\x0a\x00", 4);
 }
 //wke++++++
 

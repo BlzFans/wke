@@ -95,7 +95,7 @@ jsValue JS_CALL js_setTestCount(jsExecState es)
     return jsUndefined();
 }
 
-void onTileChanged(const wkeClientHandler*, wkeString title)
+void onTitleChanged(const wkeClientHandler*, wkeString title)
 {
     SetWindowText(hMainWnd, wkeToStringW(title));
 }
@@ -136,7 +136,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
     t2.End();
 
     wkeClientHandler handler;
-    handler.onTitleChanged = onTileChanged;
+    handler.onTitleChanged = onTitleChanged;
     handler.onURLChanged = onURLChanged;
     g_webView->setClientHandler(&handler);
 
