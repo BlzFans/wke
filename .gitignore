@@ -2,3 +2,5 @@
 *.user
 *.ncb
 *.suo
+/build/
+demo/bin/wke.dll
