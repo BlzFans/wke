@@ -2,7 +2,10 @@
 #include <JavaScriptCore/JSGlobalObject.h>
 #include <JavaScriptCore/JSFunction.h>
 #include <JavaScriptCore/SourceCode.h>
+#include <JavaScriptCore/JavaScript.h>
+#include <JavaScriptCore/APICast.h>
 #include <JavaScriptCore/Completion.h>
+#include <JavaScriptCore/OpaqueJSString.h>
 #include <WebCore/GCController.h>
 #include <WebCore/JSDOMWindowCustom.h>
 #include <WebCore/Page.h>
@@ -213,26 +216,19 @@ jsValue jsStringW(jsExecState es, const wchar_t* str)
     return JSC::JSValue::encode(value);
 }
 
-jsValue jsObject(jsExecState es)
+jsValue jsEmptyObject(jsExecState es)
 {
     JSC::JSValue value(JSC::constructEmptyObject((JSC::ExecState*)es));
     return JSC::JSValue::encode(value);
 }
 
-jsValue jsArray(jsExecState es)
+jsValue jsEmptyArray(jsExecState es)
 {
     JSC::JSValue value(JSC::constructEmptyArray((JSC::ExecState*)es));
     return JSC::JSValue::encode(value);
 }
 
-jsValue jsFunction(jsExecState es, jsNativeFunction fn, unsigned int argCount)
-{
-    JSC::ExecState* exec = (JSC::ExecState*)es;
-    JSC::JSGlobalObject* globalObject = (JSC::JSGlobalObject*)exec->lexicalGlobalObject()->toThisObject(exec);
 
-    JSC::JSValue value(JSC::JSFunction::create(exec, globalObject, argCount, JSC::Identifier(), (JSC::NativeFunction)fn));
-    return JSC::JSValue::encode(value);
-}
 
 
 //return the window object
@@ -510,6 +506,109 @@ jsValue JS_CALL js_setWebViewName(jsExecState es)
 
     return jsUndefined();
 }
+
+JSValueRef objectGetPropertyCallback(JSContextRef ctx, JSObjectRef object, JSStringRef propertyName, JSValueRef* exception)
+{
+    JSC::ExecState* exec = toJS(ctx);
+    JSC::JSObject* obj = toJS(object);
+
+    jsObjectData* p = (jsObjectData*)JSObjectGetPrivate(object);
+    if (!p || !p->propertyGet)
+        return false;
+
+    JSC::UString str = propertyName->ustring();
+    const char* name = StringTable::addString(str.characters(), str.length());
+    jsValue ret = p->propertyGet(exec, JSC::JSValue::encode(obj), name);
+
+    return toRef(exec, JSC::JSValue::decode(ret));
+}
+
+bool objectSetPropertyCallback(JSContextRef ctx, JSObjectRef object, JSStringRef propertyName, JSValueRef value, JSValueRef* exception)
+{
+    JSC::ExecState* exec = toJS(ctx);
+    JSC::JSObject* obj = toJS(object);
+
+    jsObjectData* p = (jsObjectData*)JSObjectGetPrivate(object);
+    if (!p || !p->propertySet)
+        return false;
+
+    JSC::UString str = propertyName->ustring();
+    const char* name = StringTable::addString(str.characters(), str.length());
+    return p->propertySet(exec, JSC::JSValue::encode(obj), name, JSC::JSValue::encode(toJS(exec,value)));
+}
+
+void objectFinalize(JSObjectRef object)
+{
+    jsObjectData* p = (jsObjectData*)JSObjectGetPrivate(object);
+    if (p && p->finalize)
+        p->finalize(p);
+}
+
+JSValueRef objectCallAsFunctionCallback(JSContextRef ctx, JSObjectRef function, JSObjectRef thisObject, size_t argumentCount, const JSValueRef arguments[], JSValueRef* exception)
+{
+    JSC::ExecState* exec = toJS(ctx);
+    JSC::JSObject* obj = toJS(function);
+
+    jsObjectData* p = (jsObjectData*)JSObjectGetPrivate(function);
+    if (!p || !p->callAsFunction)
+        return false;
+
+    jsValue args[10] = { 0 };
+    for (int i = 0; i < argumentCount; ++i)
+        args[i] = JSC::JSValue::encode(toJS(exec, arguments[i]));
+
+    jsValue ret = p->callAsFunction(exec, JSC::JSValue::encode(toJS(function)), args, argumentCount);
+    return toRef(exec, JSC::JSValue::decode(ret));
+}
+
+
+WKE_API jsValue jsObject(jsExecState es, jsObjectData* data)
+{
+    JSC::ExecState* exec = (JSC::ExecState*)es;
+    JSC::JSGlobalObject* globalObject = (JSC::JSGlobalObject*)exec->lexicalGlobalObject();
+    JSContextRef ctx = toRef(exec);
+
+    JSClassDefinition classDef = kJSClassDefinitionEmpty;
+    classDef.getProperty = objectGetPropertyCallback;
+    classDef.setProperty = objectSetPropertyCallback;
+    classDef.finalize = objectFinalize;
+
+    JSClassRef globalClass = JSClassCreate(&classDef);  
+    JSObjectRef obj = JSObjectMake(ctx, globalClass, NULL);
+    JSObjectSetPrivate(obj ,data);
+
+    JSC::JSValue value = toJS(obj);
+    return JSC::JSValue::encode(value);
+}
+
+WKE_API jsValue jsFunction(jsExecState es, jsObjectData* data)
+{
+    JSC::ExecState* exec = (JSC::ExecState*)es;
+    JSC::JSGlobalObject* globalObject = (JSC::JSGlobalObject*)exec->lexicalGlobalObject();
+    JSContextRef ctx = toRef(exec);
+
+    JSClassDefinition classDef = kJSClassDefinitionEmpty;
+    classDef.finalize = objectFinalize;
+    classDef.callAsFunction = objectCallAsFunctionCallback;
+
+    JSClassRef globalClass = JSClassCreate(&classDef);  
+    JSObjectRef obj = JSObjectMake(ctx, globalClass, NULL);
+    JSObjectSetPrivate(obj ,data);
+
+    JSC::JSValue value = toJS(obj);
+    return JSC::JSValue::encode(value);
+}
+
+
+WKE_API jsObjectData* jsObjectGetData(jsExecState es, jsValue object)
+{
+    JSC::ExecState* exec = (JSC::ExecState*)es;
+    JSC::JSValue val = JSC::JSValue::decode(object);
+    JSValueRef valRef = toRef(exec, val);
+    JSContextRef ctxRef = toRef(exec);
+    return (jsObjectData*)JSObjectGetPrivate(JSValueToObject(ctxRef, valRef, NULL));
+}
+
 
 void onCreateGlobalObject(JSC::JSGlobalObject* globalObject)
 {

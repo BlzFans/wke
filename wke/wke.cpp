@@ -10,6 +10,7 @@
 #include <WebCore/RenderThemeWin.h>
 #include <WebCore/ResourceHandleManager.h>
 #include <WebCore/Console.h>
+#include <WebCore/SecurityOrigin.h>
 
 #include "wkePlatformStrategies.inl"
 
@@ -30,6 +31,9 @@ void wkeInit()
     JSC::initializeThreading();
     WTF::initializeMainThread();
     wke::PlatformStrategies::initialize();
+
+    //cexer 解决不能加载本地图片的BUG。
+    WebCore::SecurityOrigin::setLocalLoadPolicy(WebCore::SecurityOrigin::AllowLocalLoadsForAll);
 
     //WebCore::Console::setShouldPrintExceptions(true);
     //WebCore::ResourceHandleManager::sharedInstance()->setCookieJarFileName("cookie.txt");

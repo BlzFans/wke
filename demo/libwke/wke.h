@@ -68,6 +68,11 @@ typedef struct _wkeClientHandler {
     ON_URL_CHANGED onURLChanged;
 } wkeClientHandler;
 
+typedef struct _wkeBufHandler
+{
+	virtual void onBufUpdated (const HDC hdc,int x, int y, int cx, int cy) = 0;
+}wkeBufHandler;
+
 /*
  *c++ interface
  *-----------------------------------------------------------------------------------------------------------
@@ -120,8 +125,10 @@ namespace wke
         virtual void addDirtyArea(int x, int y, int w, int h) = 0;
 
         virtual void layoutIfNeeded() = 0;
-        virtual void paint(void* bits, int pitch) = 0;
-
+		virtual void tick() = 0;
+        virtual void paint(void* bits, int pitch)=0;
+        virtual void paint(void* bits, int bufWid, int bufHei, int xDst, int yDst, int w, int h, int xSrc, int ySrc, bool bCopyAlpha)=0;
+        virtual HDC getViewDC() =0;
         virtual bool canGoBack() const = 0;
         virtual bool goBack() = 0;
         virtual bool canGoForward() const = 0;
@@ -166,6 +173,9 @@ namespace wke
 
         virtual void setClientHandler(const wkeClientHandler* handler) = 0;
         virtual const wkeClientHandler* getClientHandler() const = 0;
+
+		virtual void setBufHandler(wkeBufHandler *handler) = 0;
+		virtual const wkeBufHandler * getBufHandler() const  = 0;
     };
 }
 
@@ -254,7 +264,8 @@ WKE_API void wkeSetDirty(wkeWebView webView, bool dirty);
 WKE_API bool wkeIsDirty(wkeWebView webView);
 WKE_API void wkeAddDirtyArea(wkeWebView webView, int x, int y, int w, int h);
 WKE_API void wkeLayoutIfNeeded(wkeWebView webView);
-WKE_API void wkePaint(wkeWebView webView, void* bits, int pitch);
+WKE_API void wkePaint(wkeWebView webView, void* bits,int bufWid, int bufHei, int xDst, int yDst, int w, int h, int xSrc, int ySrc, bool bCopyAlpha);
+WKE_API void wkePaint2(wkeWebView webView, void* bits,int pitch);
 
 WKE_API bool wkeCanGoBack(wkeWebView webView);
 WKE_API bool wkeGoBack(wkeWebView webView);
@@ -319,6 +330,7 @@ typedef enum
 	JSTYPE_UNDEFINED,
 } jsType;
 
+
 WKE_API void jsBindFunction(const char* name, jsNativeFunction fn, unsigned int argCount);
 WKE_API void jsBindGetter(const char* name, jsNativeFunction fn); /*get property*/
 WKE_API void jsBindSetter(const char* name, jsNativeFunction fn); /*set property*/
@@ -358,13 +370,45 @@ WKE_API jsValue jsFalse();
 
 WKE_API jsValue jsString(jsExecState es, const utf8* str);
 WKE_API jsValue jsStringW(jsExecState es, const wchar_t* str);
-WKE_API jsValue jsObject(jsExecState es);
-WKE_API jsValue jsArray(jsExecState es);
+WKE_API jsValue jsEmptyObject(jsExecState es);
+WKE_API jsValue jsEmptyArray(jsExecState es);
 
-WKE_API jsValue jsFunction(jsExecState es, jsNativeFunction fn, unsigned int argCount);
 
-//return the window object
+
+//cexer JS对象、函数绑定支持
+typedef jsValue (*jsGetPropertyCallback)(jsExecState es, jsValue object, const char* propertyName);
+typedef bool (*jsSetPropertyCallback)(jsExecState es, jsValue object, const char* propertyName, jsValue value);
+typedef jsValue (*jsCallAsFunctionCallback)(jsExecState es, jsValue object, jsValue* args, int argCount);
+typedef void (*jsFinalizeCallback)(struct tagjsObjectData* data);
+
+typedef struct tagjsObjectData
+{
+    char typeName[100];
+    jsGetPropertyCallback propertyGet;
+    jsSetPropertyCallback propertySet;
+    jsFinalizeCallback finalize;
+    jsCallAsFunctionCallback callAsFunction;
+
+} jsObjectData;
+
+WKE_API jsValue jsObject(jsExecState es, jsObjectData* obj);
+WKE_API jsValue jsFunction(jsExecState es, jsObjectData* obj);
+WKE_API jsObjectData* jsObjectGetData(jsExecState es, jsValue object);
+
+WKE_API jsValue jsGet(jsExecState es, jsValue object, const char* prop);
+WKE_API void   jsSet(jsExecState es, jsValue object, const char* prop, jsValue v);
+
+WKE_API jsValue jsGetAt(jsExecState es, jsValue object, int index);
+WKE_API void   jsSetAt(jsExecState es, jsValue object, int index, jsValue v);
+
+WKE_API int     jsGetLength(jsExecState es, jsValue object);
+WKE_API void    jsSetLength(jsExecState es, jsValue object, int length);
+
+
+
+//window object
 WKE_API jsValue jsGlobalObject(jsExecState es);
+WKE_API wkeWebView jsGetWebView(jsExecState es);
 
 WKE_API jsValue jsEval(jsExecState es, const utf8* str);
 WKE_API jsValue jsEvalW(jsExecState es, const wchar_t* str);
@@ -372,21 +416,15 @@ WKE_API jsValue jsEvalW(jsExecState es, const wchar_t* str);
 WKE_API jsValue jsCall(jsExecState es, jsValue func, jsValue thisObject, jsValue* args, int argCount);
 WKE_API jsValue jsCallGlobal(jsExecState es, jsValue func, jsValue* args, int argCount);
 
-WKE_API jsValue jsGet(jsExecState es, jsValue object, const char* prop);
-WKE_API void jsSet(jsExecState es, jsValue object, const char* prop, jsValue v);
-
 WKE_API jsValue jsGetGlobal(jsExecState es, const char* prop);
-WKE_API void jsSetGlobal(jsExecState es, const char* prop, jsValue v);
+WKE_API void    jsSetGlobal(jsExecState es, const char* prop, jsValue v);
 
-WKE_API jsValue jsGetAt(jsExecState es, jsValue object, int index);
-WKE_API void jsSetAt(jsExecState es, jsValue object, int index, jsValue v);
 
-WKE_API int jsGetLength(jsExecState es, jsValue object);
-WKE_API void jsSetLength(jsExecState es, jsValue object, int length);
+//garbage collect
+WKE_API void jsGC(); 
 
-WKE_API wkeWebView jsGetWebView(jsExecState es);
 
-WKE_API void jsGC(); //garbage collect
+
 
 #ifdef __cplusplus
 }
