@@ -7,6 +7,7 @@
 #include <memory.h>
 #include <tchar.h>
 #include <time.h>
+#include <ShellAPI.h>
 
 #include <wke.h>
 
@@ -612,6 +613,37 @@ LRESULT CALLBACK WebViewWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
     bool handled = true;
 	switch (message)
 	{
+    //cexer 增加拖放加载
+    case WM_CREATE:
+        {
+            DragAcceptFiles(hWnd, TRUE);
+        }
+        return 0;
+
+    case WM_DROPFILES:
+        {
+            if (g_webView)
+            {
+                wchar_t szFile[MAX_PATH + 8] = {0};
+                wcscpy(szFile, L"file:///");
+
+                HDROP hDrop = reinterpret_cast<HDROP>(wParam);
+
+                UINT uFilesCount = DragQueryFileW(hDrop, 0xFFFFFFFF, szFile, MAX_PATH);
+                if (uFilesCount != 0)
+                {
+                    UINT uRet = DragQueryFileW(hDrop, 0, (wchar_t*)szFile + 8, MAX_PATH);
+                    if ( uRet != 0)
+                    {
+                        g_webView->loadURL(szFile);
+                        SetWindowTextW(hWnd, szFile);
+                    }
+                }
+                DragFinish(hDrop);
+            }
+        }
+        return 0;
+
     case WM_COMMAND:
         SendMessage(GetParent(hWnd), message, wParam, lParam);
         return 0;

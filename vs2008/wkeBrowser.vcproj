@@ -60,7 +60,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="Imm32.lib wke.lib"
+				AdditionalDependencies="Imm32.lib wke.lib shell32.lib"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="..\build\vs2008\$(ConfigurationName)\lib"
 				GenerateDebugInformation="true"
@@ -87,7 +87,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="REM Do not edit from the Visual Studio IDE! Customize via a $(ProjectName)PostBuild.cmd file&#x0D;&#x0A;if not exist &quot;$(ProjectDir)$(ProjectName)PostBuild.cmd&quot; exit /b&#x0D;&#x0A;&#x0D;&#x0A;set CONFIGURATIONNAME=$(ConfigurationName)&#x0D;&#x0A;set INPUTDIR=$(InputDir)&#x0D;&#x0A;set INPUTFILENAME=$(InputFileName)&#x0D;&#x0A;set INPUTPATH=$(InputPath)&#x0D;&#x0A;set INTDIR=$(IntDir)&#x0D;&#x0A;set OUTDIR=$(OutDir)&#x0D;&#x0A;set PLATFORMNAME=$(PlatformName)&#x0D;&#x0A;set PROJECTDIR=$(ProjectDir)&#x0D;&#x0A;set PROJECTFILENAME=$(ProjectFileName)&#x0D;&#x0A;set PROJECTNAME=$(ProjectName)&#x0D;&#x0A;set PROJECTPATH=$(ProjectPath)&#x0D;&#x0A;set SOLUTIONDIR=$(SolutionDir)&#x0D;&#x0A;set SOLUTIONFILENAME=$(SolutionFileName)&#x0D;&#x0A;set SOLUTIONNAME=$(SolutionName)&#x0D;&#x0A;set SOLUTIONPATH=$(SolutionPath)&#x0D;&#x0A;set TARGETDIR=$(TargetDir)&#x0D;&#x0A;set TARGETEXT=$(TargetExt)&#x0D;&#x0A;set TARGETFILENAME=$(TargetFileName)&#x0D;&#x0A;set TARGETPATH=$(TargetPath)&#x0D;&#x0A;&#x0D;&#x0A;REM If any of the above variables didn&apos;t exist previously and&#x0D;&#x0A;REM were set to an empty string, set will set the errorlevel to 1,&#x0D;&#x0A;REM which will cause the project-specific script to think the build&#x0D;&#x0A;REM has failed. This cmd /c call will clear the errorlevel.&#x0D;&#x0A;cmd /c&#x0D;&#x0A;&#x0D;&#x0A;&quot;$(ProjectDir)$(ProjectName)PostBuild.cmd&quot;"
+				CommandLine="REM Do not edit from the Visual Studio IDE! Customize via a $(ProjectName)PostBuild.cmd file&#x0D;&#x0A;if not exist &quot;$(ProjectDir)$(ProjectName)PostBuild.cmd&quot; exit /b&#x0D;&#x0A;&#x0D;&#x0A;set CONFIGURATIONNAME=$(ConfigurationName)&#x0D;&#x0A;set INPUTDIR=$(InputDir)&#x0D;&#x0A;set INPUTFILENAME=$(InputFileName)&#x0D;&#x0A;set INPUTPATH=$(InputPath)&#x0D;&#x0A;set INTDIR=$(IntDir)&#x0D;&#x0A;set OUTDIR=$(OutDir)&#x0D;&#x0A;set PLATFORMNAME=$(PlatformName)&#x0D;&#x0A;set PROJECTDIR=$(ProjectDir)&#x0D;&#x0A;set PROJECTFILENAME=$(ProjectFileName)&#x0D;&#x0A;set PROJECTNAME=$(ProjectName)&#x0D;&#x0A;set PROJECTPATH=$(ProjectPath)&#x0D;&#x0A;set SOLUTIONDIR=$(SolutionDir)&#x0D;&#x0A;set SOLUTIONFILENAME=$(SolutionFileName)&#x0D;&#x0A;set SOLUTIONNAME=$(SolutionName)&#x0D;&#x0A;set SOLUTIONPATH=$(SolutionPath)&#x0D;&#x0A;set TARGETDIR=$(TargetDir)&#x0D;&#x0A;set TARGETEXT=$(TargetExt)&#x0D;&#x0A;set TARGETFILENAME=$(TargetFileName)&#x0D;&#x0A;set TARGETPATH=$(TargetPath)&#x0D;&#x0A;&#x0D;&#x0A;REM If any of the above variables didn&apos;t exist previously and&#x0D;&#x0A;REM were set to an empty string, set will set the errorlevel to 1,&#x0D;&#x0A;REM which will cause the project-specific script to think the build&#x0D;&#x0A;REM has failed. This cmd /c call will clear the errorlevel.&#x0D;&#x0A;cmd /c&#x0D;&#x0A;&#x0D;&#x0A;&quot;$(ProjectDir)$(ProjectName)PostBuild.cmd&quot;&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
@@ -135,7 +135,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="Imm32.lib wke.lib"
+				AdditionalDependencies="Imm32.lib wke.lib shell32.lib"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="..\build\vs2008\$(ConfigurationName)\lib"
 				GenerateDebugInformation="true"
@@ -164,7 +164,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="REM Do not edit from the Visual Studio IDE! Customize via a $(ProjectName)PostBuild.cmd file&#x0D;&#x0A;if not exist &quot;$(ProjectDir)$(ProjectName)PostBuild.cmd&quot; exit /b&#x0D;&#x0A;&#x0D;&#x0A;set CONFIGURATIONNAME=$(ConfigurationName)&#x0D;&#x0A;set INPUTDIR=$(InputDir)&#x0D;&#x0A;set INPUTFILENAME=$(InputFileName)&#x0D;&#x0A;set INPUTPATH=$(InputPath)&#x0D;&#x0A;set INTDIR=$(IntDir)&#x0D;&#x0A;set OUTDIR=$(OutDir)&#x0D;&#x0A;set PLATFORMNAME=$(PlatformName)&#x0D;&#x0A;set PROJECTDIR=$(ProjectDir)&#x0D;&#x0A;set PROJECTFILENAME=$(ProjectFileName)&#x0D;&#x0A;set PROJECTNAME=$(ProjectName)&#x0D;&#x0A;set PROJECTPATH=$(ProjectPath)&#x0D;&#x0A;set SOLUTIONDIR=$(SolutionDir)&#x0D;&#x0A;set SOLUTIONFILENAME=$(SolutionFileName)&#x0D;&#x0A;set SOLUTIONNAME=$(SolutionName)&#x0D;&#x0A;set SOLUTIONPATH=$(SolutionPath)&#x0D;&#x0A;set TARGETDIR=$(TargetDir)&#x0D;&#x0A;set TARGETEXT=$(TargetExt)&#x0D;&#x0A;set TARGETFILENAME=$(TargetFileName)&#x0D;&#x0A;set TARGETPATH=$(TargetPath)&#x0D;&#x0A;&#x0D;&#x0A;REM If any of the above variables didn&apos;t exist previously and&#x0D;&#x0A;REM were set to an empty string, set will set the errorlevel to 1,&#x0D;&#x0A;REM which will cause the project-specific script to think the build&#x0D;&#x0A;REM has failed. This cmd /c call will clear the errorlevel.&#x0D;&#x0A;cmd /c&#x0D;&#x0A;&#x0D;&#x0A;&quot;$(ProjectDir)$(ProjectName)PostBuild.cmd&quot;"
+				CommandLine="REM Do not edit from the Visual Studio IDE! Customize via a $(ProjectName)PostBuild.cmd file&#x0D;&#x0A;if not exist &quot;$(ProjectDir)$(ProjectName)PostBuild.cmd&quot; exit /b&#x0D;&#x0A;&#x0D;&#x0A;set CONFIGURATIONNAME=$(ConfigurationName)&#x0D;&#x0A;set INPUTDIR=$(InputDir)&#x0D;&#x0A;set INPUTFILENAME=$(InputFileName)&#x0D;&#x0A;set INPUTPATH=$(InputPath)&#x0D;&#x0A;set INTDIR=$(IntDir)&#x0D;&#x0A;set OUTDIR=$(OutDir)&#x0D;&#x0A;set PLATFORMNAME=$(PlatformName)&#x0D;&#x0A;set PROJECTDIR=$(ProjectDir)&#x0D;&#x0A;set PROJECTFILENAME=$(ProjectFileName)&#x0D;&#x0A;set PROJECTNAME=$(ProjectName)&#x0D;&#x0A;set PROJECTPATH=$(ProjectPath)&#x0D;&#x0A;set SOLUTIONDIR=$(SolutionDir)&#x0D;&#x0A;set SOLUTIONFILENAME=$(SolutionFileName)&#x0D;&#x0A;set SOLUTIONNAME=$(SolutionName)&#x0D;&#x0A;set SOLUTIONPATH=$(SolutionPath)&#x0D;&#x0A;set TARGETDIR=$(TargetDir)&#x0D;&#x0A;set TARGETEXT=$(TargetExt)&#x0D;&#x0A;set TARGETFILENAME=$(TargetFileName)&#x0D;&#x0A;set TARGETPATH=$(TargetPath)&#x0D;&#x0A;&#x0D;&#x0A;REM If any of the above variables didn&apos;t exist previously and&#x0D;&#x0A;REM were set to an empty string, set will set the errorlevel to 1,&#x0D;&#x0A;REM which will cause the project-specific script to think the build&#x0D;&#x0A;REM has failed. This cmd /c call will clear the errorlevel.&#x0D;&#x0A;cmd /c&#x0D;&#x0A;&#x0D;&#x0A;&quot;$(ProjectDir)$(ProjectName)PostBuild.cmd&quot;&#x0D;&#x0A;"
 			/>
 		</Configuration>
 	</Configurations>
@@ -177,15 +177,15 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath="..\wkeBrowser\render.h"
+				RelativePath="..\wkeBrowser\hyperlink.h"
 				>
 			</File>
-            <File
+			<File
 				RelativePath="..\wkeBrowser\render.cpp"
 				>
 			</File>
-            <File
-				RelativePath="..\wkeBrowser\renderGDI.h"
+			<File
+				RelativePath="..\wkeBrowser\render.h"
 				>
 			</File>
 			<File
@@ -196,8 +196,8 @@
 				RelativePath="..\wkeBrowser\renderD3D.h"
 				>
 			</File>
-            <File
-				RelativePath="..\wkeBrowser\hyperlink.h"
+			<File
+				RelativePath="..\wkeBrowser\renderGDI.h"
 				>
 			</File>
 			<File
