@@ -145,7 +145,9 @@ namespace wke
 
     void CWebView::loadURL(const utf8* inUrl)
     {
-        WebCore::KURL url(WebCore::KURL(), inUrl, WebCore::UTF8Encoding());
+        //cexer 必须调用String::fromUTF8显示构造第二个参数，否则String::String会把inUrl当作latin1处理。
+        //WebCore::KURL url(WebCore::KURL(), inUrl, WebCore::UTF8Encoding());
+        WebCore::KURL url(WebCore::KURL(), WTF::String::fromUTF8(inUrl), WebCore::UTF8Encoding());
         if (!url.isValid())
             url.setProtocol("http:");
 
