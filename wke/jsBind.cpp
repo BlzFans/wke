@@ -292,19 +292,47 @@ jsValue jsCallGlobal(jsExecState es, jsValue func, jsValue* args, int argCount)
 
 jsValue jsGet(jsExecState es, jsValue object, const char* prop)
 {
-    JSC::JSValue o = JSC::JSValue::decode(object);
+    //cexer
+    //不能使用JSC::Identifier((JSC::ExecState*)es, prop)构造JSC::Identifier，因JSC::UString内部把const char*地址作为hash值，
+    //如果使用相同的内存地址，每次存放不同的属性名称来调用此函数，却都访问的是第一次调用时的属性。
+    //JSC::JSValue o = JSC::JSValue::decode(object);
+    //JSC::JSValue ret = o.get((JSC::ExecState*)es, JSC::Identifier((JSC::ExecState*)es, prop));
+    //return JSC::JSValue::encode(ret);
 
-    JSC::JSValue ret = o.get((JSC::ExecState*)es, JSC::Identifier((JSC::ExecState*)es, prop));
-    return JSC::JSValue::encode(ret);
+    jsValue ret = jsUndefined();
+
+    JSC::ExecState* exec = (JSC::ExecState*)es;
+    if (JSC::JSGlobalData* data = exec->scopeChain()->globalData)
+    {
+        JSContextRef ctx = toRef(exec);
+        JSObjectRef objectRef = JSValueToObject(ctx, toRef(exec, JSC::JSValue::decode(object)), NULL);
+        JSStringRef propertyName = JSStringCreateWithUTF8CString(prop);
+        JSValueRef valueRef = JSObjectGetProperty(ctx, objectRef, propertyName, NULL);
+        ret = JSC::JSValue::encode(toJS(exec, valueRef));
+    }
+    return ret;
 }
 
 void jsSet(jsExecState es, jsValue object, const char* prop, jsValue value)
 {
-    JSC::JSValue o = JSC::JSValue::decode(object);
-    JSC::JSValue v = JSC::JSValue::decode(value);
+    //cexer
+    //不能使用JSC::Identifier((JSC::ExecState*)es, prop)构造JSC::Identifier，因JSC::UString内部把const char*地址作为hash值，
+    //如果使用相同的内存地址，每次存放不同的属性名称来调用此函数，却都访问的是第一次调用时的属性。
+    //JSC::JSValue o = JSC::JSValue::decode(object);
+    //JSC::JSValue v = JSC::JSValue::decode(value);
+    //JSC::PutPropertySlot slot;
+    //o.put((JSC::ExecState*)es, JSC::Identifier((JSC::ExecState*)es, prop), v, slot);
 
-    JSC::PutPropertySlot slot;
-    o.put((JSC::ExecState*)es, JSC::Identifier((JSC::ExecState*)es, prop), v, slot);
+    JSC::ExecState* exec = (JSC::ExecState*)es;
+    if (JSC::JSGlobalData* data = exec->scopeChain()->globalData)
+    {
+        JSContextRef ctx = toRef(exec);
+        JSObjectRef objectRef = JSValueToObject(ctx, toRef(exec, JSC::JSValue::decode(object)), NULL);
+        JSStringRef propertyName = JSStringCreateWithUTF8CString(prop);
+        JSValueRef valueRef = toRef(exec, JSC::JSValue::decode(value));
+
+        JSObjectSetProperty(ctx, objectRef, propertyName, valueRef, kJSClassAttributeNone, NULL);
+    }
 }
 
 jsValue jsGetGlobal(jsExecState es, const char* prop)
