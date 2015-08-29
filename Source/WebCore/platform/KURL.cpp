@@ -1673,7 +1673,9 @@ static void encodeRelativeString(const String& rel, const TextEncoding& encoding
     UCharBuffer s;
     encodeHostnames(rel, s);
 
-    TextEncoding pathEncoding(UTF8Encoding()); // Path is always encoded as UTF-8; other parts may depend on the scheme.
+    //cexer Windows上路径应该使用GBK。
+    TextEncoding pathEncoding("GBK");
+    //TextEncoding pathEncoding(UTF8Encoding()); // Path is always encoded as UTF-8; other parts may depend on the scheme.
 
     int pathEnd = -1;
     if (encoding != pathEncoding && encoding.isValid() && !protocolIs(rel, "mailto") && !protocolIs(rel, "data") && !protocolIsJavaScript(rel)) {

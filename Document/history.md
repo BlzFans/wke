@@ -1,4 +1,7 @@
-﻿## 2015-08-30 01:26 `Document/history.md`调整顺序按时间从新到旧。
+﻿## 2015-08-30 01:23 修正HTML中图片地址包含中文时无法显示的问题。
+`WebCore::Document::completeURL`当中构造`KURL`对象时，会调用`encodeRelativeString`将所有URL（包括本地路径）转换为UTF-8编码，导致文件打开失败，显然在Windows上路径应该是GBK。可用wkeBrowser加载`demo/bin/english.html`测试。
+
+## 2015-08-30 01:26 `Document/history.md`调整顺序按时间从新到旧。
 
 ## 2015-08-30 01:19 增加webBrowser拖放加载HTML文件的功能。
 
