@@ -45,6 +45,7 @@ namespace wke
         ,gfxContext_(NULL)
         ,awake_(true)
         ,clientHandler_(NULL)
+		,bufHandler_(NULL)
     {
         WebCore::Page::PageClients pageClients;
         pageClients.chromeClient = new ChromeClient(this);
@@ -330,33 +331,53 @@ namespace wke
         mainFrame_->view()->updateLayoutAndStyleIfNeededRecursive();
     }
 
+	void CWebView::tick()
+	{
+		if(!dirty_) return;
+
+		layoutIfNeeded();
+
+		if (gfxContext_ == NULL)
+		{
+			WebCore::BitmapInfo bmp = WebCore::BitmapInfo::createBottomUp(WebCore::IntSize(width_, height_));
+			HBITMAP hbmp = ::CreateDIBSection(0, &bmp, DIB_RGB_COLORS, &pixels_, NULL, 0);
+			::SelectObject(hdc_.get(), hbmp);
+			hbmp_ = adoptPtr(hbmp);
+
+			gfxContext_ = new WebCore::GraphicsContext(hdc_.get(), transparent_);
+		}
+
+		gfxContext_->save();
+
+		if (transparent_)
+			gfxContext_->clearRect(dirtyArea_);
+
+		gfxContext_->clip(dirtyArea_);
+
+		mainFrame_->view()->paint(gfxContext_, dirtyArea_);
+
+		gfxContext_->restore();
+        ChromeClient* client = (ChromeClient*)page()->chrome()->client();
+        client->paintPopupMenu(pixels_,  width_*4);
+
+		if(bufHandler_)
+		{
+            WebCore::IntPoint pt = dirtyArea_.location();
+            WebCore::IntSize sz = dirtyArea_.size();
+			bufHandler_->onBufUpdated(hdc_.get(),pt.x(),pt.y(),sz.width(),sz.height());	
+		}
+        dirtyArea_ = WebCore::IntRect();
+        dirty_ = false;
+	}
+    
+    HDC CWebView::getViewDC()
+    {
+        return hdc_.get();
+    }
+    
     void CWebView::paint(void* bits, int pitch)
     {
-        layoutIfNeeded();
-
-        if (gfxContext_ == NULL)
-        {
-            WebCore::BitmapInfo bmp = WebCore::BitmapInfo::createBottomUp(WebCore::IntSize(width_, height_));
-            HBITMAP hbmp = ::CreateDIBSection(0, &bmp, DIB_RGB_COLORS, &pixels_, NULL, 0);
-            ::SelectObject(hdc_.get(), hbmp);
-            hbmp_ = adoptPtr(hbmp);
-
-            gfxContext_ = new WebCore::GraphicsContext(hdc_.get(), transparent_);
-        }
-
-        gfxContext_->save();
-
-        if (transparent_)
-            gfxContext_->clearRect(dirtyArea_);
-
-        gfxContext_->clip(dirtyArea_);
-
-        mainFrame_->view()->paint(gfxContext_, dirtyArea_);
-
-        gfxContext_->restore();
-
-        dirty_ = false;
-        dirtyArea_ = WebCore::IntRect(0, 0, 0, 0);
+        if(dirty_) tick();
 
         if (pitch == 0 || pitch == width_*4)
         {
@@ -374,9 +395,49 @@ namespace wke
             }
         }
 
-        ChromeClient* client = (ChromeClient*)page()->chrome()->client();
-        client->paintPopupMenu(bits, pitch);
-        client->paintToolTip(bits, pitch);
+    }
+
+    void CWebView::paint(void* bits, int bufWid, int bufHei, int xDst, int yDst, int w, int h, int xSrc, int ySrc, bool bCopyAlpha)
+    {
+        if(dirty_) tick();
+
+        
+        if(xSrc + w > width_) w = width_ - xSrc;
+        if(ySrc + h > height_) h = height_ -ySrc;
+        
+        if(xDst + w > bufWid) w =bufWid - xDst;
+        if(yDst + h > bufHei) h = bufHei - yDst;
+        
+        int pitchDst = bufWid*4;
+        int pitchSrc = width_*4;
+        
+        unsigned char* src = (unsigned char*)pixels_; 
+        unsigned char* dst = (unsigned char*)bits; 
+        src += pitchSrc*ySrc + xSrc*4;
+        dst += yDst*pitchDst + xDst*4;
+        
+        if(bCopyAlpha)
+        {
+            for(int j = 0; j< h; j++)
+            {
+                memcpy(dst,src,w*4);
+                dst += pitchDst;
+                src += pitchSrc;
+            }
+        }else
+        {
+            for(int j = 0; j< h; j++)
+            {
+                for(int i=0;i<w;i++)
+                {
+                    memcpy(dst,src,3);
+                    dst += 4;
+                    src += 4;
+                }
+                dst += (bufWid - w)*4;
+                src += (width_ - w)*4;
+            }
+        }
     }
 
     bool CWebView::canGoBack() const
@@ -920,6 +981,16 @@ namespace wke
     {
         return clientHandler_;
     }
+
+	void CWebView::setBufHandler( wkeBufHandler *handler )
+	{
+		bufHandler_ = handler;
+	}
+
+	const wkeBufHandler * CWebView::getBufHandler() const
+	{
+		return bufHandler_;
+	}
 }
 
 static Vector<wke::IWebView*> s_webViews;

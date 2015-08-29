@@ -230,7 +230,12 @@ void wkeLayoutIfNeeded(wkeWebView webView)
     webView->layoutIfNeeded();
 }
 
-void wkePaint(wkeWebView webView, void* bits, int pitch)
+void wkePaint(wkeWebView webView,void* bits, int bufWid, int bufHei, int xDst, int yDst, int w, int h, int xSrc, int ySrc, bool bCopyAlpha)
+{
+    webView->paint(bits, bufWid,  bufHei,  xDst,  yDst,  w,  h,  xSrc,  ySrc, bCopyAlpha);
+}
+
+void wkePaint2(wkeWebView webView, void* bits,int pitch)
 {
     webView->paint(bits, pitch);
 }

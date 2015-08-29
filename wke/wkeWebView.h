@@ -50,8 +50,11 @@ namespace wke
         virtual void addDirtyArea(int x, int y, int w, int h);
 
         virtual void layoutIfNeeded();
-        virtual void paint(void* dst, int pitch);
-
+        virtual void paint(void* bits, int pitch);
+        virtual void paint(void* bits, int bufWid, int bufHei, int xDst, int yDst, int w, int h, int xSrc, int ySrc, bool bCopyAlpha);
+		virtual void tick();
+        virtual HDC  getViewDC();
+        
         virtual bool canGoBack() const;
         virtual bool goBack();
         virtual bool canGoForward() const;
@@ -97,9 +100,15 @@ namespace wke
         virtual void setClientHandler(const wkeClientHandler* handler);
         virtual const wkeClientHandler* getClientHandler() const;
 
+		virtual void setBufHandler(wkeBufHandler *handler);
+		virtual const wkeBufHandler * getBufHandler() const;
+
         WebCore::Page* page() const { return page_.get(); }
         WebCore::Frame* mainFrame() const { return mainFrame_; }
 
+		void * getPixels(){
+			return pixels_;
+		}
     protected:
         OwnPtr<WebCore::Page> page_;
         WebCore::Frame* mainFrame_;
@@ -121,6 +130,7 @@ namespace wke
         bool awake_;
 
         const wkeClientHandler* clientHandler_;
+		wkeBufHandler * bufHandler_;
     };
 }
 

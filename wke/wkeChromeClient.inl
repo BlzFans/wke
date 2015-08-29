@@ -39,12 +39,13 @@ namespace wke
             return title_;
         }
 
-        void paint(void* bits, int pitch)
+        WebCore::IntRect paint(void* bits, int pitch)
         {
+            WebCore::IntRect rcRet;
             if (!pixels_)
             {
                 if (title_.isEmpty())
-                    return;
+                    return rcRet;
 
                 if (!hdc_)
                 {
@@ -59,7 +60,7 @@ namespace wke
                 const int marginH = 4;
                 const int marginV = 4;
                 if (marginH * 2 >= width || marginV * 2 >= height)
-                    return;
+                    return rcRet;
 
                 RECT rcText;
                 rcText.left = marginH;
@@ -156,6 +157,9 @@ namespace wke
                 src += w*4;
                 dst += pitch;
             }
+            
+            rcRet = rect_;
+            return rcRet;
         }
 
     private:
@@ -530,15 +534,17 @@ namespace wke
             popupMenu_ = popupMenu;
         }
 
-        void paintPopupMenu(void* bits, int pitch)
+        WebCore::IntRect paintPopupMenu(void* bits, int pitch)
         {
+            WebCore::IntRect rc;
             if (popupMenu_)
-                popupMenu_->paint(bits, pitch);
+                rc=popupMenu_->paint(bits, pitch);
+            return rc;
         }
 
-        void paintToolTip(void* bits, int pitch)
+        WebCore::IntRect paintToolTip(void* bits, int pitch)
         {
-            toolTip_.paint(bits, pitch);
+            return toolTip_.paint(bits, pitch);
         }
 
     protected:

@@ -76,6 +76,7 @@ void PopupMenu::show(const WebCore::IntRect& r, WebCore::FrameView* view, int in
     }
 
     chromeClient_->setPopupMenu(this);
+    invalidate();
 }
 
 void PopupMenu::hide()
@@ -331,7 +332,7 @@ void PopupMenu::updateFromElement()
 
 const int separatorPadding = 4;
 const int separatorHeight = 1;
-void PopupMenu::paint(void* bits, int pitch)
+WebCore::IntRect PopupMenu::paint(void* bits, int pitch)
 {
     if (!pixels_)
     {
@@ -438,6 +439,7 @@ void PopupMenu::paint(void* bits, int pitch)
         src += w*4;
         dst += pitch;
     }
+    return windowRect_;
 }
 
 bool PopupMenu::mouseEvent(const WebCore::PlatformMouseEvent& mouseEvent)
@@ -696,6 +698,7 @@ void PopupMenu::invalidate()
 {
     IWebView* webView = (IWebView*)chromeClient_->webView();
     webView->setDirty(true);
+    webView->addDirtyArea(windowRect_.location().x(),windowRect_.location().y(),windowRect_.size().width(),windowRect_.size().height());
     pixels_ = NULL;
 }
 

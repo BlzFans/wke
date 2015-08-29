@@ -20,7 +20,7 @@ namespace wke
         virtual void updateFromElement();
         virtual void disconnectClient();
 
-        void paint(void* bits, int pitch);
+        WebCore::IntRect paint(void* bits, int pitch);
 
         bool mouseEvent(const WebCore::PlatformMouseEvent& mouseEvent);
         bool mouseWheel(const WebCore::PlatformWheelEvent& wheelEvent);
