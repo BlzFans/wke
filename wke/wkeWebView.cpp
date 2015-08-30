@@ -492,6 +492,21 @@ namespace wke
         page()->setCookieEnabled(enable);
     }
 
+	//»ñÈ¡cookies
+	const wchar_t* CWebView::cookieW()
+	{
+		int e = 0;
+		WTF::String str	= mainFrame()->document()->cookie(e);
+		return StringTableW::addString(str.characters(), str.length());
+	}
+
+    const utf8* CWebView::cookie()
+    {
+        int e = 0;
+        WTF::String str	= mainFrame()->document()->cookie(e);
+        return str.utf8().data();
+    }
+
     bool CWebView::cookieEnabled() const
     {
         return page()->cookieEnabled();

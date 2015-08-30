@@ -139,7 +139,9 @@ namespace wke
         virtual void cut() = 0;
         virtual void paste() = 0;
         virtual void delete_() = 0;
-
+        
+        virtual const wchar_t * cookieW() =0;
+        virtual const utf8* cookie() = 0;
         virtual void setCookieEnabled(bool enable) = 0;
         virtual bool cookieEnabled() const = 0;
 
@@ -278,6 +280,8 @@ WKE_API void wkeCut(wkeWebView webView);
 WKE_API void wkePaste(wkeWebView webView);
 WKE_API void wkeDelete(wkeWebView webView);
 
+WKE_API const wchar_t* wkeGetCookieW();
+WKE_API const utf8* wkeGetCookie();
 WKE_API void wkeSetCookieEnabled(wkeWebView webView, bool enable);
 WKE_API bool wkeCookieEnabled(wkeWebView webView);
 

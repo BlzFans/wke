@@ -1,4 +1,7 @@
-﻿#### 2015-08-30 02:00 调整`Document/history.md`标题级别（之前太大）。
+﻿#### 2015-08-30 22:59 合并[zhanjx1314](https://github.com/zhanjx1314/oos)实现的获取cookie的功能。
+合并[zhanjx1314](https://github.com/zhanjx1314/oos)实现的获取cookie的功能（`wchar_t*`版本），并在其基础上增加了一个`utf8*`版本的重载，另外在webBrowser中增加一个菜单项测试此功能。
+
+#### 2015-08-30 02:00 调整`Document/history.md`标题级别（之前太大）。
 
 #### 2015-08-30 01:40 修正`CWebView::loadURL`加载中文路径的HTML文件失败的问题。
 `CWebView::loadURL`调用`KURL::KURL(const KURL& base, const String& relative, const TextEncoding&)`构造`KURL`，第二个参数传入的是`const char*`类型的UTF-8字符串以构造一个`String`对象，然而`String::String(const char*)`是把字符串按照latin1处理的，正确应该使用`String::fromUTF8`显式从UTF-8构造。可以用wkeBrowser加载`demo/bin/中文.html`测试。
@@ -12,7 +15,7 @@
 
 #### 2015-08-30 01:19 增加webBrowser拖放加载HTML文件的功能。
 
-#### 2015-08-29 23:56 修正jsSet/jsGet多次调用不同属性却始终获取/设置的是第一次调用时的属性的问题。
+#### 2015-08-29 23:56 修正`jsSet`/`jsGet`多次调用不同属性却始终获取/设置的是第一次调用时的属性的问题。
 `JSC::Identifier`内部以`JSC::UString`保存属性名称，而`JSC::UString`内部把`char*`类型字符串的指针值作为其hash值，虽然在一个字符串内存上设置了与前次不同的字符串内容，但因为使用了同一内存地址（指针相同），hash值相同，会认为是同一个字符串。
 
 #### 2015-08-29 22:14 增删、修改JS绑定相关的接口，增加`Document/说明.txt`。

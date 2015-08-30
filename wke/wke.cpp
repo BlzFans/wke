@@ -289,6 +289,17 @@ void wkeDelete(wkeWebView webView)
     webView->delete_();
 }
 
+const wchar_t * wkeGetCookieW(wkeWebView webView)
+{
+    return webView->cookieW();
+}
+
+const utf8* wkeGetCookie(wkeWebView webView)
+{
+    return webView->cookie();
+}
+
+
 void wkeSetCookieEnabled(wkeWebView webView, bool enable)
 {
     webView->setCookieEnabled(enable);

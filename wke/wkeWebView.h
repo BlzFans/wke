@@ -65,7 +65,10 @@ namespace wke
         virtual void cut();
         virtual void paste();
         virtual void delete_();
-        
+
+        virtual const wchar_t* cookieW();
+        virtual const utf8* cookie();
+
         virtual void setCookieEnabled(bool enable);
         virtual bool cookieEnabled() const;
         

@@ -459,6 +459,15 @@ void takeScreenshot()
     g_webView->runJS("document.body.style.overflow='visible'");
 }
 
+void viewCookie()
+{
+    if (g_webView == NULL)
+        return;
+
+    const wchar_t* cookie = g_webView->cookieW();
+    MessageBoxW(NULL, cookie, L"Cookie", MB_OK|MB_ICONINFORMATION);
+}
+
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	int wmId, wmEvent;
@@ -500,6 +509,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
         case ID_TAKE_SCREENSHOT:
             takeScreenshot();
+            break;
+
+        case ID_TOOLS_VIEWCOOKIE:
+            viewCookie();
             break;
 
         case ID_SET_EDITABLE:
