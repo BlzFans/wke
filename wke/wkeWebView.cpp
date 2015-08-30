@@ -143,6 +143,34 @@ namespace wke
         mainFrame_->view()->updateBackgroundRecursively(backgroundColor, transparent);
     }
 
+	void CWebView::loadPostURL(const utf8* inUrl,const char * poastData,int nLen )
+	{
+		WebCore::KURL url(WebCore::KURL(), WTF::String::fromUTF8(inUrl), WebCore::UTF8Encoding());
+		if (!url.isValid())
+			url.setProtocol("http:");
+
+		if (!url.isValid())
+			return;
+
+		if (WebCore::protocolIsJavaScript(url))
+		{
+			mainFrame_->script()->executeIfJavaScriptURL(url);
+			return;
+		}
+
+		WebCore::ResourceRequest request(url);
+		request.setCachePolicy(WebCore::UseProtocolCachePolicy);
+		request.setTimeoutInterval(60.f);
+		request.setHTTPMethod("POST");
+		request.setHTTPBody(WebCore::FormData::create(poastData, nLen));
+		mainFrame_->loader()->load(request, false);
+	}
+
+	void CWebView::loadPostURL(const wchar_t * inUrl,const char * poastData,int nLen )
+	{
+       loadPostURL(String(inUrl).utf8().data(),poastData,nLen);
+	}
+
     void CWebView::loadURL(const utf8* inUrl)
     {
         //cexer 必须调用String::fromUTF8显示构造第二个参数，否则String::String会把inUrl当作latin1处理。

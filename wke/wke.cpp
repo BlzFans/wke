@@ -118,7 +118,14 @@ void wkeSetTransparent(wkeWebView webView, bool transparent)
     webView->setTransparent(transparent);
 }
 
-
+void wkePostURL(wkeWebView wkeView,const utf8 * url,const char *szPostData,int nLen)
+{
+	wkeView->loadPostURL(url,szPostData,nLen);
+}
+void wkePostURLW(wkeWebView wkeView,const wchar_t * url,const char *szPostData,int nLen)
+{
+    wkeView->loadPostURL(url,szPostData,nLen);
+}
 void wkeLoadURL(wkeWebView webView, const utf8* url)
 {
     webView->loadURL(url);

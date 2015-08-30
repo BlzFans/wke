@@ -1,4 +1,12 @@
-﻿#### 2015-08-30 22:59 合并[zhanjx1314](https://github.com/zhanjx1314/oos)实现的获取cookie的功能。
+﻿#### 2015-08-30 23:24 合并*zhanjx1314*实现的POST方式加载页面的功能。
+
+合并*zhanjx1314*实现的POST方式加载页面的功能：
+
+	WKE_API void wkePostURL(wkeWebView wkeView,const utf8 * url,const char* postData,int postLen); 
+	WKE_API void wkePostURLW(wkeWebView wkeView,const wchar_t * url,const char* postData,int postLen);
+
+
+#### 2015-08-30 22:59 合并[zhanjx1314](https://github.com/zhanjx1314/oos)实现的获取cookie的功能。
 合并[zhanjx1314](https://github.com/zhanjx1314/oos)实现的获取cookie的功能（`wchar_t*`版本），并在其基础上增加了一个`utf8*`版本的重载，另外在webBrowser中增加一个菜单项测试此功能。
 
 #### 2015-08-30 02:00 调整`Document/history.md`标题级别（之前太大）。

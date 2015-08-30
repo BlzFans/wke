@@ -96,6 +96,9 @@ namespace wke
 
         virtual void loadURL(const utf8* url) = 0;
         virtual void loadURL(const wchar_t* url) = 0;
+  
+		virtual void loadPostURL(const utf8* inUrl, const char* poastData, int postLen) = 0;
+		virtual void loadPostURL(const wchar_t* inUrl, const char* poastData, int postLen) =0;
 
         virtual void loadHTML(const utf8* html) = 0;
         virtual void loadHTML(const wchar_t* html) = 0;
@@ -127,7 +130,7 @@ namespace wke
         virtual void layoutIfNeeded() = 0;
 		virtual void tick() = 0;
         virtual void paint(void* bits, int pitch)=0;
-        virtual void paint(void* bits, int bufWid, int bufHei, int xDst, int yDst, int w, int h, int xSrc, int ySrc, bool bCopyAlpha)=0;
+        virtual void paint(void* bits, int bufWid, int bufHei, int xDst, int yDst, int w, int h, int xSrc, int ySrc, bool fKeepAlpha)=0;
         virtual HDC getViewDC() =0;
         virtual bool canGoBack() const = 0;
         virtual bool goBack() = 0;
@@ -237,6 +240,8 @@ WKE_API void wkeSetTransparent(wkeWebView webView, bool transparent);
 
 WKE_API void wkeLoadURL(wkeWebView webView, const utf8* url);
 WKE_API void wkeLoadURLW(wkeWebView webView, const wchar_t* url);
+WKE_API void wkePostURL(wkeWebView wkeView,const utf8* url, const char* postData,int  postLen); 
+WKE_API void wkePostURLW(wkeWebView wkeView,const wchar_t* url, const char* postData, int postLen);
 
 WKE_API void wkeLoadHTML(wkeWebView webView, const utf8* html);
 WKE_API void wkeLoadHTMLW(wkeWebView webView, const wchar_t* html);

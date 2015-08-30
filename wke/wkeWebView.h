@@ -21,6 +21,9 @@ namespace wke
 
         virtual void loadURL(const utf8* inUrl);
         virtual void loadURL(const wchar_t* url);
+        
+        virtual void loadPostURL(const utf8* inUrl,const char * poastData,int nLen );
+        virtual void loadPostURL(const wchar_t * inUrl,const char * poastData,int nLen );
 
         virtual void loadHTML(const utf8* html);
         virtual void loadHTML(const wchar_t* html);
@@ -51,7 +54,7 @@ namespace wke
 
         virtual void layoutIfNeeded();
         virtual void paint(void* bits, int pitch);
-        virtual void paint(void* bits, int bufWid, int bufHei, int xDst, int yDst, int w, int h, int xSrc, int ySrc, bool bCopyAlpha);
+        virtual void paint(void* bits, int bufWid, int bufHei, int xDst, int yDst, int w, int h, int xSrc, int ySrc, bool fKeepAlpha);
 		virtual void tick();
         virtual HDC  getViewDC();
         
