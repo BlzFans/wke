@@ -1,4 +1,7 @@
-﻿#### 2015-09-04 19:53 增加从命令行提供的URL进行加载的功能。
+﻿#### 2015-09-04 19:56 实现 <input type="file"/> 文件选择功能。
+* 实现 ChromeClient::runOpenPanel 函数，打开文件对话框，支持 multipe 属性多选文件。可通过 demo/bin/file.html 和 Document/demo/file.asp 测试。
+
+#### 2015-09-04 19:53 增加从命令行提供的URL进行加载的功能。
 * webBrowser 增加命令行支持，若有命令行参数，则将其作为URL加载。
 
 #### 2015-09-03 10:37 增加项目规范、根据规范调整命名。
