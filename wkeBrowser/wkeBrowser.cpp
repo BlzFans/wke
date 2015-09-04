@@ -104,14 +104,14 @@ jsValue JS_CALL js_setTestCount(jsExecState es)
 在地址栏输入`javascript:test.msgbox('1')`测试调用成员函数。
 在地址栏输入`javascript:document.write(test.value)`测试访问成员变量。
 */
-class BindTestObject : public jsObjectData
+class BindTestObject : public jsData
 {
 public:
 	BindTestObject()
 		: m_value(0)
 	{
-		jsObjectData* data = this;
-        memset(data, 0, sizeof(jsObjectData));
+		jsData* data = this;
+        memset(data, 0, sizeof(jsData));
         strcpy(data->typeName, "Object");
         data->propertyGet = js_getObjectProp;
         data->propertySet = js_setObjectProp;
@@ -126,26 +126,26 @@ public:
 protected:
 	static bool js_setObjectProp(jsExecState es, jsValue object, const char* propertyName, jsValue value)
 	{
-		BindTestObject* pthis = (BindTestObject*)jsObjectGetData(es, object);
+		BindTestObject* pthis = (BindTestObject*)jsGetData(es, object);
 		if (strcmp(propertyName, "value") == 0)
 			return pthis->m_value = jsToInt(es, value), true;
 		else
 			return false;
 	}
 
-	static void js_releaseObject(jsObjectData* data)
+	static void js_releaseObject(jsData* data)
 	{
 		BindTestObject* pthis = (BindTestObject*)data;
 		delete pthis;
 	}
 
-	class BindTestMsgbox : public jsObjectData
+	class BindTestMsgbox : public jsData
 	{
 	public:
 		BindTestMsgbox(BindTestObject* obj)
 		{
-			jsObjectData* data = this;
-			memset(data, 0, sizeof(jsObjectData));
+			jsData* data = this;
+			memset(data, 0, sizeof(jsData));
 			strcpy(data->typeName, "Function");
 			data->callAsFunction = js_callAsFunction;
 			data->finalize = js_releaseFunction;
@@ -154,7 +154,7 @@ protected:
 		}
 
 	protected:
-		static void js_releaseFunction(jsObjectData* data)
+		static void js_releaseFunction(jsData* data)
 		{
 			BindTestMsgbox* pthis = (BindTestMsgbox*)data;
 			delete pthis;
@@ -162,7 +162,7 @@ protected:
 
 		static jsValue js_callAsFunction(jsExecState es, jsValue object, jsValue* args, int argCount)
 		{
-			BindTestMsgbox* pthis = (BindTestMsgbox*)jsObjectGetData(es, object);
+			BindTestMsgbox* pthis = (BindTestMsgbox*)jsGetData(es, object);
 			const wchar_t* text = NULL;
 			const wchar_t* title = NULL;
 			if (argCount >= 1)
@@ -179,7 +179,7 @@ protected:
 
 	static jsValue js_getObjectProp(jsExecState es, jsValue object, const char* propertyName)
 	{
-		BindTestObject* pthis = (BindTestObject*)jsObjectGetData(es, object);
+		BindTestObject* pthis = (BindTestObject*)jsGetData(es, object);
 		if (strcmp(propertyName, "value") == 0)
 			return jsInt(pthis->m_value);
 
@@ -214,7 +214,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
     CTimer t1, t2, t3;
 
     t1.Start();
-    wkeInit();
+    wkeInitialize();
     t1.End();
 
 	//jsBindObject("testObj", js_getObjectProp, js_setObjectProp);
@@ -287,7 +287,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 
     g_render->destroy();
     g_webView->destroy();
-    wkeShutdown();
+    wkeFinalize();
 
 	return (int) msg.wParam;
 }
@@ -439,8 +439,8 @@ void takeScreenshot()
         return;
 
     g_webView->runJS("document.body.style.overflow='hidden'");	
-	int w = g_webView->contentsWidth();
-	int h = g_webView->contentsHeight();
+	int w = g_webView->contentWidth();
+	int h = g_webView->contentHeight();
     
     int oldwidth = g_webView->width();
     int oldheight = g_webView->height();
@@ -680,7 +680,7 @@ LRESULT CALLBACK WebViewWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 
             //flags = HIWORD(lParam);
 
-            handled = g_webView->keyDown(virtualKeyCode, flags, false);
+            handled = g_webView->fireKeyDownEvent(virtualKeyCode, flags, false);
         }
         break;
 
@@ -695,7 +695,7 @@ LRESULT CALLBACK WebViewWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 
             //flags = HIWORD(lParam);
 
-            handled = g_webView->keyUp(virtualKeyCode, flags, false);
+            handled = g_webView->fireKeyUpEvent(virtualKeyCode, flags, false);
         }
         break;
 
@@ -710,7 +710,7 @@ LRESULT CALLBACK WebViewWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 
             //flags = HIWORD(lParam);
 
-            handled = g_webView->keyPress(charCode, flags, false);
+            handled = g_webView->fireKeyPressEvent(charCode, flags, false);
         }
         break;
 
@@ -755,7 +755,7 @@ LRESULT CALLBACK WebViewWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 
             //flags = wParam;
 
-            handled = g_webView->mouseEvent(message, x, y, flags);
+            handled = g_webView->fireMouseEvent(message, x, y, flags);
         }
         break;
 
@@ -782,7 +782,7 @@ LRESULT CALLBACK WebViewWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
             if (wParam & MK_RBUTTON)
                 flags |= WKE_RBUTTON;
 
-            handled = g_webView->contextMenuEvent(pt.x, pt.y, flags);
+            handled = g_webView->fireContextMenuEvent(pt.x, pt.y, flags);
         }
         break;
 
@@ -811,21 +811,21 @@ LRESULT CALLBACK WebViewWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 
             //flags = wParam;
 
-            handled = g_webView->mouseWheel(pt.x, pt.y, delta, flags);
+            handled = g_webView->fireMouseWheelEvent(pt.x, pt.y, delta, flags);
         }
         break;
 
     case WM_SETFOCUS:
-        g_webView->focus();
+        g_webView->setFocus();
         break;
 
     case WM_KILLFOCUS:
-        g_webView->unfocus();
+        g_webView->killFocus();
         break;
 
     case WM_IME_STARTCOMPOSITION:
         {
-            wkeRect caret = g_webView->getCaret();
+            wkeRect caret = g_webView->caretRect();
 
             CANDIDATEFORM form;
             form.dwIndex = 0;

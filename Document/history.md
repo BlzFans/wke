@@ -1,4 +1,67 @@
-﻿#### 2015-09-03 10:17 将回调全部集中到接口 wkeClientHandler 当中。
+﻿#### 2015-09-03 10:37 增加项目规范、根据规范调整命名。
+* 编写项目规范，位于 Document/rules.md，合作提交的朋友请按规范编写文档和代码。目前此规范还不完善，后续继续添加。
+* 根据 Document/rules.md 中的命名规范，以及使语法更正确、含义更清晰，作了以下命名调整：
+    - 更名 wkeClientHandler 为 wkeViewHandler（因这里的 "Client" 一词实际上是 WebKit 内部实现相关的东西，在接口中不需要）。
+    - 更名 wkeSetClientHandler 为 wkeSetHandler （去掉 Client）。
+    - 更名 IWebView::setClientHandler 为 IWebView::setHandler （去掉 Client）。
+    - 更名 IWebView::getClientHandler 为 IWebView::handler （去掉 Client、成员函数获取属性不加 get）。
+    - 更名 IWebView::cookieEnabled 为 IWebView::isCookieEnabled （获取是否属性前面加 is）。
+    - 更名 IWebView::getCaret 为 IWebView::caretRect （成员函数获取属性不加 get、使含义更明确）。
+    - 更名 IWebView::getViewDC 为 IWebView::viewDC （成员函数获取属性不加 get）。
+    - 更名 IWebView::transparent 为 IWebView::isTransparent （获取是否属性前面加 is）。
+    - 更名 IWebView::awaken 为 IWebView::wake（执行操作的函数使用动词）。
+    - 更名 IWebView::contentsHeight 为 IWebView::contentHeight（content 即可代表所有内容，无需复数）。
+    - 更名 IWebView::contentsWidth 为 IWebView::contentWidth（content 即可代表所有内容，无需复数）。
+    - 更名 IWebView::contextMenuEvent 为 IWebView::fireContextMenuEvent（使含义更准确）。
+    - 更名 IWebView::copy 为 IWebView::editorCopy （使含义更准确）。
+    - 更名 IWebView::cut 为 IWebView::editorCut （使含义更准确）。
+    - 更名 IWebView::delete_ 为 IWebView::editorDelete （使含义更准确）。
+    - 更名 IWebView::focus 为 IWebView::setFocus （使含义更准确）。
+    - 更名 IWebView::isLoadComplete 为 isLoadingCompleted （语法更准确、统一）。
+    - 更名 IWebView::isLoaded 为 isLoadingSucceeded （语法更准确、统一）。
+    - 更名 IWebView::isLoadFailed 为 isLoadingFailed （语法更准确、统一）。
+    - 更名 IWebView::keyDown 为 IWebView::fireKeyDownEvent（使含义更准确）。
+    - 更名 IWebView::keyPress 为 IWebView::fireKeyPressEvent（使含义更准确）。
+    - 更名 IWebView::keyUp 为 IWebView::fireKeyUpEvent（使含义更准确）。
+    - 更名 IWebView::mouseEvent 为 IWebView::fireMouseEvent（使含义更准确）。
+    - 更名 IWebView::mouseWheel 为 IWebView::fireMouseWheelEvent（使含义更准确）。
+    - 更名 IWebView::paste 为 IWebView::editorPaste （使含义更准确）。
+    - 更名 IWebView::selectAll 为 IWebView::editorSelectAll  （使含义更准确）。
+    - 更名 IWebView::tick 为 IWebView::IWebView::repaintIfNeeded（使含义更准确）。
+    - 更名 IWebView::unfocus 为 IWebView::killFocus（使含义更准确） 。
+    - 更名 jsObjectData 为 jsData（Object 函数统一不加 Object）。
+    - 更名 jsObjectGetData 为 jsGetData（Object 函数统一不加 Object）。
+    - 更名 ON_PAINT_UPDATED 为 wkeOnPaintUpdated（类型用大驼峰命名法）。
+    - 更名 ON_TITLE_CHANGED 为 wkeOnTitleChanged（类型用大驼峰命名法）。
+    - 更名 ON_URL_CHANGED 为 wkeOnUrlChanged（类型用大驼峰命名法）。
+    - 更名 wkeInit 为 wkeInitialize （使含义更准确）。
+    - 更名 wkeShutdown 为 wkeFinalize （使含义更准确）。
+    - 更名 wkeVersion 为 wkeGetVersion（非成员函数获取数据加 get）。
+    - 更名 wkeVersionString 为 wkeGetVersionString（非成员函数获取数据加 get）。
+    - 更名 wkeTitle 为 wkeGetTitle，wkeTitleW 为 wkeGetTitleW（非成员函数获取数据加 get）。
+    - 更名 wkeWidth 为 wkdGetWidth（非成员函数获取数据加 get）。
+    - 更名 wkeHeight 为 wkdGetHeight（非成员函数获取数据加 get）。	
+    - 更名 wkeWebViewName 为 wkeGetName（非成员函数获取数据加 get、WebView 相关操作函数命名统一不加 WebView）。
+    - 更名 wkeZoomFactor 为 wkeGetZoomFactor（非成员函数获取数据加 get）。
+    - 更名 wkeAwaken 为 wkeWake（wake 动词含义更准确）。
+    - 更名 wkeContentsWidth 为 wkdGetContentWidth（content 即可代表所有内容无需复数、非成员函数获取数据加 get）。
+    - 更名 wkeContentsHeight 为 wkeGetContentHeight（content 即可代表所有内容无需复数、非成员函数获取数据加 get）。
+    - 更名 wkeSelectAll 为 wkeEditorSelectAll （使含义更准确）。
+    - 更名 wkeCopy 为 wkeEditorCopy （使含义更准确）。
+    - 更名 wkeCut 为 wkeEditorCut （使含义更准确）。
+    - 更名 wkePaste 为 wkeEditorPaste （使含义更准确）。
+    - 更名 wkeFocus 为 wkeSetFocus（使含义更准确）。
+    - 更名 wkeUnfocus 为 wkeKillFocus（使含义更准确）。
+    - 更名 wkeGlobalExec 为 wkeGetGlobalExec（非成员函数获取数据加 get）。
+    - 更名 wkeIsLoadComplete 为 wkeIsLoadingCompleted  （语法更准确、统一）。
+    - 更名 wkeIsLoaded 为 wkeIsLoadingSucceeded  （语法更准确、统一）。
+    - 更名 wkeIsLoadFailed 为 wkeIsLoadingFailed  （语法更准确、统一）。
+    - 更名 wkeMediaVolume 为 wkeGetMediaVolume（非成员函数获取数据加 get）。
+    - 更名 wkeSetWebViewName 为 wkeSetName（WebView 相关操作函数命名统一不加 WebView）。
+    - 更名 wkeCookieEnabled 为 wkeIsCookieEnabled（获取是否数据是前面加 is）。
+    - 更名 wkeGetCaret 为 wkeGetCaretRect （使含义更明确）。
+
+#### 2015-09-03 10:17 将回调全部集中到接口 wkeClientHandler 当中。
 * 去掉 wkeBufHandler，将功能合并到 wkeClientHandler 当中。
 * wkeClientHandler 中增加一个回调参数，以传递自定义参数。
 * 去掉 wkeClientHandler 的 const 属性，避免在回调处理中要需要非 const 访问时导致问题。

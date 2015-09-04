@@ -187,7 +187,7 @@ namespace wke
         {
             if (frame_ == page_->mainFrame())
             {
-                wkeClientHandler* handler = webView_->getClientHandler();
+                wkeViewHandler* handler = webView_->handler();
                 if (handler && handler->onTitleChanged)
                     handler->onTitleChanged(handler, (const wkeString)&title.string());
             }
@@ -202,7 +202,7 @@ namespace wke
             if (frame_ == NULL || frame_ != page_->mainFrame())
                 return;
 
-            wkeClientHandler* handler = webView_->getClientHandler();
+            wkeViewHandler* handler = webView_->handler();
             if (handler == NULL || handler->onURLChanged == NULL)
                 return;
 
@@ -496,7 +496,7 @@ namespace wke
 
         virtual void transitionToCommittedForNewPage() override
         {
-            bool transparent = webView_->transparent();
+            bool transparent = webView_->isTransparent();
             WebCore::Color backgroundColor = transparent ? WebCore::Color::transparent : WebCore::Color::white;
 
             WebCore::IntSize size(webView_->width(), webView_->height());

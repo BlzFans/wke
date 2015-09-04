@@ -118,7 +118,7 @@ namespace wke
         name_ = StringTable::addString(name);
     }
 
-    bool CWebView::transparent() const
+    bool CWebView::isTransparent() const
     {
         return transparent_;
     }
@@ -241,21 +241,21 @@ namespace wke
         loadURL(url);
     }
 
-    bool CWebView::isLoaded() const
+    bool CWebView::isLoadingSucceeded() const
     {
         FrameLoaderClient* client = (FrameLoaderClient*)mainFrame()->loader()->client();
         return client->isLoaded();
     }
 
-    bool CWebView::isLoadFailed() const
+    bool CWebView::isLoadingFailed() const
     {
         FrameLoaderClient* client = (FrameLoaderClient*)mainFrame()->loader()->client();
         return client->isLoadFailed();
     }
 
-    bool CWebView::isLoadComplete() const
+    bool CWebView::isLoadingCompleted() const
     {
-        return isLoaded() || isLoadFailed();
+        return isLoadingSucceeded() || isLoadingFailed();
     }
 
     bool CWebView::isDocumentReady() const
@@ -326,12 +326,12 @@ namespace wke
         return height_; 
     }
 
-    int CWebView::contentsWidth() const
+    int CWebView::contentWidth() const
     {
         return mainFrame()->view()->contentsWidth();
     }
 
-    int CWebView::contentsHeight() const
+    int CWebView::contentHeight() const
     {
         return mainFrame()->view()->contentsHeight();
     }
@@ -360,7 +360,7 @@ namespace wke
         mainFrame_->view()->updateLayoutAndStyleIfNeededRecursive();
     }
 
-	void CWebView::tick()
+	void CWebView::repaintIfNeeded()
 	{
 		if(!dirty_) return;
 
@@ -393,20 +393,20 @@ namespace wke
 		{
             WebCore::IntPoint pt = dirtyArea_.location();
             WebCore::IntSize sz = dirtyArea_.size();
-			clientHandler_->onBufferChanged(clientHandler_, hdc_.get(),pt.x(),pt.y(),sz.width(),sz.height());	
+			clientHandler_->onPaintUpdated(clientHandler_, hdc_.get(),pt.x(),pt.y(),sz.width(),sz.height());	
 		}
         dirtyArea_ = WebCore::IntRect();
         dirty_ = false;
 	}
     
-    HDC CWebView::getViewDC()
+    HDC CWebView::viewDC()
     {
         return hdc_.get();
     }
     
     void CWebView::paint(void* bits, int pitch)
     {
-        if(dirty_) tick();
+        if(dirty_) repaintIfNeeded();
 
         if (pitch == 0 || pitch == width_*4)
         {
@@ -428,7 +428,7 @@ namespace wke
 
     void CWebView::paint(void* bits, int bufWid, int bufHei, int xDst, int yDst, int w, int h, int xSrc, int ySrc, bool bCopyAlpha)
     {
-        if(dirty_) tick();
+        if(dirty_) repaintIfNeeded();
 
         
         if(xSrc + w > width_) w = width_ - xSrc;
@@ -489,27 +489,27 @@ namespace wke
         return page()->goForward();
     }
 
-    void CWebView::selectAll()
+    void CWebView::editorSelectAll()
     {
         mainFrame()->editor()->command("SelectAll").execute();
     }
 
-    void CWebView::copy()
+    void CWebView::editorCopy()
     {
         page()->focusController()->focusedOrMainFrame()->editor()->command("Copy").execute();
     }
 
-    void CWebView::cut()
+    void CWebView::editorCut()
     {
         page()->focusController()->focusedOrMainFrame()->editor()->command("Cut").execute();
     }
 
-    void CWebView::paste()
+    void CWebView::editorPaste()
     {
         page()->focusController()->focusedOrMainFrame()->editor()->command("Paste").execute();
     }
 
-    void CWebView::delete_()
+    void CWebView::editorDelete()
     {
         page()->focusController()->focusedOrMainFrame()->editor()->command("Delete").execute();
     }
@@ -534,7 +534,7 @@ namespace wke
         return str.utf8().data();
     }
 
-    bool CWebView::cookieEnabled() const
+    bool CWebView::isCookieEnabled() const
     {
         return page()->cookieEnabled();
     }
@@ -634,7 +634,7 @@ namespace wke
     }
 
 
-    bool CWebView::mouseEvent(unsigned int message, int x, int y, unsigned int flags)
+    bool CWebView::fireMouseEvent(unsigned int message, int x, int y, unsigned int flags)
     {
         if (!mainFrame()->view()->didFirstLayout())
             return true;
@@ -723,7 +723,7 @@ namespace wke
         return handled;
     }
 
-    bool CWebView::contextMenuEvent(int x, int y, unsigned int flags)
+    bool CWebView::fireContextMenuEvent(int x, int y, unsigned int flags)
     {
         page()->contextMenuController()->clearContextMenu();
 
@@ -756,7 +756,7 @@ namespace wke
         return targetFrame->eventHandler()->sendContextMenuEvent(mouseEvent);
     }
 
-    bool CWebView::mouseWheel(int x, int y, int wheelDelta, unsigned int flags)
+    bool CWebView::fireMouseWheelEvent(int x, int y, int wheelDelta, unsigned int flags)
     {
         if (!mainFrame()->view()->didFirstLayout())
             return true;
@@ -800,7 +800,7 @@ namespace wke
         return mainFrame()->eventHandler()->handleWheelEvent(wheelEvent);
     }
 
-    bool CWebView::keyUp(unsigned int virtualKeyCode, unsigned int flags, bool systemKey)
+    bool CWebView::fireKeyUpEvent(unsigned int virtualKeyCode, unsigned int flags, bool systemKey)
     {
         LPARAM keyData = MAKELPARAM(0, (WORD)flags);
         WebCore::PlatformKeyboardEvent keyEvent(0, virtualKeyCode, keyData, WebCore::PlatformKeyboardEvent::KeyUp, systemKey);
@@ -809,7 +809,7 @@ namespace wke
         return frame->eventHandler()->keyEvent(keyEvent);
     }
 
-    bool CWebView::keyDown(unsigned int virtualKeyCode, unsigned int flags, bool systemKey)
+    bool CWebView::fireKeyDownEvent(unsigned int virtualKeyCode, unsigned int flags, bool systemKey)
     {
         LPARAM keyData = MAKELPARAM(0, (WORD)flags);
         WebCore::PlatformKeyboardEvent keyEvent(0, virtualKeyCode, keyData, WebCore::PlatformKeyboardEvent::RawKeyDown, systemKey);
@@ -898,7 +898,7 @@ namespace wke
         return false;
     }
 
-    bool CWebView::keyPress(unsigned int charCode, unsigned int flags, bool systemKey)
+    bool CWebView::fireKeyPressEvent(unsigned int charCode, unsigned int flags, bool systemKey)
     {
         LPARAM keyData = MAKELPARAM(0, (WORD)flags);
         WebCore::PlatformKeyboardEvent keyEvent(0, charCode, keyData, WebCore::PlatformKeyboardEvent::Char, systemKey);
@@ -914,19 +914,19 @@ namespace wke
         return frame->eventHandler()->keyEvent(keyEvent);
     }
 
-    void CWebView::focus()
+    void CWebView::setFocus()
     {
         WebCore::FocusController* focusController = page()->focusController();
         focusController->setFocused(true);
     }
 
-    void CWebView::unfocus()
+    void CWebView::killFocus()
     {
         WebCore::FocusController* focusController = page()->focusController();
         focusController->setFocused(false);
     }
 
-    wkeRect CWebView::getCaret()
+    wkeRect CWebView::caretRect()
     {
         wkeRect rect;
         rect.x = rect.y = 0;
@@ -983,7 +983,7 @@ namespace wke
         page()->willMoveOffscreen();
     }
 
-    void CWebView::awaken()
+    void CWebView::wake()
     {
         awake_ = true;
         page()->didMoveOnscreen();
@@ -1016,12 +1016,12 @@ namespace wke
         }
     }
 
-    void CWebView::setClientHandler(wkeClientHandler* handler)
+    void CWebView::setHandler(wkeViewHandler* handler)
     {
         clientHandler_ = handler;
     }
 
-    wkeClientHandler* CWebView::getClientHandler() const
+    wkeViewHandler* CWebView::handler() const
     {
         return clientHandler_;
     }

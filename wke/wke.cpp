@@ -18,7 +18,7 @@
 #include "icuwin.h"
 #include "stringTable.h"
 
-void wkeInit()
+void wkeInitialize()
 {
     //double-precision float
     _controlfp(_PC_53, _MCW_PC);
@@ -39,7 +39,7 @@ void wkeInit()
     //WebCore::ResourceHandleManager::sharedInstance()->setCookieJarFileName("cookie.txt");
 }
 
-void wkeShutdown()
+void wkeFinalize()
 {
     wkeUpdate();
 
@@ -73,12 +73,12 @@ void wkeUpdate()
 #define MINOR_VERSION   (2)
 #define WEBKIT_BUILD    (98096)
 
-unsigned int wkeVersion()
+unsigned int wkeGetVersion()
 {
     return (MAJOR_VERSION << 8) + MINOR_VERSION;
 }
 
-const utf8* wkeVersionString()
+const utf8* wkeGetVersionString()
 {
     static utf8 s_versionString[128];
     sprintf(s_versionString, "wke version %d.%02d\n"
@@ -98,19 +98,19 @@ void wkeSetFileSystem(FILE_OPEN pfn_open, FILE_CLOSE pfn_close, FILE_SIZE pfn_si
     libcurl_set_file_system(pfn_open, pfn_close, pfn_size, pfn_read, pfn_seek);
 }
 
-const char* wkeWebViewName(wkeWebView webView)
+const char* wkeGetName(wkeWebView webView)
 {
     return webView->name();
 }
 
-void wkeSetWebViewName(wkeWebView webView, const char* name)
+void wkeSetName(wkeWebView webView, const char* name)
 {
     webView->setName(name);
 }
 
 bool wkeIsTransparent(wkeWebView webView)
 {
-    return webView->transparent();
+    return webView->isTransparent();
 }
 
 void wkeSetTransparent(wkeWebView webView, bool transparent)
@@ -156,19 +156,19 @@ void wkeLoadFileW(wkeWebView webView, const wchar_t* filename)
     return webView->loadFile(filename);
 }
 
-bool wkeIsLoaded(wkeWebView webView)
+bool wkeIsLoadingSucceeded(wkeWebView webView)
 {
-    return webView->isLoaded();
+    return webView->isLoadingSucceeded();
 }
 
-bool wkeIsLoadFailed(wkeWebView webView)
+bool wkeIsLoadingFailed(wkeWebView webView)
 {
-    return webView->isLoadFailed();
+    return webView->isLoadingFailed();
 }
 
-bool wkeIsLoadComplete(wkeWebView webView)
+bool wkeIsLoadingCompleted(wkeWebView webView)
 {
-    return webView->isLoadComplete();
+    return webView->isLoadingCompleted();
 }
 
 bool wkeIsDocumentReady(wkeWebView webView)
@@ -186,12 +186,12 @@ void wkeReload(wkeWebView webView)
     webView->reload();
 }
 
-const utf8* wkeTitle(wkeWebView webView)
+const utf8* wkeGetTitle(wkeWebView webView)
 {
     return webView->title();
 }
 
-const wchar_t* wkeTitleW(wkeWebView webView)
+const wchar_t* wkeGetTitleW(wkeWebView webView)
 {
     return webView->titleW();
 }
@@ -201,24 +201,24 @@ void wkeResize(wkeWebView webView, int w, int h)
     webView->resize(w, h);
 }
 
-int wkeWidth(wkeWebView webView)
+int wkeGetWidth(wkeWebView webView)
 {
     return webView->width();
 }
 
-int wkeHeight(wkeWebView webView)
+int wkeGetHeight(wkeWebView webView)
 {
     return webView->height();
 }
 
-int wkeContentsWidth(wkeWebView webView)
+int wkeGetContentWidth(wkeWebView webView)
 {
-    return webView->contentsWidth();
+    return webView->contentWidth();
 }
 
-int wkeContentsHeight(wkeWebView webView)
+int wkeGetContentHeight(wkeWebView webView)
 {
-    return webView->contentsHeight();
+    return webView->contentHeight();
 }
 
 void wkeSetDirty(wkeWebView webView, bool dirty)
@@ -271,29 +271,29 @@ bool wkeGoForward(wkeWebView webView)
     return webView->goForward();
 }
 
-void wkeSelectAll(wkeWebView webView)
+void wkeEditorSelectAll(wkeWebView webView)
 {
-    webView->selectAll();
+    webView->editorSelectAll();
 }
 
-void wkeCopy(wkeWebView webView)
+void wkeEditorCopy(wkeWebView webView)
 {
-    webView->copy();
+    webView->editorCopy();
 }
 
-void wkeCut(wkeWebView webView)
+void wkeEditorCut(wkeWebView webView)
 {
-    webView->cut();
+    webView->editorCut();
 }
 
-void wkePaste(wkeWebView webView)
+void wkeEditorPaste(wkeWebView webView)
 {
-    webView->paste();
+    webView->editorPaste();
 }
 
-void wkeDelete(wkeWebView webView)
+void wkeEditorDelete(wkeWebView webView)
 {
-    webView->delete_();
+    webView->editorDelete();
 }
 
 const wchar_t * wkeGetCookieW(wkeWebView webView)
@@ -312,9 +312,9 @@ void wkeSetCookieEnabled(wkeWebView webView, bool enable)
     webView->setCookieEnabled(enable);
 }
 
-bool wkeCookieEnabled(wkeWebView webView)
+bool wkeIsCookieEnabled(wkeWebView webView)
 {
-    return webView->cookieEnabled();
+    return webView->isCookieEnabled();
 }
 
 void wkeSetMediaVolume(wkeWebView webView, float volume)
@@ -322,54 +322,54 @@ void wkeSetMediaVolume(wkeWebView webView, float volume)
     webView->setMediaVolume(volume);
 }
 
-float wkeMediaVolume(wkeWebView webView)
+float wkeGetMediaVolume(wkeWebView webView)
 {
     return webView->mediaVolume();
 }
 
-bool wkeMouseEvent(wkeWebView webView, unsigned int message, int x, int y, unsigned int flags)
+bool wkeFireMouseEvent(wkeWebView webView, unsigned int message, int x, int y, unsigned int flags)
 {
-    return webView->mouseEvent(message, x, y, flags);
+    return webView->fireMouseEvent(message, x, y, flags);
 }
 
-bool wkeContextMenuEvent(wkeWebView webView, int x, int y, unsigned int flags)
+bool wkeFireContextMenuEvent(wkeWebView webView, int x, int y, unsigned int flags)
 {
-    return webView->contextMenuEvent(x, y, flags);
+    return webView->fireContextMenuEvent(x, y, flags);
 }
 
-bool wkeMouseWheel(wkeWebView webView, int x, int y, int delta, unsigned int flags)
+bool wkeFireMouseWheelEvent(wkeWebView webView, int x, int y, int delta, unsigned int flags)
 {
-    return webView->mouseWheel(x, y, delta, flags);
+    return webView->fireMouseWheelEvent(x, y, delta, flags);
 }
 
-bool wkeKeyUp(wkeWebView webView, unsigned int virtualKeyCode, unsigned int flags, bool systemKey)
+bool wkeFireKeyUpEvent(wkeWebView webView, unsigned int virtualKeyCode, unsigned int flags, bool systemKey)
 {
-    return webView->keyUp(virtualKeyCode, flags, systemKey);
+    return webView->fireKeyUpEvent(virtualKeyCode, flags, systemKey);
 }
 
-bool wkeKeyDown(wkeWebView webView, unsigned int virtualKeyCode, unsigned int flags, bool systemKey)
+bool wkeFireKeyDownEvent(wkeWebView webView, unsigned int virtualKeyCode, unsigned int flags, bool systemKey)
 {
-    return webView->keyDown(virtualKeyCode, flags, systemKey);
+    return webView->fireKeyDownEvent(virtualKeyCode, flags, systemKey);
 }
 
-bool wkeKeyPress(wkeWebView webView, unsigned int charCode, unsigned int flags, bool systemKey)
+bool wkeFireKeyPressEvent(wkeWebView webView, unsigned int charCode, unsigned int flags, bool systemKey)
 {
-    return webView->keyPress(charCode, flags, systemKey);
+    return webView->fireKeyPressEvent(charCode, flags, systemKey);
 }
 
-void wkeFocus(wkeWebView webView)
+void wkeSetFocus(wkeWebView webView)
 {
-    webView->focus();
+    webView->setFocus();
 }
 
-void wkeUnfocus(wkeWebView webView)
+void wkeKillFocus(wkeWebView webView)
 {
-    webView->unfocus();
+    webView->killFocus();
 }
 
 wkeRect wkeGetCaret(wkeWebView webView)
 {
-    return webView->getCaret();
+    return webView->caretRect();
 }
 
 jsValue wkeRunJS(wkeWebView webView, const utf8* script)
@@ -392,9 +392,9 @@ void wkeSleep(wkeWebView webView)
     webView->sleep();
 }
 
-void wkeAwaken(wkeWebView webView)
+void wkeWake(wkeWebView webView)
 {
-    webView->awaken();
+    webView->wake();
 }
 
 bool wkeIsAwake(wkeWebView webView)
@@ -407,7 +407,7 @@ void wkeSetZoomFactor(wkeWebView webView, float factor)
     webView->setZoomFactor(factor);
 }
 
-float wkeZoomFactor(wkeWebView webView)
+float wkeGetZoomFactor(wkeWebView webView)
 {
     return webView->zoomFactor();
 }
@@ -417,14 +417,14 @@ void wkeSetEditable(wkeWebView webView, bool editable)
     webView->setEditable(editable);
 }
 
-WKE_API void wkeSetClientHandler(wkeWebView webView, wkeClientHandler* handler)
+WKE_API void wkeSetHandler(wkeWebView webView, wkeViewHandler* handler)
 {
-    webView->setClientHandler(handler);
+    webView->setHandler(handler);
 }
 
-WKE_API const wkeClientHandler* wkeGetClientHandler(wkeWebView webView)
+WKE_API const wkeViewHandler* wkeGetHandler(wkeWebView webView)
 {
-    return webView->getClientHandler();
+    return webView->handler();
 }
 
 WKE_API const utf8* wkeToString(const wkeString string)

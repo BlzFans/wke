@@ -16,7 +16,7 @@ namespace wke
         virtual const char* name() const;
         virtual void setName(const char* name);
         
-        virtual bool transparent() const;
+        virtual bool isTransparent() const;
         virtual void setTransparent(bool transparent);
 
         virtual void loadURL(const utf8* inUrl);
@@ -31,9 +31,9 @@ namespace wke
         virtual void loadFile(const utf8* filename);
         virtual void loadFile(const wchar_t* filename);
         
-        virtual bool isLoaded() const;
-        virtual bool isLoadFailed() const;
-        virtual bool isLoadComplete() const;
+        virtual bool isLoadingSucceeded() const;
+        virtual bool isLoadingFailed() const;
+        virtual bool isLoadingCompleted() const;
         virtual bool isDocumentReady() const;
         virtual void stopLoading();
         virtual void reload();
@@ -45,8 +45,8 @@ namespace wke
         virtual int width() const;
         virtual int height() const;
 
-        virtual int contentsWidth() const;
-        virtual int contentsHeight() const;
+        virtual int contentWidth() const;
+        virtual int contentHeight() const;
         
         virtual void setDirty(bool dirty);
         virtual bool isDirty() const;
@@ -55,47 +55,47 @@ namespace wke
         virtual void layoutIfNeeded();
         virtual void paint(void* bits, int pitch);
         virtual void paint(void* bits, int bufWid, int bufHei, int xDst, int yDst, int w, int h, int xSrc, int ySrc, bool fKeepAlpha);
-		virtual void tick();
-        virtual HDC  getViewDC();
+		virtual void repaintIfNeeded();
+        virtual HDC  viewDC();
         
         virtual bool canGoBack() const;
         virtual bool goBack();
         virtual bool canGoForward() const;
         virtual bool goForward();
         
-        virtual void selectAll();
-        virtual void copy();
-        virtual void cut();
-        virtual void paste();
-        virtual void delete_();
+        virtual void editorSelectAll();
+        virtual void editorCopy();
+        virtual void editorCut();
+        virtual void editorPaste();
+        virtual void editorDelete();
 
         virtual const wchar_t* cookieW();
         virtual const utf8* cookie();
 
         virtual void setCookieEnabled(bool enable);
-        virtual bool cookieEnabled() const;
+        virtual bool isCookieEnabled() const;
         
         virtual void setMediaVolume(float volume);
         virtual float mediaVolume() const;
         
-        virtual bool mouseEvent(unsigned int message, int x, int y, unsigned int flags);
-        virtual bool contextMenuEvent(int x, int y, unsigned int flags);
-        virtual bool mouseWheel(int x, int y, int delta, unsigned int flags);
-        virtual bool keyUp(unsigned int virtualKeyCode, unsigned int flags, bool systemKey);
-        virtual bool keyDown(unsigned int virtualKeyCode, unsigned int flags, bool systemKey);
-        virtual bool keyPress(unsigned int charCode, unsigned int flags, bool systemKey);
+        virtual bool fireMouseEvent(unsigned int message, int x, int y, unsigned int flags);
+        virtual bool fireContextMenuEvent(int x, int y, unsigned int flags);
+        virtual bool fireMouseWheelEvent(int x, int y, int delta, unsigned int flags);
+        virtual bool fireKeyUpEvent(unsigned int virtualKeyCode, unsigned int flags, bool systemKey);
+        virtual bool fireKeyDownEvent(unsigned int virtualKeyCode, unsigned int flags, bool systemKey);
+        virtual bool fireKeyPressEvent(unsigned int charCode, unsigned int flags, bool systemKey);
         
-        virtual void focus();
-        virtual void unfocus();
+        virtual void setFocus();
+        virtual void killFocus();
         
-        virtual wkeRect getCaret();
+        virtual wkeRect caretRect();
         
         virtual jsValue runJS(const wchar_t* script);
         virtual jsValue runJS(const utf8* script);
         virtual jsExecState globalExec();
         
         virtual void sleep();
-        virtual void awaken();
+        virtual void wake();
         virtual bool isAwake() const;
 
         void setZoomFactor(float factor);
@@ -103,8 +103,8 @@ namespace wke
 
         void setEditable(bool editable);
 
-        virtual void setClientHandler(wkeClientHandler* handler);
-        virtual wkeClientHandler* getClientHandler() const;
+        virtual void setHandler(wkeViewHandler* handler);
+        virtual wkeViewHandler* handler() const;
 
         WebCore::Page* page() const { return page_.get(); }
         WebCore::Frame* mainFrame() const { return mainFrame_; }
@@ -132,7 +132,7 @@ namespace wke
 
         bool awake_;
 
-        wkeClientHandler* clientHandler_;
+        wkeViewHandler* clientHandler_;
     };
 }
 

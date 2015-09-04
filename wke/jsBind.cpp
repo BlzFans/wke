@@ -540,7 +540,7 @@ JSValueRef objectGetPropertyCallback(JSContextRef ctx, JSObjectRef object, JSStr
     JSC::ExecState* exec = toJS(ctx);
     JSC::JSObject* obj = toJS(object);
 
-    jsObjectData* p = (jsObjectData*)JSObjectGetPrivate(object);
+    jsData* p = (jsData*)JSObjectGetPrivate(object);
     if (!p || !p->propertyGet)
         return false;
 
@@ -556,7 +556,7 @@ bool objectSetPropertyCallback(JSContextRef ctx, JSObjectRef object, JSStringRef
     JSC::ExecState* exec = toJS(ctx);
     JSC::JSObject* obj = toJS(object);
 
-    jsObjectData* p = (jsObjectData*)JSObjectGetPrivate(object);
+    jsData* p = (jsData*)JSObjectGetPrivate(object);
     if (!p || !p->propertySet)
         return false;
 
@@ -567,7 +567,7 @@ bool objectSetPropertyCallback(JSContextRef ctx, JSObjectRef object, JSStringRef
 
 void objectFinalize(JSObjectRef object)
 {
-    jsObjectData* p = (jsObjectData*)JSObjectGetPrivate(object);
+    jsData* p = (jsData*)JSObjectGetPrivate(object);
     if (p && p->finalize)
         p->finalize(p);
 }
@@ -577,7 +577,7 @@ JSValueRef objectCallAsFunctionCallback(JSContextRef ctx, JSObjectRef function, 
     JSC::ExecState* exec = toJS(ctx);
     JSC::JSObject* obj = toJS(function);
 
-    jsObjectData* p = (jsObjectData*)JSObjectGetPrivate(function);
+    jsData* p = (jsData*)JSObjectGetPrivate(function);
     if (!p || !p->callAsFunction)
         return false;
 
@@ -590,7 +590,7 @@ JSValueRef objectCallAsFunctionCallback(JSContextRef ctx, JSObjectRef function, 
 }
 
 
-WKE_API jsValue jsObject(jsExecState es, jsObjectData* data)
+WKE_API jsValue jsObject(jsExecState es, jsData* data)
 {
     JSC::ExecState* exec = (JSC::ExecState*)es;
     JSC::JSGlobalObject* globalObject = (JSC::JSGlobalObject*)exec->lexicalGlobalObject();
@@ -609,7 +609,7 @@ WKE_API jsValue jsObject(jsExecState es, jsObjectData* data)
     return JSC::JSValue::encode(value);
 }
 
-WKE_API jsValue jsFunction(jsExecState es, jsObjectData* data)
+WKE_API jsValue jsFunction(jsExecState es, jsData* data)
 {
     JSC::ExecState* exec = (JSC::ExecState*)es;
     JSC::JSGlobalObject* globalObject = (JSC::JSGlobalObject*)exec->lexicalGlobalObject();
@@ -628,13 +628,13 @@ WKE_API jsValue jsFunction(jsExecState es, jsObjectData* data)
 }
 
 
-WKE_API jsObjectData* jsObjectGetData(jsExecState es, jsValue object)
+WKE_API jsData* jsGetData(jsExecState es, jsValue object)
 {
     JSC::ExecState* exec = (JSC::ExecState*)es;
     JSC::JSValue val = JSC::JSValue::decode(object);
     JSValueRef valRef = toRef(exec, val);
     JSContextRef ctxRef = toRef(exec);
-    return (jsObjectData*)JSObjectGetPrivate(JSValueToObject(ctxRef, valRef, NULL));
+    return (jsData*)JSObjectGetPrivate(JSValueToObject(ctxRef, valRef, NULL));
 }
 
 
@@ -645,7 +645,7 @@ void onCreateGlobalObject(JSC::JSGlobalObject* globalObject)
     addSetter(globalObject, "webViewName", js_setWebViewName);
 
     JSC::ExecState* exec = globalObject->globalExec();
-    jsSetGlobal(exec, "wke", ::jsString(exec, wkeVersionString()));
+    jsSetGlobal(exec, "wke", ::jsString(exec, wkeGetVersionString()));
 
     for (size_t i = 0; i < s_jsFunctions.size(); ++i)
     {
