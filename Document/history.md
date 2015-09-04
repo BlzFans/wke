@@ -1,4 +1,8 @@
-﻿#### 2015-09-04 19:56 实现 <input type="file"/> 文件选择功能。
+﻿#### 2015-09-04 20:40 修改项目 readme 文件。
+* 增加文件 readme.md 描述项目相关信息，并在末尾附原项目 readme.txt 的内容。
+* 删除原项目 readme.txt 。
+
+#### 2015-09-04 19:56 实现 <input type="file"/> 文件选择功能。
 * 实现 ChromeClient::runOpenPanel 函数，打开文件对话框，支持 multipe 属性多选文件。可通过 demo/bin/file.html 和 Document/demo/file.asp 测试。
 
 #### 2015-09-04 19:53 增加从命令行提供的URL进行加载的功能。
