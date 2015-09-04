@@ -417,7 +417,7 @@ void wkeSetEditable(wkeWebView webView, bool editable)
     webView->setEditable(editable);
 }
 
-WKE_API void wkeSetClientHandler(wkeWebView webView, const wkeClientHandler* handler)
+WKE_API void wkeSetClientHandler(wkeWebView webView, wkeClientHandler* handler)
 {
     webView->setClientHandler(handler);
 }

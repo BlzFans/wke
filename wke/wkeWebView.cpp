@@ -45,7 +45,6 @@ namespace wke
         ,gfxContext_(NULL)
         ,awake_(true)
         ,clientHandler_(NULL)
-		,bufHandler_(NULL)
     {
         WebCore::Page::PageClients pageClients;
         pageClients.chromeClient = new ChromeClient(this);
@@ -390,11 +389,11 @@ namespace wke
         ChromeClient* client = (ChromeClient*)page()->chrome()->client();
         client->paintPopupMenu(pixels_,  width_*4);
 
-		if(bufHandler_)
+		if(clientHandler_)
 		{
             WebCore::IntPoint pt = dirtyArea_.location();
             WebCore::IntSize sz = dirtyArea_.size();
-			bufHandler_->onBufUpdated(hdc_.get(),pt.x(),pt.y(),sz.width(),sz.height());	
+			clientHandler_->onBufferChanged(clientHandler_, hdc_.get(),pt.x(),pt.y(),sz.width(),sz.height());	
 		}
         dirtyArea_ = WebCore::IntRect();
         dirty_ = false;
@@ -1017,25 +1016,15 @@ namespace wke
         }
     }
 
-    void CWebView::setClientHandler(const wkeClientHandler* handler)
+    void CWebView::setClientHandler(wkeClientHandler* handler)
     {
         clientHandler_ = handler;
     }
 
-    const wkeClientHandler* CWebView::getClientHandler() const
+    wkeClientHandler* CWebView::getClientHandler() const
     {
         return clientHandler_;
     }
-
-	void CWebView::setBufHandler( wkeBufHandler *handler )
-	{
-		bufHandler_ = handler;
-	}
-
-	const wkeBufHandler * CWebView::getBufHandler() const
-	{
-		return bufHandler_;
-	}
 }
 
 static Vector<wke::IWebView*> s_webViews;

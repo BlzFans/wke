@@ -59,19 +59,21 @@ enum wkeMouseMsg
 typedef void* jsExecState;
 typedef __int64 jsValue;
 
+// wkeClientHandler
 typedef void* wkeString;
-typedef void (*ON_TITLE_CHANGED) (const struct _wkeClientHandler* clientHandler, const wkeString title);
-typedef void (*ON_URL_CHANGED) (const struct _wkeClientHandler* clientHandler, const wkeString url);
+typedef struct _wkeClientHandler wkeClientHandler;
+
+typedef void (*ON_TITLE_CHANGED)(wkeClientHandler* clientHandler, const wkeString title);
+typedef void (*ON_URL_CHANGED)(wkeClientHandler* clientHandler, const wkeString url);
+typedef void (*ON_BUFFER_UPDATED)(wkeClientHandler* clientHandler, const HDC hdc, int x, int y, int cx, int cy);
 
 typedef struct _wkeClientHandler {
     ON_TITLE_CHANGED onTitleChanged;
     ON_URL_CHANGED onURLChanged;
+    ON_BUFFER_UPDATED onBufferChanged;
+    void* callbackParam;
 } wkeClientHandler;
 
-typedef struct _wkeBufHandler
-{
-	virtual void onBufUpdated (const HDC hdc,int x, int y, int cx, int cy) = 0;
-}wkeBufHandler;
 
 /*
  *c++ interface
@@ -176,11 +178,8 @@ namespace wke
 
         virtual void setEditable(bool editable) = 0;
 
-        virtual void setClientHandler(const wkeClientHandler* handler) = 0;
-        virtual const wkeClientHandler* getClientHandler() const = 0;
-
-		virtual void setBufHandler(wkeBufHandler *handler) = 0;
-		virtual const wkeBufHandler * getBufHandler() const  = 0;
+        virtual void setClientHandler(wkeClientHandler* handler) = 0;
+        virtual wkeClientHandler* getClientHandler() const = 0;
     };
 }
 

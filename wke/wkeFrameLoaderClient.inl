@@ -187,7 +187,7 @@ namespace wke
         {
             if (frame_ == page_->mainFrame())
             {
-                const wkeClientHandler* handler = webView_->getClientHandler();
+                wkeClientHandler* handler = webView_->getClientHandler();
                 if (handler && handler->onTitleChanged)
                     handler->onTitleChanged(handler, (const wkeString)&title.string());
             }
@@ -202,7 +202,7 @@ namespace wke
             if (frame_ == NULL || frame_ != page_->mainFrame())
                 return;
 
-            const wkeClientHandler* handler = webView_->getClientHandler();
+            wkeClientHandler* handler = webView_->getClientHandler();
             if (handler == NULL || handler->onURLChanged == NULL)
                 return;
 

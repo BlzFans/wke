@@ -1,8 +1,16 @@
-﻿#### 2015-08-31 02:13 修改 Document/history.md 的标题级别。 …
+﻿#### 2015-09-03 10:17 将回调全部集中到接口 wkeClientHandler 当中。
+* 去掉 wkeBufHandler，将功能合并到 wkeClientHandler 当中。
+* wkeClientHandler 中增加一个回调参数，以传递自定义参数。
+* 去掉 wkeClientHandler 的 const 属性，避免在回调处理中要需要非 const 访问时导致问题。
+
+
+#### 2015-08-31 02:13 修改 Document/history.md 的标题级别。 …
 每条记录的标题修改为四级标题，因三级在浏览器中查看太大。
+
 
 #### 2015-08-31 02:13 修改 Document/history.md 的记录格式。 …
 每条记录不再使用严格的 markdown 格式，改为直接使用提交日志的文本，但增加 markdown 三级标题。
+
 
 #### 2015-08-30 23:24 合并 zhanjx1314 实现的 POST 方式加载页面的功能。 …
 合并 zhanjx1314 实现的 wkePostURL 函数，该函数可以 POST 方式加载页面。
