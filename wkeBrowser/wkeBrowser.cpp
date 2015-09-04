@@ -7,6 +7,7 @@
 #include <memory.h>
 #include <tchar.h>
 #include <time.h>
+#include <stdlib.h>
 #include <ShellAPI.h>
 
 #include <wke.h>
@@ -229,7 +230,14 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 
     t3.Start();
     //g_webView->loadURL("file:///test/test.html");
-    g_webView->loadHTML(L"<p style=\"background-color: #00FF00\">Testing</p><img id=\"webkit logo\" src=\"http://webkit.org/images/icon-gold.png\" alt=\"Face\"><div style=\"border: solid blue; background: white;\" contenteditable=\"true\">div with blue border</div><ul><li>foo<li>bar<li>baz</ul>");
+
+    int argc = 0;
+    LPWSTR* argv = CommandLineToArgvW(GetCommandLineW(), &argc);
+    if (argc > 1)
+        g_webView->loadURL(argv[1]);
+    else
+        g_webView->loadHTML(L"<p style=\"background-color: #00FF00\">Testing</p><img id=\"webkit logo\" src=\"http://webkit.org/images/icon-gold.png\" alt=\"Face\"><div style=\"border: solid blue; background: white;\" contenteditable=\"true\">div with blue border</div><ul><li>foo<li>bar<li>baz</ul>");
+    LocalFree(argv);
     t3.End();
 
     unsigned int ms1 = t1.GetTime();
