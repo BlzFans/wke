@@ -1,4 +1,8 @@
-﻿#### 2015-09-04 20:40 修改项目 readme 文件。
+﻿#### 2015-09-07 00:23 两处小调整。
+* 修改 readme.md 。
+* 提交 release 版本的 demo/bin/wke.dll 。
+
+#### 2015-09-04 20:40 修改项目 readme 文件。
 * 增加文件 readme.md 描述项目相关信息，并在末尾附原项目 readme.txt 的内容。
 * 删除原项目 readme.txt 。
 

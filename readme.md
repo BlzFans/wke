@@ -11,7 +11,7 @@ wke 是一个基于 WebKit 精简的浏览器引擎，原项目地址 <https://github.com/BlzFans/w
 
 若你想快速浏览一下本项目完整的修改历史，可以浏览[提交日志](https://github.com/cexer/wke/commits/master)。也可以查看[修改记录](https://github.com/cexer/wke/blob/master/Document/history.md)了解最近的修改。
 
-若你有任何与项目相关的问题或建议，请联系本人邮箱 <cexer@qq.com>，或者加入QQ群 178168957 和大家一起讨论。
+若你有任何与项目相关的问题或建议，请联系本人邮箱 <cexer@qq.com>，或者加入QQ群 *178168957* 和大家一起讨论。
 
 **待完善**
 
