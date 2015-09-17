@@ -215,7 +215,18 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
     CTimer t1, t2, t3;
 
     t1.Start();
-    wkeInitialize();
+
+    wkeSettings settings;
+    memset(&settings, 0, sizeof(settings));
+
+#if defined(WKE_BROWSER_USE_LOCAL_PROXY)
+    settings.proxy.type = WKE_PROXY_HTTP;
+    strcpy(settings.proxy.hostname, "127.0.0.1");
+    settings.proxy.port = 8888;
+    settings.mask |= WKE_SETTING_PROXY;
+#endif
+    wkeInitializeEx(&settings);
+
     t1.End();
 
 	//jsBindObject("testObj", js_getObjectProp, js_setObjectProp);

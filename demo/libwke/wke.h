@@ -75,6 +75,39 @@ typedef struct _wkeViewHandler {
 } wkeViewHandler;
 
 
+typedef enum _wkeProxyType {
+
+    WKE_PROXY_NONE,
+    WKE_PROXY_HTTP,
+    WKE_PROXY_SOCKS4,
+    WKE_PROXY_SOCKS4A,
+    WKE_PROXY_SOCKS5,
+    WKE_PROXY_SOCKS5HOSTNAME
+
+} wkeProxyType;
+
+typedef struct _wkeProxy {
+
+   wkeProxyType type;
+   char hostname[100];
+   unsigned short port;
+   char username[50];
+   char password[50];
+
+} wkeProxy;
+
+typedef enum _wkeSettingMask {
+    
+    WKE_SETTING_PROXY = 1
+};
+
+typedef struct _wkeSettings {
+
+  wkeProxy proxy;
+  unsigned int mask;
+
+} wkeSettings;
+
 /*
  *c++ interface
  *-----------------------------------------------------------------------------------------------------------
@@ -213,6 +246,8 @@ extern "C"
 #endif
 
 WKE_API void wkeInitialize();
+WKE_API void wkeInitializeEx(const wkeSettings* settings);
+
 WKE_API void wkeFinalize();
 WKE_API void wkeUpdate();
 WKE_API unsigned int wkeGetVersion();

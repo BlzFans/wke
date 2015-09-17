@@ -1,4 +1,9 @@
-﻿#### 2015-09-07 00:23 两处小调整。
+﻿#### 2015-09-17 01:28 增加初始化时的全局配置功能，当前只支持代理配置。
+* 增加初始化函数 wkeInitializeEx，可在初始化时同时进行一些全局性地配置 。
+* 通过 wkeInitializeEx 增加代理配置功能，目前仅支持 HTTP 代理。
+* 修改 wkeBrowser 使用 wkeInitializeEx 进行初始化，并增加代理测试。
+
+#### 2015-09-07 00:23 两处小调整。
 * 修改 readme.md 。
 * 提交 release 版本的 demo/bin/wke.dll 。
 
