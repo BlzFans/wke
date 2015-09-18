@@ -213,19 +213,20 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 		return FALSE;
 
     CTimer t1, t2, t3;
-
+    wkeInitialize();
     t1.Start();
 
     wkeSettings settings;
     memset(&settings, 0, sizeof(settings));
 
 #if defined(WKE_BROWSER_USE_LOCAL_PROXY)
-    settings.proxy.type = WKE_PROXY_HTTP;
+    settings.proxy.type = WKE_PROXY_SOCKS5;
     strcpy(settings.proxy.hostname, "127.0.0.1");
-    settings.proxy.port = 8888;
+    settings.proxy.port = 1080;
     settings.mask |= WKE_SETTING_PROXY;
 #endif
-    wkeInitializeEx(&settings);
+    //wkeInitializeEx(&settings);
+    wkeConfigure(&settings);
 
     t1.End();
 

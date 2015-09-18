@@ -65,12 +65,16 @@ void wkeSetProxy(const wkeProxy& proxy)
     WebCore::ResourceHandleManager::sharedInstance()->setProxyInfo(hostname, proxy.port, proxyType, username, password);
 }
 
+void wkeConfigure(const wkeSettings* settings)
+{
+    if (settings->mask & WKE_SETTING_PROXY)
+        wkeSetProxy(settings->proxy);
+}
+
 void wkeInitializeEx(const wkeSettings* settings)
 {
     wkeInitialize();
-
-    if (settings->mask & WKE_SETTING_PROXY)
-        wkeSetProxy(settings->proxy);
+    wkeConfigure(settings);
 }
 
 void wkeFinalize()

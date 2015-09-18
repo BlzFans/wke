@@ -247,6 +247,7 @@ extern "C"
 
 WKE_API void wkeInitialize();
 WKE_API void wkeInitializeEx(const wkeSettings* settings);
+WKE_API void wkeConfigure(const wkeSettings* settings);
 
 WKE_API void wkeFinalize();
 WKE_API void wkeUpdate();
