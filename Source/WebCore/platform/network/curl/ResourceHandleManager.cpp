@@ -443,7 +443,7 @@ void ResourceHandleManager::setProxyInfo(const String& host,
         if (username.length() || password.length())
             userPass = username + ":" + password + "@";
 
-        m_proxy = String("http://") + userPass + host + ":" + String::number(port);
+        m_proxy = userPass + host + ":" + String::number(port);
     }
 }
 
