@@ -251,7 +251,8 @@ JSStringRef JSValueCreateJSONString(JSContextRef ctx, JSValueRef apiValue, unsig
         if (exception)
             *exception = toRef(exec, exec->exception());
         exec->clearException();
-        return 0;
+        //cexer 非法值应该在被调用者生成错误时就生成，不应该由调用者来生成。
+        //return 0;
     }
     return OpaqueJSString::create(result).leakRef();
 }
@@ -277,7 +278,8 @@ double JSValueToNumber(JSContextRef ctx, JSValueRef value, JSValueRef* exception
         if (exception)
             *exception = toRef(exec, exec->exception());
         exec->clearException();
-        number = std::numeric_limits<double>::quiet_NaN();
+        //cexer 非法值应该在被调用者生成错误时就生成，不应该由调用者来生成。
+        //number = std::numeric_limits<double>::quiet_NaN();
     }
     return number;
 }
@@ -294,7 +296,8 @@ JSStringRef JSValueToStringCopy(JSContextRef ctx, JSValueRef value, JSValueRef* 
         if (exception)
             *exception = toRef(exec, exec->exception());
         exec->clearException();
-        stringRef.clear();
+        //cexer 非法值应该在被调用者生成错误时就生成，不应该由调用者来生成。
+        //stringRef.clear();
     }
     return stringRef.release().leakRef();
 }
@@ -311,7 +314,8 @@ JSObjectRef JSValueToObject(JSContextRef ctx, JSValueRef value, JSValueRef* exce
         if (exception)
             *exception = toRef(exec, exec->exception());
         exec->clearException();
-        objectRef = 0;
+        //cexer 非法值应该在被调用者生成错误时就生成，不应该由调用者来生成。
+        //objectRef = 0;
     }
     return objectRef;
 }    
