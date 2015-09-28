@@ -22,6 +22,57 @@
 			InheritedPropertySheets=".\vsprops\wkeDebug.vsprops"
 			CharacterSet="1"
 			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
 		</Configuration>
 		<Configuration
 			Name="Release_Cairo_CFLite|Win32"
@@ -29,6 +80,57 @@
 			InheritedPropertySheets=".\vsprops\wkeRelease.vsprops"
 			CharacterSet="1"
 			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
 		</Configuration>
 	</Configurations>
 	<References>
@@ -54,14 +156,6 @@
 			RelativePath="..\wke\stringTable.h"
 			>
 		</File>
-	    <File
-			RelativePath="..\wke\wkeWebView.cpp"
-			>
-		</File>
-		<File
-			RelativePath="..\wke\wkeWebView.h"
-			>
-		</File>
 		<File
 			RelativePath="..\wke\wke.cpp"
 			>
@@ -71,19 +165,23 @@
 			>
 		</File>
 		<File
-			RelativePath="..\wke\wkePopupMenu.cpp"
+			RelativePath="..\wke\wke.rc"
 			>
 		</File>
 		<File
-			RelativePath="..\wke\wkePopupMenu.h"
+			RelativePath="..\wke\wkeChromeClient.cpp"
 			>
 		</File>
 		<File
-			RelativePath="..\wke\wkeChromeClient.inl"
+			RelativePath="..\wke\wkeChromeClient.h"
 			>
 		</File>
 		<File
-			RelativePath="..\wke\wkeContextMenuClient.inl"
+			RelativePath="..\wke\wkeContextMenuClient.cpp"
+			>
+		</File>
+		<File
+			RelativePath="..\wke\wkeContextMenuClient.h"
 			>
 		</File>
 		<File
@@ -95,27 +193,59 @@
 			>
 		</File>
 		<File
-			RelativePath="..\wke\wkeDragClient.inl"
+			RelativePath="..\wke\wkeDragClient.cpp"
 			>
 		</File>
 		<File
-			RelativePath="..\wke\wkeEditorClient.inl"
+			RelativePath="..\wke\wkeDragClient.h"
 			>
 		</File>
 		<File
-			RelativePath="..\wke\wkeFrameLoaderClient.inl"
+			RelativePath="..\wke\wkeEditorClient.cpp"
 			>
 		</File>
 		<File
-			RelativePath="..\wke\wkeInspectorClient.inl"
+			RelativePath="..\wke\wkeEditorClient.h"
 			>
 		</File>
 		<File
-			RelativePath="..\wke\wkePlatformStrategies.inl"
+			RelativePath="..\wke\wkeFrameLoaderClient.cpp"
 			>
 		</File>
-        <File
-			RelativePath="..\wke\wke.rc"
+		<File
+			RelativePath="..\wke\wkeFrameLoaderClient.h"
+			>
+		</File>
+		<File
+			RelativePath="..\wke\wkeInspectorClient.cpp"
+			>
+		</File>
+		<File
+			RelativePath="..\wke\wkeInspectorClient.h"
+			>
+		</File>
+		<File
+			RelativePath="..\wke\wkePlatformStrategies.cpp"
+			>
+		</File>
+		<File
+			RelativePath="..\wke\wkePlatformStrategies.h"
+			>
+		</File>
+		<File
+			RelativePath="..\wke\wkePopupMenu.cpp"
+			>
+		</File>
+		<File
+			RelativePath="..\wke\wkePopupMenu.h"
+			>
+		</File>
+		<File
+			RelativePath="..\wke\wkeWebView.cpp"
+			>
+		</File>
+		<File
+			RelativePath="..\wke\wkeWebView.h"
 			>
 		</File>
 	</Files>

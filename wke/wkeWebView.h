@@ -1,143 +1,186 @@
 #ifndef WKE_WEB_VIEW_H
 #define WKE_WEB_VIEW_H
 
+
+//////////////////////////////////////////////////////////////////////////
+
+
+#include <WebCore/config.h>
+#include <WebCore/ChromeClient.h>
+#include <WebCore/FrameLoaderClient.h>
+#include <WebCore/ResourceError.h>
+#include <WebCore/Page.h>
+#include <WebCore/Frame.h>
+#include <WebCore/FileChooser.h>
+#include <WebCore/FormState.h>
+#include <WebCore/HTMLFormElement.h>
+#include <WebCore/FrameView.h>
+#include <WebCore/BitmapInfo.h>
+#include <WebCore/Settings.h>
+#include <WebCore/PlatformWheelEvent.h>
+#include <WebCore/PlatformKeyboardEvent.h>
+#include <WebCore/FocusController.h>
+#include <WebCore/ScriptValue.h>
+#include <WebCore/BackForwardList.h>
+#include <WebCore/TextEncoding.h>
+#include <WebCore/ContextMenuController.h>
+#include <WebCore/Chrome.h>
+
+//cexer: 必须包含在后面，因为其中的 windows.h 会定义 max、min，导致 WebCore 内部的 max、min 出现错乱。
 #include "wke.h"
+
+
+//////////////////////////////////////////////////////////////////////////
+
+
+
 
 namespace wke
 {
-    class CWebView : public IWebView
-    {
-    public:
-        CWebView();
-        ~CWebView();
 
-        virtual void destroy();
 
-        virtual const char* name() const;
-        virtual void setName(const char* name);
-        
-        virtual bool isTransparent() const;
-        virtual void setTransparent(bool transparent);
 
-        virtual void loadURL(const utf8* inUrl);
-        virtual void loadURL(const wchar_t* url);
-        
-        virtual void loadPostURL(const utf8* inUrl,const char * poastData,int nLen );
-        virtual void loadPostURL(const wchar_t * inUrl,const char * poastData,int nLen );
 
-        virtual void loadHTML(const utf8* html);
-        virtual void loadHTML(const wchar_t* html);
+class CWebView : public IWebView
+{
+public:
+    CWebView();
+   ~CWebView();
 
-        virtual void loadFile(const utf8* filename);
-        virtual void loadFile(const wchar_t* filename);
+    virtual void destroy();
 
-		virtual void setUserAgent(const utf8 * useragent);
-        virtual void setUserAgent(const wchar_t * useragent);
+    virtual const char* name() const;
+    virtual void setName(const char* name);
+    
+    virtual bool isTransparent() const;
+    virtual void setTransparent(bool transparent);
 
-        virtual bool isLoadingSucceeded() const;
-        virtual bool isLoadingFailed() const;
-        virtual bool isLoadingCompleted() const;
-        virtual bool isDocumentReady() const;
-        virtual void stopLoading();
-        virtual void reload();
+    virtual void loadURL(const utf8* inUrl);
+    virtual void loadURL(const wchar_t* url);
+    
+    virtual void loadPostURL(const utf8* inUrl,const char * poastData,int nLen );
+    virtual void loadPostURL(const wchar_t * inUrl,const char * poastData,int nLen );
 
-        virtual const utf8* title();
-        virtual const wchar_t* titleW();
-        
-        virtual void resize(int w, int h);
-        virtual int width() const;
-        virtual int height() const;
+    virtual void loadHTML(const utf8* html);
+    virtual void loadHTML(const wchar_t* html);
 
-        virtual int contentWidth() const;
-        virtual int contentHeight() const;
-        
-        virtual void setDirty(bool dirty);
-        virtual bool isDirty() const;
-        virtual void addDirtyArea(int x, int y, int w, int h);
+    virtual void loadFile(const utf8* filename);
+    virtual void loadFile(const wchar_t* filename);
 
-        virtual void layoutIfNeeded();
-        virtual void paint(void* bits, int pitch);
-        virtual void paint(void* bits, int bufWid, int bufHei, int xDst, int yDst, int w, int h, int xSrc, int ySrc, bool fKeepAlpha);
-		virtual void repaintIfNeeded();
-        virtual HDC  viewDC();
-        
-        virtual bool canGoBack() const;
-        virtual bool goBack();
-        virtual bool canGoForward() const;
-        virtual bool goForward();
-        
-        virtual void editorSelectAll();
-        virtual void editorCopy();
-        virtual void editorCut();
-        virtual void editorPaste();
-        virtual void editorDelete();
+	virtual void setUserAgent(const utf8 * useragent);
+    virtual void setUserAgent(const wchar_t * useragent);
 
-        virtual const wchar_t* cookieW();
-        virtual const utf8* cookie();
+    virtual bool isLoadingSucceeded() const;
+    virtual bool isLoadingFailed() const;
+    virtual bool isLoadingCompleted() const;
+    virtual bool isDocumentReady() const;
+    virtual void stopLoading();
+    virtual void reload();
 
-        virtual void setCookieEnabled(bool enable);
-        virtual bool isCookieEnabled() const;
-        
-        virtual void setMediaVolume(float volume);
-        virtual float mediaVolume() const;
-        
-        virtual bool fireMouseEvent(unsigned int message, int x, int y, unsigned int flags);
-        virtual bool fireContextMenuEvent(int x, int y, unsigned int flags);
-        virtual bool fireMouseWheelEvent(int x, int y, int delta, unsigned int flags);
-        virtual bool fireKeyUpEvent(unsigned int virtualKeyCode, unsigned int flags, bool systemKey);
-        virtual bool fireKeyDownEvent(unsigned int virtualKeyCode, unsigned int flags, bool systemKey);
-        virtual bool fireKeyPressEvent(unsigned int charCode, unsigned int flags, bool systemKey);
-        
-        virtual void setFocus();
-        virtual void killFocus();
-        
-        virtual wkeRect caretRect();
-        
-        virtual jsValue runJS(const wchar_t* script);
-        virtual jsValue runJS(const utf8* script);
-        virtual jsExecState globalExec();
-        
-        virtual void sleep();
-        virtual void wake();
-        virtual bool isAwake() const;
+    virtual const utf8* title();
+    virtual const wchar_t* titleW();
+    
+    virtual void resize(int w, int h);
+    virtual int width() const;
+    virtual int height() const;
 
-        void setZoomFactor(float factor);
-        float zoomFactor() const;
+    virtual int contentWidth() const;
+    virtual int contentHeight() const;
+    
+    virtual void setDirty(bool dirty);
+    virtual bool isDirty() const;
+    virtual void addDirtyArea(int x, int y, int w, int h);
 
-        void setEditable(bool editable);
+    virtual void layoutIfNeeded();
+    virtual void paint(void* bits, int pitch);
+    virtual void paint(void* bits, int bufWid, int bufHei, int xDst, int yDst, int w, int h, int xSrc, int ySrc, bool fKeepAlpha);
+	virtual void repaintIfNeeded();
+    virtual HDC  viewDC();
+    
+    virtual bool canGoBack() const;
+    virtual bool goBack();
+    virtual bool canGoForward() const;
+    virtual bool goForward();
+    
+    virtual void editorSelectAll();
+    virtual void editorCopy();
+    virtual void editorCut();
+    virtual void editorPaste();
+    virtual void editorDelete();
 
-        virtual void setHandler(wkeViewHandler* handler);
-        virtual wkeViewHandler* handler() const;
+    virtual const wchar_t* cookieW();
+    virtual const utf8* cookie();
 
-        WebCore::Page* page() const { return page_.get(); }
-        WebCore::Frame* mainFrame() const { return mainFrame_; }
+    virtual void setCookieEnabled(bool enable);
+    virtual bool isCookieEnabled() const;
+    
+    virtual void setMediaVolume(float volume);
+    virtual float mediaVolume() const;
+    
+    virtual bool fireMouseEvent(unsigned int message, int x, int y, unsigned int flags);
+    virtual bool fireContextMenuEvent(int x, int y, unsigned int flags);
+    virtual bool fireMouseWheelEvent(int x, int y, int delta, unsigned int flags);
+    virtual bool fireKeyUpEvent(unsigned int virtualKeyCode, unsigned int flags, bool systemKey);
+    virtual bool fireKeyDownEvent(unsigned int virtualKeyCode, unsigned int flags, bool systemKey);
+    virtual bool fireKeyPressEvent(unsigned int charCode, unsigned int flags, bool systemKey);
+    
+    virtual void setFocus();
+    virtual void killFocus();
+    
+    virtual wkeRect caretRect();
+    
+    virtual jsValue runJS(const wchar_t* script);
+    virtual jsValue runJS(const utf8* script);
+    virtual jsExecState globalExec();
+    
+    virtual void sleep();
+    virtual void wake();
+    virtual bool isAwake() const;
 
-		void * getPixels(){
-			return pixels_;
-		}
-		
-	protected:
-        OwnPtr<WebCore::Page> page_;
-        WebCore::Frame* mainFrame_;
+    void setZoomFactor(float factor);
+    float zoomFactor() const;
 
-        const char* name_;
-        bool transparent_;
+    void setEditable(bool editable);
 
-        int width_;
-        int height_;
+    virtual void setHandler(wkeViewHandler* handler);
+    virtual wkeViewHandler* handler() const;
 
-        bool dirty_;
-        WebCore::IntRect dirtyArea_;
+    WebCore::Page* page() const { return page_.get(); }
+    WebCore::Frame* mainFrame() const { return mainFrame_; }
 
-        WebCore::GraphicsContext* gfxContext_;
-        OwnPtr<HDC> hdc_;
-        OwnPtr<HBITMAP> hbmp_;
-        void* pixels_;
+	void * getPixels(){
+		return pixels_;
+	}
+	
+protected:
+    OwnPtr<WebCore::Page> page_;
+    WebCore::Frame* mainFrame_;
 
-        bool awake_;
+    const char* name_;
+    bool transparent_;
 
-        wkeViewHandler* clientHandler_;
-    };
-}
+    int width_;
+    int height_;
 
-#endif //
+    bool dirty_;
+    WebCore::IntRect dirtyArea_;
+
+    WebCore::GraphicsContext* gfxContext_;
+    OwnPtr<HDC> hdc_;
+    OwnPtr<HBITMAP> hbmp_;
+    void* pixels_;
+
+    bool awake_;
+
+    wkeViewHandler* clientHandler_;
+};
+
+
+
+
+};//namespace wke
+
+
+
+
+#endif//#ifndef WKE_WEB_VIEW_H

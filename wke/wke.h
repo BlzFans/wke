@@ -11,6 +11,10 @@
 #define WKE_H
 
 
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+
+
 #ifdef BUILDING_wke
 #   define WKE_API __declspec(dllexport)
 #else

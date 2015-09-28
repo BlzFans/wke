@@ -1,4 +1,7 @@
 
+//////////////////////////////////////////////////////////////////////////
+
+
 #include <WebCore/config.h>
 #include <WebCore/FrameView.h>
 #include <WebCore/TextRun.h>
@@ -8,19 +11,26 @@
 #include <WebCore/FileChooser.h>
 #include <WebCore/PlatformWheelEvent.h>
 #include <WebCore/PlatformKeyboardEvent.h>
-#include "wkeWebView.h"
-#include "wkePopupMenu.h"
 
-#include "wkeChromeClient.inl"
+#include "wkeChromeClient.h"
+#include "wkePopupMenu.h"
+#include "wkeWebView.h"
+
+
+//////////////////////////////////////////////////////////////////////////
+
 
 // Maximum height of a popup window
 static const int maxPopupHeight = 320;
-
 static const int optionSpacingMiddle = 1;
 static const int popupWindowBorderWidth = 1;
 
+
 namespace wke
 {
+
+
+
 
 PopupMenu::PopupMenu(WebCore::PopupMenuClient* client, ChromeClient* chromeClient_)
     :popupClient_(client)
@@ -702,4 +712,7 @@ void PopupMenu::invalidate()
     pixels_ = NULL;
 }
 
-}
+
+
+
+};//namespace wke;
