@@ -59,13 +59,21 @@ enum wkeMouseMsg
 typedef void* jsExecState;
 typedef __int64 jsValue;
 
-// wkeClientHandler
 typedef void* wkeString;
 typedef struct _wkeViewHandler wkeViewHandler;
 
-typedef void (*wkeOnTitleChanged)(wkeViewHandler*, const wkeString title);
-typedef void (*wkeOnUrlChanged)(wkeViewHandler*, const wkeString url);
-typedef void (*wkeOnPaintUpdated)(wkeViewHandler*, const HDC hdc, int x, int y, int cx, int cy);
+#if defined(__cplusplus)
+    namespace wke{ class IWebView; };
+    typedef wke::IWebView* wkeWebView;
+
+#else
+    struct _tagWkeWebView;
+    typedef _tagWkeWebView* wkeWebView;
+#endif
+
+typedef void (*wkeOnTitleChanged)(wkeViewHandler* handler, wkeWebView webView, const wkeString title);
+typedef void (*wkeOnUrlChanged)(wkeViewHandler* handler, wkeWebView webView, const wkeString url);
+typedef void (*wkeOnPaintUpdated)(wkeViewHandler* handler, wkeWebView webView, const HDC hdc, int x, int y, int cx, int cy);
 
 typedef struct _wkeViewHandler {
     wkeOnTitleChanged onTitleChanged;
@@ -219,11 +227,9 @@ namespace wke
     };
 }
 
-typedef wke::IWebView* wkeWebView;
 
 #else
 
-typedef void* wkeWebView;
 
 #ifndef HAVE_WCHAR_T
 typedef unsigned short wchar_t;
@@ -325,8 +331,8 @@ WKE_API void wkeEditorCut(wkeWebView webView);
 WKE_API void wkeEditorPaste(wkeWebView webView);
 WKE_API void wkeEditorDelete(wkeWebView webView);
 
-WKE_API const wchar_t* wkeGetCookieW();
-WKE_API const utf8* wkeGetCookie();
+WKE_API const wchar_t* wkeGetCookieW(wkeWebView webView);
+WKE_API const utf8* wkeGetCookie(wkeWebView webView);
 WKE_API void wkeSetCookieEnabled(wkeWebView webView, bool enable);
 WKE_API bool wkeIsCookieEnabled(wkeWebView webView);
 
@@ -343,7 +349,7 @@ WKE_API bool wkeFireKeyPressEvent(wkeWebView webView, unsigned int charCode, uns
 WKE_API void wkeSetFocus(wkeWebView webView);
 WKE_API void wkeKillFocus(wkeWebView webView);
 
-WKE_API wkeRect wkeGetCaret(wkeWebView webView);
+WKE_API wkeRect wkeGetCaretRect(wkeWebView webView);
 
 WKE_API jsValue wkeRunJS(wkeWebView webView, const utf8* script);
 WKE_API jsValue wkeRunJSW(wkeWebView webView, const wchar_t* script);

@@ -1,4 +1,11 @@
-﻿#### 2015-09-28 22：01 修改 wke 实现中用到的 IWebView 为 CWebView。
+﻿#### 2015-09-28 22:10 修改 wkeBrowser 对 wke 的调用为 C 接口调用。
+* 修改 wkeBrowser 对 wke 的调用为 C 接口调用，因 IWebView* 纯虚函数的调用方式，与 C 接口没有大的区别，择其一即可。而容 C 接口可兼容大多数的开发语言，所以保留 C 接口，为抛弃 C++ 接口做准备。
+* 修正 wkeGetCookie、wkeGetCookieW 函数没有 wkeWebView 参数的 BUG。
+* 更名 wkeGetCaret 为 wkeGetCaretRect 。
+* 修改 wkeBrowser，默认关闭代理（取消定义宏 WKE_BROWSER_USE_LOCAL_PROXY）。
+
+
+#### 2015-09-28 22：01 修改 wke 实现中用到的 IWebView 为 CWebView。
 * 修改实现中（如 wkeChromeClient、wkeFrameLoaderClient 等）用到的 IWebView 为 CWebView，因为实现需要知道 IWebView 之外的、具体实现相关的信息，用 IWebView 不合适。
 * 此修改为后续的实现作准备。
 

@@ -2,4 +2,4 @@
 
 #include "resource.h"
 
-#define WKE_BROWSER_USE_LOCAL_PROXY
+//#define WKE_BROWSER_USE_LOCAL_PROXY

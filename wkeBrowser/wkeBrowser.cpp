@@ -237,21 +237,21 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 
     t2.Start();
     g_webView = wkeCreateWebView();
-    g_webView->setTransparent(false);
+    wkeSetTransparent(g_webView, false);
     t2.End();
 
     t3.Start();
-    //g_webView->loadURL("file:///test/test.html");
+    //wkeLoadUrl("file:///test/test.html");
 
     //ÉèÖÃUserAgent
-    g_webView->setUserAgent(L"Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36");
+    wkeSetUserAgent(g_webView, "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36");
 
     int argc = 0;
     LPWSTR* argv = CommandLineToArgvW(GetCommandLineW(), &argc);
     if (argc > 1)
-        g_webView->loadURL(argv[1]);
+        wkeLoadURLW(g_webView, argv[1]);
     else
-        g_webView->loadHTML(L"<p style=\"background-color: #00FF00\">Testing</p><img id=\"webkit logo\" src=\"http://webkit.org/images/icon-gold.png\" alt=\"Face\"><div style=\"border: solid blue; background: white;\" contenteditable=\"true\">div with blue border</div><ul><li>foo<li>bar<li>baz</ul>");
+        wkeLoadHTMLW(g_webView, L"<p style=\"background-color: #00FF00\">Testing</p><img id=\"webkit logo\" src=\"http://webkit.org/images/icon-gold.png\" alt=\"Face\"><div style=\"border: solid blue; background: white;\" contenteditable=\"true\">div with blue border</div><ul><li>foo<li>bar<li>baz</ul>");
     LocalFree(argv);
     t3.End();
 
@@ -298,7 +298,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
                 DispatchMessage(&msg);
             }
         }
-        else if (!IsIconic(hMainWnd) && g_webView->isDirty())
+        else if (!IsIconic(hMainWnd) && wkeIsDirty(g_webView))
         {
             g_render->render(g_webView);
         }
@@ -309,7 +309,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
     }
 
     g_render->destroy();
-    g_webView->destroy();
+    wkeDestroyWebView(g_webView);
     wkeFinalize();
 
 	return (int) msg.wParam;
@@ -382,14 +382,14 @@ void zoom(bool zoomIn)
 
     s_currentZoom = s_zoomLevels[i];
 
-    g_webView->setZoomFactor(s_currentZoom / 100.f);
+    wkeSetZoomFactor(g_webView, s_currentZoom / 100.f);
 }
 
 void resetZoom()
 {
     s_currentZoom = 100;
     if (g_webView)
-        g_webView->setZoomFactor(s_currentZoom / 100.f);
+        wkeSetZoomFactor(g_webView, s_currentZoom / 100.f);
 }
 
 void convertFilename(wchar_t* filename)
@@ -461,25 +461,25 @@ void takeScreenshot()
     if (g_webView == NULL)
         return;
 
-    g_webView->runJS("document.body.style.overflow='hidden'");	
-	int w = g_webView->contentWidth();
-	int h = g_webView->contentHeight();
+    wkeRunJS(g_webView, "document.body.style.overflow='hidden'");	
+	int w = wkeGetContentWidth(g_webView);
+	int h = wkeGetContentHeight(g_webView);
     
-    int oldwidth = g_webView->width();
-    int oldheight = g_webView->height();
-    g_webView->resize(w, h);
+    int oldwidth = wkeGetWidth(g_webView);
+    int oldheight = wkeGetHeight(g_webView);
+    wkeResize(g_webView, w, h);
     wkeUpdate();
 
     void* pixels = malloc(w*h*4);
-    g_webView->paint(pixels, 0);
+    wkePaint2(g_webView, pixels, 0);
 
     //save bitmap
     saveBitmap(pixels, w, h, g_webView->titleW());
 
     free(pixels);
 
-    g_webView->resize(oldwidth, oldheight);
-    g_webView->runJS("document.body.style.overflow='visible'");
+    wkeResize(g_webView, oldwidth, oldheight);
+    wkeRunJS(g_webView, "document.body.style.overflow='visible'");
 }
 
 void viewCookie()
@@ -487,7 +487,7 @@ void viewCookie()
     if (g_webView == NULL)
         return;
 
-    const wchar_t* cookie = g_webView->cookieW();
+    const wchar_t* cookie = wkeGetCookieW(g_webView);
     MessageBoxW(NULL, cookie, L"Cookie", MB_OK|MB_ICONINFORMATION);
 }
 
@@ -510,12 +510,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
         case ID_FILE_GOBACK:
             if (g_webView)
-                g_webView->goBack();
+                wkeGoBack(g_webView);
             break;
 
         case ID_FILE_GOFORWARD:
             if (g_webView)
-                g_webView->goForward();
+                wkeGoForward(g_webView);
             break;
 
         case ID_ZOOM_IN:
@@ -545,12 +545,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 UINT state = GetMenuState(hMenu, ID_SET_EDITABLE, MF_BYCOMMAND);
                 if (state & MF_CHECKED)
                 {
-                    g_webView->setEditable(false);
+                    wkeSetEditable(g_webView, false);
                     CheckMenuItem(hMenu, ID_SET_EDITABLE, MF_BYCOMMAND | MF_UNCHECKED); 
                 }
                 else
                 {
-                    g_webView->setEditable(true);
+                    wkeSetEditable(g_webView, true);
                     CheckMenuItem(hMenu, ID_SET_EDITABLE, MF_BYCOMMAND | MF_CHECKED); 
                 }
             }
@@ -580,10 +580,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             bool canGoBack = false;
             bool canGoForward = false;
 
-            if (g_webView && g_webView->canGoBack())
+            if (g_webView && wkeCanGoBack(g_webView))
                 canGoBack = true;
 
-            if (g_webView && g_webView->canGoForward())
+            if (g_webView && wkeCanGoForward(g_webView))
                 canGoForward = true;
 
             EnableMenuItem((HMENU)wParam, ID_FILE_GOBACK, canGoBack ? MF_ENABLED : MF_DISABLED);
@@ -671,7 +671,7 @@ LRESULT CALLBACK WebViewWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
                     UINT uRet = DragQueryFileW(hDrop, 0, (wchar_t*)szFile + 8, MAX_PATH);
                     if ( uRet != 0)
                     {
-                        g_webView->loadURL(szFile);
+                        wkeLoadURLW(g_webView, szFile);
                         SetWindowTextW(hWnd, szFile);
                     }
                 }
@@ -687,7 +687,7 @@ LRESULT CALLBACK WebViewWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
     case WM_SIZE:
         if (g_webView && g_render)
         {
-            g_webView->resize(LOWORD(lParam), HIWORD(lParam));
+            wkeResize(g_webView, LOWORD(lParam), HIWORD(lParam));
             g_render->resize(LOWORD(lParam), HIWORD(lParam));
         }
         break;
@@ -703,7 +703,7 @@ LRESULT CALLBACK WebViewWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 
             //flags = HIWORD(lParam);
 
-            handled = g_webView->fireKeyDownEvent(virtualKeyCode, flags, false);
+            handled = wkeFireKeyDownEvent(g_webView, virtualKeyCode, flags, false);
         }
         break;
 
@@ -718,7 +718,7 @@ LRESULT CALLBACK WebViewWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 
             //flags = HIWORD(lParam);
 
-            handled = g_webView->fireKeyUpEvent(virtualKeyCode, flags, false);
+            handled = wkeFireKeyUpEvent(g_webView, virtualKeyCode, flags, false);
         }
         break;
 
@@ -733,7 +733,7 @@ LRESULT CALLBACK WebViewWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 
             //flags = HIWORD(lParam);
 
-            handled = g_webView->fireKeyPressEvent(charCode, flags, false);
+            handled = wkeFireKeyPressEvent(g_webView, charCode, flags, false);
         }
         break;
 
@@ -778,7 +778,7 @@ LRESULT CALLBACK WebViewWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 
             //flags = wParam;
 
-            handled = g_webView->fireMouseEvent(message, x, y, flags);
+            handled = wkeFireMouseEvent(g_webView, message, x, y, flags);
         }
         break;
 
@@ -805,7 +805,7 @@ LRESULT CALLBACK WebViewWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
             if (wParam & MK_RBUTTON)
                 flags |= WKE_RBUTTON;
 
-            handled = g_webView->fireContextMenuEvent(pt.x, pt.y, flags);
+            handled = wkeFireContextMenuEvent(g_webView, pt.x, pt.y, flags);
         }
         break;
 
@@ -834,21 +834,21 @@ LRESULT CALLBACK WebViewWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 
             //flags = wParam;
 
-            handled = g_webView->fireMouseWheelEvent(pt.x, pt.y, delta, flags);
+            handled = wkeFireMouseWheelEvent(g_webView, pt.x, pt.y, delta, flags);
         }
         break;
 
     case WM_SETFOCUS:
-        g_webView->setFocus();
+        wkeSetFocus(g_webView);
         break;
 
     case WM_KILLFOCUS:
-        g_webView->killFocus();
+        wkeKillFocus(g_webView);
         break;
 
     case WM_IME_STARTCOMPOSITION:
         {
-            wkeRect caret = g_webView->caretRect();
+            wkeRect caret = wkeGetCaretRect(g_webView);
 
             CANDIDATEFORM form;
             form.dwIndex = 0;
@@ -886,7 +886,7 @@ void resizeSubViews()
         MoveWindow(hURLBarWnd, 0, 0, rcClient.right, URLBAR_HEIGHT, TRUE);
         MoveWindow(hViewWindow, 0, URLBAR_HEIGHT, rcClient.right, rcClient.bottom - URLBAR_HEIGHT, TRUE);
 
-        g_webView->resize(rcClient.right, rcClient.bottom - URLBAR_HEIGHT);
+        wkeResize(g_webView, rcClient.right, rcClient.bottom - URLBAR_HEIGHT);
     }
 }
 
@@ -933,18 +933,18 @@ LRESULT CALLBACK UrlEditProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
    //         data->finalize = js_releaseObject;
 
 			BindTestObject* testObj = new BindTestObject();
-            jsExecState es = g_webView->globalExec();
+            jsExecState es = wkeGlobalExec(g_webView);
             jsValue obj = jsObject(es, testObj);
             jsSetGlobal(es, "test", obj);
 		}
 		else if (wcsstr(url, L"javascript:") == url)
 		{
 			url[len] = L'\0';
-			g_webView->runJS(url + wcslen(L"javascript:"));
+			wkeRunJSW(g_webView, url + wcslen(L"javascript:"));
 		}
 		else if (wcsstr(url, L"call") == url)
 		{
-			jsExecState es = g_webView->globalExec();
+			jsExecState es = wkeGlobalExec(g_webView);
 			jsValue jsDocument = jsGet(es, jsGlobalObject(es), "document");
 
 			{
@@ -972,7 +972,7 @@ LRESULT CALLBACK UrlEditProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 		else
 		{
 			url[len] = L'\0';
-			g_webView->loadURL(url);
+			wkeLoadURLW(g_webView, url);
 			SetFocus(hViewWindow);
 		}
         return 0;

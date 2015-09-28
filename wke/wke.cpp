@@ -415,7 +415,7 @@ void wkeKillFocus(wkeWebView webView)
     webView->killFocus();
 }
 
-wkeRect wkeGetCaret(wkeWebView webView)
+wkeRect wkeGetCaretRect(wkeWebView webView)
 {
     return webView->caretRect();
 }
