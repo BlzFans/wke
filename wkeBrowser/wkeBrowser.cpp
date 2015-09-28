@@ -474,7 +474,7 @@ void takeScreenshot()
     wkePaint2(g_webView, pixels, 0);
 
     //save bitmap
-    saveBitmap(pixels, w, h, g_webView->titleW());
+    saveBitmap(pixels, w, h, wkeGetTitleW(g_webView));
 
     free(pixels);
 

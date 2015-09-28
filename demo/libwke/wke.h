@@ -11,17 +11,29 @@
 #define WKE_H
 
 
+//////////////////////////////////////////////////////////////////////////
+
+
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
 
-#ifdef BUILDING_wke
-#   define WKE_API __declspec(dllexport)
+//////////////////////////////////////////////////////////////////////////
+
+
+#if defined(__cplusplus)
+    #define WKE_EXTERN_C extern "C"
 #else
-#   define WKE_API __declspec(dllimport)
+    #define WKE_EXTERN_C
 #endif
 
-typedef char utf8;
+
+#ifdef BUILDING_wke
+#   define WKE_API WKE_EXTERN_C __declspec(dllexport)
+#else
+#   define WKE_API WKE_EXTERN_C __declspec(dllimport)
+#endif
+
 
 typedef struct {
     int x;
@@ -60,13 +72,29 @@ enum wkeMouseMsg
     WKE_MSG_MOUSEWHEEL      =  0x020A,
 };
 
+
+
+#if !defined(__cplusplus)
+    #ifndef HAVE_WCHAR_T
+        typedef unsigned short wchar_t;
+    #endif
+
+    #ifndef HAVE_BOOL
+        typedef unsigned char bool;
+        #define true 1
+        #define false 0
+    #endif
+#endif
+
+
+typedef char utf8;
 typedef void* jsExecState;
 typedef __int64 jsValue;
 
 
 #if defined(__cplusplus)
-    namespace wke{ class IWebView; };
-    typedef wke::IWebView* wkeWebView;
+    namespace wke{ class CWebView; };
+    typedef wke::CWebView* wkeWebView;
 
     namespace wke{ class CString; };
     typedef wke::CString* wkeString;
@@ -126,132 +154,6 @@ typedef struct _wkeSettings {
 
 } wkeSettings;
 
-/*
- *c++ interface
- *-----------------------------------------------------------------------------------------------------------
- *
- */
-
-#ifdef __cplusplus
-
-namespace wke
-{
-    class IWebView
-    {
-    public:
-        virtual void destroy() = 0;
-
-        virtual const char* name() const = 0;
-        virtual void setName(const char* name) = 0;
-
-        virtual bool isTransparent() const = 0;
-        virtual void setTransparent(bool transparent) = 0;
-
-        virtual void loadURL(const utf8* url) = 0;
-        virtual void loadURL(const wchar_t* url) = 0;
-  
-		virtual void loadPostURL(const utf8* inUrl, const char* poastData, int postLen) = 0;
-		virtual void loadPostURL(const wchar_t* inUrl, const char* poastData, int postLen) =0;
-
-        virtual void loadHTML(const utf8* html) = 0;
-        virtual void loadHTML(const wchar_t* html) = 0;
-
-        virtual void loadFile(const utf8* filename) = 0;
-        virtual void loadFile(const wchar_t* filename) = 0;
-
-        virtual void setUserAgent(const utf8 * useragent) = 0;
-	    virtual void setUserAgent(const wchar_t * useragent) = 0;
-
-        virtual bool isLoadingSucceeded() const = 0;        /*document load sucessed*/
-        virtual bool isLoadingFailed() const = 0;    /*document load failed*/
-        virtual bool isLoadingCompleted() const = 0;  /*document load complete*/
-        virtual bool isDocumentReady() const = 0; /*document ready*/
-        virtual void stopLoading() = 0;
-        virtual void reload() = 0;
-
-        virtual const utf8* title() = 0;
-        virtual const wchar_t* titleW() = 0;
-
-        virtual void resize(int w, int h) = 0;
-        virtual int width() const = 0;   /*viewport width*/
-        virtual int height() const = 0;  /*viewport height*/
-
-        virtual int contentWidth() const = 0;  /*contents width*/
-        virtual int contentHeight() const = 0; /*contents height*/
-
-        virtual void setDirty(bool dirty) = 0;
-        virtual bool isDirty() const = 0;
-        virtual void addDirtyArea(int x, int y, int w, int h) = 0;
-
-        virtual void layoutIfNeeded() = 0;
-		virtual void repaintIfNeeded() = 0;
-        virtual void paint(void* bits, int pitch)=0;
-        virtual void paint(void* bits, int bufWid, int bufHei, int xDst, int yDst, int w, int h, int xSrc, int ySrc, bool fKeepAlpha) = 0;
-        virtual HDC viewDC() =0;
-        virtual bool canGoBack() const = 0;
-        virtual bool goBack() = 0;
-        virtual bool canGoForward() const = 0;
-        virtual bool goForward() = 0;
-
-        virtual void editorSelectAll() = 0;
-        virtual void editorCopy() = 0;
-        virtual void editorCut() = 0;
-        virtual void editorPaste() = 0;
-        virtual void editorDelete() = 0;
-        
-        virtual const wchar_t * cookieW() =0;
-        virtual const utf8* cookie() = 0;
-        virtual void setCookieEnabled(bool enable) = 0;
-        virtual bool isCookieEnabled() const = 0;
-
-        virtual void setMediaVolume(float volume) = 0;
-        virtual float mediaVolume() const = 0;
-
-        virtual bool fireMouseEvent(unsigned int message, int x, int y, unsigned int flags) = 0;
-        virtual bool fireContextMenuEvent(int x, int y, unsigned int flags) = 0;
-        virtual bool fireMouseWheelEvent(int x, int y, int delta, unsigned int flags) = 0;
-        virtual bool fireKeyUpEvent(unsigned int virtualKeyCode, unsigned int flags, bool systemKey) = 0;
-        virtual bool fireKeyDownEvent(unsigned int virtualKeyCode, unsigned int flags, bool systemKey) = 0;
-        virtual bool fireKeyPressEvent(unsigned int virtualKeyCode, unsigned int flags, bool systemKey) = 0;
-
-        virtual void setFocus() = 0;
-        virtual void killFocus() = 0;
-
-        virtual wkeRect caretRect() = 0;
-
-        virtual jsValue runJS(const utf8* script) = 0;
-        virtual jsValue runJS(const wchar_t* script) = 0;
-        virtual jsExecState globalExec() = 0;
-
-        virtual void sleep() = 0; //moveOffscreen
-        virtual void wake() = 0; //moveOnscreen
-        virtual bool isAwake() const = 0;
-
-        virtual void setZoomFactor(float factor) = 0;
-        virtual float zoomFactor() const = 0;
-
-        virtual void setEditable(bool editable) = 0;
-
-        virtual void setHandler(wkeViewHandler* hndr) = 0;
-        virtual wkeViewHandler* handler() const = 0;
-    };
-}
-
-
-#else
-
-
-#ifndef HAVE_WCHAR_T
-typedef unsigned short wchar_t;
-#endif
-
-#ifndef HAVE_BOOL
-typedef unsigned char bool;
-#define true 1
-#define false 0
-#endif
-
-#endif /*__cplusplus*/
 
 /*
  *c interface
@@ -259,7 +161,7 @@ typedef unsigned char bool;
  *
  */
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C"
 {
 #endif
@@ -501,4 +403,4 @@ WKE_API void jsGC();
 #endif
 
 
-#endif
+#endif//#ifndef WKE_H

@@ -186,14 +186,14 @@ bool CRenderD3D::UpdateTexture(wkeWebView webView)
         if (FAILED(hr))
             return false;
 
-        webView->setDirty(true);
+        wkeSetDirty(webView, true);
     }
 
-    if (webView->isDirty())
+    if (wkeIsDirty(webView))
     {
         D3DLOCKED_RECT rect;
         m_pWebViewTexture->LockRect(0, &rect, NULL, D3DLOCK_DISCARD);
-        webView->paint(rect.pBits, rect.Pitch);
+        wkePaint2(webView, rect.pBits, rect.Pitch);
         m_pWebViewTexture->UnlockRect(0);
     }
 

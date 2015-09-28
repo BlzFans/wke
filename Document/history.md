@@ -1,4 +1,8 @@
-﻿#### 2015-09-28 01:58 修改 wkeString 字符串相关接口。
+﻿#### 2015-09-29 02:20 去掉 IWebView 接口。
+* 因 IWebView* 纯虚函数的调用方式，与 C 接口没有大的区别，择其一即可。而 C 接口可兼容大多数的开发语言，所以保留 C 接口。不再支持 IWebView* 接口。
+* 在 C++ 模式下导出符号增加 extern "C" 。
+
+#### 2015-09-29 01:58 修改 wkeString 字符串相关接口。
 * 修改 wkeString 的类型定义，使在 C 下更安全，在 C++ 下更方便。
 * 更名 wkeToString 为 wkeGetString，更名 wkeToStringW 为 wkeGetStringW，使其符合 wke 的命令习惯 。
 * 增加 wkeSetString 和 wkeSetStringW 。
@@ -7,20 +11,20 @@
 * 整理 wke 内部的结构，将所有的 *.inl 文件使用 .h 和 .cpp 进行分离。
 * 在 wke.h 当中包含上 windows.h，因其需要 HDC 的定义。
 
-#### 2015-09-28 22:17 提交 Release 版的目标文件。
+#### 2015-09-29 22:17 提交 Release 版的目标文件。
 * 上次提交误提交了 Debug 版的 wke.dll，改为提交 Release 版的。
 
-#### 2015-09-28 22:10 修改 wkeBrowser 对 wke 的调用为 C 接口调用。
+#### 2015-09-29 22:10 修改 wkeBrowser 对 wke 的调用为 C 接口调用。
 * 修改 wkeBrowser 对 wke 的调用为 C 接口调用，因 IWebView* 纯虚函数的调用方式，与 C 接口没有大的区别，择其一即可。而容 C 接口可兼容大多数的开发语言，所以保留 C 接口，为抛弃 C++ 接口做准备。
 * 修正 wkeGetCookie、wkeGetCookieW 函数没有 wkeWebView 参数的 BUG。
 * 更名 wkeGetCaret 为 wkeGetCaretRect 。
 * 修改 wkeBrowser，默认关闭代理（取消定义宏 WKE_BROWSER_USE_LOCAL_PROXY）。
 
-#### 2015-09-28 22：01 修改 wke 实现中用到的 IWebView 为 CWebView。
+#### 2015-09-29 22：01 修改 wke 实现中用到的 IWebView 为 CWebView。
 * 修改实现中（如 wkeChromeClient、wkeFrameLoaderClient 等）用到的 IWebView 为 CWebView，因为实现需要知道 IWebView 之外的、具体实现相关的信息，用 IWebView 不合适。
 * 此修改为后续的实现作准备。
 
-#### 2015-09-28 21:06 合并 zhanjx1314 实现的设置 UserAgent 的功能。
+#### 2015-09-29 21:06 合并 zhanjx1314 实现的设置 UserAgent 的功能。
 * 合并 zhanjx1314（群里(__少） 实现的设置 UserAgent 的功能。
 * 在 webBrowser 当中测试了设置 UserAgent 的功能。
 
