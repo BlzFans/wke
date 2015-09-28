@@ -243,6 +243,9 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
     t3.Start();
     //g_webView->loadURL("file:///test/test.html");
 
+    //ÉèÖÃUserAgent
+    g_webView->setUserAgent(L"Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36");
+
     int argc = 0;
     LPWSTR* argv = CommandLineToArgvW(GetCommandLineW(), &argc);
     if (argc > 1)

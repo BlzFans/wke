@@ -141,6 +141,9 @@ namespace wke
         virtual void loadFile(const utf8* filename) = 0;
         virtual void loadFile(const wchar_t* filename) = 0;
 
+        virtual void setUserAgent(const utf8 * useragent) = 0;
+	    virtual void setUserAgent(const wchar_t * useragent) = 0;
+
         virtual bool isLoadingSucceeded() const = 0;        /*document load sucessed*/
         virtual bool isLoadingFailed() const = 0;    /*document load failed*/
         virtual bool isLoadingCompleted() const = 0;  /*document load complete*/
@@ -165,7 +168,7 @@ namespace wke
         virtual void layoutIfNeeded() = 0;
 		virtual void repaintIfNeeded() = 0;
         virtual void paint(void* bits, int pitch)=0;
-        virtual void paint(void* bits, int bufWid, int bufHei, int xDst, int yDst, int w, int h, int xSrc, int ySrc, bool fKeepAlpha)=0;
+        virtual void paint(void* bits, int bufWid, int bufHei, int xDst, int yDst, int w, int h, int xSrc, int ySrc, bool fKeepAlpha) = 0;
         virtual HDC viewDC() =0;
         virtual bool canGoBack() const = 0;
         virtual bool goBack() = 0;
@@ -272,6 +275,9 @@ WKE_API void wkeSetName(wkeWebView webView, const char* name);
 
 WKE_API bool wkeIsTransparent(wkeWebView webView);
 WKE_API void wkeSetTransparent(wkeWebView webView, bool transparent);
+
+WKE_API void wkeSetUserAgent(wkeWebView webView, const utf8* userAgent);
+WKE_API void wkeSetUserAgentW(wkeWebView webView, const wchar_t* userAgent);
 
 WKE_API void wkeLoadURL(wkeWebView webView, const utf8* url);
 WKE_API void wkeLoadURLW(wkeWebView webView, const wchar_t* url);

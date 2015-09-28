@@ -483,7 +483,15 @@ namespace wke
 
         virtual String userAgent(const WebCore::KURL&) override
         {
-            return "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/535.2 (KHTML, like Gecko) Safari/535.2 wke/1.0";
+			if (userAgent_.isEmpty())
+			{
+				return "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/535.2 (KHTML, like Gecko) Safari/535.2 wke/1.2";
+			}
+			else
+			{
+				return userAgent_;
+			}
+            
         }
        
         virtual void savePlatformDataToCachedFrame(WebCore::CachedFrame*) override
@@ -675,8 +683,14 @@ namespace wke
             return documentReady_;
         }
 
+		void setUserAgent(const WTF::String& str)
+		{
+			userAgent_ = str;
+		}
+
     protected:
         IWebView* webView_;
+		WTF::String userAgent_;
 
         WebCore::Page* page_;
         WebCore::Frame* frame_;

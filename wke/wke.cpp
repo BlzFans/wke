@@ -156,6 +156,16 @@ void wkeSetTransparent(wkeWebView webView, bool transparent)
     webView->setTransparent(transparent);
 }
 
+void wkeSetUserAgent(wkeWebView webView, const utf8* userAgent)
+{
+    webView->setUserAgent(userAgent);
+}
+
+void wkeSetUserAgentW(wkeWebView webView, const wchar_t* userAgent)
+{
+    webView->setUserAgent(userAgent);
+}
+
 void wkePostURL(wkeWebView wkeView,const utf8 * url,const char *szPostData,int nLen)
 {
 	wkeView->loadPostURL(url,szPostData,nLen);
@@ -527,3 +537,4 @@ STDAPI_(BOOL) DllMain( HMODULE hModule, DWORD  ul_reason_for_call, LPVOID /*lpRe
     CoreFoundationDllMain(hModule, ul_reason_for_call, 0);
     return ret;
 }
+

@@ -264,6 +264,17 @@ namespace wke
         return client->isDocumentReady();
     }
 
+	void CWebView::setUserAgent(const utf8 * useragent)
+	{
+        FrameLoaderClient* client = (FrameLoaderClient*)mainFrame()->loader()->client();
+		client->setUserAgent( WTF::String::fromUTF8(useragent));
+	}
+
+	void CWebView::setUserAgent(const wchar_t * useragent )
+	{
+          setUserAgent(String(useragent).utf8().data());
+	}
+
     void CWebView::stopLoading()
     {
         mainFrame()->loader()->stopAllLoaders();

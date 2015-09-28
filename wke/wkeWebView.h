@@ -30,7 +30,10 @@ namespace wke
 
         virtual void loadFile(const utf8* filename);
         virtual void loadFile(const wchar_t* filename);
-        
+
+		virtual void setUserAgent(const utf8 * useragent);
+        virtual void setUserAgent(const wchar_t * useragent);
+
         virtual bool isLoadingSucceeded() const;
         virtual bool isLoadingFailed() const;
         virtual bool isLoadingCompleted() const;
@@ -112,7 +115,8 @@ namespace wke
 		void * getPixels(){
 			return pixels_;
 		}
-    protected:
+		
+	protected:
         OwnPtr<WebCore::Page> page_;
         WebCore::Frame* mainFrame_;
 
