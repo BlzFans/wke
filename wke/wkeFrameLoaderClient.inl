@@ -45,7 +45,7 @@ namespace wke
     class FrameLoaderClient : public WebCore::FrameLoaderClient
     {
     public:
-        FrameLoaderClient(IWebView* webView, WebCore::Page* page)
+        FrameLoaderClient(CWebView* webView, WebCore::Page* page)
             :webView_(webView)
             ,page_(page)
             ,frame_(NULL)
@@ -189,7 +189,7 @@ namespace wke
             {
                 wkeViewHandler* handler = webView_->handler();
                 if (handler && handler->onTitleChanged)
-                    handler->onTitleChanged(handler, (const wkeString)&title.string());
+                    handler->onTitleChanged(handler, webView_, (const wkeString)&title.string());
             }
         }
 
@@ -213,7 +213,7 @@ namespace wke
             const WebCore::ResourceRequest& request = loader->request();
             const WebCore::KURL& url = request.firstPartyForCookies();
 
-            handler->onURLChanged(handler, (const wkeString)&url.string());
+            handler->onURLChanged(handler, webView_, (const wkeString)&url.string());
         }
 
         virtual void dispatchDidFailProvisionalLoad(const WebCore::ResourceError&) override
@@ -689,7 +689,7 @@ namespace wke
 		}
 
     protected:
-        IWebView* webView_;
+        CWebView* webView_;
 		WTF::String userAgent_;
 
         WebCore::Page* page_;

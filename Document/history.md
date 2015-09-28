@@ -1,4 +1,8 @@
-﻿#### 2015-09-28 21:06 合并 zhanjx1314 实现的设置 UserAgent 的功能。
+﻿#### 2015-09-28 22：01 修改 wke 实现中用到的 IWebView 为 CWebView。
+* 修改实现中（如 wkeChromeClient、wkeFrameLoaderClient 等）用到的 IWebView 为 CWebView，因为实现需要知道 IWebView 之外的、具体实现相关的信息，用 IWebView 不合适。
+* 此修改为后续的实现作准备。
+
+#### 2015-09-28 21:06 合并 zhanjx1314 实现的设置 UserAgent 的功能。
 * 合并 zhanjx1314（群里(__少） 实现的设置 UserAgent 的功能。
 * 在 webBrowser 当中测试了设置 UserAgent 的功能。
 

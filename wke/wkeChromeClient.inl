@@ -23,7 +23,7 @@ namespace wke
     class ToolTip
     {
     public:
-        ToolTip(IWebView* webView)
+        ToolTip(CWebView* webView)
             :webView_(webView)
             ,pixels_(NULL)
         {}
@@ -172,13 +172,13 @@ namespace wke
         void* pixels_;
         RECT rect_;
 
-        IWebView* webView_;
+        CWebView* webView_;
     };
 
     class ChromeClient : public WebCore::ChromeClient
     {
     public:
-        ChromeClient(IWebView* webView)
+        ChromeClient(CWebView* webView)
             :webView_(webView)
             ,toolTip_(webView)
             ,popupMenu_(NULL)
@@ -233,7 +233,7 @@ namespace wke
         virtual WebCore::Page* createWindow(WebCore::Frame*, const WebCore::FrameLoadRequest&, const WebCore::WindowFeatures&, const WebCore::NavigationAction&) override
         {
             dbgMsg(L"createWindow\n");
-            return ((CWebView*)webView_)->page();
+            return webView_->page();
         }
 
         virtual void show() override
@@ -586,7 +586,7 @@ namespace wke
 
     protected:
         WebCore::FloatRect rect_;
-        IWebView* webView_;
+        CWebView* webView_;
         ToolTip toolTip_;
         PopupMenu* popupMenu_;
     };

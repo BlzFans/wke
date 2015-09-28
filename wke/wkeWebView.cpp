@@ -404,7 +404,7 @@ namespace wke
 		{
             WebCore::IntPoint pt = dirtyArea_.location();
             WebCore::IntSize sz = dirtyArea_.size();
-			clientHandler_->onPaintUpdated(clientHandler_, hdc_.get(),pt.x(),pt.y(),sz.width(),sz.height());	
+			clientHandler_->onPaintUpdated(clientHandler_, this, hdc_.get(),pt.x(),pt.y(),sz.width(),sz.height());	
 		}
         dirtyArea_ = WebCore::IntRect();
         dirty_ = false;
@@ -1038,7 +1038,7 @@ namespace wke
     }
 }
 
-static Vector<wke::IWebView*> s_webViews;
+static Vector<wke::CWebView*> s_webViews;
 
 wkeWebView wkeCreateWebView()
 {

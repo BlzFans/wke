@@ -146,7 +146,7 @@ void PopupMenu::calculatePositionAndSize(const WebCore::IntRect& r, WebCore::Fra
 
     WebCore::IntRect popupRect(popupX, rScreenCoords.maxY(), popupWidth, popupHeight);
 
-    IWebView* webView = (IWebView*)chromeClient_->webView();
+    CWebView* webView = (CWebView*)chromeClient_->webView();
     // The popup needs to stay within the bounds of the screen and not overlap any toolbars
     WebCore::FloatRect screen = WebCore::FloatRect(0, 0, (float)webView->width(), (float)webView->height());
 
@@ -696,7 +696,7 @@ void PopupMenu::scrollTo(int offset)
 
 void PopupMenu::invalidate()
 {
-    IWebView* webView = (IWebView*)chromeClient_->webView();
+    CWebView* webView = (CWebView*)chromeClient_->webView();
     webView->setDirty(true);
     webView->addDirtyArea(windowRect_.location().x(),windowRect_.location().y(),windowRect_.size().width(),windowRect_.size().height());
     pixels_ = NULL;
