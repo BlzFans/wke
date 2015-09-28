@@ -241,6 +241,14 @@
 			>
 		</File>
 		<File
+			RelativePath="..\wke\wkeString.cpp"
+			>
+		</File>
+		<File
+			RelativePath="..\wke\wkeString.h"
+			>
+		</File>
+		<File
 			RelativePath="..\wke\wkeWebView.cpp"
 			>
 		</File>

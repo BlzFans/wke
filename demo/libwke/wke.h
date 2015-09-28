@@ -63,18 +63,24 @@ enum wkeMouseMsg
 typedef void* jsExecState;
 typedef __int64 jsValue;
 
-typedef void* wkeString;
-typedef struct _wkeViewHandler wkeViewHandler;
 
 #if defined(__cplusplus)
     namespace wke{ class IWebView; };
     typedef wke::IWebView* wkeWebView;
 
+    namespace wke{ class CString; };
+    typedef wke::CString* wkeString;
+
 #else
     struct _tagWkeWebView;
     typedef _tagWkeWebView* wkeWebView;
+
+    struct _tagWkeString;
+    typedef _tagWkeString* wkeString;
 #endif
 
+
+typedef struct _wkeViewHandler wkeViewHandler;
 typedef void (*wkeOnTitleChanged)(wkeViewHandler* handler, wkeWebView webView, const wkeString title);
 typedef void (*wkeOnUrlChanged)(wkeViewHandler* handler, wkeWebView webView, const wkeString url);
 typedef void (*wkeOnPaintUpdated)(wkeViewHandler* handler, wkeWebView webView, const HDC hdc, int x, int y, int cx, int cy);
@@ -372,8 +378,13 @@ WKE_API void wkeSetEditable(wkeWebView webView, bool editable);
 WKE_API void wkeSetHandler(wkeWebView webView, const wkeViewHandler* handler);
 WKE_API const wkeViewHandler* wkeGetHandler(wkeWebView webView);
 
-WKE_API const utf8* wkeToString(const wkeString string);
-WKE_API const wchar_t* wkeToStringW(const wkeString string);
+WKE_API const utf8* wkeGetString(const wkeString string);
+WKE_API const wchar_t* wkeGetStringW(const wkeString string);
+
+WKE_API void wkeSetString(wkeString string, const utf8* str, size_t len);
+WKE_API void wkeSetStringW(wkeString string, const wchar_t* str, size_t len);
+
+
 
 /***JavaScript Bind***/
 #define JS_CALL __fastcall

@@ -1,4 +1,9 @@
-﻿#### 2015-09-29 01:39 整理 wke 内部结构。
+﻿#### 2015-09-28 01:58 修改 wkeString 字符串相关接口。
+* 修改 wkeString 的类型定义，使在 C 下更安全，在 C++ 下更方便。
+* 更名 wkeToString 为 wkeGetString，更名 wkeToStringW 为 wkeGetStringW，使其符合 wke 的命令习惯 。
+* 增加 wkeSetString 和 wkeSetStringW 。
+
+#### 2015-09-29 01:39 整理 wke 内部结构。
 * 整理 wke 内部的结构，将所有的 *.inl 文件使用 .h 和 .cpp 进行分离。
 * 在 wke.h 当中包含上 windows.h，因其需要 HDC 的定义。
 

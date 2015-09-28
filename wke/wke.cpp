@@ -16,6 +16,7 @@
 #include "wkePlatformStrategies.h"
 #include "icuwin.h"
 #include "stringTable.h"
+#include "wkeString.h"
 
 //cexer: 必须包含在后面，因为其中的 windows.h 会定义 max、min，导致 WebCore 内部的 max、min 出现错乱。
 #include "wke.h"
@@ -472,28 +473,63 @@ void wkeSetEditable(wkeWebView webView, bool editable)
     webView->setEditable(editable);
 }
 
-WKE_API void wkeSetHandler(wkeWebView webView, wkeViewHandler* handler)
+void wkeSetHandler(wkeWebView webView, wkeViewHandler* handler)
 {
     webView->setHandler(handler);
 }
 
-WKE_API const wkeViewHandler* wkeGetHandler(wkeWebView webView)
+const wkeViewHandler* wkeGetHandler(wkeWebView webView)
 {
     return webView->handler();
 }
 
-WKE_API const utf8* wkeToString(const wkeString string)
+const utf8* wkeGetString(const wkeString s)
 {
-    const String* str = (const String*)string;
-    return StringTable::addString(str->characters(), str->length());
+    return s ? s->string() : "";
 }
 
-WKE_API const wchar_t* wkeToStringW(const wkeString string)
+const wchar_t* wkeGetStringW(const wkeString string)
 {
-    const String* str = (const String*)string;
-    return StringTableW::addString(str->characters(), str->length());
+    return string ? string->stringW() : L"";
 }
 
+void wkeSetString(wkeString string, const utf8* str, size_t len)
+{
+    if (!string)
+        return;
+
+    if (str == NULL)
+    {
+        str = "";
+        len = 0;
+    }
+    else
+    {
+        if (len == 0)
+            len = strlen(str);
+    }
+
+    string->setString(str, len);
+}
+
+void wkeSetStringW(wkeString string, const wchar_t* str, size_t len)
+{
+    if (!string)
+        return;
+
+    if (str == NULL)
+    {
+        str = L"";
+        len = 0;
+    }
+    else
+    {
+        if (len == 0)
+            len = wcslen(str);
+    }
+
+    string->setString(str, len);
+}
 
 
 

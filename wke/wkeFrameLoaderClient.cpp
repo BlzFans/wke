@@ -2,6 +2,7 @@
 
 
 #include "wkeFrameLoaderClient.h"
+#include "wkeString.h"
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -580,7 +581,8 @@ void FrameLoaderClient::dispatchDidCommitLoad()
     const WebCore::ResourceRequest& request = loader->request();
     const WebCore::KURL& url = request.firstPartyForCookies();
 
-    handler->onURLChanged(handler, webView_, (const wkeString)&url.string());
+    wke::CString string(url.string());
+    handler->onURLChanged(handler, webView_, &string);
 }
 
 void FrameLoaderClient::dispatchDidChangeIcons(WebCore::IconType type)
@@ -594,7 +596,10 @@ void FrameLoaderClient::dispatchDidReceiveTitle(const WebCore::StringWithDirecti
     {
         wkeViewHandler* handler = webView_->handler();
         if (handler && handler->onTitleChanged)
-            handler->onTitleChanged(handler, webView_, (const wkeString)&title.string());
+        {
+            wke::CString string(title.string());
+            handler->onTitleChanged(handler, webView_, &string);
+        }
     }
 }
 
