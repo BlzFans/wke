@@ -1,4 +1,7 @@
-﻿#### 2015-09-29 15:32 去掉 wke 项目中的 StringTable 依赖。
+﻿#### 2015-09-29 23:07 修正去掉 StringTable 依赖之后的编译问题。
+* 修正去掉 StringTable 依赖之后的编译问题。
+
+#### 2015-09-29 15:32 去掉 wke 项目中的 StringTable 依赖。
 * 去掉 wke 项目中的 StringTable 依赖，因 StringTable 实际上全局字符串池，且只在 wkeFinalize 时才释放，若字符串函数（比如jsToString）调用过多，会导致内存只增不减。
 * 修改 jsToString 和 jsToStringW 的实现，不依赖 StringTable，返回 static 字符串，因此其返回值会被下次调用冲掉，在使用不能保存字符串指针，应该立即保存到字符串数组或 std::string、std::wstring 当中再使用。
 * 更名 jsToString 为 jsToTempString，更名 jsToStringW 为 jsToTempStringW，因其返回值会被下次调用冲掉。
