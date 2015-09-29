@@ -329,8 +329,8 @@ WKE_API int jsToInt(jsExecState es, jsValue v);
 WKE_API float jsToFloat(jsExecState es, jsValue v);
 WKE_API double jsToDouble(jsExecState es, jsValue v);
 WKE_API bool jsToBoolean(jsExecState es, jsValue v);
-WKE_API const utf8* jsToString(jsExecState es, jsValue v);
-WKE_API const wchar_t* jsToStringW(jsExecState es, jsValue v);
+WKE_API const utf8* jsToTempString(jsExecState es, jsValue v);
+WKE_API const wchar_t* jsToTempStringW(jsExecState es, jsValue v);
 
 WKE_API jsValue jsInt(int n);
 WKE_API jsValue jsFloat(float f);

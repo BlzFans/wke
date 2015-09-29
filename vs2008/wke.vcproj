@@ -149,14 +149,6 @@
 			>
 		</File>
 		<File
-			RelativePath="..\wke\stringTable.cpp"
-			>
-		</File>
-		<File
-			RelativePath="..\wke\stringTable.h"
-			>
-		</File>
-		<File
 			RelativePath="..\wke\wke.cpp"
 			>
 		</File>

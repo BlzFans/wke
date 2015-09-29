@@ -27,7 +27,7 @@
 #include <WebCore/Chrome.h>
 
 //cexer: 必须包含在后面，因为其中的 windows.h 会定义 max、min，导致 WebCore 内部的 max、min 出现错乱。
-#include "wke.h"
+#include "wkeString.h"
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -49,9 +49,12 @@ public:
 
     void destroy();
 
-    const char* name() const;
-    void setName(const char* name);
-    
+    const utf8* name() const;
+    const wchar_t* nameW() const;
+
+    void setName(const utf8* name);
+    void setName(const wchar_t* name);
+
     bool isTransparent() const;
     void setTransparent(bool transparent);
 
@@ -151,8 +154,10 @@ public:
 protected:
     OwnPtr<WebCore::Page> page_;
     WebCore::Frame* mainFrame_;
+    wke::CString title_;
+    wke::CString cookie_;
 
-    const char* name_;
+    wke::CString name_;
     bool transparent_;
 
     int width_;

@@ -34,7 +34,6 @@ void wkeInitialize()
     CoInitialize(NULL);
 
     icuwin_init();
-    initStringTable();
 
     JSC::initializeThreading();
     WTF::initializeMainThread();
@@ -91,8 +90,6 @@ void wkeFinalize()
 
     WebCore::iconDatabase().close();
     WebCore::PageGroup::closeLocalStorage();
-
-    destroyStringTable();
 
     CoUninitialize();
 }

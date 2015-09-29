@@ -20,7 +20,7 @@ namespace wke
 
 
 CWebView::CWebView()
-    :name_(StringTable::emptyString())
+    :name_("")
     ,transparent_(false)
     ,dirty_(false)
     ,width_(0)
@@ -28,6 +28,8 @@ CWebView::CWebView()
     ,gfxContext_(NULL)
     ,awake_(true)
     ,clientHandler_(NULL)
+    ,title_("")
+    ,cookie_("")
 {
     WebCore::Page::PageClients pageClients;
     pageClients.chromeClient = new ChromeClient(this);
@@ -91,14 +93,23 @@ void CWebView::destroy()
     wkeDestroyWebView(this);
 }
 
-const char* CWebView::name() const
+const utf8* CWebView::name() const
 {
-    return name_;
+    return name_.string();
 }
 
-void CWebView::setName(const char* name)
+const wchar_t* CWebView::nameW() const
 {
-    name_ = StringTable::addString(name);
+    return name_.stringW();
+}
+
+void CWebView::setName(const utf8* name)
+{
+    name_.setString(name);
+}
+void CWebView::setName(const wchar_t* name)
+{
+    name_.setString(name);
 }
 
 bool CWebView::isTransparent() const
@@ -270,24 +281,20 @@ void CWebView::reload()
 
 const utf8* CWebView::title()
 {
-    if (mainFrame()->loader()->documentLoader())
-    {
-        const String& str = mainFrame()->loader()->documentLoader()->title().string();
-        return StringTable::addString(str.characters(), str.length());
-    }
+    if (!mainFrame()->loader()->documentLoader())
+        return "notitle";
 
-    return StringTable::addString("notitle");
+    title_ = mainFrame()->loader()->documentLoader()->title().string();
+    return title_.string();
 }
 
 const wchar_t* CWebView::titleW()
 {
-    if (mainFrame()->loader()->documentLoader())
-    {
-        const String& str = mainFrame()->loader()->documentLoader()->title().string();
-        return StringTableW::addString(str.characters(), str.length());
-    }
+    if (!mainFrame()->loader()->documentLoader())
+        return L"notitle";
 
-    return StringTableW::addString(L"notitle");
+    title_ = mainFrame()->loader()->documentLoader()->title().string();
+    return title_.stringW();
 }
 
 void CWebView::resize(int w, int h)
@@ -517,15 +524,15 @@ void CWebView::setCookieEnabled(bool enable)
 const wchar_t* CWebView::cookieW()
 {
 	int e = 0;
-	WTF::String str	= mainFrame()->document()->cookie(e);
-	return StringTableW::addString(str.characters(), str.length());
+	cookie_	= mainFrame()->document()->cookie(e);
+	return cookie_.stringW();
 }
 
 const utf8* CWebView::cookie()
 {
-    int e = 0;
-    WTF::String str	= mainFrame()->document()->cookie(e);
-    return str.utf8().data();
+	int e = 0;
+	cookie_	= mainFrame()->document()->cookie(e);
+	return cookie_.string();
 }
 
 bool CWebView::isCookieEnabled() const

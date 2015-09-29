@@ -27,6 +27,9 @@ public:
     CString(const wchar_t* str, size_t len = 0);
    ~CString();
 
+    CString& operator=(const WTF::String& str);
+    CString& operator=(const CString& that);
+
 public:
     const utf8* string() const;
     const wchar_t* stringW() const;

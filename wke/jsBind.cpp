@@ -16,6 +16,8 @@
 #include <WebCore/Chrome.h>
 #include <WebCore/ChromeClient.h>
 
+#include <string>
+
 #include "wkeDebug.h"
 #include "stringTable.h"
 
@@ -158,20 +160,26 @@ bool jsToBoolean(jsExecState es, jsValue v)
     return value.toBoolean((JSC::ExecState*)es);
 }
 
-const utf8* jsToString(jsExecState es, jsValue v)
+
+static std::string s_sharedStringBuffer;
+static std::wstring s_sharedStringBufferW;
+
+const utf8* jsToTempString(jsExecState es, jsValue v)
 {
     JSC::JSValue value = JSC::JSValue::decode(v);
     JSC::UString str = value.toString((JSC::ExecState*)es);
 
-    return StringTable::addString(str.characters(), str.length());
+    s_sharedStringBuffer = str.utf8().data();
+    return s_sharedStringBuffer.c_str();
 }
 
-const wchar_t* jsToStringW(jsExecState es, jsValue v)
+const wchar_t* jsToTempStringW(jsExecState es, jsValue v)
 {
     JSC::JSValue value = JSC::JSValue::decode(v);
     JSC::UString str = value.toString((JSC::ExecState*)es);
 
-    return StringTableW::addString(str.characters(), str.length());
+    s_sharedStringBufferW.assign(str.characters(), str.length());
+    return s_sharedStringBufferW.c_str();
 }
 
 jsValue jsInt(int n)
@@ -526,7 +534,7 @@ jsValue JS_CALL js_outputMsg(jsExecState es)
     //ASSERT(jsArgType(es, 0) == JSTYPE_STRING);
 
     jsValue value = jsArg(es, 0);
-    OutputDebugStringW(jsToStringW(es, value));
+    OutputDebugStringW(jsToTempStringW(es, value));
 
     return jsUndefined();
 }
@@ -539,7 +547,7 @@ jsValue JS_CALL js_getWebViewName(jsExecState es)
 
 jsValue JS_CALL js_setWebViewName(jsExecState es)
 {
-    const char* name = jsToString(es, jsArg(es, 0));
+    const char* name = jsToTempString(es, jsArg(es, 0));
     wkeWebView webView = jsGetWebView(es);
     webView->setName(name);
 
@@ -555,8 +563,8 @@ JSValueRef objectGetPropertyCallback(JSContextRef ctx, JSObjectRef object, JSStr
     if (!p || !p->propertyGet)
         return false;
 
-    JSC::UString str = propertyName->ustring();
-    const char* name = StringTable::addString(str.characters(), str.length());
+    WTF::CString str = propertyName->ustring().latin1();
+    const char* name = str.data();
     jsValue ret = p->propertyGet(exec, JSC::JSValue::encode(obj), name);
 
     return toRef(exec, JSC::JSValue::decode(ret));
@@ -571,8 +579,8 @@ bool objectSetPropertyCallback(JSContextRef ctx, JSObjectRef object, JSStringRef
     if (!p || !p->propertySet)
         return false;
 
-    JSC::UString str = propertyName->ustring();
-    const char* name = StringTable::addString(str.characters(), str.length());
+    WTF::CString str = propertyName->ustring().latin1();
+    const char* name = str.data();
     return p->propertySet(exec, JSC::JSValue::encode(obj), name, JSC::JSValue::encode(toJS(exec,value)));
 }
 

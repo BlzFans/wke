@@ -76,10 +76,13 @@ bool registerWebViewWindowClass();
 
 jsValue JS_CALL js_msgBox(jsExecState es)
 {
-    const wchar_t* text = jsToStringW(es, jsArg(es, 0));
-    const wchar_t* title = jsToStringW(es, jsArg(es, 1));
+    wchar_t text[1025] = { 0 };
+    wcsncpy(text, jsToTempStringW(es, jsArg(es, 0)), 1024);
 
-    MessageBox(hMainWnd, text, title, 0);
+    wchar_t title[1025] = { 0 };
+    wcsncpy(title, jsToTempStringW(es, jsArg(es, 1)), 1024);
+
+    MessageBoxW(hMainWnd, text, title, MB_OK);
 
     return jsUndefined();
 }
@@ -164,12 +167,15 @@ protected:
 		static jsValue js_callAsFunction(jsExecState es, jsValue object, jsValue* args, int argCount)
 		{
 			BindTestMsgbox* pthis = (BindTestMsgbox*)jsGetData(es, object);
-			const wchar_t* text = NULL;
-			const wchar_t* title = NULL;
+    
+            wchar_t text[1025] = { 0 };
+            wchar_t title[1025] = { 0 };
+            
 			if (argCount >= 1)
-				text = jsToStringW(es, jsArg(es, 0));
+				wcsncpy(text, jsToTempStringW(es, jsArg(es, 0)), 1024);
 			if (argCount >= 2)
-				title = jsToStringW(es, jsArg(es, 1));
+				wcsncpy(title, jsToTempStringW(es, jsArg(es, 1)), 1024);
+
 			pthis->m_obj->msgbox(text);
 			return jsInt(0);
 		}
@@ -951,21 +957,21 @@ LRESULT CALLBACK UrlEditProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 				char prop[10] = { 0 };
 				strcpy(prop, "URL");
 				jsValue jsUrl = jsGet(es, jsDocument, prop);
-				MessageBoxW(NULL, jsToStringW(es, jsUrl), NULL, MB_OK);
+				MessageBoxW(NULL, jsToTempStringW(es, jsUrl), NULL, MB_OK);
 			}
 
 			{
 				char prop[10] = { 0 };
 				strcpy(prop, "title");
 				jsValue jsTitle = jsGet(es, jsDocument, prop);
-				MessageBoxW(NULL, jsToStringW(es, jsTitle), NULL, MB_OK);
+				MessageBoxW(NULL, jsToTempStringW(es, jsTitle), NULL, MB_OK);
 			}
 
 			{
 				char prop[10] = { 0 };
 				strcpy(prop, "cookie");
 				jsValue jsCookie = jsGet(es, jsDocument, prop);
-				MessageBoxW(NULL, jsToStringW(es, jsCookie), NULL, MB_OK);
+				MessageBoxW(NULL, jsToTempStringW(es, jsCookie), NULL, MB_OK);
 			}
 
 		}

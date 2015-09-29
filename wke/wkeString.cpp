@@ -44,6 +44,21 @@ CString::~CString()
     _free();
 }
 
+CString& CString::operator=(const WTF::String& str)
+{
+    if (&m_string != &str)
+    {
+        _dirty();
+        m_string = str;
+    }
+    return *this;
+}
+
+CString& CString::operator=(const CString& str)
+{
+    return operator=(str.m_string);
+}
+
 const utf8* CString::string() const
 {
     if (!m_utf8)
