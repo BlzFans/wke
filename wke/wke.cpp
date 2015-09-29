@@ -307,6 +307,16 @@ void wkePaint2(wkeWebView webView, void* bits,int pitch)
     webView->paint(bits, pitch);
 }
 
+void wkeRepaintIfNeeded(wkeWebView webView)
+{
+    webView->repaintIfNeeded();
+}
+
+HDC wkeGetViewDC(wkeWebView webView)
+{
+    return webView->viewDC();
+}
+
 bool wkeCanGoBack(wkeWebView webView)
 {
     return webView->canGoBack();
@@ -478,7 +488,7 @@ void wkeSetHandler(wkeWebView webView, wkeViewHandler* handler)
     webView->setHandler(handler);
 }
 
-const wkeViewHandler* wkeGetHandler(wkeWebView webView)
+wkeViewHandler* wkeGetHandler(wkeWebView webView)
 {
     return webView->handler();
 }
@@ -580,4 +590,5 @@ STDAPI_(BOOL) DllMain( HMODULE hModule, DWORD  ul_reason_for_call, LPVOID /*lpRe
     CoreFoundationDllMain(hModule, ul_reason_for_call, 0);
     return ret;
 }
+
 

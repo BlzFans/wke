@@ -1,4 +1,8 @@
-﻿#### 2015-09-29 02:20 去掉 IWebView 接口。
+﻿#### 2015-09-29 09:10 增加两个 C 导出函数 wkeRepaintIfNeed 和 wkeGetViewDC 。
+* 增加两个 C 导出函数 wkeRepaintIfNeed 和 wkeGetViewDC 。
+* 修正 wkeSetHandler 和 wkeGetHandler 的 const 问题。
+
+#### 2015-09-29 02:20 去掉 IWebView 接口。
 * 因 IWebView* 纯虚函数的调用方式，与 C 接口没有大的区别，择其一即可。而 C 接口可兼容大多数的开发语言，所以保留 C 接口。不再支持 IWebView* 接口。
 * 在 C++ 模式下导出符号增加 extern "C" 。
 

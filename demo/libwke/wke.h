@@ -28,7 +28,7 @@
 #endif
 
 
-#ifdef BUILDING_wke
+#if defined(BUILDING_wke)
 #   define WKE_API WKE_EXTERN_C __declspec(dllexport)
 #else
 #   define WKE_API WKE_EXTERN_C __declspec(dllimport)
@@ -145,7 +145,7 @@ typedef struct _wkeProxy {
 typedef enum _wkeSettingMask {
     
     WKE_SETTING_PROXY = 1
-};
+} wkeSettingMask;
 
 typedef struct _wkeSettings {
 
@@ -231,6 +231,8 @@ WKE_API void wkeAddDirtyArea(wkeWebView webView, int x, int y, int w, int h);
 WKE_API void wkeLayoutIfNeeded(wkeWebView webView);
 WKE_API void wkePaint(wkeWebView webView, void* bits,int bufWid, int bufHei, int xDst, int yDst, int w, int h, int xSrc, int ySrc, bool bCopyAlpha);
 WKE_API void wkePaint2(wkeWebView webView, void* bits,int pitch);
+WKE_API void wkeRepaintIfNeeded(wkeWebView webView);
+WKE_API HDC wkeGetViewDC(wkeWebView webView);
 
 WKE_API bool wkeCanGoBack(wkeWebView webView);
 WKE_API bool wkeGoBack(wkeWebView webView);
@@ -277,8 +279,8 @@ WKE_API float wkeGetZoomFactor(wkeWebView webView);
 
 WKE_API void wkeSetEditable(wkeWebView webView, bool editable);
 
-WKE_API void wkeSetHandler(wkeWebView webView, const wkeViewHandler* handler);
-WKE_API const wkeViewHandler* wkeGetHandler(wkeWebView webView);
+WKE_API void wkeSetHandler(wkeWebView webView, wkeViewHandler* handler);
+WKE_API wkeViewHandler* wkeGetHandler(wkeWebView webView);
 
 WKE_API const utf8* wkeGetString(const wkeString string);
 WKE_API const wchar_t* wkeGetStringW(const wkeString string);
