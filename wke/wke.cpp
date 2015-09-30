@@ -479,14 +479,19 @@ void wkeSetEditable(wkeWebView webView, bool editable)
     webView->setEditable(editable);
 }
 
-void wkeSetHandler(wkeWebView webView, wkeViewHandler* handler)
+void wkeOnTitleChanged(wkeWebView webView, wkeTitleChangedCallback callback, void* callbackParam)
 {
-    webView->setHandler(handler);
+    webView->onTitleChanged(callback, callbackParam);
 }
 
-wkeViewHandler* wkeGetHandler(wkeWebView webView)
+void wkeOnURLChanged(wkeWebView webView, wkeURLChangedCallback callback, void* callbackParam)
 {
-    return webView->handler();
+    webView->onURLChanged(callback, callbackParam);
+}
+
+void wkeOnPaintUpdated(wkeWebView webView, wkePaintUpdatedCallback callback, void* callbackParam)
+{
+    webView->onPaintUpdated(callback, callbackParam);
 }
 
 const utf8* wkeGetString(const wkeString s)

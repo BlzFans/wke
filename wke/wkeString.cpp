@@ -93,6 +93,11 @@ const wchar_t* CString::stringW() const
     return m_wide;
 }
 
+const WTF::String& CString::original() const
+{
+    return m_string;
+}
+
 void CString::setString(const utf8* str, size_t len /*= 0*/)
 {
     _dirty();

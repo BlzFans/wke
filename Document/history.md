@@ -1,4 +1,19 @@
-﻿#### 2015-09-29 23:07 修正去掉 StringTable 依赖之后的编译问题。
+﻿#### 2015-09-30 16:36 规范 wke 回调接口。
+* 修改所有回调函数类型名称为 `事件名称 + Callback` 的形式：
+    - 更名 wkeOnTitleChanged 为 wkeTitleChangedCallback
+    - 更名 wkeOnURLChanged 为 wkeURLChangedCallback
+    - 更名 wkeOnPaintUpdated 为 wkePaintUpdatedCallback
+
+* 去掉 wkeSetHandler、wkeGetHandler，所有回调定义单独的 wkeOn + 事件名称 形式的设置函数：
+    - wkeOnTitleChanged
+    - wkeOnURLChanged
+    - wkeOnPaintUpdated
+
+* 修改所有回调函数的回调参数，去掉 wkeClientHandler，增加 void* param。
+* 去掉 wkeClientHandler 结构。
+
+
+#### 2015-09-29 23:07 修正去掉 StringTable 依赖之后的编译问题。
 * 修正去掉 StringTable 依赖之后的编译问题。
 
 #### 2015-09-29 15:32 去掉 wke 项目中的 StringTable 依赖。

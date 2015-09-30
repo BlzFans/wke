@@ -145,13 +145,28 @@ public:
 
     void setEditable(bool editable);
 
-    void setHandler(wkeViewHandler* handler);
-    wkeViewHandler* handler() const;
-
     WebCore::Page* page() const { return page_.get(); }
     WebCore::Frame* mainFrame() const { return mainFrame_; }
-	
+
+    void onTitleChanged(wkeTitleChangedCallback callback, void* callbackParam);
+    void onURLChanged(wkeURLChangedCallback callback, void* callbackParam);
+    void onPaintUpdated(wkePaintUpdatedCallback callback, void* callbackParam);
+
 protected:
+    void _initHandler();
+    void _initPage();
+    void _initMemoryDC();
+
+    //按理这些接口应该使用CWebView来实现的，可以把它们想像成一个类，因此设置为友员符合情理。
+    friend class ToolTip;
+    friend class ChromeClient;
+    friend class ContextMenuClient;
+    friend class DrawClient;
+    friend class EditorClient;
+    friend class FrameLoaderClient;
+    friend class InspectorClient;
+    friend class PlatformStrategies;
+
     OwnPtr<WebCore::Page> page_;
     WebCore::Frame* mainFrame_;
     wke::CString title_;
@@ -173,7 +188,18 @@ protected:
 
     bool awake_;
 
-    wkeViewHandler* clientHandler_;
+    struct _wkeHandler
+    {
+        wkeTitleChangedCallback titleChangedCallback;
+        void* titleChangedCallbackParam;
+
+        wkeURLChangedCallback urlChangedCallback;
+        void* urlChangedCallbackParam;
+
+        wkePaintUpdatedCallback paintUpdatedCallback;
+        void* paintUpdatedCallbackParam;
+    };
+    _wkeHandler handler_;
 };
 
 

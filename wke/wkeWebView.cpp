@@ -26,59 +26,12 @@ CWebView::CWebView()
     ,height_(0)
     ,gfxContext_(NULL)
     ,awake_(true)
-    ,clientHandler_(NULL)
     ,title_("")
     ,cookie_("")
 {
-    WebCore::Page::PageClients pageClients;
-    pageClients.chromeClient = new ChromeClient(this);
-    pageClients.contextMenuClient = new ContextMenuClient;
-    pageClients.inspectorClient = new InspectorClient;
-    pageClients.editorClient = new EditorClient;
-    pageClients.dragClient = new DragClient;
-
-    page_ = adoptPtr(new WebCore::Page(pageClients));
-    WebCore::Settings* settings = page_->settings();
-    settings->setMinimumFontSize(0);
-    settings->setMinimumLogicalFontSize(9);
-    settings->setDefaultFontSize(16);
-    settings->setDefaultFixedFontSize(13);
-    settings->setJavaScriptEnabled(true);
-    settings->setPluginsEnabled(true);
-    settings->setLoadsImagesAutomatically(true);
-    settings->setDefaultTextEncodingName(icuwin_getDefaultEncoding());
-    
-    settings->setStandardFontFamily("Times New Roman");
-    settings->setFixedFontFamily("Courier New");
-    settings->setSerifFontFamily("Times New Roman");
-    settings->setSansSerifFontFamily("Arial");
-    settings->setCursiveFontFamily("Comic Sans MS");
-    settings->setFantasyFontFamily("Times New Roman");
-    settings->setPictographFontFamily("Times New Roman");
-
-    settings->setAllowUniversalAccessFromFileURLs(true);
-    settings->setAllowFileAccessFromFileURLs(true);
-
-    settings->setJavaScriptCanAccessClipboard(true);
-    settings->setShouldPrintBackgrounds(true);
-    settings->setTextAreasAreResizable(true);
-
-    settings->setLocalStorageEnabled(true);
-    
-    UChar dir[256];
-    GetCurrentDirectory(256, dir);
-    wcscat(dir, L"\\localStorage");
-    settings->setLocalStorageDatabasePath(dir);
-    WebCore::DatabaseTracker::tracker().setDatabaseDirectoryPath(dir);
-
-    FrameLoaderClient* loader = new FrameLoaderClient(this, page_.get());
-    mainFrame_ = WebCore::Frame::create(page_.get(), NULL, loader).get();
-    loader->setFrame(mainFrame_);
-    mainFrame_->init();
-
-    page()->focusController()->setActive(true);
-
-    hdc_ = adoptPtr(::CreateCompatibleDC(0));
+    _initHandler();
+    _initPage();
+    _initMemoryDC();
 }
 
 CWebView::~CWebView()
@@ -389,11 +342,11 @@ void CWebView::repaintIfNeeded()
     ChromeClient* client = (ChromeClient*)page()->chrome()->client();
     client->paintPopupMenu(pixels_,  width_*4);
 
-	if(clientHandler_)
+	if(handler_.paintUpdatedCallback)
 	{
         WebCore::IntPoint pt = dirtyArea_.location();
         WebCore::IntSize sz = dirtyArea_.size();
-		clientHandler_->onPaintUpdated(clientHandler_, this, hdc_.get(),pt.x(),pt.y(),sz.width(),sz.height());	
+		handler_.paintUpdatedCallback(this, handler_.paintUpdatedCallbackParam, hdc_.get(),pt.x(),pt.y(),sz.width(),sz.height());	
 	}
     dirtyArea_ = WebCore::IntRect();
     dirty_ = false;
@@ -1016,15 +969,84 @@ void CWebView::setEditable(bool editable)
     }
 }
 
-void CWebView::setHandler(wkeViewHandler* handler)
+void CWebView::onTitleChanged(wkeTitleChangedCallback callback, void* callbackParam)
 {
-    clientHandler_ = handler;
+    handler_.titleChangedCallback = callback;
+    handler_.titleChangedCallbackParam = callbackParam;
 }
 
-wkeViewHandler* CWebView::handler() const
+void CWebView::onURLChanged(wkeURLChangedCallback callback, void* callbackParam)
 {
-    return clientHandler_;
+    handler_.urlChangedCallback = callback;
+    handler_.urlChangedCallbackParam = callbackParam;
 }
+
+void CWebView::onPaintUpdated(wkePaintUpdatedCallback callback, void* callbackParam)
+{
+    handler_.paintUpdatedCallback = callback;
+    handler_.paintUpdatedCallbackParam = callbackParam;
+}
+
+
+void CWebView::_initHandler()
+{
+    memset(&handler_, 0, sizeof(handler_));
+}
+
+void CWebView::_initPage()
+{
+    WebCore::Page::PageClients pageClients;
+    pageClients.chromeClient = new ChromeClient(this);
+    pageClients.contextMenuClient = new ContextMenuClient;
+    pageClients.inspectorClient = new InspectorClient;
+    pageClients.editorClient = new EditorClient;
+    pageClients.dragClient = new DragClient;
+
+    page_ = adoptPtr(new WebCore::Page(pageClients));
+    WebCore::Settings* settings = page_->settings();
+    settings->setMinimumFontSize(0);
+    settings->setMinimumLogicalFontSize(9);
+    settings->setDefaultFontSize(16);
+    settings->setDefaultFixedFontSize(13);
+    settings->setJavaScriptEnabled(true);
+    settings->setPluginsEnabled(true);
+    settings->setLoadsImagesAutomatically(true);
+    settings->setDefaultTextEncodingName(icuwin_getDefaultEncoding());
+    
+    settings->setStandardFontFamily("Times New Roman");
+    settings->setFixedFontFamily("Courier New");
+    settings->setSerifFontFamily("Times New Roman");
+    settings->setSansSerifFontFamily("Arial");
+    settings->setCursiveFontFamily("Comic Sans MS");
+    settings->setFantasyFontFamily("Times New Roman");
+    settings->setPictographFontFamily("Times New Roman");
+
+    settings->setAllowUniversalAccessFromFileURLs(true);
+    settings->setAllowFileAccessFromFileURLs(true);
+    settings->setJavaScriptCanAccessClipboard(true);
+    settings->setShouldPrintBackgrounds(true);
+    settings->setTextAreasAreResizable(true);
+    settings->setLocalStorageEnabled(true);
+
+    UChar dir[256];
+    GetCurrentDirectory(256, dir);
+    wcscat(dir, L"\\localStorage");
+    settings->setLocalStorageDatabasePath(dir);
+    WebCore::DatabaseTracker::tracker().setDatabaseDirectoryPath(dir);
+
+    FrameLoaderClient* loader = new FrameLoaderClient(this, page_.get());
+    mainFrame_ = WebCore::Frame::create(page_.get(), NULL, loader).get();
+    loader->setFrame(mainFrame_);
+    mainFrame_->init();
+
+    page()->focusController()->setActive(true);
+}
+
+void CWebView::_initMemoryDC()
+{
+    hdc_ = adoptPtr(::CreateCompatibleDC(0));
+}
+
 
 
 

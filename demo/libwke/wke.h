@@ -108,18 +108,6 @@ typedef __int64 jsValue;
 #endif
 
 
-typedef struct _wkeViewHandler wkeViewHandler;
-typedef void (*wkeOnTitleChanged)(wkeViewHandler* handler, wkeWebView webView, const wkeString title);
-typedef void (*wkeOnUrlChanged)(wkeViewHandler* handler, wkeWebView webView, const wkeString url);
-typedef void (*wkeOnPaintUpdated)(wkeViewHandler* handler, wkeWebView webView, const HDC hdc, int x, int y, int cx, int cy);
-
-typedef struct _wkeViewHandler {
-    wkeOnTitleChanged onTitleChanged;
-    wkeOnUrlChanged onURLChanged;
-    wkeOnPaintUpdated onPaintUpdated;
-    void* callbackParam;
-} wkeViewHandler;
-
 
 typedef enum _wkeProxyType {
 
@@ -279,15 +267,20 @@ WKE_API float wkeGetZoomFactor(wkeWebView webView);
 
 WKE_API void wkeSetEditable(wkeWebView webView, bool editable);
 
-WKE_API void wkeSetHandler(wkeWebView webView, wkeViewHandler* handler);
-WKE_API wkeViewHandler* wkeGetHandler(wkeWebView webView);
-
 WKE_API const utf8* wkeGetString(const wkeString string);
 WKE_API const wchar_t* wkeGetStringW(const wkeString string);
 
 WKE_API void wkeSetString(wkeString string, const utf8* str, size_t len);
 WKE_API void wkeSetStringW(wkeString string, const wchar_t* str, size_t len);
 
+typedef void (*wkeTitleChangedCallback)(wkeWebView webView, void* param, const wkeString title);
+WKE_API void wkeOnTitleChanged(wkeWebView webView, wkeTitleChangedCallback callback, void* callbackParam);
+
+typedef void (*wkeURLChangedCallback)(wkeWebView webView, void* param, const wkeString url);
+WKE_API void wkeOnURLChanged(wkeWebView webView, wkeURLChangedCallback callback, void* callbackParam);
+
+typedef void (*wkePaintUpdatedCallback)(wkeWebView webView, void* param, const HDC hdc, int x, int y, int cx, int cy);
+WKE_API void wkeOnPaintUpdated(wkeWebView webView, wkePaintUpdatedCallback callback, void* callbackParam);
 
 
 /***JavaScript Bind***/

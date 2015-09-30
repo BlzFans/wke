@@ -33,6 +33,7 @@ public:
 public:
     const utf8* string() const;
     const wchar_t* stringW() const;
+    const WTF::String& original() const;
     
     void setString(const utf8* str, size_t len = 0);
     void setString(const wchar_t* str, size_t len = 0);
