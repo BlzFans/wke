@@ -39,6 +39,26 @@ namespace wke
 {
 
 
+struct CWebViewHandler
+{
+    wkeTitleChangedCallback titleChangedCallback;
+    void* titleChangedCallbackParam;
+
+    wkeURLChangedCallback urlChangedCallback;
+    void* urlChangedCallbackParam;
+
+    wkePaintUpdatedCallback paintUpdatedCallback;
+    void* paintUpdatedCallbackParam;
+
+    wkeAlertBoxCallback alertBoxCallback;
+    void* alertBoxCallbackParam;
+
+    wkeConfirmBoxCallback confirmBoxCallback;
+    void* confirmBoxCallbackParam;
+
+    wkePromptBoxCallback promptBoxCallback;
+    void* promptBoxCallbackParam;
+};
 
 
 class CWebView
@@ -151,6 +171,9 @@ public:
     void onTitleChanged(wkeTitleChangedCallback callback, void* callbackParam);
     void onURLChanged(wkeURLChangedCallback callback, void* callbackParam);
     void onPaintUpdated(wkePaintUpdatedCallback callback, void* callbackParam);
+    void onAlertBox(wkeAlertBoxCallback callback, void* callbackParam);
+    void onConfirmBox(wkeConfirmBoxCallback callback, void* callbackParam);
+    void onPromptBox(wkePromptBoxCallback callback, void* callbackParam);
 
 protected:
     void _initHandler();
@@ -188,18 +211,7 @@ protected:
 
     bool awake_;
 
-    struct _wkeHandler
-    {
-        wkeTitleChangedCallback titleChangedCallback;
-        void* titleChangedCallbackParam;
-
-        wkeURLChangedCallback urlChangedCallback;
-        void* urlChangedCallbackParam;
-
-        wkePaintUpdatedCallback paintUpdatedCallback;
-        void* paintUpdatedCallbackParam;
-    };
-    _wkeHandler handler_;
+    CWebViewHandler handler_;
 };
 
 

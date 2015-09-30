@@ -282,6 +282,15 @@ WKE_API void wkeOnURLChanged(wkeWebView webView, wkeURLChangedCallback callback,
 typedef void (*wkePaintUpdatedCallback)(wkeWebView webView, void* param, const HDC hdc, int x, int y, int cx, int cy);
 WKE_API void wkeOnPaintUpdated(wkeWebView webView, wkePaintUpdatedCallback callback, void* callbackParam);
 
+typedef void (*wkeAlertBoxCallback)(wkeWebView webView, void* param, const wkeString msg);
+WKE_API void wkeOnAlertBox(wkeWebView webView, wkeAlertBoxCallback callback, void* callbackParam);
+
+typedef bool (*wkeConfirmBoxCallback)(wkeWebView webView, void* param, const wkeString msg);
+WKE_API void wkeOnConfirmBox(wkeWebView webView, wkeConfirmBoxCallback callback, void* callbackParam);
+
+typedef bool (*wkePromptBoxCallback)(wkeWebView webView, void* param, const wkeString msg, const wkeString defaultResult, wkeString result);
+WKE_API void wkeOnPromptBox(wkeWebView webView, wkePromptBoxCallback callback, void* callbackParam);
+
 
 /***JavaScript Bind***/
 #define JS_CALL __fastcall

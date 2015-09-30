@@ -570,7 +570,8 @@ void FrameLoaderClient::dispatchDidCommitLoad()
     if (frame_ == NULL || frame_ != page_->mainFrame())
         return;
 
-    if (webView_->handler_.urlChangedCallback == NULL)
+    wke::CWebViewHandler& handler = webView_->handler_;
+    if (handler.urlChangedCallback == NULL)
         return;
 
     WebCore::DocumentLoader* loader = frame_->loader()->documentLoader();
@@ -581,7 +582,7 @@ void FrameLoaderClient::dispatchDidCommitLoad()
     const WebCore::KURL& url = request.firstPartyForCookies();
 
     wke::CString string(url.string());
-    webView_->handler_.urlChangedCallback(webView_, webView_->handler_.urlChangedCallbackParam, &string);
+    handler.urlChangedCallback(webView_, handler.urlChangedCallbackParam, &string);
 }
 
 void FrameLoaderClient::dispatchDidChangeIcons(WebCore::IconType type)
@@ -593,10 +594,11 @@ void FrameLoaderClient::dispatchDidReceiveTitle(const WebCore::StringWithDirecti
 {
     if (frame_ == page_->mainFrame())
     {
-        if (webView_->handler_.titleChangedCallback)
+        wke::CWebViewHandler& handler = webView_->handler_;
+        if (handler.titleChangedCallback)
         {
             wke::CString string(title.string());
-            webView_->handler_.titleChangedCallback(webView_, webView_->handler_.titleChangedCallbackParam, &string);
+            handler.titleChangedCallback(webView_, handler.titleChangedCallbackParam, &string);
         }
     }
 }

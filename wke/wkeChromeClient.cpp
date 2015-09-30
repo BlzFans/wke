@@ -450,18 +450,43 @@ void ChromeClient::setStatusbarText(const WTF::String& text)
 bool ChromeClient::runJavaScriptPrompt(WebCore::Frame*, const WTF::String& msg, const WTF::String& defaultValue, WTF::String& result)
 {
     outputMsg(L"JavaScript Prompt %s %s\n", CSTR(msg), CSTR(defaultValue));
+
+    wke::CWebViewHandler& handler = webView_->handler_;
+    if (!!handler.promptBoxCallback)
+        return false;
+
+    wke::CString wkeMsg(msg);
+    wke::CString wkeDefaultResult(defaultValue);
+    wke::CString wkeResult("");
+    if (!handler.promptBoxCallback(webView_, handler.promptBoxCallbackParam, &wkeMsg, &wkeDefaultResult, &wkeResult))
+        return false;
+
+    result = wkeResult.original();
     return true;
 }
 
 bool ChromeClient::runJavaScriptConfirm(WebCore::Frame*, const WTF::String& msg)
 {
     outputMsg(L"JavaScript Confirm %s\n", CSTR(msg));
-    return true;
+
+    wke::CWebViewHandler& handler = webView_->handler_;
+    if (!handler.confirmBoxCallback)
+        return false;
+
+    wke::CString wkeMsg(msg);
+    return handler.confirmBoxCallback(webView_, handler.confirmBoxCallbackParam, &wkeMsg);
 }
 
 void ChromeClient::runJavaScriptAlert(WebCore::Frame*, const WTF::String& msg)
 {
     outputMsg(L"JavaScript Alert %s\n", CSTR(msg));
+
+    wke::CWebViewHandler& handler = webView_->handler_;
+    if (!handler.alertBoxCallback)
+        return;
+
+    wke::CString wkeMsg(msg);
+    handler.alertBoxCallback(webView_, handler.alertBoxCallbackParam, &wkeMsg);
 }
 
 void ChromeClient::closeWindowSoon()

@@ -987,10 +987,46 @@ void CWebView::onPaintUpdated(wkePaintUpdatedCallback callback, void* callbackPa
     handler_.paintUpdatedCallbackParam = callbackParam;
 }
 
+void CWebView::onAlertBox(wkeAlertBoxCallback callback, void* callbackParam)
+{
+    handler_.alertBoxCallback = callback;
+    handler_.alertBoxCallbackParam = callbackParam;
+}
+
+void CWebView::onConfirmBox(wkeConfirmBoxCallback callback, void* callbackParam)
+{
+    handler_.confirmBoxCallback = callback;
+    handler_.confirmBoxCallbackParam = callbackParam;
+}
+
+void CWebView::onPromptBox(wkePromptBoxCallback callback, void* callbackParam)
+{
+    handler_.promptBoxCallback = callback;
+    handler_.promptBoxCallbackParam = callbackParam;
+}
+
+void defaultRunAlertBox(wkeWebView webView, void* param, const wkeString msg)
+{
+    MessageBoxW(NULL, wkeGetStringW(msg), NULL, MB_OK);
+}
+
+bool defaultRunConfirmBox(wkeWebView webView, void* param, const wkeString msg)
+{
+    int result = MessageBoxW(NULL, wkeGetStringW(msg), NULL, MB_OKCANCEL);
+    return result == IDOK;
+}
+
+bool defaultRunPromptBox(wkeWebView webView, void* param, const wkeString msg, const wkeString defaultResult, wkeString result)
+{
+    return false;
+}
 
 void CWebView::_initHandler()
 {
     memset(&handler_, 0, sizeof(handler_));
+    handler_.alertBoxCallback = defaultRunAlertBox;
+    handler_.confirmBoxCallback = defaultRunConfirmBox;
+    handler_.promptBoxCallback = defaultRunPromptBox;
 }
 
 void CWebView::_initPage()

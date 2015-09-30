@@ -1,4 +1,13 @@
-﻿#### 2015-09-30 16:36 规范 wke 回调接口。
+﻿#### 2015-09-30 17:21 实现 alert、confirm、prompt 回调。
+* 实现 alert、confirm、prompt 回调，并支持自定义实现，接口：
+ - wkeOnAlertBox
+ - wkeOnConfirmBox
+ - wkeOnPromptBox
+
+* 修正 wkeGetStringW 复制字符串截断的问题。
+* wkeBrowser 中增加 wkeOnTitleChanged 和 wkeOnURLChanged 回调的测试。
+
+#### 2015-09-30 16:36 规范 wke 回调接口。
 * 修改所有回调函数类型名称为 `事件名称 + Callback` 的形式：
     - 更名 wkeOnTitleChanged 为 wkeTitleChangedCallback
     - 更名 wkeOnURLChanged 为 wkeURLChangedCallback

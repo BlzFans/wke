@@ -100,6 +100,15 @@ jsValue JS_CALL js_setTestCount(jsExecState es)
     return jsUndefined();
 }
 
+void onTitleChanged(wkeWebView webView, void* param, const wkeString title)
+{
+    SetWindowTextW(hMainWnd, wkeGetStringW(title));
+}
+
+void onURLChanged(wkeWebView webView, void* param, const wkeString url)
+{
+    SetWindowTextW(hURLBarWnd, wkeGetStringW(url));
+}
 
 
 /*
@@ -243,10 +252,13 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 
     t2.Start();
     g_webView = wkeCreateWebView();
-    wkeSetTransparent(g_webView, false);
     t2.End();
 
+
     t3.Start();
+    wkeSetTransparent(g_webView, false);
+    wkeOnTitleChanged(g_webView, onTitleChanged, NULL);
+    wkeOnURLChanged(g_webView, onURLChanged, NULL);
     //wkeLoadUrl("file:///test/test.html");
 
     //…Ë÷√UserAgent

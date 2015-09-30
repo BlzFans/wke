@@ -494,6 +494,21 @@ void wkeOnPaintUpdated(wkeWebView webView, wkePaintUpdatedCallback callback, voi
     webView->onPaintUpdated(callback, callbackParam);
 }
 
+void wkeOnAlertBox(wkeWebView webView, wkeAlertBoxCallback callback, void* callbackParam)
+{
+    webView->onAlertBox(callback, callbackParam);
+}
+
+void wkeOnConfirmBox(wkeWebView webView, wkeConfirmBoxCallback callback, void* callbackParam)
+{
+    webView->onConfirmBox(callback, callbackParam);
+}
+
+void wkeOnPromptBox(wkeWebView webView, wkePromptBoxCallback callback, void* callbackParam)
+{
+    webView->onPromptBox(callback, callbackParam);
+}
+
 const utf8* wkeGetString(const wkeString s)
 {
     return s ? s->string() : "";
