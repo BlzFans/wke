@@ -32,43 +32,43 @@ namespace wke
 
 
 
-PopupMenu::PopupMenu(WebCore::PopupMenuClient* client, ChromeClient* chromeClient_)
-    :popupClient_(client)
-    ,chromeClient_(chromeClient_)
-    ,scrollOffset_(0)
-    ,scrollbar_(0)
-    ,focusedIndex_(0)
-    ,showPopup_(false)
-    ,wheelDelta_(0)
-    ,scrollbarCapturingMouse_(false)
-    ,pixels_(NULL)
+PopupMenu::PopupMenu(WebCore::PopupMenuClient* client, ChromeClient* chromeClient)
+    :m_popupClient(client)
+    ,m_chromeClient(chromeClient)
+    ,m_scrollOffset(0)
+    ,m_scrollbar(0)
+    ,m_focusedIndex(0)
+    ,m_showPopup(false)
+    ,m_wheelDelta(0)
+    ,m_scrollbarCapturingMouse(false)
+    ,m_pixels(NULL)
 {
 }
 
 PopupMenu::~PopupMenu()
 {
-    if (scrollbar_)
-        scrollbar_->setParent(0);
+    if (m_scrollbar)
+        m_scrollbar->setParent(0);
 
     hide();
 }
 
 void PopupMenu::disconnectClient()
 {
-    popupClient_ = 0;
+    m_popupClient = 0;
 }
 
 void PopupMenu::show(const WebCore::IntRect& r, WebCore::FrameView* view, int index)
 {
-	showPopup_ = true;
+	m_showPopup = true;
     calculatePositionAndSize(r, view);
     if (clientRect().isEmpty())
         return;
 
-    if (!scrollbar_ && visibleItems() < client()->listSize()) {
+    if (!m_scrollbar && visibleItems() < client()->listSize()) {
         // We need a scroll bar
-        scrollbar_ = client()->createScrollbar(this, WebCore::VerticalScrollbar, WebCore::SmallScrollbar);
-        scrollbar_->styleChanged();
+        m_scrollbar = client()->createScrollbar(this, WebCore::VerticalScrollbar, WebCore::SmallScrollbar);
+        m_scrollbar->styleChanged();
 
         WebCore::IntSize size(clientRect().size());
         scrollbar()->setFrameRect(WebCore::IntRect(size.width() - scrollbar()->width(), 0, scrollbar()->width(), size.height()));
@@ -85,21 +85,21 @@ void PopupMenu::show(const WebCore::IntRect& r, WebCore::FrameView* view, int in
             setFocusedIndex(index);
     }
 
-    chromeClient_->setPopupMenu(this);
+    m_chromeClient->setPopupMenu(this);
     invalidate();
 }
 
 void PopupMenu::hide()
 {
-    if (!showPopup_)
+    if (!m_showPopup)
         return;
 
-    showPopup_ = false;
+    m_showPopup = false;
     if (client())
         client()->popupDidHide();
 
-    if (chromeClient_->popupMenu() == this)
-        chromeClient_->setPopupMenu(NULL);
+    if (m_chromeClient->popupMenu() == this)
+        m_chromeClient->setPopupMenu(NULL);
 
     invalidate();
 }
@@ -113,11 +113,11 @@ void PopupMenu::calculatePositionAndSize(const WebCore::IntRect& r, WebCore::Fra
 
     // First, determine the popup's height
     int itemCount = client()->listSize();
-    itemHeight_ = client()->menuStyle().font().fontMetrics().height() + optionSpacingMiddle;
-    int naturalHeight = itemHeight_ * itemCount;
+    m_itemHeight = client()->menuStyle().font().fontMetrics().height() + optionSpacingMiddle;
+    int naturalHeight = m_itemHeight * itemCount;
     int popupHeight = std::min(maxPopupHeight, naturalHeight);
     // The popup should show an integral number of items (i.e. no partial items should be visible)
-    popupHeight -= popupHeight % itemHeight_;
+    popupHeight -= popupHeight % m_itemHeight;
     
     // Next determine its width
     int popupWidth = 0;
@@ -156,7 +156,7 @@ void PopupMenu::calculatePositionAndSize(const WebCore::IntRect& r, WebCore::Fra
 
     WebCore::IntRect popupRect(popupX, rScreenCoords.maxY(), popupWidth, popupHeight);
 
-    CWebView* webView = (CWebView*)chromeClient_->webView();
+    CWebView* webView = (CWebView*)m_chromeClient->webView();
     // The popup needs to stay within the bounds of the screen and not overlap any toolbars
     WebCore::FloatRect screen = WebCore::FloatRect(0, 0, (float)webView->width(), (float)webView->height());
 
@@ -184,7 +184,7 @@ void PopupMenu::calculatePositionAndSize(const WebCore::IntRect& r, WebCore::Fra
         popupRect.setWidth(popupRect.width() - (screen.x() - popupRect.x()));
         popupRect.setX(screen.x());
     }
-    windowRect_ = popupRect;
+    m_windowRect = popupRect;
     return;
 }
 
@@ -198,7 +198,7 @@ bool PopupMenu::setFocusedIndex(int i, bool hotTracking)
 
     invalidate();
 
-    focusedIndex_ = i;
+    m_focusedIndex = i;
 
     if (!hotTracking)
         client()->setTextFromItem(i);
@@ -209,17 +209,17 @@ bool PopupMenu::setFocusedIndex(int i, bool hotTracking)
 
 int PopupMenu::visibleItems() const
 {
-    return clientRect().height() / itemHeight_;
+    return clientRect().height() / m_itemHeight;
 }
 
 int PopupMenu::listIndexAtPoint(const WebCore::IntPoint& point) const
 {
-    return scrollOffset_ + point.y() / itemHeight_;
+    return m_scrollOffset + point.y() / m_itemHeight;
 }
 
 int PopupMenu::focusedIndex() const
 {
-    return focusedIndex_;
+    return m_focusedIndex;
 }
 
 void PopupMenu::focusFirst()
@@ -290,7 +290,7 @@ bool PopupMenu::up(unsigned lines)
 
 WebCore::IntRect PopupMenu::clientRect() const
 {
-    WebCore::IntRect clientRect = windowRect_;
+    WebCore::IntRect clientRect = m_windowRect;
     clientRect.inflate(-popupWindowBorderWidth);
     clientRect.setLocation(WebCore::IntPoint(0, 0));
     return clientRect;
@@ -298,33 +298,33 @@ WebCore::IntRect PopupMenu::clientRect() const
 
 void PopupMenu::incrementWheelDelta(int delta)
 {
-    wheelDelta_ += delta;
+    m_wheelDelta += delta;
 }
 
 void PopupMenu::reduceWheelDelta(int delta)
 {
     ASSERT(delta >= 0);
-    ASSERT(delta <= abs(wheelDelta_));
+    ASSERT(delta <= abs(m_wheelDelta));
 
-    if (wheelDelta_ > 0)
-        wheelDelta_ -= delta;
-    else if (wheelDelta_ < 0)
-        wheelDelta_ += delta;
+    if (m_wheelDelta > 0)
+        m_wheelDelta -= delta;
+    else if (m_wheelDelta < 0)
+        m_wheelDelta += delta;
 }
 
 bool PopupMenu::scrollToRevealSelection()
 {
-    if (!scrollbar_)
+    if (!m_scrollbar)
         return false;
 
     int index = focusedIndex();
 
-    if (index < scrollOffset_) {
+    if (index < m_scrollOffset) {
         ScrollableArea::scrollToYOffsetWithoutAnimation(index);
         return true;
     }
 
-    if (index >= scrollOffset_ + visibleItems()) {
+    if (index >= m_scrollOffset + visibleItems()) {
         ScrollableArea::scrollToYOffsetWithoutAnimation(index - visibleItems() + 1);
         return true;
     }
@@ -334,7 +334,7 @@ bool PopupMenu::scrollToRevealSelection()
 
 void PopupMenu::updateFromElement()
 {
-    focusedIndex_ = client()->selectedIndex();
+    m_focusedIndex = client()->selectedIndex();
     invalidate();
 
     scrollToRevealSelection();
@@ -344,26 +344,26 @@ const int separatorPadding = 4;
 const int separatorHeight = 1;
 WebCore::IntRect PopupMenu::paint(void* bits, int pitch)
 {
-    if (!pixels_)
+    if (!m_pixels)
     {
-        if (!hdc_)
-            hdc_ = adoptPtr(::CreateCompatibleDC(0));
+        if (!m_hdc)
+            m_hdc = adoptPtr(::CreateCompatibleDC(0));
 
-        WebCore::BitmapInfo bmp = WebCore::BitmapInfo::createBottomUp(windowRect_.size());
-        HBITMAP hbmp = ::CreateDIBSection(0, &bmp, DIB_RGB_COLORS, &pixels_, NULL, 0);
-        SelectObject(hdc_.get(), hbmp);
-        hbmp_ = adoptPtr(hbmp);
+        WebCore::BitmapInfo bmp = WebCore::BitmapInfo::createBottomUp(m_windowRect.size());
+        HBITMAP hbmp = ::CreateDIBSection(0, &bmp, DIB_RGB_COLORS, &m_pixels, NULL, 0);
+        SelectObject(m_hdc.get(), hbmp);
+        m_hbitmap = adoptPtr(hbmp);
 
-        WebCore::GraphicsContext context(hdc_.get());
+        WebCore::GraphicsContext context(m_hdc.get());
 
         int itemCount = client()->listSize();
-        WebCore::IntRect listRect = windowRect_;
+        WebCore::IntRect listRect = m_windowRect;
         listRect.setX(0);
         listRect.setY(0);
-        listRect.move(0, scrollOffset_ * itemHeight_);
+        listRect.move(0, m_scrollOffset * m_itemHeight);
 
-        for (int y = listRect.y(); y < listRect.maxY(); y += itemHeight_) {
-            int index = y / itemHeight_;
+        for (int y = listRect.y(); y < listRect.maxY(); y += m_itemHeight) {
+            int index = y / m_itemHeight;
             WebCore::Color optionBackgroundColor, optionTextColor;
             WebCore::PopupMenuStyle itemStyle = client()->itemStyle(index);
             if (index == focusedIndex()) {
@@ -376,14 +376,14 @@ WebCore::IntRect PopupMenu::paint(void* bits, int pitch)
 
             WebCore::IntRect itemRect;
             itemRect.setX(popupWindowBorderWidth);
-            itemRect.setY(popupWindowBorderWidth + (index - scrollOffset_) * itemHeight_);
+            itemRect.setY(popupWindowBorderWidth + (index - m_scrollOffset) * m_itemHeight);
 
-            if (scrollbar_)
-                itemRect.setWidth(windowRect_.width() - popupWindowBorderWidth * 2 - scrollbar_->frameRect().width());
+            if (m_scrollbar)
+                itemRect.setWidth(m_windowRect.width() - popupWindowBorderWidth * 2 - m_scrollbar->frameRect().width());
             else
-                itemRect.setWidth(windowRect_.width() - popupWindowBorderWidth * 2);
+                itemRect.setWidth(m_windowRect.width() - popupWindowBorderWidth * 2);
 
-            itemRect.setHeight(itemHeight_);
+            itemRect.setHeight(m_itemHeight);
 
             if (itemStyle.isVisible())
                 context.fillRect(itemRect, optionBackgroundColor, WebCore::ColorSpaceDeviceRGB);
@@ -421,16 +421,16 @@ WebCore::IntRect PopupMenu::paint(void* bits, int pitch)
             }
         }
 
-        if (scrollbar_)
+        if (m_scrollbar)
         {
-            WebCore::IntRect rect = windowRect_;
+            WebCore::IntRect rect = m_windowRect;
             rect.setX(0);
             rect.setY(0);
-            scrollbar_->paint(&context, rect);
+            m_scrollbar->paint(&context, rect);
         }
 
         //border
-        WebCore::FloatRect rect = windowRect_;
+        WebCore::FloatRect rect = m_windowRect;
         rect.setX(0);
         rect.setY(0);
         context.setStrokeColor(WebCore::Color::gray, WebCore::ColorSpaceDeviceRGB);
@@ -438,10 +438,10 @@ WebCore::IntRect PopupMenu::paint(void* bits, int pitch)
     }
 
     //copy to dst
-    int w = windowRect_.width();
-    int h = windowRect_.height();
-    unsigned char* src = (unsigned char*)pixels_; 
-    unsigned char* dst = (unsigned char*)bits + windowRect_.y() * pitch + windowRect_.x()*4;
+    int w = m_windowRect.width();
+    int h = m_windowRect.height();
+    unsigned char* src = (unsigned char*)m_pixels; 
+    unsigned char* dst = (unsigned char*)bits + m_windowRect.y() * pitch + m_windowRect.x()*4;
 
     for (int i = 0; i < h; ++i)
     {
@@ -449,7 +449,7 @@ WebCore::IntRect PopupMenu::paint(void* bits, int pitch)
         src += w*4;
         dst += pitch;
     }
-    return windowRect_;
+    return m_windowRect;
 }
 
 bool PopupMenu::mouseEvent(const WebCore::PlatformMouseEvent& mouseEvent)
@@ -457,7 +457,7 @@ bool PopupMenu::mouseEvent(const WebCore::PlatformMouseEvent& mouseEvent)
     if (scrollbar()) {
 
         WebCore::IntPoint mousePoint = mouseEvent.pos();
-        mousePoint.move(-windowRect_.x(), -windowRect_.y());
+        mousePoint.move(-m_windowRect.x(), -m_windowRect.y());
 
         WebCore::IntRect scrollBarRect = scrollbar()->frameRect();
         if (mouseEvent.eventType() == WebCore::MouseEventMoved)
@@ -503,10 +503,10 @@ bool PopupMenu::mouseEvent(const WebCore::PlatformMouseEvent& mouseEvent)
     WebCore::IntPoint mousePoint = mouseEvent.pos();
     if (mouseEvent.eventType() == WebCore::MouseEventMoved)
     {
-        RECT bounds = windowRect_;
+        RECT bounds = m_windowRect;
         if (::PtInRect(&bounds, mousePoint))
         {
-            mousePoint.move(-windowRect_.x(), -windowRect_.y());
+            mousePoint.move(-m_windowRect.x(), -m_windowRect.y());
             setFocusedIndex(listIndexAtPoint(mousePoint), true);
             return true;
         }
@@ -519,10 +519,10 @@ bool PopupMenu::mouseEvent(const WebCore::PlatformMouseEvent& mouseEvent)
         // If the mouse is inside the window, update the focused index. Otherwise, 
         // hide the popup.
 
-        RECT bounds = windowRect_;
+        RECT bounds = m_windowRect;
         if (::PtInRect(&bounds, mousePoint))
         {
-            mousePoint.move(-windowRect_.x(), -windowRect_.y());
+            mousePoint.move(-m_windowRect.x(), -m_windowRect.y());
             setFocusedIndex(listIndexAtPoint(mousePoint), true);
             return true;
         }
@@ -534,7 +534,7 @@ bool PopupMenu::mouseEvent(const WebCore::PlatformMouseEvent& mouseEvent)
     if (mouseEvent.eventType() == WebCore::MouseEventReleased)
     {
         // Only hide the popup if the mouse is inside the popup window.
-        RECT bounds = windowRect_;
+        RECT bounds = m_windowRect;
         if (client() && ::PtInRect(&bounds, mousePoint)) {
             hide();
             int index = focusedIndex();
@@ -679,12 +679,12 @@ bool PopupMenu::keyPress(const WebCore::PlatformKeyboardEvent& keyEvent)
 
 int PopupMenu::scrollSize(WebCore::ScrollbarOrientation orientation) const
 {
-    return ((orientation == WebCore::VerticalScrollbar) && scrollbar_) ? (scrollbar_->totalSize() - scrollbar_->visibleSize()) : 0;
+    return ((orientation == WebCore::VerticalScrollbar) && m_scrollbar) ? (m_scrollbar->totalSize() - m_scrollbar->visibleSize()) : 0;
 }
 
 int PopupMenu::scrollPosition(WebCore::Scrollbar*) const
 {
-    return scrollOffset_;
+    return m_scrollOffset;
 }
 
 void PopupMenu::setScrollOffset(const WebCore::IntPoint& offset)
@@ -694,22 +694,22 @@ void PopupMenu::setScrollOffset(const WebCore::IntPoint& offset)
 
 void PopupMenu::scrollTo(int offset)
 {
-    ASSERT(scrollbar_);
-    if (scrollOffset_ == offset)
+    ASSERT(m_scrollbar);
+    if (m_scrollOffset == offset)
         return;
 
-    int scrolledLines = scrollOffset_ - offset;
-    scrollOffset_ = offset;
+    int scrolledLines = m_scrollOffset - offset;
+    m_scrollOffset = offset;
 
     invalidate();
 }
 
 void PopupMenu::invalidate()
 {
-    CWebView* webView = (CWebView*)chromeClient_->webView();
+    CWebView* webView = (CWebView*)m_chromeClient->webView();
     webView->setDirty(true);
-    webView->addDirtyArea(windowRect_.location().x(),windowRect_.location().y(),windowRect_.size().width(),windowRect_.size().height());
-    pixels_ = NULL;
+    webView->addDirtyArea(m_windowRect.location().x(),m_windowRect.location().y(),m_windowRect.size().width(),m_windowRect.size().height());
+    m_pixels = NULL;
 }
 
 

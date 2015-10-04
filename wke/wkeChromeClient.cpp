@@ -10,42 +10,42 @@ namespace wke
 {
 
 
-ToolTip::ToolTip(CWebView* webView) :webView_(webView)
-    ,pixels_(NULL)
+ToolTip::ToolTip(CWebView* webView) :m_webView(webView)
+    ,m_pixels(NULL)
 {
 
 }
 
 void ToolTip::set(const String& title, const WebCore::IntPoint& point)
 {
-    title_ = title;
-    point_ = point;
-    pixels_ = NULL;
+    m_title = title;
+    m_point = point;
+    m_pixels = NULL;
 }
 
 const String& ToolTip::title() const
 {
-    return title_;
+    return m_title;
 }
 
 
 WebCore::IntRect ToolTip::paint(void* bits, int pitch)
 {
     WebCore::IntRect rcRet;
-    if (!pixels_)
+    if (!m_pixels)
     {
-        if (title_.isEmpty())
+        if (m_title.isEmpty())
             return rcRet;
 
-        if (!hdc_)
+        if (!m_hdc)
         {
-            hdc_ = adoptPtr(::CreateCompatibleDC(0));
-            ::SelectObject(hdc_.get(), GetStockObject(DEFAULT_GUI_FONT));
-            ::SetTextColor(hdc_.get(), RGB(0x64, 0x64, 0x64));
+            m_hdc = adoptPtr(::CreateCompatibleDC(0));
+            ::SelectObject(m_hdc.get(), GetStockObject(DEFAULT_GUI_FONT));
+            ::SetTextColor(m_hdc.get(), RGB(0x64, 0x64, 0x64));
         }
 
-        int width = webView_->width();
-        int height = webView_->height();
+        int width = m_webView->width();
+        int height = m_webView->height();
 
         const int marginH = 4;
         const int marginV = 4;
@@ -57,7 +57,7 @@ WebCore::IntRect ToolTip::paint(void* bits, int pitch)
         rcText.right = rcText.left + width / 2;
         rcText.top = marginV;
         rcText.bottom = rcText.top + height / 2;
-        ::DrawText(hdc_.get(), title_.characters(), title_.length(), &rcText, DT_WORDBREAK|DT_CALCRECT);
+        ::DrawText(m_hdc.get(), m_title.characters(), m_title.length(), &rcText, DT_WORDBREAK|DT_CALCRECT);
 
         if (rcText.right > width - marginH)
             rcText.right = width - marginH;
@@ -65,75 +65,75 @@ WebCore::IntRect ToolTip::paint(void* bits, int pitch)
         if (rcText.bottom > height - marginV)
             rcText.bottom = height - marginV;
 
-        rect_.left = 0;
-        rect_.top = 0;
-        rect_.right = rcText.right + marginH;
-        rect_.bottom = rcText.bottom + marginV;
+        m_rect.left = 0;
+        m_rect.top = 0;
+        m_rect.right = rcText.right + marginH;
+        m_rect.bottom = rcText.bottom + marginV;
 
-        WebCore::BitmapInfo bmp = WebCore::BitmapInfo::createBottomUp(WebCore::IntSize(rect_.right, rect_.bottom));
-        HBITMAP hbmp = ::CreateDIBSection(0, &bmp, DIB_RGB_COLORS, &pixels_, NULL, 0);
-        SelectObject(hdc_.get(), hbmp);
-        hbmp_ = adoptPtr(hbmp);
+        WebCore::BitmapInfo bmp = WebCore::BitmapInfo::createBottomUp(WebCore::IntSize(m_rect.right, m_rect.bottom));
+        HBITMAP hbmp = ::CreateDIBSection(0, &bmp, DIB_RGB_COLORS, &m_pixels, NULL, 0);
+        SelectObject(m_hdc.get(), hbmp);
+        m_hbitmap = adoptPtr(hbmp);
 
-        unsigned int* ptr = (unsigned int*)pixels_;
+        unsigned int* ptr = (unsigned int*)m_pixels;
 
         //background
-        memset(ptr, 0xFA, rect_.right * rect_.bottom * 4);
+        memset(ptr, 0xFA, m_rect.right * m_rect.bottom * 4);
 
         //top
-        memset(ptr, 0x64, rect_.right * 4);
+        memset(ptr, 0x64, m_rect.right * 4);
 
         //bottom
-        ptr = (unsigned int*)pixels_ + rect_.right * (rect_.bottom - 1);
-        memset(ptr, 0x64, rect_.right * 4);
+        ptr = (unsigned int*)m_pixels + m_rect.right * (m_rect.bottom - 1);
+        memset(ptr, 0x64, m_rect.right * 4);
 
         //left and right
-        ptr = (unsigned int*)pixels_ + rect_.right;
-        for (int i = 1; i < rect_.bottom; ++i)
+        ptr = (unsigned int*)m_pixels + m_rect.right;
+        for (int i = 1; i < m_rect.bottom; ++i)
         {
             ptr[0] = 0x64646464;
             ptr[-1] = 0x64646464;
-            ptr += rect_.right;
+            ptr += m_rect.right;
         }
 
         //corner
-        ptr = (unsigned int*)pixels_;
-        ptr[rect_.right + 1] = 0x64646464; 
-        ptr[rect_.right * 2 - 2] = 0x64646464;
-        ptr[rect_.right * (rect_.bottom - 1) - 2] = 0x64646464;
-        ptr[rect_.right * (rect_.bottom - 2) + 1] = 0x64646464;
+        ptr = (unsigned int*)m_pixels;
+        ptr[m_rect.right + 1] = 0x64646464; 
+        ptr[m_rect.right * 2 - 2] = 0x64646464;
+        ptr[m_rect.right * (m_rect.bottom - 1) - 2] = 0x64646464;
+        ptr[m_rect.right * (m_rect.bottom - 2) + 1] = 0x64646464;
 
-        ::DrawText(hdc_.get(), title_.characters(), title_.length(), &rcText, DT_WORDBREAK);
+        ::DrawText(m_hdc.get(), m_title.characters(), m_title.length(), &rcText, DT_WORDBREAK);
 
-        for (int i = 0; i < rect_.right * rect_.bottom; ++i)
+        for (int i = 0; i < m_rect.right * m_rect.bottom; ++i)
         {
-            ((unsigned char*)pixels_)[i*4 + 3] = 255;
+            ((unsigned char*)m_pixels)[i*4 + 3] = 255;
         }
 
         const int offset = 10;
-        if (point_.x() + offset + rect_.right < width)
-            rect_.left = point_.x() + offset;
-        else if (point_.x() > rect_.right + offset)
-            rect_.left = point_.x() - rect_.right - offset;
+        if (m_point.x() + offset + m_rect.right < width)
+            m_rect.left = m_point.x() + offset;
+        else if (m_point.x() > m_rect.right + offset)
+            m_rect.left = m_point.x() - m_rect.right - offset;
         else
-            rect_.left = width - rect_.right;
+            m_rect.left = width - m_rect.right;
 
-        if (point_.y() + offset + rect_.bottom < height)
-            rect_.top = point_.y() + offset;
-        else if (point_.y() > rect_.top + offset)
-            rect_.top = point_.y() - rect_.bottom - offset;
+        if (m_point.y() + offset + m_rect.bottom < height)
+            m_rect.top = m_point.y() + offset;
+        else if (m_point.y() > m_rect.top + offset)
+            m_rect.top = m_point.y() - m_rect.bottom - offset;
         else
-            rect_.top = height - rect_.bottom;
+            m_rect.top = height - m_rect.bottom;
 
-        rect_.right += rect_.left;
-        rect_.bottom += rect_.top;
+        m_rect.right += m_rect.left;
+        m_rect.bottom += m_rect.top;
     }
 
     //copy to dst
-    int w = rect_.right - rect_.left;
-    int h = rect_.bottom - rect_.top;
-    unsigned char* src = (unsigned char*)pixels_; 
-    unsigned char* dst = (unsigned char*)bits + rect_.top * pitch + rect_.left*4;
+    int w = m_rect.right - m_rect.left;
+    int h = m_rect.bottom - m_rect.top;
+    unsigned char* src = (unsigned char*)m_pixels; 
+    unsigned char* dst = (unsigned char*)bits + m_rect.top * pitch + m_rect.left*4;
 
     //save corner
     memcpy(src, dst, 4);
@@ -148,16 +148,16 @@ WebCore::IntRect ToolTip::paint(void* bits, int pitch)
         dst += pitch;
     }
 
-    rcRet = rect_;
+    rcRet = m_rect;
     return rcRet;
 }
 
 
 
 
-ChromeClient::ChromeClient(CWebView* webView) :webView_(webView)
-    ,toolTip_(webView)
-    ,popupMenu_(NULL)
+ChromeClient::ChromeClient(CWebView* webView) :m_webView(webView)
+    ,m_tooltip(webView)
+    ,m_popupMenu(NULL)
 {
 
 }
@@ -169,30 +169,30 @@ void ChromeClient::chromeDestroyed()
 
 WebCore::IntRect ChromeClient::paintToolTip(void* bits, int pitch)
 {
-    return toolTip_.paint(bits, pitch);
+    return m_tooltip.paint(bits, pitch);
 }
 
 WebCore::IntRect ChromeClient::paintPopupMenu(void* bits, int pitch)
 {
     WebCore::IntRect rc;
-    if (popupMenu_)
-        rc=popupMenu_->paint(bits, pitch);
+    if (m_popupMenu)
+        rc=m_popupMenu->paint(bits, pitch);
     return rc;
 }
 
 void ChromeClient::setPopupMenu(PopupMenu* popupMenu)
 {
-    popupMenu_ = popupMenu;
+    m_popupMenu = popupMenu;
 }
 
 PopupMenu* ChromeClient::popupMenu()
 {
-    return popupMenu_;
+    return m_popupMenu;
 }
 
 void* ChromeClient::webView() const 
 {
-    return webView_;
+    return m_webView;
 }
 
 void ChromeClient::numWheelEventHandlersChanged(unsigned)
@@ -357,11 +357,11 @@ void ChromeClient::mouseDidMoveOverElement(const WebCore::HitTestResult& result,
 {
     WebCore::TextDirection dir;
     String title = result.title(dir);
-    if (title != toolTip_.title())
+    if (title != m_tooltip.title())
     {
         WebCore::IntPoint point = ((CWebView*)webView())->mainFrame()->eventHandler()->currentMousePosition();
-        toolTip_.set(title, point);
-        webView_->setDirty(true);
+        m_tooltip.set(title, point);
+        m_webView->setDirty(true);
     }
 }
 
@@ -411,19 +411,19 @@ void ChromeClient::scroll(const WebCore::IntSize&, const WebCore::IntRect&, cons
 
 void ChromeClient::invalidateContentsForSlowScroll(const WebCore::IntRect& rect, bool immediate)
 {
-    webView_->addDirtyArea(rect.x(), rect.y(), rect.width(), rect.height());
+    m_webView->addDirtyArea(rect.x(), rect.y(), rect.width(), rect.height());
     //dbgMsg(L"invalidateContentsForSlowScroll\n");
 }
 
 void ChromeClient::invalidateContentsAndWindow(const WebCore::IntRect& rect, bool immediate)
 {
-    webView_->addDirtyArea(rect.x(), rect.y(), rect.width(), rect.height());
+    m_webView->addDirtyArea(rect.x(), rect.y(), rect.width(), rect.height());
     //dbgMsg(L"invalidateContentsAndWindow\n");
 }
 
 void ChromeClient::invalidateWindow(const WebCore::IntRect& rect, bool immediate)
 {
-    webView_->addDirtyArea(rect.x(), rect.y(), rect.width(), rect.height());
+    m_webView->addDirtyArea(rect.x(), rect.y(), rect.width(), rect.height());
     //dbgMsg(L"invalidateWindow\n");
 }
 
@@ -451,14 +451,14 @@ bool ChromeClient::runJavaScriptPrompt(WebCore::Frame*, const WTF::String& msg, 
 {
     outputMsg(L"JavaScript Prompt %s %s\n", CSTR(msg), CSTR(defaultValue));
 
-    wke::CWebViewHandler& handler = webView_->handler_;
+    wke::CWebViewHandler& handler = m_webView->m_handler;
     if (!!handler.promptBoxCallback)
         return false;
 
     wke::CString wkeMsg(msg);
     wke::CString wkeDefaultResult(defaultValue);
     wke::CString wkeResult("");
-    if (!handler.promptBoxCallback(webView_, handler.promptBoxCallbackParam, &wkeMsg, &wkeDefaultResult, &wkeResult))
+    if (!handler.promptBoxCallback(m_webView, handler.promptBoxCallbackParam, &wkeMsg, &wkeDefaultResult, &wkeResult))
         return false;
 
     result = wkeResult.original();
@@ -469,24 +469,24 @@ bool ChromeClient::runJavaScriptConfirm(WebCore::Frame*, const WTF::String& msg)
 {
     outputMsg(L"JavaScript Confirm %s\n", CSTR(msg));
 
-    wke::CWebViewHandler& handler = webView_->handler_;
+    wke::CWebViewHandler& handler = m_webView->m_handler;
     if (!handler.confirmBoxCallback)
         return false;
 
     wke::CString wkeMsg(msg);
-    return handler.confirmBoxCallback(webView_, handler.confirmBoxCallbackParam, &wkeMsg);
+    return handler.confirmBoxCallback(m_webView, handler.confirmBoxCallbackParam, &wkeMsg);
 }
 
 void ChromeClient::runJavaScriptAlert(WebCore::Frame*, const WTF::String& msg)
 {
     outputMsg(L"JavaScript Alert %s\n", CSTR(msg));
 
-    wke::CWebViewHandler& handler = webView_->handler_;
+    wke::CWebViewHandler& handler = m_webView->m_handler;
     if (!handler.alertBoxCallback)
         return;
 
     wke::CString wkeMsg(msg);
-    handler.alertBoxCallback(webView_, handler.alertBoxCallbackParam, &wkeMsg);
+    handler.alertBoxCallback(m_webView, handler.alertBoxCallbackParam, &wkeMsg);
 }
 
 void ChromeClient::closeWindowSoon()
@@ -572,7 +572,7 @@ void ChromeClient::show()
 WebCore::Page* ChromeClient::createWindow(WebCore::Frame*, const WebCore::FrameLoadRequest&, const WebCore::WindowFeatures&, const WebCore::NavigationAction&)
 {
     dbgMsg(L"createWindow\n");
-    return webView_->page();
+    return m_webView->page();
 }
 
 void ChromeClient::focusedFrameChanged(WebCore::Frame*)
@@ -607,17 +607,17 @@ void ChromeClient::focus()
 
 WebCore::FloatRect ChromeClient::pageRect()
 {
-    return rect_;
+    return m_rect;
 }
 
 WebCore::FloatRect ChromeClient::windowRect()
 {
-    return rect_;
+    return m_rect;
 }
 
 void ChromeClient::setWindowRect(const WebCore::FloatRect& rect)
 {
-    rect_ = rect;
+    m_rect = rect;
 }
 
 

@@ -43,12 +43,12 @@ WTF::String FrameNetworkingContext::userAgent() const
 
 
 FrameLoaderClient::FrameLoaderClient(CWebView* webView, WebCore::Page* page) 
-    :webView_(webView)
-    ,page_(page)
-    ,frame_(NULL)
-    ,loadFailed_(false)
-    ,loaded_(false)
-    ,documentReady_(false)
+    :m_webView(webView)
+    ,m_page(page)
+    ,m_frame(NULL)
+    ,m_loadFailed(false)
+    ,m_loaded(false)
+    ,m_documentReady(false)
 {
 
 }
@@ -62,37 +62,37 @@ void FrameLoaderClient::frameLoaderDestroyed()
 
 void FrameLoaderClient::setUserAgent(const WTF::String& str)
 {
-    userAgent_ = str;
+    m_userAgent = str;
 }
 
 bool FrameLoaderClient::isDocumentReady() const
 {
-    return documentReady_;
+    return m_documentReady;
 }
 
 bool FrameLoaderClient::isLoaded() const
 {
-    return loaded_;
+    return m_loaded;
 }
 
 bool FrameLoaderClient::isLoadFailed() const
 {
-    return loadFailed_;
+    return m_loadFailed;
 }
 
 WebCore::Frame* FrameLoaderClient::frame() const
 {
-    return frame_;
+    return m_frame;
 }
 
 void FrameLoaderClient::setFrame(WebCore::Frame* frame)
 {
-    frame_ = frame;
+    m_frame = frame;
 }
 
 PassRefPtr<WebCore::FrameNetworkingContext> FrameLoaderClient::createNetworkingContext()
 {
-    return FrameNetworkingContext::create(frame_);
+    return FrameNetworkingContext::create(m_frame);
 }
 
 void FrameLoaderClient::registerForIconNotification(bool listen /*= true*/)
@@ -198,7 +198,7 @@ PassRefPtr<WebCore::Widget> FrameLoaderClient::createPlugin(const WebCore::IntSi
             newParamValues[i] = "opaque";
     }
 
-    RefPtr<WebCore::PluginView> pluginView = WebCore::PluginView::create(frame_, pluginSize, element, url, newParamNames, newParamValues, mimeType, loadManually);
+    RefPtr<WebCore::PluginView> pluginView = WebCore::PluginView::create(m_frame, pluginSize, element, url, newParamNames, newParamValues, mimeType, loadManually);
     if (pluginView->status() == WebCore::PluginStatusLoadedSuccessfully)
         return pluginView;
 
@@ -217,15 +217,15 @@ void FrameLoaderClient::didTransferChildFrameToNewDocument(WebCore::Page*)
 
 PassRefPtr<WebCore::Frame> FrameLoaderClient::createFrame(const WebCore::KURL& url, const WTF::String& name, WebCore::HTMLFrameOwnerElement* ownerElement, const WTF::String& referrer, bool allowsScrolling, int marginWidth, int marginHeight)
 {
-    FrameLoaderClient* loader = new FrameLoaderClient(webView_, page_);
-    RefPtr<WebCore::Frame> childFrame = WebCore::Frame::create(page_, ownerElement, loader);
+    FrameLoaderClient* loader = new FrameLoaderClient(m_webView, m_page);
+    RefPtr<WebCore::Frame> childFrame = WebCore::Frame::create(m_page, ownerElement, loader);
     loader->setFrame(childFrame.get());
 
-    frame_->tree()->appendChild(childFrame);
+    m_frame->tree()->appendChild(childFrame);
     childFrame->tree()->setName(name);
     childFrame->init();
 
-    frame_->loader()->loadURLIntoChildFrame(url, referrer, childFrame.get());
+    m_frame->loader()->loadURLIntoChildFrame(url, referrer, childFrame.get());
     if (!childFrame->tree()->parent())
         return 0;
 
@@ -259,11 +259,11 @@ void FrameLoaderClient::didSaveToPageCache()
 
 void FrameLoaderClient::transitionToCommittedForNewPage()
 {
-    bool transparent = webView_->isTransparent();
+    bool transparent = m_webView->isTransparent();
     WebCore::Color backgroundColor = transparent ? WebCore::Color::transparent : WebCore::Color::white;
 
-    WebCore::IntSize size(webView_->width(), webView_->height());
-    frame_->createView(size, backgroundColor, transparent, WebCore::IntSize(), false);
+    WebCore::IntSize size(m_webView->width(), m_webView->height());
+    m_frame->createView(size, backgroundColor, transparent, WebCore::IntSize(), false);
 }
 
 void FrameLoaderClient::transitionToCommittedFromCachedFrame(WebCore::CachedFrame*)
@@ -278,13 +278,13 @@ void FrameLoaderClient::savePlatformDataToCachedFrame(WebCore::CachedFrame*)
 
 String FrameLoaderClient::userAgent(const WebCore::KURL&)
 {
-    if (userAgent_.isEmpty())
+    if (m_userAgent.isEmpty())
     {
         return "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/535.2 (KHTML, like Gecko) Safari/535.2 wke/1.2";
     }
     else
     {
-        return userAgent_;
+        return m_userAgent;
     }
 }
 
@@ -434,7 +434,7 @@ void FrameLoaderClient::finishedLoading(WebCore::DocumentLoader* loader)
 void FrameLoaderClient::committedLoad(WebCore::DocumentLoader* loader, const char* data, int length)
 {
     loader->commitData(data, length);
-    if (frame_->document()->isMediaDocument())
+    if (m_frame->document()->isMediaDocument())
         loader->cancelMainResourceLoad(pluginWillHandleLoadError(loader->response()));
 }
 
@@ -470,9 +470,9 @@ void FrameLoaderClient::postProgressEstimateChangedNotification()
 
 void FrameLoaderClient::postProgressStartedNotification()
 {
-    loaded_ = false;
-    loadFailed_ = false;
-    documentReady_ = false;
+    m_loaded = false;
+    m_loadFailed = false;
+    m_documentReady = false;
 }
 
 void FrameLoaderClient::setMainDocumentError(WebCore::DocumentLoader*, const WebCore::ResourceError&)
@@ -492,7 +492,7 @@ void FrameLoaderClient::dispatchDidLoadMainResource(WebCore::DocumentLoader*)
 
 void FrameLoaderClient::dispatchWillSubmitForm(WebCore::FramePolicyFunction function, PassRefPtr<WebCore::FormState> formState)
 {
-    (frame_->loader()->policyChecker()->*function)(WebCore::PolicyUse);
+    (m_frame->loader()->policyChecker()->*function)(WebCore::PolicyUse);
 }
 
 void FrameLoaderClient::dispatchWillSendSubmitEvent(WebCore::HTMLFormElement*)
@@ -513,12 +513,12 @@ void FrameLoaderClient::cancelPolicyCheck()
 void FrameLoaderClient::dispatchDecidePolicyForNavigationAction(WebCore::FramePolicyFunction function, const WebCore::NavigationAction& action, const WebCore::ResourceRequest&, PassRefPtr<WebCore::FormState>)
 {
     // cexer 实现URL访问控制
-    wke::CWebViewNavigation& navigation = webView_->m_navigation;
+    wke::CWebViewHandler& handler = m_webView->m_handler;
 
     // 默认允许加载
-    if (!navigation.callback)
+    if (!handler.navigationCallback)
     {
-        (frame_->loader()->policyChecker()->*function)(WebCore::PolicyUse);
+        (m_frame->loader()->policyChecker()->*function)(WebCore::PolicyUse);
         return;
     }
 
@@ -546,20 +546,20 @@ void FrameLoaderClient::dispatchDecidePolicyForNavigationAction(WebCore::FramePo
     }
 
     wke::CString url = action.url().string();
-    if (navigation.callback(webView_, navigation.callbackParam, type, &url))
-        (frame_->loader()->policyChecker()->*function)(WebCore::PolicyUse);
+    if (handler.navigationCallback(m_webView, handler.navigationCallbackParam, type, &url))
+        (m_frame->loader()->policyChecker()->*function)(WebCore::PolicyUse);
     else
-        (frame_->loader()->policyChecker()->*function)(WebCore::PolicyIgnore);
+        (m_frame->loader()->policyChecker()->*function)(WebCore::PolicyIgnore);
 }
 
 void FrameLoaderClient::dispatchDecidePolicyForNewWindowAction(WebCore::FramePolicyFunction function, const WebCore::NavigationAction&, const WebCore::ResourceRequest&, PassRefPtr<WebCore::FormState>, const WTF::String& frameName)
 {
-    (frame_->loader()->policyChecker()->*function)(WebCore::PolicyUse);
+    (m_frame->loader()->policyChecker()->*function)(WebCore::PolicyUse);
 }
 
 void FrameLoaderClient::dispatchDecidePolicyForResponse(WebCore::FramePolicyFunction function, const WebCore::ResourceResponse&, const WebCore::ResourceRequest&)
 {
-    (frame_->loader()->policyChecker()->*function)(WebCore::PolicyUse);
+    (m_frame->loader()->policyChecker()->*function)(WebCore::PolicyUse);
 }
 
 void FrameLoaderClient::dispatchShow()
@@ -569,7 +569,7 @@ void FrameLoaderClient::dispatchShow()
 
 WebCore::Frame* FrameLoaderClient::dispatchCreatePage(const WebCore::NavigationAction&)
 {
-    return page_->mainFrame();
+    return m_page->mainFrame();
 }
 
 void FrameLoaderClient::dispatchDidFirstVisuallyNonEmptyLayout()
@@ -584,34 +584,34 @@ void FrameLoaderClient::dispatchDidFirstLayout()
 
 void FrameLoaderClient::dispatchDidFinishLoad()
 {
-    loaded_ = true;
+    m_loaded = true;
 }
 
 void FrameLoaderClient::dispatchDidFinishDocumentLoad()
 {
-    documentReady_ = true;
+    m_documentReady = true;
 }
 
 void FrameLoaderClient::dispatchDidFailLoad(const WebCore::ResourceError&)
 {
-    loadFailed_ = true;
+    m_loadFailed = true;
 }
 
 void FrameLoaderClient::dispatchDidFailProvisionalLoad(const WebCore::ResourceError&)
 {
-    loadFailed_ = true;
+    m_loadFailed = true;
 }
 
 void FrameLoaderClient::dispatchDidCommitLoad()
 {
-    if (frame_ == NULL || frame_ != page_->mainFrame())
+    if (m_frame == NULL || m_frame != m_page->mainFrame())
         return;
 
-    wke::CWebViewHandler& handler = webView_->handler_;
+    wke::CWebViewHandler& handler = m_webView->m_handler;
     if (handler.urlChangedCallback == NULL)
         return;
 
-    WebCore::DocumentLoader* loader = frame_->loader()->documentLoader();
+    WebCore::DocumentLoader* loader = m_frame->loader()->documentLoader();
     if (loader == NULL)
         return;
 
@@ -619,7 +619,7 @@ void FrameLoaderClient::dispatchDidCommitLoad()
     const WebCore::KURL& url = request.firstPartyForCookies();
 
     wke::CString string(url.string());
-    handler.urlChangedCallback(webView_, handler.urlChangedCallbackParam, &string);
+    handler.urlChangedCallback(m_webView, handler.urlChangedCallbackParam, &string);
 }
 
 void FrameLoaderClient::dispatchDidChangeIcons(WebCore::IconType type)
@@ -629,13 +629,13 @@ void FrameLoaderClient::dispatchDidChangeIcons(WebCore::IconType type)
 
 void FrameLoaderClient::dispatchDidReceiveTitle(const WebCore::StringWithDirection& title)
 {
-    if (frame_ == page_->mainFrame())
+    if (m_frame == m_page->mainFrame())
     {
-        wke::CWebViewHandler& handler = webView_->handler_;
+        wke::CWebViewHandler& handler = m_webView->m_handler;
         if (handler.titleChangedCallback)
         {
             wke::CString string(title.string());
-            handler.titleChangedCallback(webView_, handler.titleChangedCallbackParam, &string);
+            handler.titleChangedCallback(m_webView, handler.titleChangedCallbackParam, &string);
         }
     }
 }
@@ -745,7 +745,7 @@ bool FrameLoaderClient::shouldUseCredentialStorage(WebCore::DocumentLoader*, uns
 void FrameLoaderClient::dispatchWillSendRequest(WebCore::DocumentLoader*, unsigned long identifier, WebCore::ResourceRequest& request, const WebCore::ResourceResponse& redirectResponse)
 {
     request.addHTTPHeaderField("Accept-Language", WebCore::defaultLanguage() + ",en,*");
-    request.addHTTPHeaderField("Accept-Charset", page_->settings()->defaultTextEncodingName() + ",utf-8;q=0.7,*;q=0.3");
+    request.addHTTPHeaderField("Accept-Charset", m_page->settings()->defaultTextEncodingName() + ",utf-8;q=0.7,*;q=0.3");
 }
 
 void FrameLoaderClient::assignIdentifierToInitialRequest(unsigned long identifier, WebCore::DocumentLoader*, const WebCore::ResourceRequest&)

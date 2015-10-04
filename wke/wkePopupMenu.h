@@ -42,15 +42,15 @@ public:
     bool keyDown(const WebCore::PlatformKeyboardEvent& keyEvent);
 
 private:
-    WebCore::PopupMenuClient* client() const { return popupClient_; }
+    WebCore::PopupMenuClient* client() const { return m_popupClient; }
 
-    WebCore::Scrollbar* scrollbar() const { return scrollbar_.get(); }
+    WebCore::Scrollbar* scrollbar() const { return m_scrollbar.get(); }
 
     bool up(unsigned int lines = 1);
     bool down(unsigned int lines = 1);
 
-    int itemHeight() const { return itemHeight_; }
-    const WebCore::IntRect& windowRect() const { return windowRect_; }
+    int itemHeight() const { return m_itemHeight; }
+    const WebCore::IntRect& windowRect() const { return m_windowRect; }
     WebCore::IntRect clientRect() const;
 
     int visibleItems() const;
@@ -62,16 +62,16 @@ private:
     void focusFirst();
     void focusLast();
 
-    int scrollOffset() const { return scrollOffset_; }
+    int scrollOffset() const { return m_scrollOffset; }
 
     bool scrollToRevealSelection();
 
     void incrementWheelDelta(int delta);
     void reduceWheelDelta(int delta);
-    int wheelDelta() const { return wheelDelta_; }
+    int wheelDelta() const { return m_wheelDelta; }
 
-    bool scrollbarCapturingMouse() const { return scrollbarCapturingMouse_; }
-    void setScrollbarCapturingMouse(bool b) { scrollbarCapturingMouse_ = b; }
+    bool scrollbarCapturingMouse() const { return m_scrollbarCapturingMouse; }
+    void setScrollbarCapturingMouse(bool b) { m_scrollbarCapturingMouse = b; }
 
     // ScrollableArea
     virtual int scrollSize(WebCore::ScrollbarOrientation orientation) const;
@@ -83,7 +83,7 @@ private:
     virtual WebCore::ScrollableArea* enclosingScrollableArea() const { return 0; }
     virtual bool isScrollCornerVisible() const { return false; }
     virtual WebCore::IntRect scrollCornerRect() const { return WebCore::IntRect(); }
-    virtual WebCore::Scrollbar* verticalScrollbar() const { return scrollbar_.get(); }
+    virtual WebCore::Scrollbar* verticalScrollbar() const { return m_scrollbar.get(); }
 
     // NOTE: This should only be called by the overriden setScrollOffset from ScrollableArea.
     void scrollTo(int offset);
@@ -93,21 +93,21 @@ private:
 
     void invalidate();
 
-    WebCore::PopupMenuClient* popupClient_;
-    RefPtr<WebCore::Scrollbar> scrollbar_;
-    int scrollOffset_;
-    int itemHeight_;
-    int focusedIndex_;
-    bool showPopup_;
-    int wheelDelta_;
-    bool scrollbarCapturingMouse_;
+    WebCore::PopupMenuClient* m_popupClient;
+    RefPtr<WebCore::Scrollbar> m_scrollbar;
+    int m_scrollOffset;
+    int m_itemHeight;
+    int m_focusedIndex;
+    bool m_showPopup;
+    int m_wheelDelta;
+    bool m_scrollbarCapturingMouse;
 
-    ChromeClient* chromeClient_;
+    ChromeClient* m_chromeClient;
 
-    OwnPtr<HDC> hdc_;
-    OwnPtr<HBITMAP> hbmp_;
-    void* pixels_;
-    WebCore::IntRect windowRect_;
+    OwnPtr<HDC> m_hdc;
+    OwnPtr<HBITMAP> m_hbitmap;
+    void* m_pixels;
+    WebCore::IntRect m_windowRect;
 };
 
 

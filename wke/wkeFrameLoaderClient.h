@@ -254,15 +254,15 @@ public:
     void setUserAgent(const WTF::String& str);
 
 protected:
-    CWebView* webView_;
-    WTF::String userAgent_;
+    CWebView* m_webView;
+    WTF::String m_userAgent;
 
-    WebCore::Page* page_;
-    WebCore::Frame* frame_;
+    WebCore::Page* m_page;
+    WebCore::Frame* m_frame;
 
-    bool loadFailed_;
-    bool loaded_;
-    bool documentReady_;
+    bool m_loadFailed;
+    bool m_loaded;
+    bool m_documentReady;
 };
 
 

@@ -58,13 +58,9 @@ struct CWebViewHandler
 
     wkePromptBoxCallback promptBoxCallback;
     void* promptBoxCallbackParam;
-};
 
-
-struct CWebViewNavigation
-{
-    wkeNavigationCallback callback;
-    void* callbackParam;
+    wkeNavigationCallback navigationCallback;
+    void* navigationCallbackParam;
 };
 
 
@@ -172,8 +168,8 @@ public:
 
     void setEditable(bool editable);
 
-    WebCore::Page* page() const { return page_.get(); }
-    WebCore::Frame* mainFrame() const { return mainFrame_; }
+    WebCore::Page* page() const { return m_page.get(); }
+    WebCore::Frame* mainFrame() const { return m_mainFrame; }
 
     void onTitleChanged(wkeTitleChangedCallback callback, void* callbackParam);
     void onURLChanged(wkeURLChangedCallback callback, void* callbackParam);
@@ -199,29 +195,28 @@ protected:
     friend class InspectorClient;
     friend class PlatformStrategies;
 
-    OwnPtr<WebCore::Page> page_;
-    WebCore::Frame* mainFrame_;
-    wke::CString title_;
-    wke::CString cookie_;
+    OwnPtr<WebCore::Page> m_page;
+    WebCore::Frame* m_mainFrame;
+    wke::CString m_title;
+    wke::CString m_cookie;
 
-    wke::CString name_;
-    bool transparent_;
+    wke::CString m_name;
+    bool m_transparent;
 
-    int width_;
-    int height_;
+    int m_width;
+    int m_height;
 
-    bool dirty_;
-    WebCore::IntRect dirtyArea_;
+    bool m_dirty;
+    WebCore::IntRect m_dirtyArea;
 
-    WebCore::GraphicsContext* gfxContext_;
-    OwnPtr<HDC> hdc_;
-    OwnPtr<HBITMAP> hbmp_;
-    void* pixels_;
+    WebCore::GraphicsContext* m_graphicsContext;
+    OwnPtr<HDC> m_hdc;
+    OwnPtr<HBITMAP> m_hbitmap;
+    void* m_pixels;
 
-    bool awake_;
+    bool m_awake;
 
-    CWebViewHandler handler_;
-    CWebViewNavigation m_navigation;
+    CWebViewHandler m_handler;
 };
 
 

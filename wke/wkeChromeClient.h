@@ -50,15 +50,15 @@ public:
     WebCore::IntRect paint(void* bits, int pitch);
 
 private:
-    String title_;
-    WebCore::IntPoint point_;
+    String m_title;
+    WebCore::IntPoint m_point;
 
-    OwnPtr<HDC> hdc_;
-    OwnPtr<HBITMAP> hbmp_;
-    void* pixels_;
-    RECT rect_;
+    OwnPtr<HDC> m_hdc;
+    OwnPtr<HBITMAP> m_hbitmap;
+    void* m_pixels;
+    RECT m_rect;
 
-    CWebView* webView_;
+    CWebView* m_webView;
 };
 
 
@@ -193,10 +193,10 @@ public:
     WebCore::IntRect paintToolTip(void* bits, int pitch);
 
 protected:
-    WebCore::FloatRect rect_;
-    CWebView* webView_;
-    ToolTip toolTip_;
-    PopupMenu* popupMenu_;
+    WebCore::FloatRect m_rect;
+    CWebView* m_webView;
+    ToolTip m_tooltip;
+    PopupMenu* m_popupMenu;
 };
 
 
