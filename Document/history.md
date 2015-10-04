@@ -1,4 +1,7 @@
-﻿#### 2015-10-04 22:27 实现打开新窗口的控制回调 。
+﻿#### 2015-10-05 00:56 修正 wkeNavigationType 的值。
+* 在 wke 中将 WebCore::NavigationType 转换为 wkeNavigationType 时使用了直接强制转换，因此需要保证两个 enum 定义的值完全一致。
+
+#### 2015-10-04 22:27 实现打开新窗口的控制回调 。
 * 实现打开新窗口的控制回调，使用 wkeOnNewWindow 设置回调函数。
 * 在 demo/bin/file.html 当中增加 wkeOnNewWindow 的测试数据（wkeBrowser中暂未增加）。
 

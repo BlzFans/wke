@@ -296,13 +296,11 @@ WKE_API void wkeOnPromptBox(wkeWebView webView, wkePromptBoxCallback callback, v
 enum wkeNavigationType
 {
     WKE_NAVIGATION_TYPE_LINKCLICK,
-    WKE_NAVIGATION_TYPE_WINDOWOPEN,
-    WKE_NAVIGATION_TYPE_FORWARD,
-    WKE_NAVIGATION_TYPE_BACKWARD,
-    WKE_NAVIGATION_TYPE_RELOAD,
     WKE_NAVIGATION_TYPE_FORMSUBMITTE,
+    WKE_NAVIGATION_TYPE_BACKFORWARD,
+    WKE_NAVIGATION_TYPE_RELOAD,
     WKE_NAVIGATION_TYPE_FORMRESUBMITT,
-    WKE_NAVIGATION_TYPE_OTHER,
+    WKE_NAVIGATION_TYPE_OTHER
 };
 
 typedef bool (*wkeNavigationCallback)(wkeWebView webView, void* param, wkeNavigationType navigationType, const wkeString url);
