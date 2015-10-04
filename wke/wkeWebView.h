@@ -61,6 +61,9 @@ struct CWebViewHandler
 
     wkeNavigationCallback navigationCallback;
     void* navigationCallbackParam;
+
+    wkeNewWindowCallback newWindowCallback;
+    void* newWindowCallbackParam;
 };
 
 
@@ -179,6 +182,7 @@ public:
     void onPromptBox(wkePromptBoxCallback callback, void* callbackParam);
 
     void onNavigation(wkeNavigationCallback callback, void* callbackParam);
+    void onNewWindow(wkeNewWindowCallback callback, void* callbackParam);
 
 protected:
     void _initHandler();

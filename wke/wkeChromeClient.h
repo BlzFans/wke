@@ -13,6 +13,7 @@
 #include <WebCore/BitmapInfo.h>
 #include <WebCore/FileChooser.h>
 #include <WebCore/DatabaseTracker.h>
+#include <WebCore/WindowFeatures.h>
 #include <WebCore/NotificationPresenter.h>
 #include <CommDlg.h>
 

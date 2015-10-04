@@ -569,10 +569,32 @@ void ChromeClient::show()
 
 }
 
-WebCore::Page* ChromeClient::createWindow(WebCore::Frame*, const WebCore::FrameLoadRequest&, const WebCore::WindowFeatures&, const WebCore::NavigationAction&)
+WebCore::Page* ChromeClient::createWindow(WebCore::Frame*, const WebCore::FrameLoadRequest&, const WebCore::WindowFeatures& features, const WebCore::NavigationAction& action)
 {
-    dbgMsg(L"createWindow\n");
-    return m_webView->page();
+    // cexer 实现新窗口控制
+    wke::CWebViewHandler& handler = m_webView->m_handler;
+    if (!handler.newWindowCallback)
+        return m_webView->page();
+
+    wkeNavigationType type = (wkeNavigationType)action.type();
+    wke::CString url = action.url().string();
+    wkeWindowFeatures windowFeatures;
+    windowFeatures.x = features.xSet ? features.x : CW_USEDEFAULT;
+    windowFeatures.y = features.ySet ? features.y : CW_USEDEFAULT;
+    windowFeatures.width = features.widthSet ? features.width : CW_USEDEFAULT;
+    windowFeatures.height = features.heightSet ? features.height : CW_USEDEFAULT;
+    windowFeatures.locationBarVisible = features.locationBarVisible;
+    windowFeatures.menuBarVisible = features.menuBarVisible;
+    windowFeatures.resizable = features.resizable;
+    windowFeatures.statusBarVisible = features.statusBarVisible;
+    windowFeatures.toolBarVisible = features.toolBarVisible;
+    windowFeatures.fullscreen = features.fullscreen;
+
+    wke::CWebView* createdWebView = handler.newWindowCallback(m_webView, handler.newWindowCallbackParam, type, &url, &windowFeatures);
+    if (!createdWebView)
+        return m_webView->page();
+
+    return createdWebView->page();
 }
 
 void ChromeClient::focusedFrameChanged(WebCore::Frame*)

@@ -310,6 +310,27 @@ WKE_API void wkeOnNavigation(wkeWebView webView, wkeNavigationCallback callback,
 
 
 
+typedef struct
+{
+    int x;
+    int y;
+    int width;
+    int height;
+    bool menuBarVisible;
+    bool statusBarVisible;
+    bool toolBarVisible;
+    bool locationBarVisible;
+    bool scrollbarsVisible;
+    bool resizable;
+    bool fullscreen;
+
+} wkeWindowFeatures;
+
+typedef wkeWebView (*wkeNewWindowCallback)(wkeWebView webView, void* param, wkeNavigationType navigationType, const wkeString url, const wkeWindowFeatures* windowFeatures);
+WKE_API void wkeOnNewWindow(wkeWebView webView, wkeNewWindowCallback callback, void* param);
+
+
+
 /***JavaScript Bind***/
 #define JS_CALL __fastcall
 typedef jsValue (JS_CALL *jsNativeFunction) (jsExecState es);

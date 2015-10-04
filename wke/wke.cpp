@@ -514,6 +514,11 @@ void wkeOnNavigation(wkeWebView webView, wkeNavigationCallback callback, void* p
     webView->onNavigation(callback, param);
 }
 
+void wkeOnNewWindow(wkeWebView webView, wkeNewWindowCallback callback, void* param)
+{
+    webView->onNewWindow(callback, param);
+}
+
 const utf8* wkeGetString(const wkeString s)
 {
     return s ? s->string() : "";

@@ -522,29 +522,7 @@ void FrameLoaderClient::dispatchDecidePolicyForNavigationAction(WebCore::FramePo
         return;
     }
 
-    wkeNavigationType type = WKE_NAVIGATION_TYPE_OTHER;
-    switch (action.type())
-    {
-    case WebCore::NavigationTypeLinkClicked: 
-        type = WKE_NAVIGATION_TYPE_LINKCLICK; 
-        break;
-    case WebCore::NavigationTypeFormSubmitted: 
-        type = WKE_NAVIGATION_TYPE_FORMSUBMITTE; 
-        break;
-    case WebCore::NavigationTypeBackForward: 
-        type = WKE_NAVIGATION_TYPE_BACKWARD; 
-        break;
-    case WebCore::NavigationTypeReload: 
-        type = WKE_NAVIGATION_TYPE_RELOAD; 
-        break;
-    case WebCore::NavigationTypeFormResubmitted: 
-        type = WKE_NAVIGATION_TYPE_FORMRESUBMITT; 
-        break;
-    case WebCore::NavigationTypeOther:
-    default:
-        type = WKE_NAVIGATION_TYPE_OTHER;
-    }
-
+    wkeNavigationType type = (wkeNavigationType)action.type();
     wke::CString url = action.url().string();
     if (handler.navigationCallback(m_webView, handler.navigationCallbackParam, type, &url))
         (m_frame->loader()->policyChecker()->*function)(WebCore::PolicyUse);
@@ -567,9 +545,32 @@ void FrameLoaderClient::dispatchShow()
 
 }
 
-WebCore::Frame* FrameLoaderClient::dispatchCreatePage(const WebCore::NavigationAction&)
+WebCore::Frame* FrameLoaderClient::dispatchCreatePage(const WebCore::NavigationAction& action)
 {
-    return m_page->mainFrame();
+    // 实现新窗口控制
+    wke::CWebViewHandler& handler = m_webView->m_handler;
+    if (!handler.newWindowCallback)
+        return m_page->mainFrame();
+
+    wkeNavigationType type = (wkeNavigationType)action.type();
+    wke::CString url = action.url().string();
+    wkeWindowFeatures windowFeatures;
+    windowFeatures.x = CW_USEDEFAULT;
+    windowFeatures.y = CW_USEDEFAULT;
+    windowFeatures.width = CW_USEDEFAULT;
+    windowFeatures.height = CW_USEDEFAULT;
+    windowFeatures.locationBarVisible = true;
+    windowFeatures.menuBarVisible = true;
+    windowFeatures.resizable = true;
+    windowFeatures.statusBarVisible = true;
+    windowFeatures.toolBarVisible = true;
+    windowFeatures.fullscreen = false;
+    
+    wke::CWebView* createdWebView = handler.newWindowCallback(m_webView, handler.newWindowCallbackParam, type, &url, &windowFeatures);
+    if (!createdWebView)
+        return m_page->mainFrame();
+    
+    return createdWebView->mainFrame();
 }
 
 void FrameLoaderClient::dispatchDidFirstVisuallyNonEmptyLayout()

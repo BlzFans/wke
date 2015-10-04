@@ -1089,6 +1089,12 @@ void CWebView::onNavigation(wkeNavigationCallback callback, void* callbackParam)
     m_handler.navigationCallbackParam = callbackParam;
 }
 
+void CWebView::onNewWindow(wkeNewWindowCallback callback, void* callbackParam)
+{
+    m_handler.newWindowCallback = callback;
+    m_handler.newWindowCallbackParam = callbackParam;
+}
+
 
 
 
