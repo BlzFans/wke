@@ -586,21 +586,59 @@ void FrameLoaderClient::dispatchDidFirstLayout()
 void FrameLoaderClient::dispatchDidFinishLoad()
 {
     m_loaded = true;
+
+    wke::CWebViewHandler& handler = m_webView->m_handler;
+    if (handler.loadingFinishCallback)
+    {
+        wkeLoadingResult result = WKE_LOADING_SUCCEEDED;
+        wke::CString url = m_frame->document()->url().string();
+        handler.loadingFinishCallback(m_webView, handler.loadingFinishCallbackParam, &url, result, NULL);
+    }
 }
 
 void FrameLoaderClient::dispatchDidFinishDocumentLoad()
 {
     m_documentReady = true;
+
+    wke::CWebViewHandler& handler = m_webView->m_handler;
+    if (handler.documentReadyCallback)
+        handler.documentReadyCallback(m_webView, handler.documentReadyCallbackParam);
 }
 
-void FrameLoaderClient::dispatchDidFailLoad(const WebCore::ResourceError&)
+void FrameLoaderClient::dispatchDidFailLoad(const WebCore::ResourceError& error)
 {
     m_loadFailed = true;
+
+    wke::CWebViewHandler& handler = m_webView->m_handler;
+    if (handler.loadingFinishCallback)
+    {
+        wkeLoadingResult result = WKE_LOADING_FAILED;
+        wke::CString failedReason = error.localizedDescription();
+        wke::CString url = error.failingURL();
+
+        if (error.isCancellation())
+            result = WKE_LOADING_CANCELED;
+
+        handler.loadingFinishCallback(m_webView, handler.loadingFinishCallbackParam, &url, result, &failedReason);
+    }
 }
 
-void FrameLoaderClient::dispatchDidFailProvisionalLoad(const WebCore::ResourceError&)
+void FrameLoaderClient::dispatchDidFailProvisionalLoad(const WebCore::ResourceError& error)
 {
     m_loadFailed = true;
+
+    wke::CWebViewHandler& handler = m_webView->m_handler;
+    if (handler.loadingFinishCallback)
+    {
+        wkeLoadingResult result = WKE_LOADING_FAILED;
+        wke::CString failedReason = error.localizedDescription();
+        wke::CString url = error.failingURL();
+
+        if (error.isCancellation())
+            result = WKE_LOADING_CANCELED;
+
+        handler.loadingFinishCallback(m_webView, handler.loadingFinishCallbackParam, &url, result, &failedReason);
+    }
 }
 
 void FrameLoaderClient::dispatchDidCommitLoad()

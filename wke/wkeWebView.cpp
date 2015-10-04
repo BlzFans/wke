@@ -1095,6 +1095,18 @@ void CWebView::onNewWindow(wkeNewWindowCallback callback, void* callbackParam)
     m_handler.newWindowCallbackParam = callbackParam;
 }
 
+void CWebView::onLoadingFinish(wkeLoadingFinishCallback callback, void* callbackParam)
+{
+    m_handler.loadingFinishCallback = callback;
+    m_handler.loadingFinishCallbackParam = callbackParam;
+}
+
+void CWebView::onDocumentReady(wkeDocumentReadyCallback callback, void* callbackParam)
+{
+    m_handler.documentReadyCallback = callback;
+    m_handler.documentReadyCallbackParam = callbackParam;
+}
+
 
 
 

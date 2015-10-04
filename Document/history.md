@@ -1,4 +1,9 @@
-﻿#### 2015-10-05 00:56 修正 wkeNavigationType 的值。
+﻿#### 2015-10-05 01:30 增加地址加载、文档解析状态的回调接口。
+* 增加地址加载、文档解析状态的回调接口：
+ - wkeOnLoadingFinish 设置地址加载成功、失败、取消状态的回调函数。
+ - wkeOnDocumentReady 设置文档解析成功的回调函数。
+
+#### 2015-10-05 00:56 修正 wkeNavigationType 的值。
 * 在 wke 中将 WebCore::NavigationType 转换为 wkeNavigationType 时使用了直接强制转换，因此需要保证两个 enum 定义的值完全一致。
 
 #### 2015-10-04 22:27 实现打开新窗口的控制回调 。

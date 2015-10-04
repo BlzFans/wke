@@ -314,6 +314,7 @@ typedef struct
     int y;
     int width;
     int height;
+
     bool menuBarVisible;
     bool statusBarVisible;
     bool toolBarVisible;
@@ -326,6 +327,23 @@ typedef struct
 
 typedef wkeWebView (*wkeNewWindowCallback)(wkeWebView webView, void* param, wkeNavigationType navigationType, const wkeString url, const wkeWindowFeatures* windowFeatures);
 WKE_API void wkeOnNewWindow(wkeWebView webView, wkeNewWindowCallback callback, void* param);
+
+
+typedef void (*wkeDocumentReadyCallback)(wkeWebView webView, void* param);
+WKE_API void wkeOnDocumentReady(wkeWebView webView, wkeDocumentReadyCallback callback, void* param);
+
+
+enum wkeLoadingResult
+{
+    WKE_LOADING_SUCCEEDED,
+    WKE_LOADING_FAILED,
+    WKE_LOADING_CANCELED
+};
+
+typedef void (*wkeLoadingFinishCallback)(wkeWebView webView, void* param, const wkeString url, wkeLoadingResult result, const wkeString failedReason);
+WKE_API void wkeOnLoadingFinish(wkeWebView webView, wkeLoadingFinishCallback callback, void* param);
+
+
 
 
 

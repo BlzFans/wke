@@ -519,6 +519,16 @@ void wkeOnNewWindow(wkeWebView webView, wkeNewWindowCallback callback, void* par
     webView->onNewWindow(callback, param);
 }
 
+void wkeOnDocumentReady(wkeWebView webView, wkeDocumentReadyCallback callback, void* param)
+{
+    webView->onDocumentReady(callback, param);
+}
+
+void wkeOnLoadingFinish(wkeWebView webView, wkeLoadingFinishCallback callback, void* param)
+{
+    webView->onLoadingFinish(callback, param);
+}
+
 const utf8* wkeGetString(const wkeString s)
 {
     return s ? s->string() : "";

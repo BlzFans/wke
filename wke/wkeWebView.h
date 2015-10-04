@@ -64,6 +64,12 @@ struct CWebViewHandler
 
     wkeNewWindowCallback newWindowCallback;
     void* newWindowCallbackParam;
+
+    wkeDocumentReadyCallback documentReadyCallback;
+    void* documentReadyCallbackParam;
+
+    wkeLoadingFinishCallback loadingFinishCallback;
+    void* loadingFinishCallbackParam;
 };
 
 
@@ -174,15 +180,19 @@ public:
     WebCore::Page* page() const { return m_page.get(); }
     WebCore::Frame* mainFrame() const { return m_mainFrame; }
 
-    void onTitleChanged(wkeTitleChangedCallback callback, void* callbackParam);
     void onURLChanged(wkeURLChangedCallback callback, void* callbackParam);
+    void onTitleChanged(wkeTitleChangedCallback callback, void* callbackParam);
     void onPaintUpdated(wkePaintUpdatedCallback callback, void* callbackParam);
+
     void onAlertBox(wkeAlertBoxCallback callback, void* callbackParam);
     void onConfirmBox(wkeConfirmBoxCallback callback, void* callbackParam);
     void onPromptBox(wkePromptBoxCallback callback, void* callbackParam);
 
     void onNavigation(wkeNavigationCallback callback, void* callbackParam);
     void onNewWindow(wkeNewWindowCallback callback, void* callbackParam);
+
+    void onLoadingFinish(wkeLoadingFinishCallback callback, void* callbackParam);
+    void onDocumentReady(wkeDocumentReadyCallback callback, void* callbackParam);
 
 protected:
     void _initHandler();
