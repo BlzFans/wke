@@ -35,11 +35,13 @@
 #endif
 
 
-typedef struct {
+typedef struct 
+{
     int x;
     int y;
     int w;
     int h;
+
 } wkeRect;
 
 enum wkeMouseFlags
@@ -109,19 +111,18 @@ typedef __int64 jsValue;
 
 
 
-typedef enum _wkeProxyType {
-
+enum wkeProxyType
+{
     WKE_PROXY_NONE,
     WKE_PROXY_HTTP,
     WKE_PROXY_SOCKS4,
     WKE_PROXY_SOCKS4A,
     WKE_PROXY_SOCKS5,
     WKE_PROXY_SOCKS5HOSTNAME
+};
 
-} wkeProxyType;
-
-typedef struct _wkeProxy {
-
+typedef struct 
+{
    wkeProxyType type;
    char hostname[100];
    unsigned short port;
@@ -130,15 +131,15 @@ typedef struct _wkeProxy {
 
 } wkeProxy;
 
-typedef enum _wkeSettingMask {
-    
+enum wkeSettingMask 
+{
     WKE_SETTING_PROXY = 1
-} wkeSettingMask;
+};
 
-typedef struct _wkeSettings {
-
-  wkeProxy proxy;
-  unsigned int mask;
+typedef struct 
+{
+    wkeProxy proxy;
+    unsigned int mask;
 
 } wkeSettings;
 
@@ -290,6 +291,23 @@ WKE_API void wkeOnConfirmBox(wkeWebView webView, wkeConfirmBoxCallback callback,
 
 typedef bool (*wkePromptBoxCallback)(wkeWebView webView, void* param, const wkeString msg, const wkeString defaultResult, wkeString result);
 WKE_API void wkeOnPromptBox(wkeWebView webView, wkePromptBoxCallback callback, void* callbackParam);
+
+
+enum wkeNavigationType
+{
+    WKE_NAVIGATION_TYPE_LINKCLICK,
+    WKE_NAVIGATION_TYPE_WINDOWOPEN,
+    WKE_NAVIGATION_TYPE_FORWARD,
+    WKE_NAVIGATION_TYPE_BACKWARD,
+    WKE_NAVIGATION_TYPE_RELOAD,
+    WKE_NAVIGATION_TYPE_FORMSUBMITTE,
+    WKE_NAVIGATION_TYPE_FORMRESUBMITT,
+    WKE_NAVIGATION_TYPE_OTHER,
+};
+
+typedef bool (*wkeNavigationCallback)(wkeWebView webView, void* param, wkeNavigationType navigationType, const wkeString url);
+WKE_API void wkeOnNavigation(wkeWebView webView, wkeNavigationCallback callback, void* param);
+
 
 
 /***JavaScript Bind***/

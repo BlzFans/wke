@@ -61,6 +61,13 @@ struct CWebViewHandler
 };
 
 
+struct CWebViewNavigation
+{
+    wkeNavigationCallback callback;
+    void* callbackParam;
+};
+
+
 class CWebView
 {
 public:
@@ -175,6 +182,8 @@ public:
     void onConfirmBox(wkeConfirmBoxCallback callback, void* callbackParam);
     void onPromptBox(wkePromptBoxCallback callback, void* callbackParam);
 
+    void onNavigation(wkeNavigationCallback callback, void* callbackParam);
+
 protected:
     void _initHandler();
     void _initPage();
@@ -212,6 +221,7 @@ protected:
     bool awake_;
 
     CWebViewHandler handler_;
+    CWebViewNavigation m_navigation;
 };
 
 

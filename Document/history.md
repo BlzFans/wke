@@ -1,4 +1,8 @@
-﻿#### 2015-09-30 17:21 实现 alert、confirm、prompt 回调。
+﻿#### 2015-10-04 16:11 实现打开链接的控制回调。
+* 实现打开链接的控制回调，使用 wkeOnNavigation 设置回调函数。
+* 在 wkeBrowser 当中增加 wkeOnNavigation 的测试。
+
+#### 2015-09-30 17:21 实现 alert、confirm、prompt 回调。
 * 实现 alert、confirm、prompt 回调，并支持自定义实现，接口：
  - wkeOnAlertBox
  - wkeOnConfirmBox

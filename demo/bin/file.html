@@ -11,7 +11,21 @@
 <input type="submit">
 </form>
 
+<br><input type="button" onclick="windowOpen()" value="window.open"/>
+<br><a href="english.html" target="_blank">&lt;a target="_blank"&gt;</a>
+<br><a href="english.html" target="_parent">&lt;a target="_parent"&gt;</a>
+<br><a href="english.html" target="_self">&lt;a target="_self"&gt;</a>
+<br><a href="english.html" target="_top">&lt;a target="_top"&gt;</a>
+
+<br><a href="exec://calc.exe">calc.exe</a>
+<br><a href="www.baidu.com">www.baidu.com</a>
 
 </body>
+
+<script>
+function windowOpen() {
+	window.open("english.html", "english");
+}
+</script>
 </html>
 		

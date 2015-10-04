@@ -510,9 +510,46 @@ void FrameLoaderClient::cancelPolicyCheck()
 
 }
 
-void FrameLoaderClient::dispatchDecidePolicyForNavigationAction(WebCore::FramePolicyFunction function, const WebCore::NavigationAction&, const WebCore::ResourceRequest&, PassRefPtr<WebCore::FormState>)
+void FrameLoaderClient::dispatchDecidePolicyForNavigationAction(WebCore::FramePolicyFunction function, const WebCore::NavigationAction& action, const WebCore::ResourceRequest&, PassRefPtr<WebCore::FormState>)
 {
-    (frame_->loader()->policyChecker()->*function)(WebCore::PolicyUse);
+    // cexer 实现URL访问控制
+    wke::CWebViewNavigation& navigation = webView_->m_navigation;
+
+    // 默认允许加载
+    if (!navigation.callback)
+    {
+        (frame_->loader()->policyChecker()->*function)(WebCore::PolicyUse);
+        return;
+    }
+
+    wkeNavigationType type = WKE_NAVIGATION_TYPE_OTHER;
+    switch (action.type())
+    {
+    case WebCore::NavigationTypeLinkClicked: 
+        type = WKE_NAVIGATION_TYPE_LINKCLICK; 
+        break;
+    case WebCore::NavigationTypeFormSubmitted: 
+        type = WKE_NAVIGATION_TYPE_FORMSUBMITTE; 
+        break;
+    case WebCore::NavigationTypeBackForward: 
+        type = WKE_NAVIGATION_TYPE_BACKWARD; 
+        break;
+    case WebCore::NavigationTypeReload: 
+        type = WKE_NAVIGATION_TYPE_RELOAD; 
+        break;
+    case WebCore::NavigationTypeFormResubmitted: 
+        type = WKE_NAVIGATION_TYPE_FORMRESUBMITT; 
+        break;
+    case WebCore::NavigationTypeOther:
+    default:
+        type = WKE_NAVIGATION_TYPE_OTHER;
+    }
+
+    wke::CString url = action.url().string();
+    if (navigation.callback(webView_, navigation.callbackParam, type, &url))
+        (frame_->loader()->policyChecker()->*function)(WebCore::PolicyUse);
+    else
+        (frame_->loader()->policyChecker()->*function)(WebCore::PolicyIgnore);
 }
 
 void FrameLoaderClient::dispatchDecidePolicyForNewWindowAction(WebCore::FramePolicyFunction function, const WebCore::NavigationAction&, const WebCore::ResourceRequest&, PassRefPtr<WebCore::FormState>, const WTF::String& frameName)

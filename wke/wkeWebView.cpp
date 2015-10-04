@@ -1083,6 +1083,12 @@ void CWebView::_initMemoryDC()
     hdc_ = adoptPtr(::CreateCompatibleDC(0));
 }
 
+void CWebView::onNavigation(wkeNavigationCallback callback, void* callbackParam)
+{
+    m_navigation.callback = callback;
+    m_navigation.callbackParam = callbackParam;
+}
+
 
 
 

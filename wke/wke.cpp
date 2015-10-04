@@ -509,6 +509,11 @@ void wkeOnPromptBox(wkeWebView webView, wkePromptBoxCallback callback, void* cal
     webView->onPromptBox(callback, callbackParam);
 }
 
+void wkeOnNavigation(wkeWebView webView, wkeNavigationCallback callback, void* param)
+{
+    webView->onNavigation(callback, param);
+}
+
 const utf8* wkeGetString(const wkeString s)
 {
     return s ? s->string() : "";

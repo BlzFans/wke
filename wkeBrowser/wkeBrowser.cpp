@@ -16,6 +16,7 @@
 #include "render.h"
 #include "hyperlink.h"
 
+
 class CTimer
 {
 public:
@@ -110,6 +111,28 @@ void onURLChanged(wkeWebView webView, void* param, const wkeString url)
     SetWindowTextW(hURLBarWnd, wkeGetStringW(url));
 }
 
+bool onNavigation(wkeWebView webView, void* param, wkeNavigationType type, const wkeString url_)
+{
+    const wchar_t* url = wkeGetStringW(url_);
+    if (wcsstr(url, L"baidu.com") != NULL)
+        return false;
+
+    if (wcsstr(url, L"exec://") == url)
+    {
+        PROCESS_INFORMATION processInfo = { 0 };
+        STARTUPINFOW startupInfo = { 0 };
+        startupInfo.cb = sizeof(startupInfo);
+        BOOL succeeded = CreateProcessW(NULL, (LPWSTR)url + 7, NULL, NULL, FALSE, 0, NULL, NULL, &startupInfo, &processInfo);
+        if (succeeded)
+        {
+            CloseHandle(processInfo.hProcess);
+            CloseHandle(processInfo.hThread);
+        }
+        return false;
+    }
+
+    return true;
+}
 
 /*
 ## 测试绑定对象功能
@@ -259,6 +282,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
     wkeSetTransparent(g_webView, false);
     wkeOnTitleChanged(g_webView, onTitleChanged, NULL);
     wkeOnURLChanged(g_webView, onURLChanged, NULL);
+    wkeOnNavigation(g_webView, onNavigation, NULL);
     //wkeLoadUrl("file:///test/test.html");
 
     //设置UserAgent
