@@ -39,6 +39,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				RuntimeTypeInfo="true"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -97,6 +98,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				RuntimeTypeInfo="true"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -246,6 +248,14 @@
 		</File>
 		<File
 			RelativePath="..\wke\wkeWebView.h"
+			>
+		</File>
+		<File
+			RelativePath="..\wke\wkeWebWindow.cpp"
+			>
+		</File>
+		<File
+			RelativePath="..\wke\wkeWebWindow.h"
 			>
 		</File>
 	</Files>

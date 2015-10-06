@@ -44,22 +44,27 @@ typedef struct
 
 } wkeRect;
 
-enum wkeMouseFlags
+
+typedef enum
 {
     WKE_LBUTTON = 0x01,
     WKE_RBUTTON = 0x02,
     WKE_SHIFT   = 0x04,
     WKE_CONTROL = 0x08,
     WKE_MBUTTON = 0x10,
-};
 
-enum wkeKeyFlags
+} wkeMouseFlags;
+
+
+typedef enum
 {
     WKE_EXTENDED = 0x0100,
     WKE_REPEAT = 0x4000,
-};
 
-enum wkeMouseMsg
+} wkeKeyFlags;
+
+
+typedef enum
 {
     WKE_MSG_MOUSEMOVE       =  0x0200,
     WKE_MSG_LBUTTONDOWN     =  0x0201,
@@ -72,7 +77,8 @@ enum wkeMouseMsg
     WKE_MSG_MBUTTONUP       =  0x0208,
     WKE_MSG_MBUTTONDBLCLK   =  0x0209,
     WKE_MSG_MOUSEWHEEL      =  0x020A,
-};
+
+} wkeMouseMsg;
 
 
 
@@ -103,15 +109,15 @@ typedef __int64 jsValue;
 
 #else
     struct _tagWkeWebView;
-    typedef _tagWkeWebView* wkeWebView;
+    typedef struct _tagWkeWebView* wkeWebView;
 
     struct _tagWkeString;
-    typedef _tagWkeString* wkeString;
+    typedef struct _tagWkeString* wkeString;
 #endif
 
 
 
-enum wkeProxyType
+typedef enum
 {
     WKE_PROXY_NONE,
     WKE_PROXY_HTTP,
@@ -119,7 +125,8 @@ enum wkeProxyType
     WKE_PROXY_SOCKS4A,
     WKE_PROXY_SOCKS5,
     WKE_PROXY_SOCKS5HOSTNAME
-};
+
+} wkeProxyType;
 
 typedef struct 
 {
@@ -293,7 +300,7 @@ typedef bool (*wkePromptBoxCallback)(wkeWebView webView, void* param, const wkeS
 WKE_API void wkeOnPromptBox(wkeWebView webView, wkePromptBoxCallback callback, void* callbackParam);
 
 
-enum wkeNavigationType
+typedef enum
 {
     WKE_NAVIGATION_TYPE_LINKCLICK,
     WKE_NAVIGATION_TYPE_FORMSUBMITTE,
@@ -301,7 +308,8 @@ enum wkeNavigationType
     WKE_NAVIGATION_TYPE_RELOAD,
     WKE_NAVIGATION_TYPE_FORMRESUBMITT,
     WKE_NAVIGATION_TYPE_OTHER
-};
+
+} wkeNavigationType;
 
 typedef bool (*wkeNavigationCallback)(wkeWebView webView, void* param, wkeNavigationType navigationType, const wkeString url);
 WKE_API void wkeOnNavigation(wkeWebView webView, wkeNavigationCallback callback, void* param);
@@ -325,25 +333,54 @@ typedef struct
 
 } wkeWindowFeatures;
 
-typedef wkeWebView (*wkeNewWindowCallback)(wkeWebView webView, void* param, wkeNavigationType navigationType, const wkeString url, const wkeWindowFeatures* windowFeatures);
-WKE_API void wkeOnNewWindow(wkeWebView webView, wkeNewWindowCallback callback, void* param);
+typedef wkeWebView (*wkeCreateViewCallback)(wkeWebView webView, void* param, wkeNavigationType navigationType, const wkeString url, const wkeWindowFeatures* windowFeatures);
+WKE_API void wkeOnCreateView(wkeWebView webView, wkeCreateViewCallback callback, void* param);
 
 
 typedef void (*wkeDocumentReadyCallback)(wkeWebView webView, void* param);
 WKE_API void wkeOnDocumentReady(wkeWebView webView, wkeDocumentReadyCallback callback, void* param);
 
 
-enum wkeLoadingResult
+typedef enum
 {
     WKE_LOADING_SUCCEEDED,
     WKE_LOADING_FAILED,
     WKE_LOADING_CANCELED
-};
+
+} wkeLoadingResult;
 
 typedef void (*wkeLoadingFinishCallback)(wkeWebView webView, void* param, const wkeString url, wkeLoadingResult result, const wkeString failedReason);
 WKE_API void wkeOnLoadingFinish(wkeWebView webView, wkeLoadingFinishCallback callback, void* param);
 
 
+typedef enum
+{
+    WKE_WINDOW_TYPE_POPUP,
+    WKE_WINDOW_TYPE_TRANSPARENT,
+    WKE_WINDOW_TYPE_CONTROL
+
+} wkeWindowType;
+
+WKE_API wkeWebView wkeCreateWebWindow(wkeWindowType type, HWND parent, int x, int y, int width, int height);
+WKE_API void wkeDestroyWebWindow(wkeWebView webWindow);
+WKE_API HWND wkeGetWindowHandle(wkeWebView webWindow);
+
+typedef bool (*wkeWindowClosingCallback)(wkeWebView webWindow, void* param);
+WKE_API void wkeOnWindowClosing(wkeWebView webWindow, wkeWindowClosingCallback callback, void* param);
+
+typedef void (*wkeWindowDestroyCallback)(wkeWebView webWindow, void* param);
+WKE_API void wkeOnWindowDestroy(wkeWebView webWindow, wkeWindowDestroyCallback callback, void* param);
+
+
+WKE_API void wkeShowWindow(wkeWebView webWindow, bool show);
+WKE_API void wkeEnableWindow(wkeWebView webWindow, bool enable);
+
+WKE_API void wkeMoveWindow(wkeWebView webWindow, int x, int y, int width, int height);
+WKE_API void wkeMoveToCenter(wkeWebView webWindow);
+WKE_API void wkeResizeWindow(wkeWebView webWindow, int width, int height);
+
+WKE_API void wkeSetWindowTitle(wkeWebView webWindow, const utf8* title);
+WKE_API void wkeSetWindowTitleW(wkeWebView webWindow, const wchar_t* title);
 
 
 

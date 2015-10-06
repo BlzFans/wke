@@ -1,4 +1,24 @@
-﻿#### 2015-10-05 01:30 增加地址加载、文档解析状态的回调接口。
+﻿#### 2015-10-06 14:18 增加基于 wkeWebView 的带窗口、消息处理、绘制的窗口/控件接口。
+* 增加基于 wkeWebView 的带窗口、消息处理、绘制的窗口/控件，接口：
+ - 使用 wkeCreateWindow 创建窗口或控件，当前支持普通弹出窗口、分层窗口（用于透明）、控件。
+ - 使用 wkeShowWindow 显示、隐藏窗口或控件。
+ - 使用 wkeEnableWindow 禁用、启用窗口或控件。
+ - 使用 wkeMoveWindow/wkeMoveToCenter 移动窗口或控件。
+ - 使用 wkeResizeWindow 设置窗口或控件的大小。
+ - 使用 wkeSetWindowTitle 设置窗口标题。
+
+* 增加了一个新的项目 wkexe，作为三个新项目（wkeClient、wkeSample）中第一个。此项目的功能：
+ - 创建类似于 cmd.exe 之于 cmd、bat 文件的 WebApp 的执行器，加载不同的 html 文件执行任务。
+ - 演示项目，用于演示 wke 接口的作用。
+
+* 为了与 wkeCreateWindow 等一系列针对窗口的操作进行区分，修改新页面回调接口名称：
+ - 更名 wkeOnNewWindow 为 wkeOnCreateView
+ - 更名 wkeNewWindowCallback 为 wkeCreateViewCallback
+
+* 去掉了在 wkeCreateWebView、wkeDestroyWebView 中 s_webViews 相关的东西。
+* 修改 alert、confirm 弹出框的默认标题为 "wke" 。
+
+#### 2015-10-05 01:30 增加地址加载、文档解析状态的回调接口。
 * 增加地址加载、文档解析状态的回调接口：
  - wkeOnLoadingFinish 设置地址加载成功、失败、取消状态的回调函数。
  - wkeOnDocumentReady 设置文档解析成功的回调函数。

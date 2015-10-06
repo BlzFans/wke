@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset='UTF-8'/>
+</head>
+
+<body>
+
+<form enctype="multipart/form-data" action="http://127.0.0.1/wke/file.asp" method="post">
+<input type="file" multiple="multiple"/>
+<input type="submit">
+</form>
+
+<br><input type="button" onclick="windowOpen('_blank')" value="window.open(_blank)"/>
+<br><input type="button" onclick="windowOpen('_parent')" value="window.open(_parent)"/>
+<br><input type="button" onclick="windowOpen('_self')" value="window.open(_self)"/>
+<br><input type="button" onclick="windowOpen('_top')" value="window.open(_top)"/>
+<br><input type="button" onclick="windowOpen('testWindow')" value="window.open(testWindow)"/>
+
+<br><a href="english.html" target="_blank">&lt;a target="_blank"&gt;</a>
+<br><a href="english.html" target="_parent">&lt;a target="_parent"&gt;</a>
+<br><a href="english.html" target="_self">&lt;a target="_self"&gt;</a>
+<br><a href="english.html" target="_top">&lt;a target="_top"&gt;</a>
+<br><a href="english.html" target="testTarget">&lt;a target="testTarget"&gt;</a>
+
+<br><a href="exec://calc.exe">calc.exe</a>
+<br><a href="www.baidu.com">www.baidu.com</a>
+
+</body>
+
+<script>
+function windowOpen(target) {
+	window.open("english.html", target);
+}
+</script>
+</html>
+		

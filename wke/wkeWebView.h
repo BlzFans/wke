@@ -62,8 +62,8 @@ struct CWebViewHandler
     wkeNavigationCallback navigationCallback;
     void* navigationCallbackParam;
 
-    wkeNewWindowCallback newWindowCallback;
-    void* newWindowCallbackParam;
+    wkeCreateViewCallback createViewCallback;
+    void* createViewCallbackParam;
 
     wkeDocumentReadyCallback documentReadyCallback;
     void* documentReadyCallbackParam;
@@ -77,9 +77,10 @@ class CWebView
 {
 public:
     CWebView();
-   ~CWebView();
+    virtual ~CWebView();
 
-    void destroy();
+    virtual bool create();
+    virtual void destroy();
 
     const utf8* name() const;
     const wchar_t* nameW() const;
@@ -115,7 +116,7 @@ public:
     const utf8* title();
     const wchar_t* titleW();
     
-    void resize(int w, int h);
+    virtual void resize(int w, int h);
     int width() const;
     int height() const;
 
@@ -182,17 +183,17 @@ public:
 
     void onURLChanged(wkeURLChangedCallback callback, void* callbackParam);
     void onTitleChanged(wkeTitleChangedCallback callback, void* callbackParam);
-    void onPaintUpdated(wkePaintUpdatedCallback callback, void* callbackParam);
+    virtual void onPaintUpdated(wkePaintUpdatedCallback callback, void* callbackParam);
 
     void onAlertBox(wkeAlertBoxCallback callback, void* callbackParam);
     void onConfirmBox(wkeConfirmBoxCallback callback, void* callbackParam);
     void onPromptBox(wkePromptBoxCallback callback, void* callbackParam);
 
     void onNavigation(wkeNavigationCallback callback, void* callbackParam);
-    void onNewWindow(wkeNewWindowCallback callback, void* callbackParam);
+    void onCreateView(wkeCreateViewCallback callback, void* callbackParam);
 
-    void onLoadingFinish(wkeLoadingFinishCallback callback, void* callbackParam);
-    void onDocumentReady(wkeDocumentReadyCallback callback, void* callbackParam);
+    virtual void onLoadingFinish(wkeLoadingFinishCallback callback, void* callbackParam);
+    virtual void onDocumentReady(wkeDocumentReadyCallback callback, void* callbackParam);
 
 protected:
     void _initHandler();

@@ -549,7 +549,7 @@ WebCore::Frame* FrameLoaderClient::dispatchCreatePage(const WebCore::NavigationA
 {
     // 实现新窗口控制
     wke::CWebViewHandler& handler = m_webView->m_handler;
-    if (!handler.newWindowCallback)
+    if (!handler.createViewCallback)
         return m_page->mainFrame();
 
     wkeNavigationType type = (wkeNavigationType)action.type();
@@ -566,7 +566,7 @@ WebCore::Frame* FrameLoaderClient::dispatchCreatePage(const WebCore::NavigationA
     windowFeatures.toolBarVisible = true;
     windowFeatures.fullscreen = false;
     
-    wke::CWebView* createdWebView = handler.newWindowCallback(m_webView, handler.newWindowCallbackParam, type, &url, &windowFeatures);
+    wke::CWebView* createdWebView = handler.createViewCallback(m_webView, handler.createViewCallbackParam, type, &url, &windowFeatures);
     if (!createdWebView)
         return m_page->mainFrame();
     

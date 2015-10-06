@@ -40,9 +40,14 @@ CWebView::~CWebView()
     m_mainFrame->loader()->detachFromParent();
 }
 
+bool CWebView::create()
+{
+    return true;
+}
+
 void CWebView::destroy()
 {
-    wkeDestroyWebView(this);
+    delete this;
 }
 
 const utf8* CWebView::name() const
@@ -1007,12 +1012,12 @@ void CWebView::onPromptBox(wkePromptBoxCallback callback, void* callbackParam)
 
 void defaultRunAlertBox(wkeWebView webView, void* param, const wkeString msg)
 {
-    MessageBoxW(NULL, wkeGetStringW(msg), NULL, MB_OK);
+    MessageBoxW(NULL, wkeGetStringW(msg), L"wke", MB_OK);
 }
 
 bool defaultRunConfirmBox(wkeWebView webView, void* param, const wkeString msg)
 {
-    int result = MessageBoxW(NULL, wkeGetStringW(msg), NULL, MB_OKCANCEL);
+    int result = MessageBoxW(NULL, wkeGetStringW(msg), L"wke", MB_OKCANCEL);
     return result == IDOK;
 }
 
@@ -1089,10 +1094,10 @@ void CWebView::onNavigation(wkeNavigationCallback callback, void* callbackParam)
     m_handler.navigationCallbackParam = callbackParam;
 }
 
-void CWebView::onNewWindow(wkeNewWindowCallback callback, void* callbackParam)
+void CWebView::onCreateView(wkeCreateViewCallback callback, void* callbackParam)
 {
-    m_handler.newWindowCallback = callback;
-    m_handler.newWindowCallbackParam = callbackParam;
+    m_handler.createViewCallback = callback;
+    m_handler.createViewCallbackParam = callbackParam;
 }
 
 void CWebView::onLoadingFinish(wkeLoadingFinishCallback callback, void* callbackParam)
@@ -1110,40 +1115,41 @@ void CWebView::onDocumentReady(wkeDocumentReadyCallback callback, void* callback
 
 
 
+
 };//namespace wke
 
 
 
 
 
-static Vector<wke::CWebView*> s_webViews;
+//static Vector<wke::CWebView*> s_webViews;
 
 wkeWebView wkeCreateWebView()
 {
     wke::CWebView* webView = new wke::CWebView;
-    s_webViews.append(webView);
+    //s_webViews.append(webView);
     return webView;
 }
 
-wkeWebView wkeGetWebView(const char* name)
-{
-    for (size_t i = 0; i < s_webViews.size(); ++i)
-    {
-        if (strcmp(s_webViews[i]->name(), name) == 0)
-            return s_webViews[i];
-    }
-
-    return 0;
-}
+//wkeWebView wkeGetWebView(const char* name)
+//{
+//    for (size_t i = 0; i < s_webViews.size(); ++i)
+//    {
+//        if (strcmp(s_webViews[i]->name(), name) == 0)
+//            return s_webViews[i];
+//    }
+//
+//    return 0;
+//}
 
 void wkeDestroyWebView(wkeWebView webView)
 {
-    size_t pos = s_webViews.find(webView);
+    //size_t pos = s_webViews.find(webView);
 
-    ASSERT(pos != notFound);
-    if (pos != notFound)
-    {
-        s_webViews.remove(pos);
-        delete (wke::CWebView*)webView;
-    }
+    //ASSERT(pos != notFound);
+    //if (pos != notFound)
+    //{
+    //    s_webViews.remove(pos);
+        delete webView;
+    //}
 }
