@@ -1,0 +1,287 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Label="UserMacros">
+    <ENABLE_3D_CANVAS />
+    <ENABLE_3D_RENDERING />
+    <ENABLE_ACCELERATED_2D_CANVAS />
+    <ENABLE_BLOB />
+    <ENABLE_CHANNEL_MESSAGING>ENABLE_CHANNEL_MESSAGING</ENABLE_CHANNEL_MESSAGING>
+    <ENABLE_CLIENT_BASED_GEOLOCATION>ENABLE_CLIENT_BASED_GEOLOCATION</ENABLE_CLIENT_BASED_GEOLOCATION>
+    <ENABLE_CSS_FILTERS />
+    <ENABLE_CSS_REGIONS />
+    <ENABLE_CSS_EXCLUSIONS />
+    <ENABLE_SQL_DATABASE>ENABLE_SQL_DATABASE</ENABLE_SQL_DATABASE>
+    <ENABLE_DATAGRID />
+    <ENABLE_DATALIST>ENABLE_DATALIST</ENABLE_DATALIST>
+    <ENABLE_DATA_TRANSFER_ITEMS />
+    <ENABLE_DETAILS>ENABLE_DETAILS</ENABLE_DETAILS>
+    <ENABLE_DEVICE_ORIENTATION />
+    <ENABLE_DIRECTORY_UPLOAD />
+    <ENABLE_FILTERS>ENABLE_FILTERS</ENABLE_FILTERS>
+    <ENABLE_FILE_SYSTEM />
+    <ENABLE_CSS3_FLEXBOX />
+    <ENABLE_FULLSCREEN_API />
+    <ENABLE_GAMEPAD />
+    <ENABLE_GEOLOCATION>ENABLE_GEOLOCATION</ENABLE_GEOLOCATION>
+    <ENABLE_ICONDATABASE>ENABLE_ICONDATABASE</ENABLE_ICONDATABASE>
+    <ENABLE_INDEXED_DATABASE />
+    <ENABLE_INPUT_COLOR />
+    <ENABLE_INPUT_SPEECH />
+    <ENABLE_INPUT_TYPE_DATE />
+    <ENABLE_INPUT_TYPE_DATETIME />
+    <ENABLE_INPUT_TYPE_DATETIMELOCAL />
+    <ENABLE_INPUT_TYPE_MONTH />
+    <ENABLE_INPUT_TYPE_TIME />
+    <ENABLE_INPUT_TYPE_WEEK />
+    <ENABLE_JAVASCRIPT_DEBUGGER>ENABLE_JAVASCRIPT_DEBUGGER</ENABLE_JAVASCRIPT_DEBUGGER>
+    <ENABLE_LINK_PREFETCH />
+    <ENABLE_MATHML>ENABLE_MATHML</ENABLE_MATHML>
+    <ENABLE_METER_TAG>ENABLE_METER_TAG</ENABLE_METER_TAG>
+    <ENABLE_MICRODATA />
+    <ENABLE_MUTATION_OBSERVERS />
+    <ENABLE_NOTIFICATIONS />
+    <ENABLE_PAGE_VISIBILITY_API />
+    <ENABLE_PROGRESS_TAG />
+    <ENABLE_QUOTA />
+    <ENABLE_REGISTER_PROTOCOL_HANDLER />
+    <ENABLE_SHARED_WORKERS>ENABLE_SHARED_WORKERS</ENABLE_SHARED_WORKERS>
+    <ENABLE_SVG>ENABLE_SVG</ENABLE_SVG>
+    <ENABLE_SVG_DOM_OBJC_BINDINGS />
+    <ENABLE_SVG_FONTS>ENABLE_SVG_FONTS</ENABLE_SVG_FONTS>
+    <ENABLE_VIDEO />
+    <ENABLE_MEDIA_SOURCE />
+    <ENABLE_MEDIA_STATISTICS />
+    <ENABLE_WEB_AUDIO />
+    <ENABLE_WEB_SOCKETS>ENABLE_WEB_SOCKETS</ENABLE_WEB_SOCKETS>
+    <ENABLE_WEB_TIMING />
+    <ENABLE_WORKERS>ENABLE_WORKERS</ENABLE_WORKERS>
+    <ENABLE_XSLT>ENABLE_XSLT</ENABLE_XSLT>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <PreprocessorDefinitions>$(ENABLE_3D_CANVAS);$(ENABLE_3D_RENDERING);$(ENABLE_ACCELERATED_2D_CANVAS);$(ENABLE_BLOB);$(ENABLE_CHANNEL_MESSAGING);$(ENABLE_CLIENT_BASED_GEOLOCATION);$(ENABLE_CSS_FILTERS);$(ENABLE_CSS_REGIONS);$(ENABLE_CSS_EXCLUSIONS);$(ENABLE_SQL_DATABASE);$(ENABLE_DATAGRID);$(ENABLE_DATALIST);$(ENABLE_DATA_TRANSFER_ITEMS);$(ENABLE_DETAILS);$(ENABLE_DEVICE_ORIENTATION);$(ENABLE_DIRECTORY_UPLOAD);$(ENABLE_FILTERS);$(ENABLE_FILE_SYSTEM);$(ENABLE_CSS3_FLEXBOX);$(ENABLE_FULLSCREEN_API);$(ENABLE_GAMEPAD);$(ENABLE_GEOLOCATION);$(ENABLE_ICONDATABASE);$(ENABLE_INDEXED_DATABASE);$(ENABLE_INPUT_COLOR);$(ENABLE_INPUT_SPEECH);$(ENABLE_INPUT_TYPE_DATE);$(ENABLE_INPUT_TYPE_DATETIME);$(ENABLE_INPUT_TYPE_DATETIMELOCAL);$(ENABLE_INPUT_TYPE_MONTH);$(ENABLE_INPUT_TYPE_TIME);$(ENABLE_INPUT_TYPE_WEEK);$(ENABLE_JAVASCRIPT_DEBUGGER);$(ENABLE_LINK_PREFETCH);$(ENABLE_MATHML);$(ENABLE_METER_TAG);$(ENABLE_MICRODATA);$(ENABLE_MUTATION_OBSERVERS);$(ENABLE_NOTIFICATIONS);$(ENABLE_PAGE_VISIBILITY_API);$(ENABLE_PROGRESS_TAG);$(ENABLE_QUOTA);$(ENABLE_REGISTER_PROTOCOL_HANDLER);$(ENABLE_SHARED_WORKERS);$(ENABLE_SVG);$(ENABLE_SVG_DOM_OBJC_BINDINGS);$(ENABLE_SVG_FONTS);$(ENABLE_VIDEO);$(ENABLE_MEDIA_SOURCE);$(ENABLE_MEDIA_STATISTICS);$(ENABLE_WEB_SOCKETS);$(ENABLE_WEB_TIMING);$(ENABLE_WORKERS);$(ENABLE_XSLT);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <BuildMacro Include="ENABLE_3D_CANVAS">
+      <Value>$(ENABLE_3D_CANVAS)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="ENABLE_3D_RENDERING">
+      <Value>$(ENABLE_3D_RENDERING)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="ENABLE_ACCELERATED_2D_CANVAS">
+      <Value>$(ENABLE_ACCELERATED_2D_CANVAS)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="ENABLE_BLOB">
+      <Value>$(ENABLE_BLOB)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="ENABLE_CHANNEL_MESSAGING">
+      <Value>$(ENABLE_CHANNEL_MESSAGING)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="ENABLE_CLIENT_BASED_GEOLOCATION">
+      <Value>$(ENABLE_CLIENT_BASED_GEOLOCATION)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="ENABLE_CSS_FILTERS">
+      <Value>$(ENABLE_CSS_FILTERS)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="ENABLE_CSS_REGIONS">
+      <Value>$(ENABLE_CSS_REGIONS)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="ENABLE_CSS_EXCLUSIONS">
+      <Value>$(ENABLE_CSS_EXCLUSIONS)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="ENABLE_SQL_DATABASE">
+      <Value>$(ENABLE_SQL_DATABASE)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="ENABLE_DATAGRID">
+      <Value>$(ENABLE_DATAGRID)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="ENABLE_DATALIST">
+      <Value>$(ENABLE_DATALIST)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="ENABLE_DATA_TRANSFER_ITEMS">
+      <Value>$(ENABLE_DATA_TRANSFER_ITEMS)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="ENABLE_DETAILS">
+      <Value>$(ENABLE_DETAILS)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="ENABLE_DEVICE_ORIENTATION">
+      <Value>$(ENABLE_DEVICE_ORIENTATION)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="ENABLE_DIRECTORY_UPLOAD">
+      <Value>$(ENABLE_DIRECTORY_UPLOAD)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="ENABLE_FILTERS">
+      <Value>$(ENABLE_FILTERS)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="ENABLE_FILE_SYSTEM">
+      <Value>$(ENABLE_FILE_SYSTEM)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="ENABLE_CSS3_FLEXBOX">
+      <Value>$(ENABLE_CSS3_FLEXBOX)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="ENABLE_FULLSCREEN_API">
+      <Value>$(ENABLE_FULLSCREEN_API)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="ENABLE_GAMEPAD">
+      <Value>$(ENABLE_GAMEPAD)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="ENABLE_GEOLOCATION">
+      <Value>$(ENABLE_GEOLOCATION)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="ENABLE_ICONDATABASE">
+      <Value>$(ENABLE_ICONDATABASE)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="ENABLE_INDEXED_DATABASE">
+      <Value>$(ENABLE_INDEXED_DATABASE)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="ENABLE_INPUT_COLOR">
+      <Value>$(ENABLE_INPUT_COLOR)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="ENABLE_INPUT_SPEECH">
+      <Value>$(ENABLE_INPUT_SPEECH)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="ENABLE_INPUT_TYPE_DATE">
+      <Value>$(ENABLE_INPUT_TYPE_DATE)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="ENABLE_INPUT_TYPE_DATETIME">
+      <Value>$(ENABLE_INPUT_TYPE_DATETIME)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="ENABLE_INPUT_TYPE_DATETIMELOCAL">
+      <Value>$(ENABLE_INPUT_TYPE_DATETIMELOCAL)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="ENABLE_INPUT_TYPE_MONTH">
+      <Value>$(ENABLE_INPUT_TYPE_MONTH)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="ENABLE_INPUT_TYPE_TIME">
+      <Value>$(ENABLE_INPUT_TYPE_TIME)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="ENABLE_INPUT_TYPE_WEEK">
+      <Value>$(ENABLE_INPUT_TYPE_WEEK)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="ENABLE_JAVASCRIPT_DEBUGGER">
+      <Value>$(ENABLE_JAVASCRIPT_DEBUGGER)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="ENABLE_LINK_PREFETCH">
+      <Value>$(ENABLE_LINK_PREFETCH)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="ENABLE_MATHML">
+      <Value>$(ENABLE_MATHML)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="ENABLE_METER_TAG">
+      <Value>$(ENABLE_METER_TAG)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="ENABLE_MICRODATA">
+      <Value>$(ENABLE_MICRODATA)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="ENABLE_MUTATION_OBSERVERS">
+      <Value>$(ENABLE_MUTATION_OBSERVERS)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="ENABLE_NOTIFICATIONS">
+      <Value>$(ENABLE_NOTIFICATIONS)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="ENABLE_PAGE_VISIBILITY_API">
+      <Value>$(ENABLE_PAGE_VISIBILITY_API)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="ENABLE_PROGRESS_TAG">
+      <Value>$(ENABLE_PROGRESS_TAG)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="ENABLE_QUOTA">
+      <Value>$(ENABLE_QUOTA)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="ENABLE_REGISTER_PROTOCOL_HANDLER">
+      <Value>$(ENABLE_REGISTER_PROTOCOL_HANDLER)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="ENABLE_SHARED_WORKERS">
+      <Value>$(ENABLE_SHARED_WORKERS)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="ENABLE_SVG">
+      <Value>$(ENABLE_SVG)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="ENABLE_SVG_DOM_OBJC_BINDINGS">
+      <Value>$(ENABLE_SVG_DOM_OBJC_BINDINGS)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="ENABLE_SVG_FONTS">
+      <Value>$(ENABLE_SVG_FONTS)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="ENABLE_VIDEO">
+      <Value>$(ENABLE_VIDEO)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="ENABLE_MEDIA_SOURCE">
+      <Value>$(ENABLE_MEDIA_SOURCE)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="ENABLE_MEDIA_STATISTICS">
+      <Value>$(ENABLE_MEDIA_STATISTICS)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="ENABLE_WEB_AUDIO">
+      <Value>$(ENABLE_WEB_AUDIO)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="ENABLE_WEB_SOCKETS">
+      <Value>$(ENABLE_WEB_SOCKETS)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="ENABLE_WEB_TIMING">
+      <Value>$(ENABLE_WEB_TIMING)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="ENABLE_WORKERS">
+      <Value>$(ENABLE_WORKERS)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="ENABLE_XSLT">
+      <Value>$(ENABLE_XSLT)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+  </ItemGroup>
+</Project>

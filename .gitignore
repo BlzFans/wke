@@ -3,3 +3,7 @@
 *.ncb
 *.suo
 /build/
+*.ipch
+*.sdf
+*.opensdf
+*.cache

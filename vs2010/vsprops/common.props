@@ -1,0 +1,46 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Label="UserMacros">
+    <ProductionBuild>0</ProductionBuild>
+    <WEBKITOUTPUTDIR>$(ProjectDir)..\build\vs2010</WEBKITOUTPUTDIR>
+    <WEBKITLIBRARIESDIR>$(ProjectDir)..\WebKitLibraries\win</WEBKITLIBRARIESDIR>
+    <ConfigurationBuildDir>$(WebKitOutputDir)\$(Configuration)</ConfigurationBuildDir>
+  </PropertyGroup>
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.40219.1</_ProjectFileVersion>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;WINVER=0x502;_WIN32_WINNT=0x502;_WIN32_IE=0x603;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1;_HAS_EXCEPTIONS=0;BUILDING_$(ProjectName);JS_NO_EXPORT;CURL_STATICLIB;LIBXML_STATIC;LIBXSLT_STATIC;PTW32_STATIC_LIB;UCONFIG_NO_COLLATION=1;U_STATIC_IMPLEMENTATION;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <DisableSpecificWarnings>4018;4068;4099;4100;4127;4138;4180;4189;4201;4244;4251;4275;4288;4291;4305;4344;4355;4389;4481;4503;4505;4510;4512;4610;4706;4800;4951;4952;4996;6011;6031;6211;6246;6255;6387;4396;4819</DisableSpecificWarnings>
+      <AdditionalOptions>/bigobj /GS %(AdditionalOptions)</AdditionalOptions>
+      <ExceptionHandling>false</ExceptionHandling>
+    </ClCompile>
+    <Lib />
+    <Lib>
+      <AdditionalLibraryDirectories>$(ConfigurationBuildDir)\lib;$(WebKitLibrariesDir)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Lib>
+    <Lib />
+  </ItemDefinitionGroup>
+  <PropertyGroup Label="Configuration">
+    <OutDir>$(ConfigurationBuildDir)\bin\</OutDir>
+    <IntDir>$(ConfigurationBuildDir)\obj\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <ItemGroup>
+    <BuildMacro Include="ProductionBuild">
+      <Value>$(ProductionBuild)</Value>
+    </BuildMacro>
+    <BuildMacro Include="WEBKITOUTPUTDIR">
+      <Value>$(WEBKITOUTPUTDIR)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="WEBKITLIBRARIESDIR">
+      <Value>$(WEBKITLIBRARIESDIR)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="ConfigurationBuildDir">
+      <Value>$(ConfigurationBuildDir)</Value>
+    </BuildMacro>
+  </ItemGroup>
+</Project>

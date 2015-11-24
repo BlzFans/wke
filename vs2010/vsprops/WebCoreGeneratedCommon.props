@@ -1,0 +1,46 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets">
+    <Import Project="common.props" />
+  </ImportGroup>
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.40219.1</_ProjectFileVersion>
+    <NMakeBuildCommandLine>$(SystemDrive)\cygwin\bin\which.exe bash
+if errorlevel 1 set PATH=$(SystemDrive)\cygwin\bin%3b$(PATH)
+cmd /c
+if exist "$(ConfigurationBuildDir)\buildfailed" grep XX$(ProjectName)XX "$(ConfigurationBuildDir)\buildfailed"
+if errorlevel 1 exit 1
+echo XX$(ProjectName)XX &gt; "$(ConfigurationBuildDir)\buildfailed"
+
+bash build-generated-files.sh "$(ConfigurationBuildDir)" "$(WebKitLibrariesDir)" "$(WebKitVSPropsRedirectionDir)..\..\..\WebKitLibraries\win" windows
+set CONFIGURATIONBUILDDIR=$(ConfigurationBuildDir)
+bash migrate-scripts.sh "$(WebKitOutputDir)/$(Configuration)/obj/WebCore/scripts"
+cmd /C copyForwardingHeaders.cmd cg cf
+cmd /C copyWebCoreResourceFiles.cmd
+
+if exist "$(ConfigurationBuildDir)\buildfailed" del "$(ConfigurationBuildDir)\buildfailed"
+</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>echo XX$(ProjectName)XX &gt; "$(ConfigurationBuildDir)\buildfailed"
+
+del /s /q "$(ConfigurationBuildDir)\obj\WebCore\DerivedSources"
+del /s /q "$(ConfigurationBuildDir)\obj\WebCore\scripts"
+$(SystemDrive)\cygwin\bin\which.exe bash
+if errorlevel 1 set PATH=$(SystemDrive)\cygwin\bin%3b$(PATH)
+cmd /c
+bash build-generated-files.sh "$(ConfigurationBuildDir)" "$(WebKitLibrariesDir)" "$(WebKitVSPropsRedirectionDir)..\..\..\WebKitLibraries\win" windows
+set CONFIGURATIONBUILDDIR=$(ConfigurationBuildDir)
+bash migrate-scripts.sh "$(WebKitOutputDir)/$(Configuration)/obj/WebCore/scripts"
+cmd /C copyForwardingHeaders.cmd cg cf
+cmd /C copyWebCoreResourceFiles.cmd
+
+if exist "$(ConfigurationBuildDir)\buildfailed" del "$(ConfigurationBuildDir)\buildfailed"
+</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>del /s /q "$(ConfigurationBuildDir)\obj\WebCore\DerivedSources"
+del /s /q "$(ConfigurationBuildDir)\obj\WebCore\scripts"
+if exist "$(ConfigurationBuildDir)\buildfailed" del "$(ConfigurationBuildDir)\buildfailed"
+</NMakeCleanCommandLine>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration">
+    <OutDir>$(ConfigurationBuildDir)\lib\</OutDir>
+  </PropertyGroup>
+</Project>
