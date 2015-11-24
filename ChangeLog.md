@@ -1,4 +1,8 @@
-﻿#### 2015-11-24 23:38 去掉 wke 中对 std::string 的引用。
+﻿#### 2015-11-24 23:51 修改 ChangeLog 更新日志的路径。
+* 去掉 ChangeLog.txt。
+* 将 Document/history.md 移至根目录下 ChangeLog.md。
+
+#### 2015-11-24 23:38 去掉 wke 中对 std::string 的引用。
 * 去掉 wke 中 jsBind.cpp 对 std::string 的引用，自己实现了一个简单的字符串缓存对象。
 
 #### 2015-11-24 23:35 修正 wkeBrowser 无法访问百度的问题。
@@ -264,3 +268,6 @@ JSC::Identifier 内部以 JSC::UString 保存属性名称，而 JSC::UString 内
 
 
 #### 2015-08-29 21:16:57 忽略 build 目录（中间目录）。
+
+2011-09-07
+        version 1.00 released 
