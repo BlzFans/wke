@@ -1,4 +1,7 @@
-﻿#### 2015-11-24 23:35 修正 wkeBrowser 无法访问百度的问题。
+﻿#### 2015-11-24 23:38 去掉 wke 中对 std::string 的引用。
+* 去掉 wke 中 jsBind.cpp 对 std::string 的引用，自己实现了一个简单的字符串缓存对象。
+
+#### 2015-11-24 23:35 修正 wkeBrowser 无法访问百度的问题。
 * 修正 wkeBrowser 中因在 wkeOnNavigation 中禁用百度，导致无法访问百度的问题。
 
 #### 2015-11-24 23:31 增加 BrentHuang 完成的 vs2010 的工程文件。

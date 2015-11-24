@@ -16,8 +16,6 @@
 #include <WebCore/Chrome.h>
 #include <WebCore/ChromeClient.h>
 
-#include <string>
-
 #include "wkeDebug.h"
 
 //cexer: 必须包含在后面，因为其中的 wke.h -> windows.h 会定义 max、min，导致 WebCore 内部的 max、min 出现错乱。
@@ -160,15 +158,55 @@ bool jsToBoolean(jsExecState es, jsValue v)
 }
 
 
-static std::string s_sharedStringBuffer;
-static std::wstring s_sharedStringBufferW;
+template <class T>
+class wkeSimpleStringT
+{
+public:
+    wkeSimpleStringT()
+        : m_buffer(NULL)
+        , m_capacity(0)
+        , m_size(0)
+    {}
+
+   ~wkeSimpleStringT()
+    {
+        delete [] m_buffer;
+    }
+
+public:
+    void assign(const T* ptr, size_t len)
+    {
+        if (!m_buffer || m_capacity < len)
+        {
+            delete [] m_buffer;
+            m_buffer = new T[len * 2 + 1];
+            m_capacity = len * 2;
+        }
+        memcpy(m_buffer, ptr, len);
+        m_buffer[len] = 0;
+    }
+
+    const T* c_str() const
+    {
+        return m_buffer;
+    }
+
+protected:
+    T* m_buffer;
+    size_t m_size;
+    size_t m_capacity;
+};
+
+static wkeSimpleStringT<char> s_sharedStringBuffer;
+static wkeSimpleStringT<wchar_t> s_sharedStringBufferW;
 
 const utf8* jsToTempString(jsExecState es, jsValue v)
 {
     JSC::JSValue value = JSC::JSValue::decode(v);
     JSC::UString str = value.toString((JSC::ExecState*)es);
 
-    s_sharedStringBuffer = str.utf8().data();
+    CString utf8 = str.utf8();
+    s_sharedStringBuffer.assign(utf8.data(), utf8.length());
     return s_sharedStringBuffer.c_str();
 }
 
