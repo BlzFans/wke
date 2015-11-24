@@ -114,8 +114,8 @@ void onURLChanged(wkeWebView webView, void* param, const wkeString url)
 bool onNavigation(wkeWebView webView, void* param, wkeNavigationType type, const wkeString url_)
 {
     const wchar_t* url = wkeGetStringW(url_);
-    if (wcsstr(url, L"baidu.com") != NULL)
-        return false;
+    //if (wcsstr(url, L"baidu.com") != NULL)
+    //    return false;
 
     if (wcsstr(url, L"exec://") == url)
     {
