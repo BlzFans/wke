@@ -12,6 +12,9 @@
 #include "wkeDebug.h"
 #include "wkeWebView.h"
 
+#include <shlwapi.h>
+#pragma comment(lib, "shlwapi.lib")
+
 
 namespace wke
 {
@@ -178,18 +181,159 @@ void CWebView::loadHTML(const wchar_t* html)
 
 void CWebView::loadFile(const utf8* filename)
 {
-    char url[1024];
-    _snprintf(url, 1023, "file:///%s", filename);
-    url[1023] = '\0';
+    char url[4096+1] = { 0 };
+    _snprintf(url, 4096, "file:///%s", filename);
+    url[4096] = '\0';
     loadURL(url);
 }
 
 void CWebView::loadFile(const wchar_t* filename)
 {
-    wchar_t url[1024];
-    _snwprintf(url, 1024, L"file:///%s", filename);
-    url[1023] = L'\0';
+    wchar_t url[4096+1] = { 0 };
+    _snwprintf(url, 4096, L"file:///%s", filename);
+    url[4096] = L'\0';
     loadURL(url);
+}
+
+void CWebView::load(const utf8* str)
+{
+    wchar_t* wstr = NULL;
+    int wlen = MultiByteToWideChar(CP_UTF8, 0, str, strlen(str), NULL, 0);
+    wstr = new wchar_t[wlen + 1];
+    MultiByteToWideChar(CP_UTF8, 0, str, strlen(str), wstr, wlen);
+    wstr[wlen] = 0;
+
+    load(wstr);
+
+    delete [] wstr;
+}
+
+
+
+LPCWSTR GetWorkingDirectory(LPWSTR buffer, size_t bufferSize)
+{
+    GetCurrentDirectoryW(bufferSize, buffer);
+    wcscat(buffer, L"\\");
+    return buffer;
+}
+
+LPCWSTR GetWorkingPath(LPWSTR buffer, size_t bufferSize, LPCWSTR relatedPath)
+{
+    WCHAR dir[MAX_PATH + 1] = { 0 };
+    GetWorkingDirectory(dir, MAX_PATH);
+    _snwprintf(buffer, bufferSize, L"%s%s", dir, relatedPath);
+    return buffer;
+}
+
+LPCWSTR FormatWorkingPath(LPWSTR buffer, size_t bufferSize, LPCWSTR fmt, ...)
+{
+    WCHAR relatedPath[MAX_PATH + 1] = { 0 };
+    va_list args;
+    va_start(args, fmt);
+    _vsnwprintf(relatedPath, MAX_PATH, fmt, args);
+    va_end(args);
+
+    return GetWorkingPath(buffer, bufferSize, relatedPath);
+}
+
+LPCWSTR GetProgramDirectory(LPWSTR buffer, size_t bufferSize)
+{
+    DWORD i = GetModuleFileNameW(NULL, buffer, bufferSize);
+
+    -- i;
+    while (buffer[i] != '\\' && i != 0)
+        -- i;
+
+    buffer[i+1] = 0;
+    return buffer;
+}
+
+LPCWSTR GetProgramPath(LPWSTR buffer, size_t bufferSize, LPCWSTR relatedPath)
+{
+    WCHAR dir[MAX_PATH + 1] = { 0 };
+    GetProgramDirectory(dir, MAX_PATH);
+    _snwprintf(buffer, bufferSize, L"%s%s", dir, relatedPath);
+    return buffer;
+}
+
+LPCWSTR FormatProgramPath(LPWSTR buffer, size_t bufferSize, LPCWSTR fmt, ...)
+{
+    WCHAR relatedPath[MAX_PATH + 1] = { 0 };
+    va_list args;
+    va_start(args, fmt);
+    _vsnwprintf(relatedPath, MAX_PATH, fmt, args);
+    va_end(args);
+
+    return GetProgramPath(buffer, bufferSize, relatedPath);
+}
+
+void CWebView::load(const wchar_t* str)
+{
+    if (!str || str[0] == 0)
+    {
+        loadHTML(L"no url specificed");
+        return;
+    }
+
+    //有明确的 scheme，是合法的 url。
+    static const wchar_t* HTTP_SCHEME = L"http://";
+    static const wchar_t* HTTPS_SCHEME = L"https://";
+    static const wchar_t* FILE_SCHEME = L"file:///";
+    if (wcsnicmp(str, HTTP_SCHEME, wcslen(HTTP_SCHEME)) == 0 || 
+        wcsnicmp(str, HTTPS_SCHEME, wcslen(HTTPS_SCHEME)) == 0 ||
+        wcsnicmp(str, FILE_SCHEME, wcslen(FILE_SCHEME)) == 0)
+    {
+        loadURL(str);
+        return;
+    }
+
+    //包含 < 和 > 不可能是路径，很有可能是 HTML。
+    if (wcschr(str, L'<') && wcschr(str, L'>'))
+    {
+        loadHTML(str);
+        return;
+    }
+
+    bool pathValid = true;
+
+    //既不是明确的 url，也没有明确的非路径字符，当作本地路径处理。
+    wchar_t fullPath[MAX_PATH + 1] = { 0 };
+
+    //路径中包含 : 字符，说明是绝对路径
+    if (wcschr(str, L':'))
+    {
+        int strLen = wcslen(str);
+        wcsncpy(fullPath, str, strLen < MAX_PATH ? strLen : MAX_PATH);
+    }
+    //相对路径，需要补全为绝对路径。
+    else
+    {
+        do
+        {
+            //从工作目录中找
+            GetWorkingPath(fullPath, MAX_PATH, str);
+            if (PathFileExistsW(fullPath))
+                break;
+
+            //从EXE目录中找
+            GetProgramPath(fullPath, MAX_PATH, str);
+            if (PathFileExistsW(fullPath))
+                break;
+
+            pathValid = false;
+        }
+        while (0);       
+    }
+
+    //确定是合法文件路径。
+    if (pathValid)
+    {
+        loadFile(fullPath);
+        return;
+    }
+
+    //不是合法文件路径，只能当作自定义 scheme 的 url 处理。
+    loadURL(str);
 }
 
 bool CWebView::isLoadingSucceeded() const

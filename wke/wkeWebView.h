@@ -103,6 +103,9 @@ public:
     void loadFile(const utf8* filename);
     void loadFile(const wchar_t* filename);
 
+    void load(const utf8* str);
+    void load(const wchar_t* str);
+
 	void setUserAgent(const utf8 * useragent);
     void setUserAgent(const wchar_t * useragent);
 

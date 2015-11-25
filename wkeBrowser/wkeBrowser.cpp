@@ -291,7 +291,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
     int argc = 0;
     LPWSTR* argv = CommandLineToArgvW(GetCommandLineW(), &argc);
     if (argc > 1)
-        wkeLoadURLW(g_webView, argv[1]);
+        wkeLoadW(g_webView, argv[1]);
     else
         wkeLoadHTMLW(g_webView, L"<p style=\"background-color: #00FF00\">Testing</p><img id=\"webkit logo\" src=\"http://webkit.org/images/icon-gold.png\" alt=\"Face\"><div style=\"border: solid blue; background: white;\" contenteditable=\"true\">div with blue border</div><ul><li>foo<li>bar<li>baz</ul>");
     LocalFree(argv);

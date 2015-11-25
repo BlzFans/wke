@@ -204,6 +204,9 @@ WKE_API void wkeLoadHTMLW(wkeWebView webView, const wchar_t* html);
 WKE_API void wkeLoadFile(wkeWebView webView, const utf8* filename);
 WKE_API void wkeLoadFileW(wkeWebView webView, const wchar_t* filename);
 
+WKE_API void wkeLoad(wkeWebView webView, const utf8* str);
+WKE_API void wkeLoadW(wkeWebView webView, const wchar_t* str);
+
 WKE_API bool wkeIsLoading(wkeWebView webView);
 WKE_API bool wkeIsLoadingSucceeded(wkeWebView webView);
 WKE_API bool wkeIsLoadingFailed(wkeWebView webView);

@@ -209,6 +209,16 @@ void wkeLoadFileW(wkeWebView webView, const wchar_t* filename)
     return webView->loadFile(filename);
 }
 
+void wkeLoad(wkeWebView webView, const utf8* str)
+{
+    return webView->load(str);
+}
+
+void wkeLoadW(wkeWebView webView, const wchar_t* str)
+{
+    return webView->load(str);
+}
+
 bool wkeIsLoadingSucceeded(wkeWebView webView)
 {
     return webView->isLoadingSucceeded();
