@@ -119,7 +119,7 @@ private:
 
 inline ShadowInclusion* ShadowInclusionSet::find(Node* key) const
 {
-    PointerSet::iterator found = m_set.find<Node*, ShadowInclusionSet::Translator>(key);
+    PointerSet::const_iterator found = m_set.find<Node*, ShadowInclusionSet::Translator>(key);
     return found != m_set.end() ? *found : 0;
 }
 

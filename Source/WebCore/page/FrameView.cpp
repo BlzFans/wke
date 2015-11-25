@@ -866,8 +866,8 @@ static inline void collectFrameViewChildren(FrameView* frameView, Vector<RefPtr<
     const HashSet<RefPtr<Widget> >* viewChildren = frameView->children();
     ASSERT(viewChildren);
 
-    const HashSet<RefPtr<Widget> >::iterator end = viewChildren->end();
-    for (HashSet<RefPtr<Widget> >::iterator current = viewChildren->begin(); current != end; ++current) {
+    const HashSet<RefPtr<Widget> >::const_iterator end = viewChildren->end();
+    for (HashSet<RefPtr<Widget> >::const_iterator current = viewChildren->begin(); current != end; ++current) {
         Widget* widget = (*current).get();
         if (widget->isFrameView())
             frameViews.append(static_cast<FrameView*>(widget));

@@ -739,8 +739,8 @@ private:
         
         void copyCapturedVariablesToVector(const IdentifierSet& capturedVariables, Vector<RefPtr<StringImpl> >& vector)
         {
-            IdentifierSet::iterator end = capturedVariables.end();
-            for (IdentifierSet::iterator it = capturedVariables.begin(); it != end; ++it) {
+            IdentifierSet::const_iterator end = capturedVariables.end();
+            for (IdentifierSet::const_iterator it = capturedVariables.begin(); it != end; ++it) {
                 if (m_declaredVariables.contains(*it))
                     continue;
                 vector.append(*it);

@@ -44,7 +44,7 @@ public:
     {
     }
     
-    typedef HashSet<MarkedBlock*>::iterator BlockIterator;
+	typedef HashSet<MarkedBlock*>::const_iterator BlockIterator;
     
     MarkedBlockSet& blocks() { return m_blocks; }
     MarkedSpace::SizeClass& sizeClassFor(size_t bytes) { return m_markedSpace.sizeClassFor(bytes); }

@@ -1,0 +1,28 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets">
+    <Import Project="common.props" />
+  </ImportGroup>
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.40219.1</_ProjectFileVersion>
+    <NMakeBuildCommandLine>set PATH=$(ProjectDir)\..\cygwin\bin%3b$(PATH)
+ cd ..\Source\JavaScriptCore\JavaScriptCore.vcproj\JavaScriptCore
+cmd /c 
+ 
+set CONFIGURATIONBUILDDIR=$(ConfigurationBuildDir)
+nmake /nologo -f JavaScriptCoreGenerated.make</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>set PATH=$(ProjectDir)\..\cygwin\bin%3b$(PATH)
+cd ..\Source\JavaScriptCore\JavaScriptCore.vcproj\JavaScriptCore
+cmd /c 
+ 
+set CONFIGURATIONBUILDDIR=$(ConfigurationBuildDir)
+nmake /nologo -f JavaScriptCoreGenerated.make clean
+nmake -f JavaScriptCoreGenerated.make</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>set PATH=$(ProjectDir)\..\cygwin\bin%3b$(PATH)
+cd ..\Source\JavaScriptCore\JavaScriptCore.vcproj\JavaScriptCore
+cmd /c 
+ 
+set CONFIGURATIONBUILDDIR=$(ConfigurationBuildDir)
+nmake /nologo -f JavaScriptCoreGenerated.make clean</NMakeCleanCommandLine>
+  </PropertyGroup>
+</Project>
