@@ -2,10 +2,11 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
-	Name="wkeBrowser"
-	ProjectGUID="{5C21D8AD-3930-4AC3-9E32-21FCA602DB76}"
-	RootNamespace="wkeBrowser"
+	Name="wkexe"
+	ProjectGUID="{5C21D8AD-3930-4AC3-9E32-21FCA603DB76}"
+	RootNamespace="wkexe"
 	Keyword="Win32Proj"
+	TargetFrameworkVersion="0"
 	>
 	<Platforms>
 		<Platform
@@ -41,7 +42,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\wke"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;STATIC_GETOPT;_CRT_SECURE_NO_WARNINGS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -85,9 +86,6 @@
 				Name="VCAppVerifierTool"
 			/>
 			<Tool
-				Name="VCWebDeploymentTool"
-			/>
-			<Tool
 				Name="VCPostBuildEventTool"
 				CommandLine="REM Do not edit from the Visual Studio IDE! Customize via a $(ProjectName)PostBuild.cmd file&#x0D;&#x0A;if not exist &quot;$(ProjectDir)$(ProjectName)PostBuild.cmd&quot; exit /b&#x0D;&#x0A;&#x0D;&#x0A;set CONFIGURATIONNAME=$(ConfigurationName)&#x0D;&#x0A;set INPUTDIR=$(InputDir)&#x0D;&#x0A;set INPUTFILENAME=$(InputFileName)&#x0D;&#x0A;set INPUTPATH=$(InputPath)&#x0D;&#x0A;set INTDIR=$(IntDir)&#x0D;&#x0A;set OUTDIR=$(OutDir)&#x0D;&#x0A;set PLATFORMNAME=$(PlatformName)&#x0D;&#x0A;set PROJECTDIR=$(ProjectDir)&#x0D;&#x0A;set PROJECTFILENAME=$(ProjectFileName)&#x0D;&#x0A;set PROJECTNAME=$(ProjectName)&#x0D;&#x0A;set PROJECTPATH=$(ProjectPath)&#x0D;&#x0A;set SOLUTIONDIR=$(SolutionDir)&#x0D;&#x0A;set SOLUTIONFILENAME=$(SolutionFileName)&#x0D;&#x0A;set SOLUTIONNAME=$(SolutionName)&#x0D;&#x0A;set SOLUTIONPATH=$(SolutionPath)&#x0D;&#x0A;set TARGETDIR=$(TargetDir)&#x0D;&#x0A;set TARGETEXT=$(TargetExt)&#x0D;&#x0A;set TARGETFILENAME=$(TargetFileName)&#x0D;&#x0A;set TARGETPATH=$(TargetPath)&#x0D;&#x0A;&#x0D;&#x0A;REM If any of the above variables didn&apos;t exist previously and&#x0D;&#x0A;REM were set to an empty string, set will set the errorlevel to 1,&#x0D;&#x0A;REM which will cause the project-specific script to think the build&#x0D;&#x0A;REM has failed. This cmd /c call will clear the errorlevel.&#x0D;&#x0A;cmd /c&#x0D;&#x0A;&#x0D;&#x0A;&quot;$(ProjectDir)$(ProjectName)PostBuild.cmd&quot;&#x0D;&#x0A;"
 			/>
@@ -120,7 +118,7 @@
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="..\wke"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;STATIC_GETOPT;_CRT_SECURE_NO_WARNINGS"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
 				WarningLevel="3"
@@ -165,9 +163,6 @@
 				Name="VCAppVerifierTool"
 			/>
 			<Tool
-				Name="VCWebDeploymentTool"
-			/>
-			<Tool
 				Name="VCPostBuildEventTool"
 				CommandLine="REM Do not edit from the Visual Studio IDE! Customize via a $(ProjectName)PostBuild.cmd file&#x0D;&#x0A;if not exist &quot;$(ProjectDir)$(ProjectName)PostBuild.cmd&quot; exit /b&#x0D;&#x0A;&#x0D;&#x0A;set CONFIGURATIONNAME=$(ConfigurationName)&#x0D;&#x0A;set INPUTDIR=$(InputDir)&#x0D;&#x0A;set INPUTFILENAME=$(InputFileName)&#x0D;&#x0A;set INPUTPATH=$(InputPath)&#x0D;&#x0A;set INTDIR=$(IntDir)&#x0D;&#x0A;set OUTDIR=$(OutDir)&#x0D;&#x0A;set PLATFORMNAME=$(PlatformName)&#x0D;&#x0A;set PROJECTDIR=$(ProjectDir)&#x0D;&#x0A;set PROJECTFILENAME=$(ProjectFileName)&#x0D;&#x0A;set PROJECTNAME=$(ProjectName)&#x0D;&#x0A;set PROJECTPATH=$(ProjectPath)&#x0D;&#x0A;set SOLUTIONDIR=$(SolutionDir)&#x0D;&#x0A;set SOLUTIONFILENAME=$(SolutionFileName)&#x0D;&#x0A;set SOLUTIONNAME=$(SolutionName)&#x0D;&#x0A;set SOLUTIONPATH=$(SolutionPath)&#x0D;&#x0A;set TARGETDIR=$(TargetDir)&#x0D;&#x0A;set TARGETEXT=$(TargetExt)&#x0D;&#x0A;set TARGETFILENAME=$(TargetFileName)&#x0D;&#x0A;set TARGETPATH=$(TargetPath)&#x0D;&#x0A;&#x0D;&#x0A;REM If any of the above variables didn&apos;t exist previously and&#x0D;&#x0A;REM were set to an empty string, set will set the errorlevel to 1,&#x0D;&#x0A;REM which will cause the project-specific script to think the build&#x0D;&#x0A;REM has failed. This cmd /c call will clear the errorlevel.&#x0D;&#x0A;cmd /c&#x0D;&#x0A;&#x0D;&#x0A;&quot;$(ProjectDir)$(ProjectName)PostBuild.cmd&quot;&#x0D;&#x0A;"
 			/>
@@ -176,62 +171,42 @@
 	<References>
 	</References>
 	<Files>
-		<Filter
-			Name="Source Files"
-			Filter="cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx"
-			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
+		<File
+			RelativePath="..\wkexe\app.c"
 			>
-			<File
-				RelativePath="..\wkeBrowser\hyperlink.h"
-				>
-			</File>
-			<File
-				RelativePath="..\wkeBrowser\render.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\wkeBrowser\render.h"
-				>
-			</File>
-			<File
-				RelativePath="..\wkeBrowser\renderGDI.h"
-				>
-			</File>
-			<File
-				RelativePath="..\wkeBrowser\Resource.h"
-				>
-			</File>
-			<File
-				RelativePath=".\targetver.h"
-				>
-			</File>
-			<File
-				RelativePath="..\wkeBrowser\wkeBrowser.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\wkeBrowser\wkeBrowser.h"
-				>
-			</File>
-		</Filter>
-		<Filter
-			Name="Resource Files"
-			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav"
-			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
+		</File>
+		<File
+			RelativePath="..\wkexe\app.h"
 			>
-			<File
-				RelativePath="..\wkeBrowser\small.ico"
-				>
-			</File>
-			<File
-				RelativePath="..\wkeBrowser\wkeBrowser.ico"
-				>
-			</File>
-			<File
-				RelativePath="..\wkeBrowser\wkeBrowser.rc"
-				>
-			</File>
-		</Filter>
+		</File>
+		<File
+			RelativePath="..\wkexe\cmdline.c"
+			>
+		</File>
+		<File
+			RelativePath="..\wkexe\cmdline.h"
+			>
+		</File>
+		<File
+			RelativePath="..\wkexe\getopt.c"
+			>
+		</File>
+		<File
+			RelativePath="..\wkexe\getopt.h"
+			>
+		</File>
+		<File
+			RelativePath="..\wkexe\main.c"
+			>
+		</File>
+		<File
+			RelativePath="..\wkexe\path.c"
+			>
+		</File>
+		<File
+			RelativePath="..\wkexe\path.h"
+			>
+		</File>
 	</Files>
 	<Globals>
 	</Globals>

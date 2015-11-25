@@ -11,7 +11,7 @@
 		PreprocessorDefinitions="__WIN32__;DISABLE_3D_RENDERING;WEBCORE_CONTEXT_MENUS"
 		UsePrecompiledHeader="2"
 		PrecompiledHeaderThrough="WebCorePrefix.h"
-		ProgramDataBaseFileName="$(OutDir)\$(TargetName).vc80.pdb"
+		ProgramDataBaseFileName="$(OutDir)\$(TargetName).vc90.pdb"
 		ForcedIncludeFiles="WebCorePrefix.h;ICUVersion.h"
 	/>
 </VisualStudioPropertySheet>
