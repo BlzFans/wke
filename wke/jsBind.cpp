@@ -182,7 +182,7 @@ public:
             m_buffer = new T[len * 2 + 1];
             m_capacity = len * 2;
         }
-        memcpy(m_buffer, ptr, len);
+        memcpy(m_buffer, ptr, len * sizeof(T));
         m_buffer[len] = 0;
     }
 
