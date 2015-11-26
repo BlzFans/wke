@@ -1,4 +1,7 @@
-﻿#### 2015-11-25 22:28 增加基于 vs2008 工程文件 的 vs2005 工程文件。
+﻿#### 2015-11-26 10:07 修正 wkeBrowser 的 _WIN32_WINNT 导致找不到符号的问题。
+* 修正 wkeBrowser 的 _WIN32_WINNT 导致找不到 IDC_HAND 宏的问题，将其设置为最低 0x501（Windows XP）即可。
+
+#### 2015-11-25 22:28 增加基于 vs2008 工程文件 的 vs2005 工程文件。
 * 增加基于 vs2008 工程文件 的 vs2005 工程文件。
 * 修改 wkeBrowser 中 _WIN32_WINNT 定义，以支持 vs2005 编译。
 * 去掉 wkeBrowser 当中对 Direct3D 的引用，以支持 vs2005 编译。

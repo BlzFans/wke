@@ -1,8 +1,8 @@
 
 #define WIN32_LEAN_AND_MEAN
-#if !defined(_WIN32_WINNT) || (_WIN32_WINNT < 0x400)
+#if !defined(_WIN32_WINNT) || (_WIN32_WINNT < 0x501)
 #undef _WIN32_WINNT
-#define _WIN32_WINNT 0x400
+#define _WIN32_WINNT 0x501
 #endif
 
 #include <windows.h>
