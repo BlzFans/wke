@@ -159,9 +159,9 @@ public:
         data->finalize = js_releaseObject;
 	}
 
-	void msgbox(const wchar_t* msg)
+	void msgbox(const wchar_t* msg, const wchar_t* title)
 	{
-		MessageBoxW(NULL, msg, NULL, MB_OK);
+		MessageBoxW(NULL, msg, title, MB_OK);
 	}
 
 protected:
@@ -213,7 +213,7 @@ protected:
 			if (argCount >= 2)
 				wcsncpy(title, jsToTempStringW(es, jsArg(es, 1)), 1024);
 
-			pthis->m_obj->msgbox(text);
+            pthis->m_obj->msgbox(text, title[0] ? title : NULL);
 			return jsInt(0);
 		}
 
