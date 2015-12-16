@@ -303,6 +303,56 @@ typedef bool (*wkePromptBoxCallback)(wkeWebView webView, void* param, const wkeS
 WKE_API void wkeOnPromptBox(wkeWebView webView, wkePromptBoxCallback callback, void* callbackParam);
 
 
+typedef enum 
+{
+    WKE_MESSAGE_SOURCE_HTML,
+    WKE_MESSAGE_SOURCE_XML,
+    WKE_MESSAGE_SOURCE_JS,
+    WKE_MESSAGE_SOURCE_NETWORK,
+    WKE_MESSAGE_SOURCE_CONSOLE_API,
+    WKE_MESSAGE_SOURCE_OTHER
+
+} wkeMessageSource;
+
+typedef enum 
+{
+    WKE_MESSAGE_TYPE_LOG,
+    WKE_MESSAGE_TYPE_DIR,
+    WKE_MESSAGE_TYPE_DIR_XML,
+    WKE_MESSAGE_TYPE_TRACE,
+    WKE_MESSAGE_TYPE_START_GROUP,
+    WKE_MESSAGE_TYPE_START_GROUP_COLLAPSED,
+    WKE_MESSAGE_TYPE_END_GROUP,
+    WKE_MESSAGE_TYPE_ASSERT
+
+} wkeMessageType;
+
+typedef enum 
+{
+    WKE_MESSAGE_LEVEL_TIP,
+    WKE_MESSAGE_LEVEL_LOG,
+    WKE_MESSAGE_LEVEL_WARNING,
+    WKE_MESSAGE_LEVEL_ERROR,
+    WKE_MESSAGE_LEVEL_DEBUG
+
+} wkeMessageLevel;
+
+typedef struct
+{
+    wkeMessageSource source;
+    wkeMessageType type;
+    wkeMessageLevel level;
+    wkeString message;
+    wkeString url;
+    unsigned int lineNumber;
+
+} wkeConsoleMessage;
+
+typedef void (*wkeConsoleMessageCallback)(wkeWebView webView, void* param, const wkeConsoleMessage* message);
+WKE_API void wkeOnConsoleMessage(wkeWebView webView, wkeConsoleMessageCallback callback, void* callbackParam);
+
+
+
 typedef enum
 {
     WKE_NAVIGATION_TYPE_LINKCLICK,

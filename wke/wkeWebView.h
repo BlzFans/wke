@@ -70,6 +70,9 @@ struct CWebViewHandler
 
     wkeLoadingFinishCallback loadingFinishCallback;
     void* loadingFinishCallbackParam;
+
+    wkeConsoleMessageCallback consoleMessageCallback;
+    void* consoleMessageCallbackParam;
 };
 
 
@@ -194,6 +197,8 @@ public:
 
     void onNavigation(wkeNavigationCallback callback, void* callbackParam);
     void onCreateView(wkeCreateViewCallback callback, void* callbackParam);
+
+    void onConsoleMessage(wkeConsoleMessageCallback callback, void* callbackParam);
 
     virtual void onLoadingFinish(wkeLoadingFinishCallback callback, void* callbackParam);
     virtual void onDocumentReady(wkeDocumentReadyCallback callback, void* callbackParam);

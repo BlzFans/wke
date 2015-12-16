@@ -139,6 +139,66 @@ bool onNavigation(wkeWebView webView, void* param, wkeNavigationType type, const
     return true;
 }
 
+const wchar_t* messageSourceName(int i)
+{
+    const wchar_t* s_names[] = {
+        L"html",
+        L"xml",
+        L"js",
+        L"network",
+        L"console",
+        L"other"
+    };
+    return s_names[i];
+}
+
+const wchar_t* messageTypeName(int i)
+{
+    const wchar_t* s_names[] = {
+        L"log",
+        L"dir",
+        L"dir-xml",
+        L"trace",
+        L"start-group",
+        L"start-group-collapsed",
+        L"end-group",
+        L"assert"
+    };
+    return s_names[i];
+}
+
+const wchar_t* messageLevelName(int i)
+{
+    const wchar_t* s_names[] = {
+        L"tip",
+        L"log",
+        L"warning",
+        L"error",
+        L"debug"
+    };
+    return s_names[i];
+}
+
+FILE* g_consoleLog = NULL;
+void onConsoleMessage(wkeWebView webView, void* param, const wkeConsoleMessage* message)
+{
+    wchar_t msg[1024 * 10 + 1] = { 0 };
+    int len = swprintf(msg, 1024*10, L"[%s:%s:%s] %s in %s(%d)",
+        messageSourceName(message->source),
+        messageTypeName(message->type),
+        messageLevelName(message->level),
+        wkeGetStringW(message->message),
+        wkeGetStringW(message->url), (int)message->lineNumber);
+    if (len < 0)
+        len = 1024 * 10;
+    msg[len] = 0;
+
+    if (g_consoleLog)
+        fputws(msg, g_consoleLog);
+
+    OutputDebugStringW(msg);
+}
+
 /*
 ## 测试绑定对象功能
 运行wkeWebBrowser.exe，在地址栏输入`inject`回车，即可注册JS对象`test`，注册后就JS中可访问`test`对象的成员变量`value`和成员函数`msgbox`了。
@@ -288,6 +348,11 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
     wkeOnTitleChanged(g_webView, onTitleChanged, NULL);
     wkeOnURLChanged(g_webView, onURLChanged, NULL);
     wkeOnNavigation(g_webView, onNavigation, NULL);
+
+    if (g_consoleLog = fopen("wkeBrowserConsole.txt", "wb"))
+        fwrite("\xFF\xFE", 2, 1, g_consoleLog);
+
+    wkeOnConsoleMessage(g_webView, onConsoleMessage, NULL);
     //wkeLoadUrl("file:///test/test.html");
 
     //设置UserAgent
@@ -358,6 +423,9 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
     g_render->destroy();
     wkeDestroyWebView(g_webView);
     wkeFinalize();
+
+    if (g_consoleLog)
+        fclose(g_consoleLog);
 
 	return (int) msg.wParam;
 }

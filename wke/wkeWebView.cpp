@@ -1244,6 +1244,12 @@ void CWebView::onCreateView(wkeCreateViewCallback callback, void* callbackParam)
     m_handler.createViewCallbackParam = callbackParam;
 }
 
+void CWebView::onConsoleMessage(wkeConsoleMessageCallback callback, void* callbackParam)
+{
+    m_handler.consoleMessageCallback = callback;
+    m_handler.consoleMessageCallbackParam = callbackParam;
+}
+
 void CWebView::onLoadingFinish(wkeLoadingFinishCallback callback, void* callbackParam)
 {
     m_handler.loadingFinishCallback = callback;

@@ -504,9 +504,25 @@ bool ChromeClient::canRunBeforeUnloadConfirmPanel()
     return true;
 }
 
-void ChromeClient::addMessageToConsole(WebCore::MessageSource, WebCore::MessageType, WebCore::MessageLevel, const WTF::String& message, unsigned int lineNumber, const WTF::String& url)
+void ChromeClient::addMessageToConsole(WebCore::MessageSource source, WebCore::MessageType type, WebCore::MessageLevel level, const WTF::String& message, unsigned int lineNumber, const WTF::String& url)
 {
     outputMsg(L"console message %s %d %s\n", CSTR(message), lineNumber, CSTR(url));
+
+    wke::CWebViewHandler& handler = m_webView->m_handler;
+    if (!handler.consoleMessageCallback)
+        return;
+
+    wkeConsoleMessage msgStruct;
+    msgStruct.source = (wkeMessageSource)source;
+    msgStruct.type = (wkeMessageType)type;
+    msgStruct.level = (wkeMessageLevel)level;
+    msgStruct.lineNumber = lineNumber;
+
+    wke::CString csMessage = message;
+    wke::CString csUrl = url;
+    msgStruct.message = &csMessage;
+    msgStruct.url = &csUrl;
+    handler.consoleMessageCallback(m_webView, handler.consoleMessageCallbackParam, &msgStruct);
 }
 
 void ChromeClient::setResizable(bool)

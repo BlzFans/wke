@@ -540,6 +540,11 @@ void wkeOnLoadingFinish(wkeWebView webView, wkeLoadingFinishCallback callback, v
     webView->onLoadingFinish(callback, param);
 }
 
+void wkeOnConsoleMessage(wkeWebView webView, wkeConsoleMessageCallback callback, void* callbackParam)
+{
+    webView->onConsoleMessage(callback, callbackParam);
+}
+
 const utf8* wkeGetString(const wkeString s)
 {
     return s ? s->string() : "";
