@@ -278,6 +278,10 @@ WKE_API float wkeGetZoomFactor(wkeWebView webView);
 
 WKE_API void wkeSetEditable(wkeWebView webView, bool editable);
 
+WKE_API void wkeSetHostWindow(wkeWebView webWindow, HWND hostWindow);
+WKE_API HWND wkeGetHostWindow(wkeWebView webWindow);
+
+
 WKE_API const utf8* wkeGetString(const wkeString string);
 WKE_API const wchar_t* wkeGetStringW(const wkeString string);
 
@@ -434,7 +438,6 @@ WKE_API void wkeResizeWindow(wkeWebView webWindow, int width, int height);
 
 WKE_API void wkeSetWindowTitle(wkeWebView webWindow, const utf8* title);
 WKE_API void wkeSetWindowTitleW(wkeWebView webWindow, const wchar_t* title);
-
 
 
 /***JavaScript Bind***/

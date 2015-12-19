@@ -38,6 +38,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "wkeBrowser", "wkeBrowser.vc
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "wkexe", "wkexe.vcproj", "{5C21D8AD-3930-4AC3-9E32-21FCA603DB76}"
+	ProjectSection(ProjectDependencies) = postProject
+		{011D10F1-B656-4A1B-A0C3-3842F02122C6} = {011D10F1-B656-4A1B-A0C3-3842F02122C6}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

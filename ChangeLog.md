@@ -1,4 +1,11 @@
-﻿#### 2015-12-19 17:58 wkeBrowser 中增加使用 jsFunction 绑定函数的示例。
+﻿#### 2015-12-19 23:03 修正 wke 无法正确加载 windowed 插件的问题。
+* 增加 wkeSetHostWindow，若使用 windowed 插件，必须先调用此函数，以免插件找不到容器容器。
+* 增加 wkeSetHostWindow，若使用 windowed 插件，必须先调用此函数，以免插件找不到容器容器。
+* 修改 WebCore::PluginView::platformStart 函数，若找不到插件容器窗口，则使用桌面为容器。
+* 在 wkeBrowser 当中增加 wkeSetHostWindow 调用，以支持 windowed 插件，使用 VLC 插件测试通过。
+* 在 使用 wkeCreateWindow 返回的 webView 增加自动的 wkeSetHostWindow 调用，以支持 windowed 插件。
+
+#### 2015-12-19 17:58 wkeBrowser 中增加使用 jsFunction 绑定函数的示例。
 * wkeBrowser 中增加使用 jsFunction 绑定函数的示例。
 
 #### 2015-12-16 16:38 增加控制台消息回调。

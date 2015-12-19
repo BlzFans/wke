@@ -725,3 +725,13 @@ void wkeSetWindowTitleW(wkeWebView webWindow, const wchar_t* title)
         return window->setTitle(title);
 }
 
+void wkeSetHostWindow(wkeWebView webView, HWND host)
+{
+    webView->setHostWindow(host);
+}
+
+HWND wkeGetHostWindow(wkeWebView webView)
+{
+    return webView->hostWindow();
+}
+

@@ -1,0 +1,36 @@
+<HTML>
+<HEAD>
+<script src="jquery.min.js" type="text/javascript">></script>
+</HEAD>
+<BODY>
+<!--需要将 vlc.reg 当中插件路径修改为你机器上的vlc安装目录下的插件dll路径，双击导入注册表-->
+<embed id="vlc" type="application/x-vlc-plugin" pluginspage="http://www.videolan.org"
+	 width="640"
+	 height="480">
+</embed><BR>
+<input id="url" style="width:600px" type="input" placeholder="输入播放地址" />
+<input type="button" value="播放" onclick="playUrl()">
+</BODY>
+
+<script>
+function play(url)
+{
+	try {
+		var vlc = document.getElementById('vlc');
+		vlc.playlist.stop();
+		vlc.playlist.clear();
+		vlc.playlist.add(url);
+		vlc.playlist.play();
+	}
+	catch (e) {
+		alert(e.message);
+	}
+}
+function playUrl()
+{
+	var url = jQuery("#url").val();
+	alert(url);
+	play(url);
+}
+</script>
+</HTML>

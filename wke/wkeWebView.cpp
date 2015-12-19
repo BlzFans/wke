@@ -22,15 +22,16 @@ namespace wke
 
 
 CWebView::CWebView()
-    :m_name("")
-    ,m_transparent(false)
-    ,m_dirty(false)
-    ,m_width(0)
-    ,m_height(0)
-    ,m_graphicsContext(NULL)
-    ,m_awake(true)
-    ,m_title("")
-    ,m_cookie("")
+    : m_name("")
+    , m_transparent(false)
+    , m_dirty(false)
+    , m_width(0)
+    , m_height(0)
+    , m_graphicsContext(NULL)
+    , m_awake(true)
+    , m_title("")
+    , m_cookie("")
+    , m_hostWindow(NULL)
 {
     _initHandler();
     _initPage();
@@ -649,6 +650,16 @@ void CWebView::setMediaVolume(float volume)
 float CWebView::mediaVolume() const
 {
     return page()->mediaVolume();
+}
+
+void CWebView::setHostWindow(HWND win)
+{
+    m_hostWindow = win;
+}
+
+HWND CWebView::hostWindow() const
+{
+    return m_hostWindow;
 }
 
 static WebCore::MouseEventType messageToEventType(unsigned int message)

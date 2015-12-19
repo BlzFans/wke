@@ -162,7 +162,9 @@ bool CWebWindow::_createWindow(HWND parent, unsigned styles, unsigned styleEx, i
     if (!IsWindow(m_hwnd))
         return FALSE;
 
+    CWebView::setHostWindow(m_hwnd);
     CWebView::resize(width, height);
+
     return TRUE;
 }
 

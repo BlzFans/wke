@@ -278,6 +278,10 @@ WKE_API float wkeGetZoomFactor(wkeWebView webView);
 
 WKE_API void wkeSetEditable(wkeWebView webView, bool editable);
 
+WKE_API void wkeSetHostWindow(wkeWebView webWindow, HWND hostWindow);
+WKE_API HWND wkeGetHostWindow(wkeWebView webWindow);
+
+
 WKE_API const utf8* wkeGetString(const wkeString string);
 WKE_API const wchar_t* wkeGetStringW(const wkeString string);
 
@@ -301,6 +305,56 @@ WKE_API void wkeOnConfirmBox(wkeWebView webView, wkeConfirmBoxCallback callback,
 
 typedef bool (*wkePromptBoxCallback)(wkeWebView webView, void* param, const wkeString msg, const wkeString defaultResult, wkeString result);
 WKE_API void wkeOnPromptBox(wkeWebView webView, wkePromptBoxCallback callback, void* callbackParam);
+
+
+typedef enum 
+{
+    WKE_MESSAGE_SOURCE_HTML,
+    WKE_MESSAGE_SOURCE_XML,
+    WKE_MESSAGE_SOURCE_JS,
+    WKE_MESSAGE_SOURCE_NETWORK,
+    WKE_MESSAGE_SOURCE_CONSOLE_API,
+    WKE_MESSAGE_SOURCE_OTHER
+
+} wkeMessageSource;
+
+typedef enum 
+{
+    WKE_MESSAGE_TYPE_LOG,
+    WKE_MESSAGE_TYPE_DIR,
+    WKE_MESSAGE_TYPE_DIR_XML,
+    WKE_MESSAGE_TYPE_TRACE,
+    WKE_MESSAGE_TYPE_START_GROUP,
+    WKE_MESSAGE_TYPE_START_GROUP_COLLAPSED,
+    WKE_MESSAGE_TYPE_END_GROUP,
+    WKE_MESSAGE_TYPE_ASSERT
+
+} wkeMessageType;
+
+typedef enum 
+{
+    WKE_MESSAGE_LEVEL_TIP,
+    WKE_MESSAGE_LEVEL_LOG,
+    WKE_MESSAGE_LEVEL_WARNING,
+    WKE_MESSAGE_LEVEL_ERROR,
+    WKE_MESSAGE_LEVEL_DEBUG
+
+} wkeMessageLevel;
+
+typedef struct
+{
+    wkeMessageSource source;
+    wkeMessageType type;
+    wkeMessageLevel level;
+    wkeString message;
+    wkeString url;
+    unsigned int lineNumber;
+
+} wkeConsoleMessage;
+
+typedef void (*wkeConsoleMessageCallback)(wkeWebView webView, void* param, const wkeConsoleMessage* message);
+WKE_API void wkeOnConsoleMessage(wkeWebView webView, wkeConsoleMessageCallback callback, void* callbackParam);
+
 
 
 typedef enum
@@ -384,7 +438,6 @@ WKE_API void wkeResizeWindow(wkeWebView webWindow, int width, int height);
 
 WKE_API void wkeSetWindowTitle(wkeWebView webWindow, const utf8* title);
 WKE_API void wkeSetWindowTitleW(wkeWebView webWindow, const wchar_t* title);
-
 
 
 /***JavaScript Bind***/

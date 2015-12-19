@@ -999,8 +999,16 @@ bool PluginView::platformStart()
             flags |= WS_VISIBLE;
 
         HWND parentWindowHandle = windowHandleForPageClient(m_parentFrame->view()->hostWindow()->platformPageClient());
+        HINSTANCE module = WebCore::instanceHandle();
         HWND window = ::CreateWindowEx(0, kWebPluginViewdowClassName, 0, flags,
-                                       0, 0, 0, 0, parentWindowHandle, 0, WebCore::instanceHandle(), 0);
+                                       0, 0, 0, 0, parentWindowHandle, 0, module, 0);
+
+        if (!window)
+        {
+            parentWindowHandle = GetDesktopWindow();
+            window = ::CreateWindowEx(0, kWebPluginViewdowClassName, 0, flags,
+                0, 0, 0, 0, parentWindowHandle, 0, module, 0);
+        }
 
 #if OS(WINDOWS) && (PLATFORM(QT) || PLATFORM(WX))
         m_window = window;

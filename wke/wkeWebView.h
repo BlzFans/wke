@@ -159,6 +159,9 @@ public:
     void setMediaVolume(float volume);
     float mediaVolume() const;
     
+    void setHostWindow(HWND win);
+    HWND hostWindow() const;
+
     bool fireMouseEvent(unsigned int message, int x, int y, unsigned int flags);
     bool fireContextMenuEvent(int x, int y, unsigned int flags);
     bool fireMouseWheelEvent(int x, int y, int delta, unsigned int flags);
@@ -238,6 +241,7 @@ protected:
     void* m_pixels;
 
     bool m_awake;
+    HWND m_hostWindow;
 
     CWebViewHandler m_handler;
 };

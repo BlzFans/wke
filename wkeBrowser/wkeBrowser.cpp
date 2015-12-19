@@ -433,6 +433,9 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
         0, 
         hInstance, 0);
 
+    //有窗口句柄插件必须设置
+    wkeSetHostWindow(g_webView, hViewWindow);
+
     resizeSubViews();
 
     DefEditProc = reinterpret_cast<WNDPROC>(GetWindowLongPtr(hURLBarWnd, GWL_WNDPROC));

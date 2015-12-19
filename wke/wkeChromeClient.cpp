@@ -391,17 +391,33 @@ void ChromeClient::scrollbarsModeDidChange() const
 
 PlatformPageClient ChromeClient::platformPageClient() const 
 {
-    return NULL;
+    return m_webView ? m_webView->hostWindow() : NULL;
 }
 
-WebCore::IntRect ChromeClient::windowToScreen(const WebCore::IntRect& pt) const 
+WebCore::IntRect ChromeClient::windowToScreen(const WebCore::IntRect& windowPoint) const 
 {
-    return pt;
+    HWND hwnd = m_webView ? m_webView->hostWindow() : NULL;
+    if (!IsWindow(hwnd))
+        return windowPoint;
+
+    POINT tempPoint = { windowPoint.x(), windowPoint.y() };
+    ClientToScreen(hwnd, &tempPoint);
+    
+    WebCore::IntRect screePoint(tempPoint.x, tempPoint.y, windowPoint.width(), windowPoint.height());
+    return screePoint;
 }
 
-WebCore::IntPoint ChromeClient::screenToWindow(const WebCore::IntPoint& pt) const 
+WebCore::IntPoint ChromeClient::screenToWindow(const WebCore::IntPoint& screePoint) const 
 {
-    return pt;
+    HWND hwnd = m_webView ? m_webView->hostWindow() : NULL;
+    if (!IsWindow(hwnd))
+        return screePoint;
+
+    POINT tempPoint = { screePoint.x(), screePoint.y() };
+    ScreenToClient(hwnd, &tempPoint);
+
+    WebCore::IntPoint windowPoint(tempPoint.x, tempPoint.y);
+    return windowPoint;
 }
 
 void ChromeClient::scroll(const WebCore::IntSize&, const WebCore::IntRect&, const WebCore::IntRect&)

@@ -1,0 +1,17 @@
+<HTML>
+<HEAD>
+</HEAD>
+<BODY>
+<div id="output"></div>
+</BODY>
+
+<script src="jQuery.min.js" type="text/javascript"></script>
+<script>
+for(var i=0; i<navigator.plugins.length; i++){
+	var name = navigator.plugins[i].name;
+	var output = jQuery("#output");
+	var html = output.html();
+	output.html(html + name + "<BR>");
+}
+</script>
+</HTML>
