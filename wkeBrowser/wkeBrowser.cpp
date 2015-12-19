@@ -205,6 +205,53 @@ void onConsoleMessage(wkeWebView webView, void* param, const wkeConsoleMessage* 
 在地址栏输入`javascript:test.msgbox('1')`测试调用成员函数。
 在地址栏输入`javascript:document.write(test.value)`测试访问成员变量。
 */
+struct BindTestFunction
+{
+    static jsValue js_callAsFunction(jsExecState es, jsValue object, jsValue* args, int argCount)
+    {
+        wchar_t text[1025] = { 0 };
+        wchar_t title[1025] = { 0 };
+
+        if (argCount >= 1)
+            wcsncpy(text, jsToTempStringW(es, jsArg(es, 0)), 1024);
+        if (argCount >= 2)
+            wcsncpy(title, jsToTempStringW(es, jsArg(es, 1)), 1024);
+
+        MessageBoxW(NULL, text, title[0] ? title : NULL, MB_OK);
+        return jsInt(0);
+    }
+
+    static void js_releaseFunction(jsData* data)
+    {
+        delete data;
+    }
+
+    static void bindToGlobal(jsExecState es)
+    {
+        jsData* data = new jsData();
+        memset(data, 0, sizeof(jsData));
+        strcpy(data->typeName, "Function");
+        data->callAsFunction = js_callAsFunction;
+        data->finalize = js_releaseFunction;
+
+        jsValue func = jsFunction(es, data);
+        jsSetGlobal(es, "popup", func);
+    }
+
+    static void bindToObject(jsExecState es, jsValue obj)
+    {
+        jsData* data = new jsData();
+        memset(data, 0, sizeof(jsData));
+        strcpy(data->typeName, "Function");
+        data->callAsFunction = js_callAsFunction;
+        data->finalize = js_releaseFunction;
+
+        jsValue func = jsFunction(es, data);
+        jsSet(es, obj, "popup", func);
+    }
+};
+
+
 class BindTestObject : public jsData
 {
 public:
@@ -1051,6 +1098,8 @@ LRESULT CALLBACK UrlEditProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
             jsExecState es = wkeGlobalExec(g_webView);
             jsValue obj = jsObject(es, testObj);
             jsSetGlobal(es, "test", obj);
+
+            BindTestFunction::bindToGlobal(es);
 		}
 		else if (wcsstr(url, L"javascript:") == url)
 		{
