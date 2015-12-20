@@ -1,6 +1,7 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "wkeChromeClient.h"
+#include <WebCore/FrameLoadRequest.h>
 
 //////////////////////////////////////////////////////////////////////////
 
@@ -601,30 +602,35 @@ void ChromeClient::show()
 
 }
 
-WebCore::Page* ChromeClient::createWindow(WebCore::Frame*, const WebCore::FrameLoadRequest&, const WebCore::WindowFeatures& features, const WebCore::NavigationAction& action)
+WebCore::Page* ChromeClient::createWindow(WebCore::Frame*, const WebCore::FrameLoadRequest& request, const WebCore::WindowFeatures& features, const WebCore::NavigationAction& action)
 {
     // cexer 实现新窗口控制
     wke::CWebViewHandler& handler = m_webView->m_handler;
     if (!handler.createViewCallback)
         return m_webView->page();
 
-    wkeNavigationType type = (wkeNavigationType)action.type();
-    wke::CString url = action.url().string();
-    wkeWindowFeatures windowFeatures;
-    windowFeatures.x = features.xSet ? features.x : CW_USEDEFAULT;
-    windowFeatures.y = features.ySet ? features.y : CW_USEDEFAULT;
-    windowFeatures.width = features.widthSet ? features.width : CW_USEDEFAULT;
-    windowFeatures.height = features.heightSet ? features.height : CW_USEDEFAULT;
-    windowFeatures.locationBarVisible = features.locationBarVisible;
-    windowFeatures.menuBarVisible = features.menuBarVisible;
-    windowFeatures.resizable = features.resizable;
-    windowFeatures.statusBarVisible = features.statusBarVisible;
-    windowFeatures.toolBarVisible = features.toolBarVisible;
-    windowFeatures.fullscreen = features.fullscreen;
+    wkeNewViewInfo info;
+    info.navigationType = (wkeNavigationType)action.type();
+    info.x = features.xSet ? features.x : CW_USEDEFAULT;
+    info.y = features.ySet ? features.y : CW_USEDEFAULT;
+    info.width = features.widthSet ? features.width : CW_USEDEFAULT;
+    info.height = features.heightSet ? features.height : CW_USEDEFAULT;
+    info.locationBarVisible = features.locationBarVisible;
+    info.menuBarVisible = features.menuBarVisible;
+    info.resizable = features.resizable;
+    info.statusBarVisible = features.statusBarVisible;
+    info.toolBarVisible = features.toolBarVisible;
+    info.fullscreen = features.fullscreen;
 
-    wke::CWebView* createdWebView = handler.createViewCallback(m_webView, handler.createViewCallbackParam, type, &url, &windowFeatures);
+    wke::CString url = action.url().string();
+    info.url = &url;
+
+    wke::CString target = request.frameName();
+    info.target = &target;
+
+    wke::CWebView* createdWebView = handler.createViewCallback(m_webView, handler.createViewCallbackParam, &info);
     if (!createdWebView)
-        return m_webView->page();
+        return NULL;
 
     return createdWebView->page();
 }

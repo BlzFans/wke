@@ -1,4 +1,9 @@
-﻿#### 2015-12-20 15:37 去掉 wke 接口定义的平台依赖。
+﻿#### 2015-12-20 19:10 修改 wkeOnCreateView 函数。
+* 修改 wkeOnCreateView 函数参数，使用结构体 wkeNewViewInfo 传递，并增加 target 信息。
+* 修改 wkeOnCreateView 函数行为，若返回 NULL，则不继续浏览该地址。、
+* 在 wkeBrowser 当中增加 wkeOnCreateView 测试。
+
+#### 2015-12-20 15:37 去掉 wke 接口定义的平台依赖。
 * 去掉 wke.h 当中对 <windows.h>、HWND、HDC 等的直接引用，接口上去掉平台依赖。
 
 #### 2015-12-20 15:37 明确定义 wke 接口的调用约定为 cdecl。

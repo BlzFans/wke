@@ -290,7 +290,7 @@ public:
     virtual void dispatchDidFirstLayout() { }
     virtual void dispatchDidFirstVisuallyNonEmptyLayout() { }
 
-    virtual Frame* dispatchCreatePage(const NavigationAction&) { return 0; }
+    virtual Frame* dispatchCreatePage(const NavigationAction& action, const ResourceRequest& request, PassRefPtr<FormState> formState, const String& frameName) { return 0; }
     virtual void dispatchShow() { }
 
     virtual void dispatchDecidePolicyForResponse(FramePolicyFunction, const ResourceResponse&, const ResourceRequest&) { }

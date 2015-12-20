@@ -139,6 +139,34 @@ bool onNavigation(wkeWebView webView, void* param, wkeNavigationType type, const
     return true;
 }
 
+wkeWebView onCreateView(wkeWebView webView, void* param, const wkeNewViewInfo* info)
+{
+    const wchar_t* target = wkeGetStringW(info->target);
+    const wchar_t* url = wkeGetStringW(info->url);
+
+    if (wcscmp(target, L"") == 0 || wcscmp(target, L"_blank") == 0)
+    {
+        ShellExecuteW(NULL, L"open", (LPWSTR)url + 8, NULL, NULL, SW_SHOW);
+        return NULL;
+    }
+    else if (wcscmp(target, L"_self") == 0)
+    {
+        return webView;
+    }
+    else if (wcscmp(target, L"wontOpen") == 0)
+    {
+        return NULL;
+    }
+    else
+    {
+        wkeWebView newWindow = wkeCreateWebWindow(WKE_WINDOW_TYPE_POPUP, NULL, info->x, info->y, info->width, info->height);
+        wkeShowWindow(newWindow, SW_SHOW);
+        return newWindow;
+    }
+
+    return NULL;
+}
+
 const wchar_t* messageSourceName(int i)
 {
     const wchar_t* s_names[] = {
@@ -395,6 +423,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
     wkeOnTitleChanged(g_webView, onTitleChanged, NULL);
     wkeOnURLChanged(g_webView, onURLChanged, NULL);
     wkeOnNavigation(g_webView, onNavigation, NULL);
+    wkeOnCreateView(g_webView, onCreateView, NULL);
 
     if (g_consoleLog = fopen("wkeBrowserConsole.txt", "wb"))
         fwrite("\xFF\xFE", 2, 1, g_consoleLog);

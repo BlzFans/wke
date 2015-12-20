@@ -371,9 +371,12 @@ typedef bool (WKE_CALL *wkeNavigationCallback)(wkeWebView webView, void* param, 
 WKE_API void WKE_CALL wkeOnNavigation(wkeWebView webView, wkeNavigationCallback callback, void* param);
 
 
-
-typedef struct
+typedef struct  
 {
+    wkeNavigationType navigationType;
+    wkeString url;
+    wkeString target;
+
     int x;
     int y;
     int width;
@@ -387,9 +390,10 @@ typedef struct
     bool resizable;
     bool fullscreen;
 
-} wkeWindowFeatures;
+} wkeNewViewInfo;
 
-typedef wkeWebView (WKE_CALL *wkeCreateViewCallback)(wkeWebView webView, void* param, wkeNavigationType navigationType, const wkeString url, const wkeWindowFeatures* windowFeatures);
+
+typedef wkeWebView (WKE_CALL *wkeCreateViewCallback)(wkeWebView webView, void* param, const wkeNewViewInfo* info);
 WKE_API void WKE_CALL wkeOnCreateView(wkeWebView webView, wkeCreateViewCallback callback, void* param);
 
 

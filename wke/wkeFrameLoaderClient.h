@@ -113,7 +113,7 @@ public:
     virtual void dispatchDidFirstLayout() override;
     virtual void dispatchDidFirstVisuallyNonEmptyLayout() override;
 
-    virtual WebCore::Frame* dispatchCreatePage(const WebCore::NavigationAction&) override;
+    virtual WebCore::Frame* dispatchCreatePage(const WebCore::NavigationAction& action, const WebCore::ResourceRequest& request, PassRefPtr<WebCore::FormState> formState, const WTF::String& frameName) override;
 
     virtual void dispatchShow() override;
     virtual void dispatchDecidePolicyForResponse(WebCore::FramePolicyFunction function, const WebCore::ResourceResponse&, const WebCore::ResourceRequest&) override;

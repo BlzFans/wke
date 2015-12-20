@@ -159,7 +159,7 @@ namespace WebCore {
         virtual void dispatchDidFirstVisuallyNonEmptyLayout() = 0;
         virtual void dispatchDidLayout() { }
 
-        virtual Frame* dispatchCreatePage(const NavigationAction&) = 0;
+        virtual Frame* dispatchCreatePage(const NavigationAction& action, const ResourceRequest& request, PassRefPtr<FormState> formState, const String& frameName) = 0;
         virtual void dispatchShow() = 0;
 
         virtual void dispatchDecidePolicyForResponse(FramePolicyFunction, const ResourceResponse&, const ResourceRequest&) = 0;

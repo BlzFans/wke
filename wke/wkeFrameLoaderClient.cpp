@@ -545,30 +545,35 @@ void FrameLoaderClient::dispatchShow()
 
 }
 
-WebCore::Frame* FrameLoaderClient::dispatchCreatePage(const WebCore::NavigationAction& action)
+WebCore::Frame* FrameLoaderClient::dispatchCreatePage(const WebCore::NavigationAction& action, const WebCore::ResourceRequest& request, PassRefPtr<WebCore::FormState> formState, const WTF::String& frameName)
 {
     // 实现新窗口控制
     wke::CWebViewHandler& handler = m_webView->m_handler;
     if (!handler.createViewCallback)
         return m_page->mainFrame();
 
-    wkeNavigationType type = (wkeNavigationType)action.type();
-    wke::CString url = action.url().string();
-    wkeWindowFeatures windowFeatures;
-    windowFeatures.x = CW_USEDEFAULT;
-    windowFeatures.y = CW_USEDEFAULT;
-    windowFeatures.width = CW_USEDEFAULT;
-    windowFeatures.height = CW_USEDEFAULT;
-    windowFeatures.locationBarVisible = true;
-    windowFeatures.menuBarVisible = true;
-    windowFeatures.resizable = true;
-    windowFeatures.statusBarVisible = true;
-    windowFeatures.toolBarVisible = true;
-    windowFeatures.fullscreen = false;
-    
-    wke::CWebView* createdWebView = handler.createViewCallback(m_webView, handler.createViewCallbackParam, type, &url, &windowFeatures);
+    wkeNewViewInfo info;
+    info.navigationType = (wkeNavigationType)action.type();
+    info.x = CW_USEDEFAULT;
+    info.y = CW_USEDEFAULT;
+    info.width = CW_USEDEFAULT;
+    info.height = CW_USEDEFAULT;
+    info.locationBarVisible = true;
+    info.menuBarVisible = true;
+    info.resizable = true;
+    info.statusBarVisible = true;
+    info.toolBarVisible = true;
+    info.fullscreen = false;
+
+    wke::CString url(action.url().string());
+    info.url = &url;
+
+    wke::CString target(frameName);
+    info.target = &target;
+
+    wke::CWebView* createdWebView = handler.createViewCallback(m_webView, handler.createViewCallbackParam, &info);
     if (!createdWebView)
-        return m_page->mainFrame();
+        return NULL;
     
     return createdWebView->mainFrame();
 }

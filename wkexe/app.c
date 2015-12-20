@@ -138,9 +138,9 @@ void HandleTitleChanged(wkeWebView webWindow, void* param, const wkeString title
 }
 
 // 回调：创建新的页面，比如说调用了 window.open 或者点击了 <a target="_blank" .../>
-wkeWebView HandleCreateView(wkeWebView webWindow, void* param, wkeNavigationType navType, const wkeString url, const wkeWindowFeatures* features)
+wkeWebView HandleCreateView(wkeWebView webWindow, void* param, const wkeNewViewInfo* info)
 {
-    wkeWebView newWindow = wkeCreateWebWindow(WKE_WINDOW_TYPE_POPUP, NULL, features->x, features->y, features->width, features->height);
+    wkeWebView newWindow = wkeCreateWebWindow(WKE_WINDOW_TYPE_POPUP, NULL, info->x, info->y, info->width, info->height);
     wkeShowWindow(newWindow, SW_SHOW);
     return newWindow;
 }
