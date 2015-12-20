@@ -1,4 +1,8 @@
-﻿#### 2015-12-19 23:03 修正 wke 无法正确加载 windowed 插件的问题。
+﻿#### 2015-12-20 15:37 明确定义 wke 接口的调用约定为 cdecl。
+* 定义调用约定 WKE_CALL = cdecl。
+* 每个函数声明前明确加上调用约定，以防止当使用不同的调用约定时出现错误。
+
+#### 2015-12-19 23:03 修正 wke 无法正确加载 windowed 插件的问题。
 * 增加 wkeSetHostWindow，若使用 windowed 插件，必须先调用此函数，以免插件找不到容器容器。
 * 增加 wkeSetHostWindow，若使用 windowed 插件，必须先调用此函数，以免插件找不到容器容器。
 * 修改 WebCore::PluginView::platformStart 函数，若找不到插件容器窗口，则使用桌面为容器。
