@@ -266,7 +266,7 @@ LRESULT CWebWindow::_windowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM l
             int destY = rcInvalid.top;
             int width = rcInvalid.right - rcInvalid.left;
             int height = rcInvalid.bottom - rcInvalid.top;
-            BitBlt(hdc, destX, destY, width, height, wkeGetViewDC(this), srcX, srcY, SRCCOPY); 
+            BitBlt(hdc, destX, destY, width, height, (HDC)wkeGetViewDC(this), srcX, srcY, SRCCOPY); 
 
             EndPaint(hwnd, &ps);
         }
@@ -590,10 +590,10 @@ LRESULT CWebWindow::_windowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM l
     return DefWindowProcW(hwnd, message, wParam, lParam);
 }
 
-void CWebWindow::_staticOnPaintUpdated(wkeWebView webView, void* param, const HDC hdc, int x, int y, int cx, int cy)
+void CWebWindow::_staticOnPaintUpdated(wkeWebView webView, void* param, const void* hdc, int x, int y, int cx, int cy)
 {
     CWebWindow* pthis = (CWebWindow*)param;
-    pthis->_onPaintUpdated(hdc, x, y, cx, cy);
+    pthis->_onPaintUpdated((HDC)hdc, x, y, cx, cy);
 }
 
 void CWebWindow::_onPaintUpdated(const HDC hdc, int x, int y, int cx, int cy)
@@ -618,7 +618,7 @@ void CWebWindow::_onPaintUpdated(const HDC hdc, int x, int y, int cx, int cy)
         blend.BlendOp = AC_SRC_OVER;
         blend.SourceConstantAlpha = 255;
         blend.AlphaFormat = AC_SRC_ALPHA;
-        UpdateLayeredWindow(m_hwnd, hdcScreen, &pointDest, &sizeDest, wkeGetViewDC(this), &pointSource, RGB(0,0,0), &blend, ULW_ALPHA);
+        UpdateLayeredWindow(m_hwnd, hdcScreen, &pointDest, &sizeDest, (HDC)wkeGetViewDC(this), &pointSource, RGB(0,0,0), &blend, ULW_ALPHA);
 
         //SelectObject(hdcMemory, (HGDIOBJ)hbmpOld);
         //DeleteObject((HGDIOBJ)hbmpMemory);

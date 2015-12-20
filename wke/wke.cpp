@@ -319,7 +319,7 @@ void wkeRepaintIfNeeded(wkeWebView webView)
     webView->repaintIfNeeded();
 }
 
-HDC wkeGetViewDC(wkeWebView webView)
+void* wkeGetViewDC(wkeWebView webView)
 {
     return webView->viewDC();
 }
@@ -645,10 +645,10 @@ STDAPI_(BOOL) DllMain( HMODULE hModule, DWORD  ul_reason_for_call, LPVOID /*lpRe
 
 
 
-wkeWebView wkeCreateWebWindow(wkeWindowType type, HWND parent, int x, int y, int width, int height)
+wkeWebView wkeCreateWebWindow(wkeWindowType type, void* parent, int x, int y, int width, int height)
 {
     wke::CWebWindow* webWindow = new wke::CWebWindow();
-    if (!webWindow->create(parent, type, x, y, width, height))
+    if (!webWindow->create((HWND)parent, type, x, y, width, height))
     {
         delete webWindow;
         return NULL;
@@ -663,7 +663,7 @@ void wkeDestroyWebWindow(wkeWebView webWindow)
 }
 
 
-HWND wkeGetWindowHandle(wkeWebView webWindow)
+void* wkeGetWindowHandle(wkeWebView webWindow)
 {
     if (wke::CWebWindow* window = dynamic_cast<wke::CWebWindow*>(webWindow))
         return window->windowHandle();
@@ -725,12 +725,12 @@ void wkeSetWindowTitleW(wkeWebView webWindow, const wchar_t* title)
         return window->setTitle(title);
 }
 
-void wkeSetHostWindow(wkeWebView webView, HWND host)
+void wkeSetHostWindow(wkeWebView webView, void* host)
 {
-    webView->setHostWindow(host);
+    webView->setHostWindow((HWND)host);
 }
 
-HWND wkeGetHostWindow(wkeWebView webView)
+void* wkeGetHostWindow(wkeWebView webView)
 {
     return webView->hostWindow();
 }

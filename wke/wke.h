@@ -230,7 +230,7 @@ WKE_API void WKE_CALL wkeLayoutIfNeeded(wkeWebView webView);
 WKE_API void WKE_CALL wkePaint(wkeWebView webView, void* bits,int bufWid, int bufHei, int xDst, int yDst, int w, int h, int xSrc, int ySrc, bool bCopyAlpha);
 WKE_API void WKE_CALL wkePaint2(wkeWebView webView, void* bits,int pitch);
 WKE_API void WKE_CALL wkeRepaintIfNeeded(wkeWebView webView);
-WKE_API HDC WKE_CALL wkeGetViewDC(wkeWebView webView);
+WKE_API void* WKE_CALL wkeGetViewDC(wkeWebView webView);
 
 WKE_API bool WKE_CALL wkeCanGoBack(wkeWebView webView);
 WKE_API bool WKE_CALL wkeGoBack(wkeWebView webView);
@@ -277,8 +277,8 @@ WKE_API float WKE_CALL wkeGetZoomFactor(wkeWebView webView);
 
 WKE_API void WKE_CALL wkeSetEditable(wkeWebView webView, bool editable);
 
-WKE_API void WKE_CALL wkeSetHostWindow(wkeWebView webWindow, HWND hostWindow);
-WKE_API HWND WKE_CALL wkeGetHostWindow(wkeWebView webWindow);
+WKE_API void WKE_CALL wkeSetHostWindow(wkeWebView webWindow, void* hostWindow);
+WKE_API void* WKE_CALL wkeGetHostWindow(wkeWebView webWindow);
 
 
 WKE_API const utf8* WKE_CALL wkeGetString(const wkeString string);
@@ -293,7 +293,7 @@ WKE_API void WKE_CALL wkeOnTitleChanged(wkeWebView webView, wkeTitleChangedCallb
 typedef void (WKE_CALL *wkeURLChangedCallback)(wkeWebView webView, void* param, const wkeString url);
 WKE_API void WKE_CALL wkeOnURLChanged(wkeWebView webView, wkeURLChangedCallback callback, void* callbackParam);
 
-typedef void (WKE_CALL *wkePaintUpdatedCallback)(wkeWebView webView, void* param, const HDC hdc, int x, int y, int cx, int cy);
+typedef void (WKE_CALL *wkePaintUpdatedCallback)(wkeWebView webView, void* param, const void* hdc, int x, int y, int cx, int cy);
 WKE_API void WKE_CALL wkeOnPaintUpdated(wkeWebView webView, wkePaintUpdatedCallback callback, void* callbackParam);
 
 typedef void (WKE_CALL *wkeAlertBoxCallback)(wkeWebView webView, void* param, const wkeString msg);
@@ -417,9 +417,9 @@ typedef enum
 
 } wkeWindowType;
 
-WKE_API wkeWebView WKE_CALL wkeCreateWebWindow(wkeWindowType type, HWND parent, int x, int y, int width, int height);
+WKE_API wkeWebView WKE_CALL wkeCreateWebWindow(wkeWindowType type, void* parent, int x, int y, int width, int height);
 WKE_API void WKE_CALL wkeDestroyWebWindow(wkeWebView webWindow);
-WKE_API HWND WKE_CALL wkeGetWindowHandle(wkeWebView webWindow);
+WKE_API void* WKE_CALL wkeGetWindowHandle(wkeWebView webWindow);
 
 typedef bool (WKE_CALL *wkeWindowClosingCallback)(wkeWebView webWindow, void* param);
 WKE_API void WKE_CALL wkeOnWindowClosing(wkeWebView webWindow, wkeWindowClosingCallback callback, void* param);
