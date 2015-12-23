@@ -1,4 +1,7 @@
-﻿#### 2015-12-20 19:10 修改 wkeOnCreateView 函数。
+﻿#### 2015-12-23 12:47 修改插件查找机制支持非 np 开头的插件。
+* 修改 PluginDatabaseWin.cpp::PluginDatabase::getPluginPathsInDirectories，以支持加载 plugins 目录下非 np 开头的插件。
+
+#### 2015-12-20 19:10 修改 wkeOnCreateView 函数。
 * 修改 wkeOnCreateView 函数参数，使用结构体 wkeNewViewInfo 传递，并增加 target 信息。
 * 修改 wkeOnCreateView 函数行为，若返回 NULL，则不继续浏览该地址。、
 * 在 wkeBrowser 当中增加 wkeOnCreateView 测试。

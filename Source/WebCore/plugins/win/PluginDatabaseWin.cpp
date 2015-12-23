@@ -137,8 +137,10 @@ void PluginDatabase::getPluginPathsInDirectories(HashSet<String>& paths) const
                 continue;
 
             String filename = String(findFileData.cFileName, wcslen(findFileData.cFileName));
-            if ((!filename.startsWith("np", false) || !filename.endsWith("dll", false)) &&
-                (!equalIgnoringCase(filename, "Plugin.dll") || !it->endsWith("Shockwave 10", false)))
+
+            //cexer 允许非np开头的插件自动加载
+            //if ((!filename.startsWith("np", false) || !filename.endsWith("dll", false)) &&
+            if (!filename.endsWith("dll", false) && (!equalIgnoringCase(filename, "Plugin.dll") || !it->endsWith("Shockwave 10", false)))
                 continue;
 
             String fullPath = *it + "\\" + filename;
