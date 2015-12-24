@@ -1,4 +1,7 @@
-﻿#### 2015-12-23 12:47 修改插件查找机制支持非 np 开头的插件。
+﻿#### 2015-12-24 20:27 临时解决 wke 的 vs2010 工程 Debug 模式链接失败的问题。
+* 修改 vs2010 工程文件，调度模式时忽略默认库 msvcrt.lib;LIBCMT.lib。这只是临时解决问题，应该工程配置某个地方直接或间接引入了这两个 release 模式下的库。
+
+#### 2015-12-23 12:47 修改插件查找机制支持非 np 开头的插件。
 * 修改 PluginDatabaseWin.cpp::PluginDatabase::getPluginPathsInDirectories，以支持加载 plugins 目录下非 np 开头的插件。
 
 #### 2015-12-20 19:10 修改 wkeOnCreateView 函数。
