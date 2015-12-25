@@ -146,7 +146,9 @@ wkeWebView onCreateView(wkeWebView webView, void* param, const wkeNewViewInfo* i
 
     if (wcscmp(target, L"") == 0 || wcscmp(target, L"_blank") == 0)
     {
-        ShellExecuteW(NULL, L"open", (LPWSTR)url + 8, NULL, NULL, SW_SHOW);
+        if (wcsnicmp(url, L"file:///", 8) == 0)
+            url += 8;
+        ShellExecuteW(NULL, L"open", (LPWSTR)url, NULL, NULL, SW_SHOW);
         return NULL;
     }
     else if (wcscmp(target, L"_self") == 0)
