@@ -508,7 +508,9 @@ void ChromeClient::runJavaScriptAlert(WebCore::Frame*, const WTF::String& msg)
 
 void ChromeClient::closeWindowSoon()
 {
-
+    //cexer 实现 window.close
+    if (m_webView && m_webView->hostWindow())
+        PostMessage(m_webView->hostWindow(), WM_CLOSE, 0, 0);
 }
 
 bool ChromeClient::runBeforeUnloadConfirmPanel(const WTF::String& message, WebCore::Frame* frame)
@@ -657,12 +659,16 @@ bool ChromeClient::canTakeFocus(WebCore::FocusDirection)
 
 void ChromeClient::unfocus()
 {
-
+    //cexer 实现 window.blur
+    if (m_webView && m_webView->hostWindow())
+        SetFocus(NULL);
 }
 
 void ChromeClient::focus()
 {
-
+    //cexer 实现 window.focus
+    if (m_webView && m_webView->hostWindow())
+        SetFocus(m_webView->hostWindow());
 }
 
 WebCore::FloatRect ChromeClient::pageRect()
