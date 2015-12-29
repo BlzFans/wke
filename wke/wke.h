@@ -397,7 +397,15 @@ typedef wkeWebView (WKE_CALL *wkeCreateViewCallback)(wkeWebView webView, void* p
 WKE_API void WKE_CALL wkeOnCreateView(wkeWebView webView, wkeCreateViewCallback callback, void* param);
 
 
-typedef void (WKE_CALL *wkeDocumentReadyCallback)(wkeWebView webView, void* param);
+typedef struct
+{
+    wkeString url;
+    jsExecState frameJSState;
+    jsExecState mainFrameJSState;
+
+} wkeDocumentReadyInfo;
+
+typedef void (WKE_CALL *wkeDocumentReadyCallback)(wkeWebView webView, void* param, const wkeDocumentReadyInfo* info);
 WKE_API void WKE_CALL wkeOnDocumentReady(wkeWebView webView, wkeDocumentReadyCallback callback, void* param);
 
 

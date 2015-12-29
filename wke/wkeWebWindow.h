@@ -54,8 +54,8 @@ protected:
     static void _staticOnLoadingFinish(wkeWebView webView, void* param, const wkeString url, wkeLoadingResult result, const wkeString failedReason);
     void _onLoadingFinish(const wkeString url, wkeLoadingResult result, const wkeString failedReason);
 
-    static void _staticOnDocumentReady(wkeWebView webView, void* param);
-    void _onDocumentReady();
+    static void _staticOnDocumentReady(wkeWebView webView, void* param, const wkeDocumentReadyInfo* info);
+    void _onDocumentReady(const wkeDocumentReadyInfo* info);
 
     HWND m_hwnd;
     bool m_acceptDrags;

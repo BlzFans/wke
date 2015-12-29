@@ -601,13 +601,26 @@ void FrameLoaderClient::dispatchDidFinishLoad()
     }
 }
 
-void FrameLoaderClient::dispatchDidFinishDocumentLoad()
+void FrameLoaderClient::dispatchDidFinishDocumentLoad(WebCore::FrameLoader* loader)
 {
+    bool isMainDocumentLoaded = !m_documentReady;
     m_documentReady = true;
+
+    WebCore::Frame* frame = loader->frame();
+    WebCore::DOMWindow* window = frame->existingDOMWindow();
+    WebCore::ScriptController* script = frame->script();
+    WebCore::JSDOMWindow* jsWindow = script->globalObject(WebCore::mainThreadNormalWorld());
+
+    wkeDocumentReadyInfo info = { 0 };
+    info.frameJSState = jsWindow->globalExec();
+    info.mainFrameJSState = m_webView->globalExec();
+
+    wke::CString url = window->url();
+    info.url = &url;
 
     wke::CWebViewHandler& handler = m_webView->m_handler;
     if (handler.documentReadyCallback)
-        handler.documentReadyCallback(m_webView, handler.documentReadyCallbackParam);
+        handler.documentReadyCallback(m_webView, handler.documentReadyCallbackParam, &info);
 }
 
 void FrameLoaderClient::dispatchDidFailLoad(const WebCore::ResourceError& error)

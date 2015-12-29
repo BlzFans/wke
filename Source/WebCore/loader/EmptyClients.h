@@ -285,7 +285,7 @@ public:
     virtual void dispatchDidCommitLoad() { }
     virtual void dispatchDidFailProvisionalLoad(const ResourceError&) { }
     virtual void dispatchDidFailLoad(const ResourceError&) { }
-    virtual void dispatchDidFinishDocumentLoad() { }
+    virtual void dispatchDidFinishDocumentLoad(FrameLoader* loader) { }
     virtual void dispatchDidFinishLoad() { }
     virtual void dispatchDidFirstLayout() { }
     virtual void dispatchDidFirstVisuallyNonEmptyLayout() { }

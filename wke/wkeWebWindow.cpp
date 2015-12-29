@@ -647,16 +647,16 @@ void CWebWindow::_onLoadingFinish(const wkeString url, wkeLoadingResult result, 
         m_originalLoadingFinishCallback(this, m_originalLoadingFinishCallbackParam, url, result, failedReason);
 }
 
-void CWebWindow::_staticOnDocumentReady(wkeWebView webView, void* param)
+void CWebWindow::_staticOnDocumentReady(wkeWebView webView, void* param, const wkeDocumentReadyInfo* info)
 {
     CWebWindow* pthis = (CWebWindow*)param;
-    pthis->_onDocumentReady();
+    pthis->_onDocumentReady(info);
 }
 
-void CWebWindow::_onDocumentReady()
+void CWebWindow::_onDocumentReady(const wkeDocumentReadyInfo* info)
 {
     if (m_originalDocumentReadyCallback)
-        m_originalDocumentReadyCallback(this, m_originalDocumentReadyCallbackParam);
+        m_originalDocumentReadyCallback(this, m_originalDocumentReadyCallbackParam, info);
 }
 
 HWND CWebWindow::windowHandle() const

@@ -126,9 +126,11 @@ void HandleWindowDestroy(wkeWebView webWindow, void* param)
 }
 
 // 回调：文档加载成功
-void HandleDocumentReady(wkeWebView webWindow, void* param)
+void HandleDocumentReady(wkeWebView webWindow, void* param, const wkeDocumentReadyInfo* info)
 {
-    wkeShowWindow(webWindow, TRUE);
+    //主页面加载成功(非iframe)
+    if (info->frameJSState == info->mainFrameJSState)
+        wkeShowWindow(webWindow, TRUE);
 }
 
 // 回调：页面标题改变

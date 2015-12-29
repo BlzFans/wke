@@ -1,4 +1,7 @@
-﻿#### 2015-12-25 23:44 实现几个底层回调，使 window.close、window.blur、window.focus 生效。
+﻿#### 2015-12-25 23:44 增加 wkeOnDocumentReady 回调参数，以区分 iframe 的加载成功事件。
+* 增加 FrameLoaderClient::dispatchDidFinishDocumentLoad 参数，使 wkeOnDocumentReady 有回调参数，以区分 iframe 的加载成功事件。
+
+#### 2015-12-25 23:44 实现几个底层回调，使 window.close、window.blur、window.focus 生效。
 * 实现 ChromeClient::unfocus、ChromeClient::focus、ChromeClient::closeWindowSoon，使 window.close、window.blur、window.focus 生效。
 
 #### 2015-12-25 20:59 修正 wkeBrowser 中拦截 _blank 导致无法打开链接的问题。

@@ -108,7 +108,7 @@ public:
     virtual void dispatchDidCommitLoad() override;
     virtual void dispatchDidFailProvisionalLoad(const WebCore::ResourceError&) override;
     virtual void dispatchDidFailLoad(const WebCore::ResourceError&) override;
-    virtual void dispatchDidFinishDocumentLoad() override;
+    virtual void dispatchDidFinishDocumentLoad(WebCore::FrameLoader* loader) override;
     virtual void dispatchDidFinishLoad() override;
     virtual void dispatchDidFirstLayout() override;
     virtual void dispatchDidFirstVisuallyNonEmptyLayout() override;
