@@ -580,8 +580,14 @@ LRESULT CWebWindow::_windowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM l
             form.rcArea.left = caret.x;
             form.rcArea.right = caret.x + caret.w;
 
+            COMPOSITIONFORM compForm;
+            compForm.ptCurrentPos = form.ptCurrentPos;
+            compForm.rcArea = form.rcArea;
+            compForm.dwStyle = CFS_POINT;
+
             HIMC hIMC = ImmGetContext(hwnd);
             ImmSetCandidateWindow(hIMC, &form);
+            ImmSetCompositionWindow(hIMC, &compForm);
             ImmReleaseContext(hwnd, hIMC);
         }
         return 0;

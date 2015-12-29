@@ -1,4 +1,7 @@
-﻿#### 2015-12-25 23:44 增加 wkeOnDocumentReady 回调参数，以区分 iframe 的加载成功事件。
+﻿#### 2015-12-30 00:23 修正 wkeWebWindow 网页中编辑框输入法不跟随光标的问题。
+* 在 WM_IME_STARTCOMPOSITION 添加 ImmSetCompositionWindow 调用，以修正 wkeWebWindow 网页中编辑框输入法不跟随光标的问题。
+
+#### 2015-12-25 23:44 增加 wkeOnDocumentReady 回调参数，以区分 iframe 的加载成功事件。
 * 增加 FrameLoaderClient::dispatchDidFinishDocumentLoad 参数，使 wkeOnDocumentReady 有回调参数，以区分 iframe 的加载成功事件。
 
 #### 2015-12-25 23:44 实现几个底层回调，使 window.close、window.blur、window.focus 生效。
