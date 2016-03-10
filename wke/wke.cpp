@@ -46,36 +46,44 @@ void wkeInitialize()
     //WebCore::ResourceHandleManager::sharedInstance()->setCookieJarFileName("cookie.txt");
 }
 
-void wkeSetProxy(const wkeProxy& proxy)
+void wkeConfigProxy(const wkeProxy* proxy)
 {
     WebCore::ResourceHandleManager::ProxyType proxyType = WebCore::ResourceHandleManager::HTTP;
     String hostname;
     String username;
     String password;
 
-    if (proxy.hostname[0] != 0 && proxy.type >= WKE_PROXY_HTTP && proxy.type <= WKE_PROXY_SOCKS5HOSTNAME)
+    if (proxy->hostname[0] != 0 && proxy->type >= WKE_PROXY_HTTP && proxy->type <= WKE_PROXY_SOCKS5HOSTNAME)
     {
-        switch (proxy.type)
+        switch (proxy->type)
         {
-        case WKE_PROXY_HTTP:           proxyType = WebCore::ResourceHandleManager::HTTP; break;
-        case WKE_PROXY_SOCKS4:         proxyType = WebCore::ResourceHandleManager::Socks4; break;
-        case WKE_PROXY_SOCKS4A:        proxyType = WebCore::ResourceHandleManager::Socks4A; break;
-        case WKE_PROXY_SOCKS5:         proxyType = WebCore::ResourceHandleManager::Socks5; break;
-        case WKE_PROXY_SOCKS5HOSTNAME: proxyType = WebCore::ResourceHandleManager::Socks5Hostname; break;
+            case WKE_PROXY_HTTP:           proxyType = WebCore::ResourceHandleManager::HTTP; break;
+            case WKE_PROXY_SOCKS4:         proxyType = WebCore::ResourceHandleManager::Socks4; break;
+            case WKE_PROXY_SOCKS4A:        proxyType = WebCore::ResourceHandleManager::Socks4A; break;
+            case WKE_PROXY_SOCKS5:         proxyType = WebCore::ResourceHandleManager::Socks5; break;
+            case WKE_PROXY_SOCKS5HOSTNAME: proxyType = WebCore::ResourceHandleManager::Socks5Hostname; break;
         }
 
-        hostname = String::fromUTF8(proxy.hostname);
-        username = String::fromUTF8(proxy.username);
-        password = String::fromUTF8(proxy.password);
+        hostname = String::fromUTF8(proxy->hostname);
+        username = String::fromUTF8(proxy->username);
+        password = String::fromUTF8(proxy->password);
     }
 
-    WebCore::ResourceHandleManager::sharedInstance()->setProxyInfo(hostname, proxy.port, proxyType, username, password);
+    WebCore::ResourceHandleManager::sharedInstance()->setProxyInfo(hostname, proxy->port, proxyType, username, password);
+}
+
+void wkeConfigCookieFilePath(const char* path)
+{
+    WebCore::ResourceHandleManager::sharedInstance()->setCookieJarFileName(path);
 }
 
 void wkeConfigure(const wkeSettings* settings)
 {
     if (settings->mask & WKE_SETTING_PROXY)
-        wkeSetProxy(settings->proxy);
+        wkeConfigProxy(&settings->proxy);
+
+    if (settings->mask & WKE_SETTING_COOKIE_FILE_PATH)
+        wkeConfigCookieFilePath(settings->cookieFilePath);
 }
 
 void wkeInitializeEx(const wkeSettings* settings)
@@ -571,7 +579,7 @@ void wkeSetString(wkeString string, const utf8* str, size_t len)
             len = strlen(str);
     }
 
-    string->setString(str, len);
+    string->assign(str, len);
 }
 
 void wkeSetStringW(wkeString string, const wchar_t* str, size_t len)
@@ -590,7 +598,7 @@ void wkeSetStringW(wkeString string, const wchar_t* str, size_t len)
             len = wcslen(str);
     }
 
-    string->setString(str, len);
+    string->assign(str, len);
 }
 
 

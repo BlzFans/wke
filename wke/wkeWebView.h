@@ -153,6 +153,9 @@ public:
     const wchar_t* cookieW();
     const utf8* cookie();
 
+    void setCookieW(const wchar_t* val);
+    void setCookie(const utf8* val);
+
     void setCookieEnabled(bool enable);
     bool isCookieEnabled() const;
     

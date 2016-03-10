@@ -66,11 +66,11 @@ const wchar_t* CWebView::nameW() const
 
 void CWebView::setName(const utf8* name)
 {
-    m_name.setString(name);
+    m_name.assign(name);
 }
 void CWebView::setName(const wchar_t* name)
 {
-    m_name.setString(name);
+    m_name.assign(name);
 }
 
 bool CWebView::isTransparent() const
@@ -633,8 +633,25 @@ const wchar_t* CWebView::cookieW()
 const utf8* CWebView::cookie()
 {
 	int e = 0;
-	m_cookie	= mainFrame()->document()->cookie(e);
+	m_cookie = mainFrame()->document()->cookie(e);
 	return m_cookie.string();
+}
+
+void CWebView::setCookieW(const wchar_t* val)
+{
+    m_cookie = val;
+
+    int e = 0;
+    mainFrame()->document()->setCookie(val, e);
+}
+
+void CWebView::setCookie(const utf8* val)
+{
+    m_cookie = val;
+
+    String string = String::fromUTF8(val);
+    int e = 0;
+    mainFrame()->document()->setCookie(val, e);
 }
 
 bool CWebView::isCookieEnabled() const

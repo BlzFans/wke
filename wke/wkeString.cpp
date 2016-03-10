@@ -25,18 +25,26 @@ CString::CString(const WTF::String& str)
 
 }
 
-CString::CString(const utf8* str, size_t len /*= 0*/)
-    : m_utf8(NULL)
+CString::CString(const CString& that)
+    : m_string(that.m_string)
     , m_wide(NULL)
+    , m_utf8(NULL)
 {
-    m_string = WTF::String::fromUTF8(str, len);
+
 }
 
-CString::CString(const wchar_t* str, size_t len /*= 0*/)
+CString::CString(const utf8* str, size_t len)
     : m_utf8(NULL)
     , m_wide(NULL)
 {
-    WTF::String(str, len).swap(m_string);
+    assign(str, len);
+}
+
+CString::CString(const wchar_t* str, size_t len)
+    : m_utf8(NULL)
+    , m_wide(NULL)
+{
+    assign(str, len);
 }
 
 CString::~CString()
@@ -57,6 +65,20 @@ CString& CString::operator=(const WTF::String& str)
 CString& CString::operator=(const CString& str)
 {
     return operator=(str.m_string);
+}
+
+CString& CString::operator=(const wchar_t* str)
+{
+    if (m_wide != str)
+        assign(str, wcslen(str));
+    return *this;
+}
+
+CString& CString::operator=(const utf8* str)
+{
+    if (m_utf8 != str)
+        assign(str, strlen(str));
+    return *this;
 }
 
 const utf8* CString::string() const
@@ -98,16 +120,16 @@ const WTF::String& CString::original() const
     return m_string;
 }
 
-void CString::setString(const utf8* str, size_t len /*= 0*/)
+void CString::assign(const utf8* str, size_t len)
 {
-    _dirty();
     m_string = WTF::String::fromUTF8(str, len);
+    _dirty();
 }
 
-void CString::setString(const wchar_t* str, size_t len /*= 0*/)
+void CString::assign(const wchar_t* str, size_t len)
 {
-    _dirty();
     WTF::String(str, len).swap(m_string);
+    _dirty();
 }
 
 void CString::_dirty()

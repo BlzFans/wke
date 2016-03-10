@@ -1,4 +1,8 @@
-﻿#### 2016-03-10 21:24 增加查找插件时同时在工作目录的 plugins 目录下查找。
+﻿#### 2016-03-10 22:14 增加 cookie 操作接口。
+* 增加 wkeSetCookie 设置指定 wkeWebView 的 cookie。
+* 修改 wkeConfigure、wkeInitializeEx 的参数结构体 wkeSettings，增加指定全局 cookie 文件路径的成员。
+
+#### 2016-03-10 21:24 增加查找插件时同时在工作目录的 plugins 目录下查找。
 * 增加查找插件时同时在工作目录的 plugins 目录下查找，之前只在程序所在目录查找。
 
 #### 2016-03-09 09:09 增加 Document/todo.md 记录平时积累的需求、问题。

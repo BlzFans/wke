@@ -139,12 +139,14 @@ typedef struct
 
 enum wkeSettingMask 
 {
-    WKE_SETTING_PROXY = 1
+    WKE_SETTING_PROXY = 1,
+    WKE_SETTING_COOKIE_FILE_PATH = 1<<1
 };
 
 typedef struct 
 {
     wkeProxy proxy;
+    char cookieFilePath[1024];
     unsigned int mask;
 
 } wkeSettings;

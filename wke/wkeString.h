@@ -28,6 +28,10 @@ public:
    ~CString();
 
     CString& operator=(const WTF::String& str);
+    CString& operator=(const utf8* str);
+    CString& operator=(const wchar_t* str);
+
+    CString(const CString& that);
     CString& operator=(const CString& that);
 
 public:
@@ -35,8 +39,8 @@ public:
     const wchar_t* stringW() const;
     const WTF::String& original() const;
     
-    void setString(const utf8* str, size_t len = 0);
-    void setString(const wchar_t* str, size_t len = 0);
+    void assign(const utf8* str, size_t len = 0);
+    void assign(const wchar_t* str, size_t len = 0);
 
 protected:
     void _free();
