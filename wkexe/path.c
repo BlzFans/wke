@@ -2,6 +2,14 @@
 #include "path.h"
 #include <stdio.h>
 
+
+#include <shellapi.h>
+#pragma comment(lib, "shell32.lib")
+
+#include <shlwapi.h>
+#pragma comment(lib, "shlwapi.lib")
+
+
 #pragma warning(disable:4996) //'xxxxx': This function or variable may be unsafe. Consider using xxxxxx_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
 
 
@@ -60,4 +68,52 @@ LPCWSTR FormatProgramPath(LPWSTR buffer, size_t bufferSize, LPCWSTR fmt, ...)
     va_end(args);
 
     return GetProgramPath(buffer, bufferSize, relatedPath);
+}
+
+
+LPWSTR FixupHtmlFilePath(LPWSTR path)
+{
+    WCHAR fullPath[MAX_PATH + 1] = { 0 };
+    LPWSTR fullUrl = NULL;
+    
+    do
+    {
+        if (path)
+        {
+            GetWorkingPath(fullPath, MAX_PATH, path);
+            if (PathFileExistsW(fullPath))
+                break;
+
+            GetProgramPath(fullPath, MAX_PATH, path);
+            if (PathFileExistsW(fullPath))
+                break;   
+        }
+
+        GetWorkingPath(fullPath, MAX_PATH, L"main.html");
+        if (PathFileExistsW(fullPath))
+            break;
+
+        GetWorkingPath(fullPath, MAX_PATH, L"wkexe.html");
+        if (PathFileExistsW(fullPath))
+            break;    
+
+        GetProgramPath(fullPath, MAX_PATH, L"index.html");
+        if (PathFileExistsW(fullPath))
+            break;    
+
+        GetProgramPath(fullPath, MAX_PATH, L"main.html");
+        if (PathFileExistsW(fullPath))
+            break;
+
+        GetProgramPath(fullPath, MAX_PATH, L"wkexe.html");
+        if (PathFileExistsW(fullPath))
+            break;
+
+        return path;
+    }
+    while (0);
+
+    fullUrl = (WCHAR*)malloc(sizeof(WCHAR) * (MAX_PATH + 1 + 10));
+    _snwprintf(fullUrl, MAX_PATH + 1 + 10, L"file:///%s", fullPath);
+    return fullUrl;
 }

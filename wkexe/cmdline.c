@@ -15,10 +15,11 @@ static OPTIONW s_options[] =
     {{ L"help",          ARG_NONE,   NULL,       L'h' }, L"打印帮助信息\n"},
     {{ L"html",          ARG_REQ,    NULL,       L'x' }, L"设置要打开的HTML文件"},
     {{ L"transparent",  ARG_OPT,    0,          L't' }, L"支持使用分层窗口透明"},
+    {{ L"cookie",        ARG_OPT,    0,          L'c' }, L"设置cookie文件路径"},
     {{ NULL,              ARG_NULL,   0,             0 }, NULL}
 };
 
-void ParseOptions(int argc, LPWSTR* argv, CommandOptions* options)
+void ParseOptions(CommandOptions* options, int argc, LPWSTR* argv)
 {
     struct option_w longOptions[100] = { 0 };
     WCHAR shortOptions[100] = { 0 };
@@ -53,7 +54,8 @@ void ParseOptions(int argc, LPWSTR* argv, CommandOptions* options)
             break;
 
         case L'x':
-            wcscpy(options->htmlFile, optarg_w);
+            options->html = (WCHAR*)malloc(sizeof(WCHAR) * (wcslen(optarg_w) + 1));
+            wcscpy(options->html, optarg_w);
             break;
 
         case L't':
@@ -67,6 +69,10 @@ void ParseOptions(int argc, LPWSTR* argv, CommandOptions* options)
             {
                 options->transparent = FALSE;
             }
+            break;
+
+        case L'c':
+            wcscpy(options->cookiePath, optarg_w);
             break;
         }
     }
@@ -93,3 +99,17 @@ void PrintHelp()
 }
 
 
+void InitOptions(CommandOptions* options)
+{
+    memset(options, 0, sizeof(options));
+}
+
+void FreeOptions(CommandOptions* options)
+{
+    if (options->html)
+    {
+        free(options->html);
+        options->html = NULL;
+    }
+    memset(options, 0, sizeof(options));
+}

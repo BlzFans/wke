@@ -1,4 +1,15 @@
-﻿#### 2016-03-10 22:14 增加 cookie 操作接口。
+﻿#### 2016-03-10 23:29 优化 wkexe、增加命令行直接加载 HTML 文本支持。
+* 重构 wkexe 中一部分代码。
+* 修改 wkexe 行为，若未在命令行指定参数，使用默认参数启动 about:blank 页面。
+* 修改 wkexe 对于`html`参数的理解，现在可支持直接传递 html 内容，如：
+```html
+wkexe --html="<script>alert('Hello World!')</script>"
+wkexe --html="<span>Hello World!</span>"
+```
+* 增加 wkexe 对于 cookie 文件路径的自定义支持，使用参数`cookie`设置路径。
+* 修改 wkeLoadW、wkeLoad 以支持`about:blank`地址。
+
+#### 2016-03-10 22:14 增加 cookie 操作接口。
 * 增加 wkeSetCookie 设置指定 wkeWebView 的 cookie。
 * 修改 wkeConfigure、wkeInitializeEx 的参数结构体 wkeSettings，增加指定全局 cookie 文件路径的成员。
 

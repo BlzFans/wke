@@ -11,7 +11,6 @@ typedef struct
 {
     wkeWebView window;
     CommandOptions options;
-    WCHAR url[MAX_PATH+1];
 
 } Application;
 

@@ -7,107 +7,50 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <shellapi.h>
-#pragma comment(lib, "shell32.lib")
 
-#include <shlwapi.h>
-#pragma comment(lib, "shlwapi.lib")
-
-
-BOOL FixupHtmlFileUrl(LPCWSTR pathOption, LPWSTR urlBuffer, size_t bufferSize)
-{
-    WCHAR htmlPath[MAX_PATH + 1] = { 0 };
-
-    if (pathOption[0] == 0)
-    {
-        do
-        {
-            GetWorkingPath(htmlPath, MAX_PATH, L"index.html");
-            if (PathFileExistsW(htmlPath))
-                break;
-
-            GetWorkingPath(htmlPath, MAX_PATH, L"main.html");
-            if (PathFileExistsW(htmlPath))
-                break;
-
-            GetWorkingPath(htmlPath, MAX_PATH, L"wkexe.html");
-            if (PathFileExistsW(htmlPath))
-                break;    
-
-            GetProgramPath(htmlPath, MAX_PATH, L"index.html");
-            if (PathFileExistsW(htmlPath))
-                break;    
-
-            GetProgramPath(htmlPath, MAX_PATH, L"main.html");
-            if (PathFileExistsW(htmlPath))
-                break;
-
-            GetProgramPath(htmlPath, MAX_PATH, L"wkexe.html");
-            if (PathFileExistsW(htmlPath))
-                break;
-
-            return FALSE;
-        }
-        while (0);
-
-        _snwprintf(urlBuffer, bufferSize, L"file:///%s", htmlPath);
-        return TRUE;
-    }
-
-    else//if (!wcsstr(pathOption, L"://"))
-    {
-        do
-        {
-            GetWorkingPath(htmlPath, MAX_PATH, pathOption);
-            if (PathFileExistsW(htmlPath))
-                break;
-
-            GetProgramPath(htmlPath, MAX_PATH, pathOption);
-            if (PathFileExistsW(htmlPath))
-                break;
-
-            return FALSE;
-        }
-        while (0);
-
-        _snwprintf(urlBuffer, bufferSize, L"file:///%s", htmlPath);
-        return TRUE;
-    }
-
-    return FALSE;
-}
 
 BOOL FixupHtmlUrl(Application* app)
 {
-    LPWSTR htmlOption = app->options.htmlFile;
-    WCHAR htmlUrl[MAX_PATH + 1] = { 0 };
+    LPWSTR html = app->options.html;
+    if (!html || html[0] == 0)
+        return FALSE;
 
-    // 包含 :// 说明是完整的URL
-    if (wcsstr(htmlOption, L"://"))
-    {
-        wcsncpy(app->url, htmlOption, MAX_PATH);
+    // 包含 : 说明是完整的路径
+    if (wcsstr(html, L":"))
         return TRUE;
+
+    // 若不是完整URL，补完生成新的地址
+    html = FixupHtmlFilePath(html);
+    if (html != app->options.html)
+    {
+        free(app->options.html);
+        app->options.html = html;
     }
 
-    // 若不是完整URL，补全之
-    if (FixupHtmlFileUrl(htmlOption, htmlUrl, MAX_PATH))
-    {
-        wcsncpy(app->url, htmlUrl, MAX_PATH);
-        return TRUE;
-    }
-
-    // 无法获得完整的URL，出错
-    return FALSE;
+    return TRUE;
 }
 
 BOOL ProcessOptions(Application* app)
 {
     int argc = 0;
     LPWSTR* argv = CommandLineToArgvW(GetCommandLineW(), &argc);
-    ParseOptions(argc, argv, &app->options);
+    ParseOptions(&app->options, argc, argv);
     LocalFree(argv);
 
     return TRUE;
+}
+
+void FillDefultOptions(Application* app)
+{
+    app->options.cookiePath[0] = 0;
+    app->options.showHelp = false;
+    app->options.transparent = false;
+}
+
+void FillDefaultUrl(Application* app)
+{
+    app->options.html = (WCHAR*)malloc(100);
+    wcscpy(app->options.html, L"about:blank");
 }
 
 // 回调：点击了关闭、返回 true 将销毁窗口，返回 false 什么都不做。
@@ -165,7 +108,7 @@ BOOL CreateWebWindow(Application* app)
     wkeOnCreateView(app->window, HandleCreateView, app);
 
     wkeMoveToCenter(app->window);
-    wkeLoadURLW(app->window, app->url);
+    wkeLoadW(app->window, app->options.html);
 
     return TRUE;
 }
@@ -191,16 +134,10 @@ void RunApplication(Application* app)
     memset(app, 0, sizeof(Application));
 
     if (!ProcessOptions(app))
-    {
-        PrintHelpAndQuit(app);
-        return;
-    }
+        FillDefultOptions(app);
 
     if (!FixupHtmlUrl(app))
-    {
-        PrintHelpAndQuit(app);
-        return;
-    }
+        FillDefaultUrl(app);
 
     if (!CreateWebWindow(app))
     {
@@ -213,6 +150,8 @@ void RunApplication(Application* app)
 
 void QuitApplication(Application* app)
 {
+    FreeOptions(&app->options);
+
     if (app->window)
     {
         wkeDestroyWebWindow(app->window);

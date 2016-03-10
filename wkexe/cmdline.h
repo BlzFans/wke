@@ -8,12 +8,16 @@
 typedef struct
 {
     int transparent;
-    WCHAR htmlFile[MAX_PATH];
+    WCHAR* html;
     int showHelp;
+    WCHAR cookiePath[MAX_PATH];
 
 } CommandOptions;
 
-void ParseOptions(int argc, LPWSTR* argv, CommandOptions* options);
+void InitOptions(CommandOptions* options);
+void ParseOptions(CommandOptions* options, int argc, LPWSTR* argv);
+void FreeOptions(CommandOptions* options);
+
 void PrintHelp();
 
 

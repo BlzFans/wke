@@ -13,5 +13,6 @@ LPCWSTR GetProgramDirectory(LPWSTR buffer, size_t bufferSize);
 LPCWSTR GetProgramPath(LPWSTR buffer, size_t bufferSize, LPCWSTR relatedPath);
 LPCWSTR FormatProgramPath(LPWSTR buffer, size_t bufferSize, LPCWSTR fmt, ...);
 
+LPWSTR FixupHtmlFilePath(LPWSTR path);
 
 #endif//#ifndef WKEXE_PATH_H
