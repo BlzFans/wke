@@ -403,6 +403,26 @@ exit:
     return pluginsDirectory;
 }
 
+static inline String safariWorkingPluginDirectory()
+{
+    WCHAR workingDir[_MAX_PATH];
+    static String pluginsDirectory;
+    static bool cachedPluginDirectory = false;
+
+    if (!cachedPluginDirectory) {
+        cachedPluginDirectory = true;
+
+        int workingDirLen = GetCurrentDirectoryW(_MAX_PATH, workingDir);
+
+        if (!workingDirLen || workingDirLen == _MAX_PATH)
+            goto exit;
+
+        pluginsDirectory = String(workingDir) + "\\Plugins";
+    }
+exit:
+    return pluginsDirectory;
+}
+
 static inline void addMacromediaPluginDirectories(Vector<String>& directories)
 {
 #if !OS(WINCE)
@@ -428,6 +448,11 @@ Vector<String> PluginDatabase::defaultPluginDirectories()
 
     if (!ourDirectory.isNull())
         directories.append(ourDirectory);
+
+    ourDirectory = safariWorkingPluginDirectory();
+    if (!ourDirectory.isNull())
+        directories.append(ourDirectory);
+
     addQuickTimePluginDirectory(directories);
     addAdobeAcrobatPluginDirectory(directories);
     addMozillaPluginDirectories(directories);
