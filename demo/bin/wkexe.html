@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html>
 <head>
 <meta charset='UTF-8'/>
@@ -25,12 +25,17 @@
 
 <br><a href="exec://calc.exe">calc.exe</a>
 <br><a href="www.baidu.com">www.baidu.com</a>
+<br><a href="javascript:testPrompt()">prompt</a>
 
 </body>
 
 <script>
 function windowOpen(target) {
 	window.open("english.html", target);
+}
+function testPrompt() {
+	var v = prompt("你好", "工国");
+	alert(v);
 }
 </script>
 </html>

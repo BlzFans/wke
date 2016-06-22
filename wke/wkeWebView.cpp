@@ -1198,9 +1198,151 @@ namespace wke
         return result == IDOK;
     }
 
+    static unsigned char definputbox_dlg[] = 
+    {
+        0x01,0x00,0xff,0xff,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xc8,0x00,0xc8,0x00,0x06,
+        0x00,0x16,0x00,0x11,0x00,0x41,0x01,0x6f,0x00,0x00,0x00,0x00,0x00,0x57,0x00,0x69,
+        0x00,0x6e,0x00,0x33,0x00,0x32,0x00,0x49,0x00,0x6e,0x00,0x70,0x00,0x75,0x00,0x74,
+        0x00,0x42,0x00,0x6f,0x00,0x78,0x00,0x00,0x00,0x08,0x00,0xbc,0x02,0x00,0x00,0x4d,
+        0x00,0x53,0x00,0x20,0x00,0x53,0x00,0x68,0x00,0x65,0x00,0x6c,0x00,0x6c,0x00,0x20,
+        0x00,0x44,0x00,0x6c,0x00,0x67,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+        0x00,0x00,0x00,0x80,0x00,0x81,0x50,0x04,0x00,0x27,0x00,0x38,0x01,0x0e,0x00,0xe9,
+        0x03,0x00,0x00,0xff,0xff,0x81,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+        0x00,0x00,0x00,0x01,0x00,0x03,0x50,0x0e,0x01,0x04,0x00,0x2e,0x00,0x0e,0x00,0x01,
+        0x00,0x00,0x00,0xff,0xff,0x80,0x00,0x4f,0x00,0x4b,0x00,0x73,0x00,0x00,0x00,0x00,
+        0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x03,0x50,0x0e,
+        0x01,0x15,0x00,0x2e,0x00,0x0e,0x00,0x02,0x00,0x00,0x00,0xff,0xff,0x80,0x00,0x43,
+        0x00,0x41,0x00,0x4e,0x00,0x43,0x00,0x45,0x00,0x4c,0x00,0x00,0x00,0x00,0x00,0x00,
+        0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x02,0x40,0x21,0x00,0x16,0x00,0x08,
+        0x00,0x08,0x00,0xff,0xff,0xff,0xff,0xff,0xff,0x82,0x00,0x00,0x00,0x00,0x00,0x00,
+        0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x80,0x00,0x02,0x50,0x06,0x00,0x04,0x00,0x00,
+        0x01,0x1d,0x00,0xe8,0x03,0x00,0x00,0xff,0xff,0x82,0x00,0x50,0x00,0x72,0x00,0x6f,
+        0x00,0x6d,0x00,0x70,0x00,0x74,0x00,0x3a,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+        0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x84,0x10,0xa1,0x50,0x04,0x00,0x39,0x00,0x38,
+        0x01,0x31,0x00,0xea,0x03,0x00,0x00,0xff,0xff,0x81,0x00,0x00,0x00,0x00,0x00
+    };
+
+    static const INT_PTR definputbox_buttonids[] = { IDOK, IDCANCEL };
+    static LPCWSTR definputbox_buttonnames[] = { L"确定", L"取消" };
+    static const INT definputbox_id_prompt = 1000;
+    static const INT definputbox_id_edit1 = 1001;
+    static const INT definputbox_id_edit2 = 1002;
+
+    class CWin32InputBox
+    {
+    public:
+        CWin32InputBox()
+            : m_hdlg(NULL)
+            , m_edit(NULL)
+            , m_pwszResult(NULL)
+            , m_pwszMessage(NULL)
+            , m_hParent(NULL)
+        {}
+
+        ~CWin32InputBox()
+        {
+            delete [] m_pwszResult;
+            m_pwszResult = NULL;
+        }
+
+        int prompt(HWND hParent, LPCWSTR pwszMsg, LPCWSTR pwszDefaultResult, LPCWSTR* ppwszResult)
+        {
+            m_pwszMessage = pwszMsg;
+            m_pwszDefaultResult = pwszDefaultResult;
+            m_hParent = hParent;
+            int ret = DialogBoxIndirectParamW(NULL, (LPDLGTEMPLATEW)definputbox_dlg, hParent, (DLGPROC)&CWin32InputBox::DlgProc, (LPARAM)this);
+            *ppwszResult = m_pwszResult;
+            return ret;
+        }
+
+    protected:
+        HWND m_hParent;
+        HWND m_hdlg;
+        HWND m_edit;
+        LPCWSTR m_pwszDefaultResult;
+        LPWSTR m_pwszResult;
+        LPCWSTR m_pwszMessage;
+
+        void onInitDialog(HWND hDlg)
+        {
+            m_hdlg = hDlg;
+            SetWindowLongPtr(hDlg, GWLP_USERDATA, (LONG_PTR)this);
+
+            // Set the button captions
+            SetDlgItemTextW(m_hdlg, (int) definputbox_buttonids[0], definputbox_buttonnames[0]);
+            SetDlgItemTextW(m_hdlg, (int) definputbox_buttonids[1], definputbox_buttonnames[1]);
+            SetWindowTextW(m_hdlg, L"wke");
+            SetDlgItemTextW(m_hdlg, definputbox_id_prompt, m_pwszMessage);
+
+            m_edit = GetDlgItem(m_hdlg, definputbox_id_edit1);
+            SetWindowText(m_edit, m_pwszDefaultResult);
+
+            RECT rectDlg = { 0 };
+            RECT rectEdit = { 0 };
+            GetWindowRect(m_hdlg, &rectDlg);
+            GetWindowRect(m_edit, &rectEdit);
+            SetWindowPos(m_hdlg, HWND_NOTOPMOST, 0, 0, rectDlg.right - rectDlg.left, rectEdit.bottom - rectDlg.top + 5, SWP_NOMOVE);
+            ShowWindow(GetDlgItem(m_hdlg, definputbox_id_edit2), SW_HIDE);
+        }
+
+        void onOK()
+        {
+            int len = GetWindowTextLengthW(m_edit);
+            m_pwszResult = new WCHAR[len + 1];
+            memset(m_pwszResult, 0, (len + 1) * sizeof(WCHAR));
+            GetWindowTextW(m_edit, m_pwszResult, len + 1);
+            EndDialog(m_hdlg, IDOK);
+        }
+
+        void onCancel()
+        {
+            m_pwszResult = new WCHAR[1];
+            *m_pwszResult = 0;
+            EndDialog(m_hdlg, IDCANCEL);
+        }
+
+        static LRESULT CALLBACK DlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+        {
+            CWin32InputBox* pthis = (CWin32InputBox*)GetWindowLongPtr(hDlg, GWLP_USERDATA);
+            switch (message)
+            {
+            case WM_INITDIALOG:
+                {
+                    pthis = (CWin32InputBox*)lParam;
+                    pthis->onInitDialog(hDlg);    
+                }
+                return TRUE;
+
+            case WM_COMMAND:
+                {
+                    INT_PTR id = LOWORD(wParam);
+                    switch (id)
+                    {
+                    case IDOK:
+                        pthis->onOK();
+                        break;
+
+                    case IDCANCEL:
+                        pthis->onCancel();
+                        break;
+                    }
+                }
+                break;
+            }
+            return FALSE;
+        }
+    };
+
     bool defaultRunPromptBox(wkeWebView webView, void* param, const wkeString msg, const wkeString defaultResult, wkeString result)
     {
-        return false;
+        LPCWSTR pwszResult = NULL;
+
+        CWin32InputBox inputBox;        
+        if (IDCANCEL == inputBox.prompt(webView->hostWindow(), wkeGetStringW(msg), wkeGetStringW(defaultResult), &pwszResult))
+            return false;
+
+        wkeSetStringW(result, pwszResult, wcslen(pwszResult));
+        return true;
     }
 
     void CWebView::_initHandler()
@@ -1209,6 +1351,7 @@ namespace wke
         m_handler.alertBoxCallback = defaultRunAlertBox;
         m_handler.confirmBoxCallback = defaultRunConfirmBox;
         m_handler.promptBoxCallback = defaultRunPromptBox;
+        m_handler.promptBoxCallbackParam = this;
     }
 
     void CWebView::_initPage()

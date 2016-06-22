@@ -469,7 +469,7 @@ bool ChromeClient::runJavaScriptPrompt(WebCore::Frame*, const WTF::String& msg, 
     outputMsg(L"JavaScript Prompt %s %s\n", CSTR(msg), CSTR(defaultValue));
 
     wke::CWebViewHandler& handler = m_webView->m_handler;
-    if (!!handler.promptBoxCallback)
+    if (!handler.promptBoxCallback)
         return false;
 
     wke::CString wkeMsg(msg);

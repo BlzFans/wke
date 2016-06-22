@@ -1,4 +1,10 @@
-﻿#### 2016-06-22 14:16 修正 CWebWindow::resize、CWebWindow::moveToCenter 的 WS_CHILD 属性判断 BUG。
+﻿#### 2016-06-22 17:40 实现默认 window.prompt。
+* 实现默认 window.prompt 函数。
+* 修改版本号为 1.2.1.0。
+* 修改资源中相关网站地址为 www.github.com/cexer/wke。
+* 取消 wke 对 WebCore 项目的依赖，防止每次从 WebCore 编译。
+
+#### 2016-06-22 14:16 修正 CWebWindow::resize、CWebWindow::moveToCenter 的 WS_CHILD 属性判断 BUG。
 * 修正 CWebWindow::resize、CWebWindow::moveToCenter 的 WS_CHILD 属性判断不正确，导致以控件形式创建时位置不正确的问题。
 
 #### 2016-03-10 23:29 优化 wkexe、增加命令行直接加载 HTML 文本支持。

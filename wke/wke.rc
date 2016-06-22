@@ -36,15 +36,15 @@ BEGIN
 	BEGIN
         BLOCK "040904B0"
 		BEGIN 
-			VALUE "CompanyName",     "wke.sf.net\0"
+			VALUE "CompanyName",     "www.github.com/cexer/wke\0"
 			VALUE "FileDescription", "WebKit Embedded\0"
-			VALUE "FileVersion",     "1, 2, 0, 0\0"
+			VALUE "FileVersion",     "1, 2, 1, 0\0"
 			VALUE "InternalName",    "wke\0"
 			VALUE "LegalCopyright",  "BlzFans@hotmail.com Copyright (C) 2012\0"
-			VALUE "LegalTrademarks", "wke.sf.net\0"
+			VALUE "LegalTrademarks", "www.github.com/cexer/wke\0"
 			VALUE "OriginalFilename","wke.dll\0"
 			VALUE "ProductName",     "WebKit Embedded\0"
-			VALUE "ProductVersion",  "1, 2, 0, 0\0"
+			VALUE "ProductVersion",  "1, 2, 1, 0\0"
 		END
 	END
 	BLOCK "VarFileInfo" 

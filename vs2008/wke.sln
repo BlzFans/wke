@@ -28,9 +28,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WebCore", "WebCore.vcproj",
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "wke", "wke.vcproj", "{011D10F1-B656-4A1B-A0C3-3842F02122C6}"
-	ProjectSection(ProjectDependencies) = postProject
-		{1C16337B-ACF3-4D03-AA90-851C5B5EADA6} = {1C16337B-ACF3-4D03-AA90-851C5B5EADA6}
-	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "wkeBrowser", "wkeBrowser.vcproj", "{5C21D8AD-3930-4AC3-9E32-21FCA602DB76}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -43,6 +40,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "wkexe", "wkexe.vcproj", "{5
 	EndProjectSection
 EndProject
 Global
+	GlobalSection(DPCodeReviewSolutionGUID) = preSolution
+		DPCodeReviewSolutionGUID = {00000000-0000-0000-0000-000000000000}
+	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug_Cairo_CFLite|Win32 = Debug_Cairo_CFLite|Win32
 		Release_Cairo_CFLite|Win32 = Release_Cairo_CFLite|Win32
