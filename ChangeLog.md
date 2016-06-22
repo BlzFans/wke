@@ -1,4 +1,7 @@
-﻿#### 2016-03-10 23:29 优化 wkexe、增加命令行直接加载 HTML 文本支持。
+﻿#### 2016-06-22 14:16 修正 CWebWindow::resize、CWebWindow::moveToCenter 的 WS_CHILD 属性判断 BUG。
+* 修正 CWebWindow::resize、CWebWindow::moveToCenter 的 WS_CHILD 属性判断不正确，导致以控件形式创建时位置不正确的问题。
+
+#### 2016-03-10 23:29 优化 wkexe、增加命令行直接加载 HTML 文本支持。
 * 重构 wkexe 中一部分代码。
 * 修改 wkexe 行为，若未在命令行指定参数，使用默认参数启动 about:blank 页面。
 * 修改 wkexe 对于`html`参数的理解，现在可支持直接传递 html 内容，如：

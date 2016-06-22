@@ -707,7 +707,7 @@ void CWebWindow::resize(int width, int height)
         point.y = rect.top;
     }
 
-    if (WS_CHILD == GetWindowLong(m_hwnd, GWL_STYLE))
+    if (WS_CHILD == (WS_CHILD & GetWindowLong(m_hwnd, GWL_STYLE)))
     {
         HWND parent = GetParent(m_hwnd);
         ScreenToClient(parent, &point);
@@ -730,7 +730,7 @@ void CWebWindow::moveToCenter()
 
     int parentWidth = 0;
     int parentHeight = 0;
-    if (WS_CHILD == GetWindowLong(m_hwnd, GWL_STYLE))
+    if (WS_CHILD == (WS_CHILD & GetWindowLong(m_hwnd, GWL_STYLE)))
     {
         HWND parent = GetParent(m_hwnd);
         RECT rect = { 0 };
