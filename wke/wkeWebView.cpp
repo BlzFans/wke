@@ -1283,6 +1283,35 @@ namespace wke
             GetWindowRect(m_edit, &rectEdit);
             SetWindowPos(m_hdlg, HWND_NOTOPMOST, 0, 0, rectDlg.right - rectDlg.left, rectEdit.bottom - rectDlg.top + 5, SWP_NOMOVE);
             ShowWindow(GetDlgItem(m_hdlg, definputbox_id_edit2), SW_HIDE);
+
+            int width = 0;
+            int height = 0;
+            {
+                RECT rect = { 0 };
+                GetWindowRect(m_hdlg, &rect);
+                width = rect.right - rect.left;
+                height = rect.bottom - rect.top;
+            }
+
+            int parentWidth = 0;
+            int parentHeight = 0;
+            if (HWND parent = GetParent(m_hdlg))
+            {
+                RECT rect = { 0 };
+                GetClientRect(parent, &rect);
+                parentWidth = rect.right - rect.left;
+                parentHeight = rect.bottom - rect.top;
+            }
+            else
+            {
+                parentWidth = GetSystemMetrics(SM_CXSCREEN);
+                parentHeight = GetSystemMetrics(SM_CYSCREEN);
+            }
+
+            int x = (parentWidth - width) / 2;
+            int y = (parentHeight - height) / 2;
+
+            MoveWindow(m_hdlg, x, y, width, height, FALSE);
         }
 
         void onOK()
@@ -1388,6 +1417,7 @@ namespace wke
         settings->setShouldPrintBackgrounds(true);
         settings->setTextAreasAreResizable(true);
         settings->setLocalStorageEnabled(true);
+        settings->setUseHixie76WebSocketProtocol( false );
 
         UChar dir[256];
         GetCurrentDirectory(256, dir);

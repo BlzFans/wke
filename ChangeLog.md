@@ -1,4 +1,7 @@
-﻿#### 2016-06-22 17:40 实现默认 window.prompt。
+﻿#### 2016-06-22 20:15 使用蚂蚁实现的 websocket 。
+* 使用蚂蚁实现的 websocket，当前一个连接一个线程，有待优化。
+
+#### 2016-06-22 17:40 实现默认 window.prompt。
 * 实现默认 window.prompt 函数。
 * 修改版本号为 1.2.1.0。
 * 修改资源中相关网站地址为 www.github.com/cexer/wke。
