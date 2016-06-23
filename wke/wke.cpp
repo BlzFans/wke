@@ -12,6 +12,7 @@
 #include <WebCore/ResourceHandleManager.h>
 #include <WebCore/Console.h>
 #include <WebCore/SecurityOrigin.h>
+#include <WebCore/DatabaseTracker.h>
 
 #include "wkePlatformStrategies.h"
 #include "icuwin.h"
@@ -20,11 +21,12 @@
 #include "wkeString.h"
 #include "wkeWebView.h"
 #include "wkeWebWindow.h"
-
+#include <shlwapi.h>
 
 //////////////////////////////////////////////////////////////////////////
 
 
+extern "C" IMAGE_DOS_HEADER __ImageBase;
 
 void wkeInitialize()
 {
@@ -44,6 +46,12 @@ void wkeInitialize()
 
     //WebCore::Console::setShouldPrintExceptions(true);
     //WebCore::ResourceHandleManager::sharedInstance()->setCookieJarFileName("cookie.txt");
+
+    WCHAR storageDir[MAX_PATH + 1] = { 0 };
+    GetModuleFileNameW((HMODULE)&__ImageBase, storageDir, MAX_PATH);
+    PathRemoveFileSpecW(storageDir);
+    wcscat(storageDir, L"\\wkeStorage");
+    WebCore::DatabaseTracker::initializeTracker(storageDir);
 }
 
 void wkeConfigProxy(const wkeProxy* proxy)

@@ -1,4 +1,7 @@
-﻿#### 2016-06-22 20:15 使用蚂蚁实现的 websocket 。
+﻿#### 2016-06-23 12:13 修正调用 WebCore::DatabaseTracker::setDatabaseDirectoryPath 发生断言失败的问题。
+* 修正调用 WebCore::DatabaseTracker::setDatabaseDirectoryPath 发生断言失败的问题，改为在 wkeInitialize 时调用 WebCore::DatabaseTracker::initializeTracker。
+
+#### 2016-06-22 20:15 使用蚂蚁实现的 websocket 。
 * 使用蚂蚁实现的 websocket，当前一个连接一个线程，有待优化。
 
 #### 2016-06-22 17:40 实现默认 window.prompt。

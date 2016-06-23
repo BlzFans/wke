@@ -1382,6 +1382,8 @@ namespace wke
         m_handler.promptBoxCallback = defaultRunPromptBox;
         m_handler.promptBoxCallbackParam = this;
     }
+    
+    extern "C" IMAGE_DOS_HEADER __ImageBase;
 
     void CWebView::_initPage()
     {
@@ -1419,11 +1421,11 @@ namespace wke
         settings->setLocalStorageEnabled(true);
         settings->setUseHixie76WebSocketProtocol( false );
 
-        UChar dir[256];
-        GetCurrentDirectory(256, dir);
-        wcscat(dir, L"\\localStorage");
-        settings->setLocalStorageDatabasePath(dir);
-        WebCore::DatabaseTracker::tracker().setDatabaseDirectoryPath(dir);
+        WCHAR storageDir[MAX_PATH + 1] = { 0 };
+        GetModuleFileNameW((HMODULE)&__ImageBase, storageDir, MAX_PATH);
+        PathRemoveFileSpecW(storageDir);
+        wcscat(storageDir, L"\\wkeStorage");
+        settings->setLocalStorageDatabasePath(storageDir);
 
         FrameLoaderClient* loader = new FrameLoaderClient(this, m_page.get());
         m_mainFrame = WebCore::Frame::create(m_page.get(), NULL, loader).get();
