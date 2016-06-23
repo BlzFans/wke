@@ -231,8 +231,14 @@ WKE_API void WKE_CALL wkeAddDirtyArea(wkeWebView webView, int x, int y, int w, i
 WKE_API void WKE_CALL wkeLayoutIfNeeded(wkeWebView webView);
 WKE_API void WKE_CALL wkePaint(wkeWebView webView, void* bits,int bufWid, int bufHei, int xDst, int yDst, int w, int h, int xSrc, int ySrc, bool bCopyAlpha);
 WKE_API void WKE_CALL wkePaint2(wkeWebView webView, void* bits,int pitch);
-WKE_API void WKE_CALL wkeRepaintIfNeeded(wkeWebView webView);
+WKE_API bool WKE_CALL wkeRepaintIfNeeded(wkeWebView webView);
 WKE_API void* WKE_CALL wkeGetViewDC(wkeWebView webView);
+
+WKE_API void WKE_CALL wkeSetRepaintInterval(wkeWebView webView, int ms);
+WKE_API int  WKE_CALL wkeGetRepaintInterval(wkeWebView webView);
+WKE_API bool WKE_CALL wkeRepaintIfNeededAfterInterval(wkeWebView webView);
+WKE_API bool WKE_CALL wkeRepaintAllNeeded();
+WKE_API int  WKE_CALL wkeRunMessageLoop(const bool *quit);
 
 WKE_API bool WKE_CALL wkeCanGoBack(wkeWebView webView);
 WKE_API bool WKE_CALL wkeGoBack(wkeWebView webView);

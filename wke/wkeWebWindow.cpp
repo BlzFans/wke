@@ -170,7 +170,7 @@ bool CWebWindow::_createWindow(HWND parent, unsigned styles, unsigned styleEx, i
 
 void CWebWindow::_destroyWindow()
 {
-    KillTimer(m_hwnd, 100);
+    //KillTimer(m_hwnd, 100);
     RemovePropW(m_hwnd, L"wkeWebWindow");
     DestroyWindow(m_hwnd);
     m_hwnd = NULL;
@@ -181,6 +181,60 @@ void CWebWindow::_initCallbacks()
     CWebView::onPaintUpdated(&CWebWindow::_staticOnPaintUpdated, this);
     CWebView::onLoadingFinish(&CWebWindow::_staticOnLoadingFinish, this);
     CWebView::onDocumentReady(&CWebWindow::_staticOnDocumentReady, this);
+}
+
+void CWebWindow::_paintDC(HDC hdc, HDC sourceDC)
+{
+    //InvalidateRect(m_hwnd, NULL, FALSE);
+
+    //HDC hdc = GetDC(m_hwnd);
+    RECT rcClip;	
+    GetClipBox(hdc, &rcClip);	
+
+    RECT rcClient;
+    GetClientRect(m_hwnd, &rcClient);
+
+    RECT rcInvalid;
+    IntersectRect(&rcInvalid, &rcClip,&rcClient);
+
+    int srcX = rcInvalid.left - rcClient.left;
+    int srcY = rcInvalid.top - rcClient.top;
+    int destX = rcInvalid.left;
+    int destY = rcInvalid.top;
+    int width = rcInvalid.right - rcInvalid.left;
+    int height = rcInvalid.bottom - rcInvalid.top;
+    BitBlt(hdc, destX, destY, width, height, sourceDC, srcX, srcY, SRCCOPY); 
+
+    //ReleaseDC(m_hwnd, hdc);
+}
+
+void CWebWindow::_paintLayeredDC(HDC hdc, HDC sourceDC)
+{
+    RECT rectDest;
+    GetWindowRect(m_hwnd, &rectDest);
+
+    SIZE sizeDest = { rectDest.right - rectDest.left, rectDest.bottom - rectDest.top };
+    POINT pointDest = { rectDest.left, rectDest.top };
+    POINT pointSource = { 0, 0 };
+
+    //HDC hdcScreen = GetDC(NULL);
+    //HDC hdcMemory = CreateCompatibleDC(hdcScreen);
+    //HBITMAP hbmpMemory = CreateCompatibleBitmap(hdcScreen, sizeDest.cx, sizeDest.cy);
+    //HBITMAP hbmpOld = (HBITMAP)SelectObject(hdcMemory, hbmpMemory);
+    //BitBlt(hdcMemory, 0, 0, sizeDest.cx, sizeDest.cy, wkeGetViewDC(this), 0, 0, SRCCOPY);
+
+    BLENDFUNCTION blend = { 0 };
+    memset(&blend, 0, sizeof(blend));
+    blend.BlendOp = AC_SRC_OVER;
+    blend.SourceConstantAlpha = 255;
+    blend.AlphaFormat = AC_SRC_ALPHA;
+    UpdateLayeredWindow(m_hwnd, hdc, &pointDest, &sizeDest, sourceDC, &pointSource, RGB(0,0,0), &blend, ULW_ALPHA);
+
+    //SelectObject(hdcMemory, (HGDIOBJ)hbmpOld);
+    //DeleteObject((HGDIOBJ)hbmpMemory);
+    //DeleteDC(hdcMemory);
+
+    //ReleaseDC(NULL, hdcScreen);
 }
 
 LRESULT CALLBACK CWebWindow::_staticWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -209,7 +263,7 @@ LRESULT CWebWindow::_windowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM l
     case WM_CREATE:
         {
             DragAcceptFiles(hwnd, TRUE);
-            SetTimer(hwnd, 100, 20, NULL);
+            //SetTimer(hwnd, 100, 20, NULL);
         }
         return 0;
 
@@ -226,7 +280,7 @@ LRESULT CWebWindow::_windowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM l
 
     case WM_DESTROY:
         {
-            KillTimer(hwnd, 100);
+            //KillTimer(hwnd, 100);
             RemovePropW(hwnd, L"wkeWebWindow");
             m_hwnd = NULL;
 
@@ -237,37 +291,17 @@ LRESULT CWebWindow::_windowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM l
         }
         return 0;
 
-    case WM_TIMER:
-        {
-            wkeRepaintIfNeeded(this);
-        }
-        return 0;
+    //case WM_TIMER:
+    //    {
+    //        wkeRepaintIfNeeded(this);
+    //    }
+    //    return 0;
 
     case WM_PAINT:
-        if (WS_EX_LAYERED != (WS_EX_LAYERED & GetWindowLong(hwnd, GWL_EXSTYLE)))
         {
-            //wkeRepaintIfNeeded(this);
-
             PAINTSTRUCT ps = { 0 };
             HDC hdc = BeginPaint(hwnd, &ps);
-
-            RECT rcClip;	
-            GetClipBox(hdc,&rcClip);	
-
-            RECT rcClient;
-            GetClientRect(hwnd, &rcClient);
-
-            RECT rcInvalid;
-            IntersectRect(&rcInvalid, &rcClip,&rcClient);
-
-            int srcX = rcInvalid.left - rcClient.left;
-            int srcY = rcInvalid.top - rcClient.top;
-            int destX = rcInvalid.left;
-            int destY = rcInvalid.top;
-            int width = rcInvalid.right - rcInvalid.left;
-            int height = rcInvalid.bottom - rcInvalid.top;
-            BitBlt(hdc, destX, destY, width, height, (HDC)wkeGetViewDC(this), srcX, srcY, SRCCOPY); 
-
+            _paintDC(hdc, (HDC)wkeGetViewDC(this));
             EndPaint(hwnd, &ps);
         }
         return 0;
@@ -602,43 +636,23 @@ void CWebWindow::_staticOnPaintUpdated(wkeWebView webView, void* param, const vo
     pthis->_onPaintUpdated((HDC)hdc, x, y, cx, cy);
 }
 
-void CWebWindow::_onPaintUpdated(const HDC hdc, int x, int y, int cx, int cy)
+void CWebWindow::_onPaintUpdated(const HDC sourceDC, int x, int y, int cx, int cy)
 {
     if (WS_EX_LAYERED == (WS_EX_LAYERED & GetWindowLong(m_hwnd, GWL_EXSTYLE)))
     {
-        RECT rectDest;
-        GetWindowRect(m_hwnd, &rectDest);
-
-        SIZE sizeDest = { rectDest.right - rectDest.left, rectDest.bottom - rectDest.top };
-        POINT pointDest = { rectDest.left, rectDest.top };
-        POINT pointSource = { 0, 0 };
-
-        HDC hdcScreen = GetDC(NULL);
-        //HDC hdcMemory = CreateCompatibleDC(hdcScreen);
-        //HBITMAP hbmpMemory = CreateCompatibleBitmap(hdcScreen, sizeDest.cx, sizeDest.cy);
-        //HBITMAP hbmpOld = (HBITMAP)SelectObject(hdcMemory, hbmpMemory);
-        //BitBlt(hdcMemory, 0, 0, sizeDest.cx, sizeDest.cy, wkeGetViewDC(this), 0, 0, SRCCOPY);
-
-        BLENDFUNCTION blend = { 0 };
-        memset(&blend, 0, sizeof(blend));
-        blend.BlendOp = AC_SRC_OVER;
-        blend.SourceConstantAlpha = 255;
-        blend.AlphaFormat = AC_SRC_ALPHA;
-        UpdateLayeredWindow(m_hwnd, hdcScreen, &pointDest, &sizeDest, (HDC)wkeGetViewDC(this), &pointSource, RGB(0,0,0), &blend, ULW_ALPHA);
-
-        //SelectObject(hdcMemory, (HGDIOBJ)hbmpOld);
-        //DeleteObject((HGDIOBJ)hbmpMemory);
-        //DeleteDC(hdcMemory);
-
-        ReleaseDC(NULL, hdcScreen);
+        HDC hdc = GetDC(NULL);
+        _paintLayeredDC(hdc, sourceDC);
+        ReleaseDC(NULL, hdc);
     }
     else
     {
-        InvalidateRect(m_hwnd, NULL, FALSE);
+        HDC hdc =GetDC(m_hwnd);
+        _paintDC(hdc, sourceDC);
+        ReleaseDC(m_hwnd, hdc);
     }
 
     if (m_originalPaintUpdatedCallback)
-        m_originalPaintUpdatedCallback(this, m_originalPaintUpdatedCallbackParam, hdc, x, y, cx, cy);
+        m_originalPaintUpdatedCallback(this, m_originalPaintUpdatedCallbackParam, sourceDC, x, y, cx, cy);
 }
 
 void CWebWindow::_staticOnLoadingFinish(wkeWebView webView, void* param, const wkeString url, wkeLoadingResult result, const wkeString failedReason)

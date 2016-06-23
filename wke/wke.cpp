@@ -26,6 +26,7 @@
 //////////////////////////////////////////////////////////////////////////
 
 
+
 extern "C" IMAGE_DOS_HEADER __ImageBase;
 
 void wkeInitialize()
@@ -330,9 +331,9 @@ void wkePaint2(wkeWebView webView, void* bits,int pitch)
     webView->paint(bits, pitch);
 }
 
-void wkeRepaintIfNeeded(wkeWebView webView)
+bool wkeRepaintIfNeeded(wkeWebView webView)
 {
-    webView->repaintIfNeeded();
+    return webView->repaintIfNeeded();
 }
 
 void* wkeGetViewDC(wkeWebView webView)
@@ -660,6 +661,7 @@ STDAPI_(BOOL) DllMain( HMODULE hModule, DWORD  ul_reason_for_call, LPVOID /*lpRe
 }
 
 
+static Vector<wke::CWebView*> s_webViews;
 
 wkeWebView wkeCreateWebWindow(wkeWindowType type, void* parent, int x, int y, int width, int height)
 {
@@ -669,6 +671,7 @@ wkeWebView wkeCreateWebWindow(wkeWindowType type, void* parent, int x, int y, in
         delete webWindow;
         return NULL;
     }
+    s_webViews.append(webWindow);
 
     return webWindow;
 }
@@ -751,3 +754,89 @@ void* wkeGetHostWindow(wkeWebView webView)
     return webView->hostWindow();
 }
 
+void wkeSetRepaintInterval(wkeWebView webView, int ms)
+{
+    webView->setRepaintInterval(ms);
+}
+
+int wkeGetRepaintInterval(wkeWebView webView)
+{
+    return webView->repaintInterval();
+}
+
+bool wkeRepaintIfNeededAfterInterval(wkeWebView webView)
+{
+    return webView->repaintIfNeededAfterInterval();
+}
+
+
+wkeWebView wkeCreateWebView()
+{
+    wke::CWebView* webView = new wke::CWebView;
+    s_webViews.append(webView);
+    return webView;
+}
+
+wkeWebView wkeGetWebView(const char* name)
+{
+    for (size_t i = 0; i < s_webViews.size(); ++i)
+    {
+        if (strcmp(s_webViews[i]->name(), name) == 0)
+            return s_webViews[i];
+    }
+
+    return 0;
+}
+
+void wkeDestroyWebView(wkeWebView webView)
+{
+    size_t pos = s_webViews.find(webView);
+
+    ASSERT(pos != notFound);
+    if (pos != notFound)
+    {
+        s_webViews.remove(pos);
+        delete webView;
+    }
+}
+
+bool wkeRepaintAllNeeded()
+{
+    bool atLeastOneRepainted = false;
+    for (size_t i = 0; i < s_webViews.size(); ++i)
+    {
+        if (s_webViews[i]->repaintIfNeededAfterInterval())
+            atLeastOneRepainted = true;
+    }
+
+    return atLeastOneRepainted;
+}
+
+int wkeRunMessageLoop(const bool *quit)
+{
+    MSG msg = { 0 };
+    while (true)
+    {
+        if (quit && *quit)
+            return 0;
+
+        //DWORD processStart = timeGetTime();
+        if (PeekMessageW(&msg, NULL, 0, 0, PM_REMOVE))
+        {
+            TranslateMessage(&msg);
+            DispatchMessage(&msg);
+
+            if (msg.message == WM_QUIT)
+                return (int)msg.wParam;
+        }
+
+        wkeRepaintAllNeeded();
+
+        //DWORD processTime = timeGetTime() - processStart;
+        //if (processTime < 5)
+        //    Sleep(5 - processTime);
+        Sleep(1);
+    }
+
+    return 0;
+}

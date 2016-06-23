@@ -136,7 +136,7 @@ public:
     void layoutIfNeeded();
     void paint(void* bits, int pitch);
     void paint(void* bits, int bufWid, int bufHei, int xDst, int yDst, int w, int h, int xSrc, int ySrc, bool fKeepAlpha);
-	void repaintIfNeeded();
+	bool repaintIfNeeded();
     HDC viewDC();
     
     bool canGoBack() const;
@@ -209,6 +209,10 @@ public:
     virtual void onLoadingFinish(wkeLoadingFinishCallback callback, void* callbackParam);
     virtual void onDocumentReady(wkeDocumentReadyCallback callback, void* callbackParam);
 
+    void setRepaintInterval(int ms);
+    int repaintInterval() const;
+    bool repaintIfNeededAfterInterval();
+
 protected:
     void _initHandler();
     void _initPage();
@@ -247,6 +251,9 @@ protected:
     HWND m_hostWindow;
 
     CWebViewHandler m_handler;
+
+    DWORD m_paintInterval;
+    DWORD m_lastPaintTimeTick;
 };
 
 

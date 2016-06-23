@@ -1,4 +1,15 @@
-﻿#### 2016-06-23 12:13 修正调用 WebCore::DatabaseTracker::setDatabaseDirectoryPath 发生断言失败的问题。
+﻿#### 2016-06-23 17:46 使用群里蚂蚁的方法优化了绘制，妈妈再也不用担心 wke 绘制卡顿了。
+* 使用群里蚂蚁的方法优化了绘制，妈妈再也不用担心 wke 绘制卡顿了。
+* 增加了以下函数：
+ - wkeSetRepaintInterval 设置 wkeRepaintIfNeededAfterInterval 调用 wkeRepaintIfNeed 的时间间隔。
+ - wkeGetRepaintInterfal 获取 wkeRepaintIfNeededAfterInterval 调用 wkeRepaintIfNeed 的时间间隔。
+ - wkeRepaintIfNeededAfterInterval 根据指定的时间间隔调用 wkeRepaintIfNeed。
+ - wkeRepaintAllNeeded 调用所有 wkeWebView 的 wkeRepaintIfNeededAfterInterval。
+ - wkeRunMessageLoop 消息循环 + wkeRepaintAllNeeded 的调用。
+ 
+优化原理：以前的绘制是使用WM_TIMER定时器来重绘，当消息队列很忙的时候有可能不能及时绘制，造成卡顿，优化方法是在消息循环当中直接绘制，使绘制优先于消息处理。
+
+#### 2016-06-23 12:13 修正调用 WebCore::DatabaseTracker::setDatabaseDirectoryPath 发生断言失败的问题。
 * 修正调用 WebCore::DatabaseTracker::setDatabaseDirectoryPath 发生断言失败的问题，改为在 wkeInitialize 时调用 WebCore::DatabaseTracker::initializeTracker。
 
 #### 2016-06-22 20:15 使用蚂蚁实现的 websocket 。

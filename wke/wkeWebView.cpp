@@ -32,6 +32,8 @@ namespace wke
         , m_title("")
         , m_cookie("")
         , m_hostWindow(NULL)
+        , m_paintInterval(15)
+        , m_lastPaintTimeTick(0)
     {
         _initHandler();
         _initPage();
@@ -468,9 +470,10 @@ namespace wke
         m_mainFrame->view()->updateLayoutAndStyleIfNeededRecursive();
     }
 
-    void CWebView::repaintIfNeeded()
+    bool CWebView::repaintIfNeeded()
     {
-        if(!m_dirty) return;
+        if(!m_dirty) 
+            return false;
 
         layoutIfNeeded();
 
@@ -505,6 +508,8 @@ namespace wke
         }
         m_dirtyArea = WebCore::IntRect();
         m_dirty = false;
+
+        return true;
     }
 
     HDC CWebView::viewDC()
@@ -1470,44 +1475,30 @@ namespace wke
         m_handler.documentReadyCallbackParam = callbackParam;
     }
 
+    void CWebView::setRepaintInterval(int ms)
+    {
+        m_paintInterval = ms > 0 ? ms : 15;
+    }
+
+    int CWebView::repaintInterval() const
+    {
+        return m_paintInterval;
+    }
 
 
+    bool CWebView::repaintIfNeededAfterInterval()
+    {
+        DWORD nowTick = timeGetTime();
+        if (nowTick - m_lastPaintTimeTick < m_paintInterval)
+            return false;
 
+        bool repainted = repaintIfNeeded();
+        if (!repainted)
+            return false;
+
+        m_lastPaintTimeTick = timeGetTime();
+        return true;
+    }
 
 };//namespace wke
 
-
-
-
-
-//static Vector<wke::CWebView*> s_webViews;
-
-wkeWebView wkeCreateWebView()
-{
-    wke::CWebView* webView = new wke::CWebView;
-    //s_webViews.append(webView);
-    return webView;
-}
-
-//wkeWebView wkeGetWebView(const char* name)
-//{
-//    for (size_t i = 0; i < s_webViews.size(); ++i)
-//    {
-//        if (strcmp(s_webViews[i]->name(), name) == 0)
-//            return s_webViews[i];
-//    }
-//
-//    return 0;
-//}
-
-void wkeDestroyWebView(wkeWebView webView)
-{
-    //size_t pos = s_webViews.find(webView);
-
-    //ASSERT(pos != notFound);
-    //if (pos != notFound)
-    //{
-    //    s_webViews.remove(pos);
-    delete webView;
-    //}
-}

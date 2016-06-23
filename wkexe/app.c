@@ -121,12 +121,7 @@ void PrintHelpAndQuit(Application* app)
 
 void RunMessageLoop(Application* app)
 {
-    MSG msg = { 0 };
-    while (GetMessageW(&msg, NULL, 0, 0))
-    {
-        TranslateMessage(&msg);
-        DispatchMessageW(&msg);
-    }
+    wkeRunMessageLoop(NULL);
 }
 
 void RunApplication(Application* app)
