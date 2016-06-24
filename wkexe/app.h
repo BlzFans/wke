@@ -9,7 +9,7 @@
 
 typedef struct
 {
-    wkeWebView window;
+    wkeWebView* window;
     CommandOptions options;
 
 } Application;

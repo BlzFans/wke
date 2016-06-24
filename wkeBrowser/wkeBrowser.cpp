@@ -64,7 +64,7 @@ HWND hViewWindow = NULL;
 TCHAR szTitle[MAX_LOADSTRING];
 TCHAR szWindowClass[MAX_LOADSTRING];
 
-wkeWebView g_webView = NULL;
+wkeWebView* g_webView = NULL;
 CRender* g_render = NULL;
 
 ATOM				MyRegisterClass(HINSTANCE hInstance);
@@ -77,46 +77,46 @@ LRESULT CALLBACK UrlEditProc(HWND, UINT, WPARAM, LPARAM);
 
 void resizeSubViews();
 LRESULT CALLBACK WebViewWndProc(HWND, UINT, WPARAM, LPARAM);
-const LPCWSTR wkeWebViewClassName = L"wkeWebView";
+const LPCWSTR wkeWebViewClassName = L"wkeWebView*";
 bool registerWebViewWindowClass();
 
-jsValue JS_CALL js_msgBox(jsExecState es)
+wkeJSValue JS_CALL js_msgBox(wkeJSState* es)
 {
     wchar_t text[1025] = { 0 };
-    wcsncpy(text, jsToTempStringW(es, jsArg(es, 0)), 1024);
+    wcsncpy(text, wkeJSToTempStringW(es, wkeJSParam(es, 0)), 1024);
 
     wchar_t title[1025] = { 0 };
-    wcsncpy(title, jsToTempStringW(es, jsArg(es, 1)), 1024);
+    wcsncpy(title, wkeJSToTempStringW(es, wkeJSParam(es, 1)), 1024);
 
     MessageBoxW(hMainWnd, text, title, MB_OK);
 
-    return jsUndefined();
+    return wkeJSUndefined();
 }
 
 static int s_testCount = 0;
-jsValue JS_CALL js_getTestCount(jsExecState es)
+wkeJSValue JS_CALL js_getTestCount(wkeJSState* es)
 {
-    return jsInt(s_testCount);
+    return wkeJSInt(s_testCount);
 }
 
-jsValue JS_CALL js_setTestCount(jsExecState es)
+wkeJSValue JS_CALL js_setTestCount(wkeJSState* es)
 {
-    s_testCount = jsToInt(es, jsArg(es, 0));
+    s_testCount = wkeJSToInt(es, wkeJSParam(es, 0));
 
-    return jsUndefined();
+    return wkeJSUndefined();
 }
 
-void onTitleChanged(wkeWebView webView, void* param, const wkeString title)
+void onTitleChanged(wkeWebView* webView, void* param, const wkeString* title)
 {
     SetWindowTextW(hMainWnd, wkeGetStringW(title));
 }
 
-void onURLChanged(wkeWebView webView, void* param, const wkeString url)
+void onURLChanged(wkeWebView* webView, void* param, const wkeString* url)
 {
     SetWindowTextW(hURLBarWnd, wkeGetStringW(url));
 }
 
-bool onNavigation(wkeWebView webView, void* param, wkeNavigationType type, const wkeString url_)
+bool onNavigation(wkeWebView* webView, void* param, wkeNavigationType type, const wkeString* url_)
 {
     const wchar_t* url = wkeGetStringW(url_);
     //if (wcsstr(url, L"baidu.com") != NULL)
@@ -139,7 +139,7 @@ bool onNavigation(wkeWebView webView, void* param, wkeNavigationType type, const
     return true;
 }
 
-wkeWebView onCreateView(wkeWebView webView, void* param, const wkeNewViewInfo* info)
+wkeWebView* onCreateView(wkeWebView* webView, void* param, const wkeNewViewInfo* info)
 {
     const wchar_t* target = wkeGetStringW(info->target);
     const wchar_t* url = wkeGetStringW(info->url);
@@ -161,7 +161,7 @@ wkeWebView onCreateView(wkeWebView webView, void* param, const wkeNewViewInfo* i
     }
     else
     {
-        wkeWebView newWindow = wkeCreateWebWindow(WKE_WINDOW_TYPE_POPUP, NULL, info->x, info->y, info->width, info->height);
+        wkeWebView* newWindow = wkeCreateWebWindow(WKE_WINDOW_TYPE_POPUP, NULL, info->x, info->y, info->width, info->height);
         wkeShowWindow(newWindow, SW_SHOW);
         return newWindow;
     }
@@ -210,7 +210,7 @@ const wchar_t* messageLevelName(int i)
 }
 
 FILE* g_consoleLog = NULL;
-void onConsoleMessage(wkeWebView webView, void* param, const wkeConsoleMessage* message)
+void onConsoleMessage(wkeWebView* webView, void* param, const wkeConsoleMessage* message)
 {
     wchar_t msg[1024 * 10 + 1] = { 0 };
     int len = swprintf(msg, 1024*10, L"[%s:%s:%s] %s in %s(%d)",
@@ -237,59 +237,59 @@ void onConsoleMessage(wkeWebView webView, void* param, const wkeConsoleMessage* 
 */
 struct BindTestFunction
 {
-    static jsValue js_callAsFunction(jsExecState es, jsValue object, jsValue* args, int argCount)
+    static wkeJSValue js_callAsFunction(wkeJSState* es, wkeJSValue object, wkeJSValue* args, int argCount)
     {
         wchar_t text[1025] = { 0 };
         wchar_t title[1025] = { 0 };
 
         if (argCount >= 1)
-            wcsncpy(text, jsToTempStringW(es, jsArg(es, 0)), 1024);
+            wcsncpy(text, wkeJSToTempStringW(es, wkeJSParam(es, 0)), 1024);
         if (argCount >= 2)
-            wcsncpy(title, jsToTempStringW(es, jsArg(es, 1)), 1024);
+            wcsncpy(title, wkeJSToTempStringW(es, wkeJSParam(es, 1)), 1024);
 
         MessageBoxW(NULL, text, title[0] ? title : NULL, MB_OK);
-        return jsInt(0);
+        return wkeJSInt(0);
     }
 
-    static void js_releaseFunction(jsData* data)
+    static void js_releaseFunction(wkeJSData* data)
     {
         delete data;
     }
 
-    static void bindToGlobal(jsExecState es)
+    static void bindToGlobal(wkeJSState* es)
     {
-        jsData* data = new jsData();
-        memset(data, 0, sizeof(jsData));
+        wkeJSData* data = new wkeJSData();
+        memset(data, 0, sizeof(wkeJSData));
         strcpy(data->typeName, "Function");
         data->callAsFunction = js_callAsFunction;
         data->finalize = js_releaseFunction;
 
-        jsValue func = jsFunction(es, data);
-        jsSetGlobal(es, "popup", func);
+        wkeJSValue func = wkeJSFunction(es, data);
+        wkeJSSetGlobal(es, "popup", func);
     }
 
-    static void bindToObject(jsExecState es, jsValue obj)
+    static void bindToObject(wkeJSState* es, wkeJSValue obj)
     {
-        jsData* data = new jsData();
-        memset(data, 0, sizeof(jsData));
+        wkeJSData* data = new wkeJSData();
+        memset(data, 0, sizeof(wkeJSData));
         strcpy(data->typeName, "Function");
         data->callAsFunction = js_callAsFunction;
         data->finalize = js_releaseFunction;
 
-        jsValue func = jsFunction(es, data);
-        jsSet(es, obj, "popup", func);
+        wkeJSValue func = wkeJSFunction(es, data);
+        wkeJSSet(es, obj, "popup", func);
     }
 };
 
 
-class BindTestObject : public jsData
+class BindTestObject : public wkeJSData
 {
 public:
 	BindTestObject()
 		: m_value(0)
 	{
-		jsData* data = this;
-        memset(data, 0, sizeof(jsData));
+		wkeJSData* data = this;
+        memset(data, 0, sizeof(wkeJSData));
         strcpy(data->typeName, "Object");
         data->propertyGet = js_getObjectProp;
         data->propertySet = js_setObjectProp;
@@ -302,28 +302,28 @@ public:
 	}
 
 protected:
-	static bool js_setObjectProp(jsExecState es, jsValue object, const char* propertyName, jsValue value)
+	static bool js_setObjectProp(wkeJSState* es, wkeJSValue object, const char* propertyName, wkeJSValue value)
 	{
-		BindTestObject* pthis = (BindTestObject*)jsGetData(es, object);
+		BindTestObject* pthis = (BindTestObject*)wkeJSGetData(es, object);
 		if (strcmp(propertyName, "value") == 0)
-			return pthis->m_value = jsToInt(es, value), true;
+			return pthis->m_value = wkeJSToInt(es, value), true;
 		else
 			return false;
 	}
 
-	static void js_releaseObject(jsData* data)
+	static void js_releaseObject(wkeJSData* data)
 	{
 		BindTestObject* pthis = (BindTestObject*)data;
 		delete pthis;
 	}
 
-	class BindTestMsgbox : public jsData
+	class BindTestMsgbox : public wkeJSData
 	{
 	public:
 		BindTestMsgbox(BindTestObject* obj)
 		{
-			jsData* data = this;
-			memset(data, 0, sizeof(jsData));
+			wkeJSData* data = this;
+			memset(data, 0, sizeof(wkeJSData));
 			strcpy(data->typeName, "Function");
 			data->callAsFunction = js_callAsFunction;
 			data->finalize = js_releaseFunction;
@@ -332,44 +332,44 @@ protected:
 		}
 
 	protected:
-		static void js_releaseFunction(jsData* data)
+		static void js_releaseFunction(wkeJSData* data)
 		{
 			BindTestMsgbox* pthis = (BindTestMsgbox*)data;
 			delete pthis;
 		}
 
-		static jsValue js_callAsFunction(jsExecState es, jsValue object, jsValue* args, int argCount)
+		static wkeJSValue js_callAsFunction(wkeJSState* es, wkeJSValue object, wkeJSValue* args, int argCount)
 		{
-			BindTestMsgbox* pthis = (BindTestMsgbox*)jsGetData(es, object);
+			BindTestMsgbox* pthis = (BindTestMsgbox*)wkeJSGetData(es, object);
     
             wchar_t text[1025] = { 0 };
             wchar_t title[1025] = { 0 };
             
 			if (argCount >= 1)
-				wcsncpy(text, jsToTempStringW(es, jsArg(es, 0)), 1024);
+				wcsncpy(text, wkeJSToTempStringW(es, wkeJSParam(es, 0)), 1024);
 			if (argCount >= 2)
-				wcsncpy(title, jsToTempStringW(es, jsArg(es, 1)), 1024);
+				wcsncpy(title, wkeJSToTempStringW(es, wkeJSParam(es, 1)), 1024);
 
             pthis->m_obj->msgbox(text, title[0] ? title : NULL);
-			return jsInt(0);
+			return wkeJSInt(0);
 		}
 
 	protected:
 		BindTestObject* m_obj;
 	};
 
-	static jsValue js_getObjectProp(jsExecState es, jsValue object, const char* propertyName)
+	static wkeJSValue js_getObjectProp(wkeJSState* es, wkeJSValue object, const char* propertyName)
 	{
-		BindTestObject* pthis = (BindTestObject*)jsGetData(es, object);
+		BindTestObject* pthis = (BindTestObject*)wkeJSGetData(es, object);
 		if (strcmp(propertyName, "value") == 0)
-			return jsInt(pthis->m_value);
+			return wkeJSInt(pthis->m_value);
 
 		else if (strcmp(propertyName, "msgbox") == 0)
 		{
-			return jsFunction(es, new BindTestMsgbox(pthis));
+			return wkeJSFunction(es, new BindTestMsgbox(pthis));
 		}
 		else
-			return jsUndefined();
+			return wkeJSUndefined();
 	}
 
 protected:
@@ -411,9 +411,9 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
     t1.End();
 
 	//jsBindObject("testObj", js_getObjectProp, js_setObjectProp);
-    jsBindFunction("msgBox", js_msgBox, 2);
-    jsBindGetter("testCount", js_getTestCount);
-    jsBindSetter("testCount", js_setTestCount);
+    wkeJSBindFunction("msgBox", js_msgBox, 2);
+    wkeJSBindGetter("testCount", js_getTestCount);
+    wkeJSBindSetter("testCount", js_setTestCount);
 
     t2.Start();
     g_webView = wkeCreateWebView();
@@ -1129,9 +1129,9 @@ LRESULT CALLBACK UrlEditProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
    //         data->finalize = js_releaseObject;
 
 			BindTestObject* testObj = new BindTestObject();
-            jsExecState es = wkeGlobalExec(g_webView);
-            jsValue obj = jsObject(es, testObj);
-            jsSetGlobal(es, "test", obj);
+            wkeJSState* es = wkeGlobalExec(g_webView);
+            wkeJSValue obj = wkeJSObject(es, testObj);
+            wkeJSSetGlobal(es, "test", obj);
 
             BindTestFunction::bindToGlobal(es);
 		}
@@ -1142,28 +1142,28 @@ LRESULT CALLBACK UrlEditProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 		}
 		else if (wcsstr(url, L"call") == url)
 		{
-			jsExecState es = wkeGlobalExec(g_webView);
-			jsValue jsDocument = jsGet(es, jsGlobalObject(es), "document");
+			wkeJSState* es = wkeGlobalExec(g_webView);
+			wkeJSValue jsDocument = wkeJSGet(es, wkeJSGlobalObject(es), "document");
 
 			{
 				char prop[10] = { 0 };
 				strcpy(prop, "URL");
-				jsValue jsUrl = jsGet(es, jsDocument, prop);
-				MessageBoxW(NULL, jsToTempStringW(es, jsUrl), NULL, MB_OK);
+				wkeJSValue jsUrl = wkeJSGet(es, jsDocument, prop);
+				MessageBoxW(NULL, wkeJSToTempStringW(es, jsUrl), NULL, MB_OK);
 			}
 
 			{
 				char prop[10] = { 0 };
 				strcpy(prop, "title");
-				jsValue jsTitle = jsGet(es, jsDocument, prop);
-				MessageBoxW(NULL, jsToTempStringW(es, jsTitle), NULL, MB_OK);
+				wkeJSValue jsTitle = wkeJSGet(es, jsDocument, prop);
+				MessageBoxW(NULL, wkeJSToTempStringW(es, jsTitle), NULL, MB_OK);
 			}
 
 			{
 				char prop[10] = { 0 };
 				strcpy(prop, "cookie");
-				jsValue jsCookie = jsGet(es, jsDocument, prop);
-				MessageBoxW(NULL, jsToTempStringW(es, jsCookie), NULL, MB_OK);
+				wkeJSValue jsCookie = wkeJSGet(es, jsDocument, prop);
+				MessageBoxW(NULL, wkeJSToTempStringW(es, jsCookie), NULL, MB_OK);
 			}
 
 		}

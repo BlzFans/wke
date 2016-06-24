@@ -50,12 +50,12 @@ protected:
     static LRESULT CALLBACK _staticWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
     LRESULT _windowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 
-    static void _staticOnPaintUpdated(wkeWebView webView, void* param, const void* hdc, int x, int y, int cx, int cy);
-    static void _staticOnLoadingFinish(wkeWebView webView, void* param, const wkeString url, wkeLoadingResult result, const wkeString failedReason);
-    static void _staticOnDocumentReady(wkeWebView webView, void* param, const wkeDocumentReadyInfo* info);
+    static void _staticOnPaintUpdated(wkeWebView* webView, void* param, const void* hdc, int x, int y, int cx, int cy);
+    static void _staticOnLoadingFinish(wkeWebView* webView, void* param, const wkeString* url, wkeLoadingResult result, const wkeString* failedReason);
+    static void _staticOnDocumentReady(wkeWebView* webView, void* param, const wkeDocumentReadyInfo* info);
 
     void _onPaintUpdated(const HDC hdc, int x, int y, int cx, int cy);
-    void _onLoadingFinish(const wkeString url, wkeLoadingResult result, const wkeString failedReason);
+    void _onLoadingFinish(const wkeString* url, wkeLoadingResult result, const wkeString* failedReason);
     void _onDocumentReady(const wkeDocumentReadyInfo* info);
 
     HWND m_hwnd;

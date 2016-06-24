@@ -1,4 +1,21 @@
-﻿#### 2016-06-23 17:55 修改版本号为 1.2.1.1。
+﻿#### 2016-06-24 12:05 规范命名、类型定义。
+* wke有几个命名，我想调整一下，问一下大家的意见，主要是基于两点原因
+ 1.现在句柄类型(wkeWebView、wkeString等)、指针类型(wkeSettings*、wkeConsoleMessaget*等）都在用，比较混乱。
+ 2.JS函数族，命名上加上wke。
+
+改动如下：
+- wkeWebView -> wkeWebView *
+- wkeString -> wkeString *
+- jsExecState -> wkeJSState *
+- jsValue -> wkeJSValue
+- ....
+- jsCall -> wkeJSCall
+- jsGet -> wkeJSGet
+- ...
+
+* 修改版本号为 1.2.2.0
+
+#### 2016-06-23 17:55 修改版本号为 1.2.1.1。
 * 修改版本号为 1.2.1.1
 
 #### 2016-06-23 17:46 使用群里蚂蚁的方法优化了绘制，妈妈再也不用担心 wke 绘制卡顿了。

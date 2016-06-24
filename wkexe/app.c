@@ -54,14 +54,14 @@ void FillDefaultUrl(Application* app)
 }
 
 // 回调：点击了关闭、返回 true 将销毁窗口，返回 false 什么都不做。
-bool HandleWindowClosing(wkeWebView webWindow, void* param)
+bool HandleWindowClosing(wkeWebView* webWindow, void* param)
 {
     Application* app = (Application*)param;
     return IDYES == MessageBoxW(NULL, L"确定要退出程序吗？", L"wkexe", MB_YESNO|MB_ICONQUESTION);
 }
 
 // 回调：窗口已销毁
-void HandleWindowDestroy(wkeWebView webWindow, void* param)
+void HandleWindowDestroy(wkeWebView* webWindow, void* param)
 {
     Application* app = (Application*)param;
     app->window = NULL;
@@ -69,7 +69,7 @@ void HandleWindowDestroy(wkeWebView webWindow, void* param)
 }
 
 // 回调：文档加载成功
-void HandleDocumentReady(wkeWebView webWindow, void* param, const wkeDocumentReadyInfo* info)
+void HandleDocumentReady(wkeWebView* webWindow, void* param, const wkeDocumentReadyInfo* info)
 {
     //主页面加载成功(非iframe)
     if (info->frameJSState == info->mainFrameJSState)
@@ -77,15 +77,15 @@ void HandleDocumentReady(wkeWebView webWindow, void* param, const wkeDocumentRea
 }
 
 // 回调：页面标题改变
-void HandleTitleChanged(wkeWebView webWindow, void* param, const wkeString title)
+void HandleTitleChanged(wkeWebView* webWindow, void* param, const wkeString* title)
 {
     wkeSetWindowTitleW(webWindow, wkeGetStringW(title));
 }
 
 // 回调：创建新的页面，比如说调用了 window.open 或者点击了 <a target="_blank" .../>
-wkeWebView HandleCreateView(wkeWebView webWindow, void* param, const wkeNewViewInfo* info)
+wkeWebView* HandleCreateView(wkeWebView* webWindow, void* param, const wkeNewViewInfo* info)
 {
-    wkeWebView newWindow = wkeCreateWebWindow(WKE_WINDOW_TYPE_POPUP, NULL, info->x, info->y, info->width, info->height);
+    wkeWebView* newWindow = wkeCreateWebWindow(WKE_WINDOW_TYPE_POPUP, NULL, info->x, info->y, info->width, info->height);
     wkeShowWindow(newWindow, SW_SHOW);
     return newWindow;
 }

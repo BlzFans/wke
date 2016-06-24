@@ -50,7 +50,7 @@ public:
         m_pixels = NULL;
     }
 
-    virtual void render(wkeWebView webView)
+    virtual void render(wkeWebView* webView)
     {
         if (wkeIsDirty(webView))
         {

@@ -177,9 +177,9 @@ public:
     
     wkeRect caretRect();
     
-    jsValue runJS(const wchar_t* script);
-    jsValue runJS(const utf8* script);
-    jsExecState globalExec();
+    wkeJSValue runJS(const wchar_t* script);
+    wkeJSValue runJS(const utf8* script);
+    wkeJSState* globalExec();
     
     void sleep();
     void wake();

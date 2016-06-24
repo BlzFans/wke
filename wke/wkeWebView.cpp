@@ -1091,29 +1091,29 @@ namespace wke
         return rect;
     }
 
-    jsValue CWebView::runJS(const wchar_t* script)
+    wkeJSValue CWebView::runJS(const wchar_t* script)
     {
         String string(script);
         WebCore::ScriptValue value = m_mainFrame->script()->executeScript(string, true);
         if (value.hasNoValue())
-            return jsUndefined();
+            return wkeJSUndefined();
 
-        return JSC::JSValue::encode(value.jsValue());
+        return (wkeJSValue)JSC::JSValue::encode(value.jsValue());
     }
 
-    jsValue CWebView::runJS(const utf8* script)
+    wkeJSValue CWebView::runJS(const utf8* script)
     {
         String string = String::fromUTF8(script);
         WebCore::ScriptValue value = m_mainFrame->script()->executeScript(string, true);
         if (value.hasNoValue())
-            return jsUndefined();
+            return wkeJSUndefined();
 
-        return JSC::JSValue::encode(value.jsValue());
+        return (wkeJSValue)JSC::JSValue::encode(value.jsValue());
     }
 
-    jsExecState CWebView::globalExec()
+    wkeJSState* CWebView::globalExec()
     {
-        return m_mainFrame->script()->globalObject(WebCore::mainThreadNormalWorld())->globalExec();
+        return (wkeJSState*)m_mainFrame->script()->globalObject(WebCore::mainThreadNormalWorld())->globalExec();
     }
 
     void CWebView::sleep()
@@ -1192,12 +1192,12 @@ namespace wke
         m_handler.promptBoxCallbackParam = callbackParam;
     }
 
-    void defaultRunAlertBox(wkeWebView webView, void* param, const wkeString msg)
+    void defaultRunAlertBox(wkeWebView* webView, void* param, const wkeString* msg)
     {
         MessageBoxW(NULL, wkeGetStringW(msg), L"wke", MB_OK);
     }
 
-    bool defaultRunConfirmBox(wkeWebView webView, void* param, const wkeString msg)
+    bool defaultRunConfirmBox(wkeWebView* webView, void* param, const wkeString* msg)
     {
         int result = MessageBoxW(NULL, wkeGetStringW(msg), L"wke", MB_OKCANCEL);
         return result == IDOK;
@@ -1367,7 +1367,7 @@ namespace wke
         }
     };
 
-    bool defaultRunPromptBox(wkeWebView webView, void* param, const wkeString msg, const wkeString defaultResult, wkeString result)
+    bool defaultRunPromptBox(wkeWebView* webView, void* param, const wkeString* msg, const wkeString* defaultResult, wkeString* result)
     {
         LPCWSTR pwszResult = NULL;
 

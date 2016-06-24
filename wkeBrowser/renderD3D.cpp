@@ -123,7 +123,7 @@ void CRenderD3D::resize(unsigned int w, unsigned int h)
     SAFE_RELEASE(m_pWebViewTexture);
 }
 
-void CRenderD3D::render(wkeWebView webView)
+void CRenderD3D::render(wkeWebView* webView)
 {
     if (!LostDeviceRestore())
         return;
@@ -167,7 +167,7 @@ bool CRenderD3D::LostDeviceRestore()
     return true;
 }
 
-bool CRenderD3D::UpdateTexture(wkeWebView webView)
+bool CRenderD3D::UpdateTexture(wkeWebView* webView)
 {
     if (m_pWebViewTexture == NULL)
     {

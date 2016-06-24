@@ -13,10 +13,10 @@ public:
     virtual bool init(HWND hView);
     virtual void destroy();
     virtual void resize(unsigned int w, unsigned int h);
-    virtual void render(wkeWebView webView);
+    virtual void render(wkeWebView* webView);
 
     bool LostDeviceRestore();
-    bool UpdateTexture(wkeWebView webView);
+    bool UpdateTexture(wkeWebView* webView);
 
 private:
     HWND m_hView;

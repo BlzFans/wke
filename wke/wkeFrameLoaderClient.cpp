@@ -612,8 +612,8 @@ void FrameLoaderClient::dispatchDidFinishDocumentLoad(WebCore::FrameLoader* load
     WebCore::JSDOMWindow* jsWindow = script->globalObject(WebCore::mainThreadNormalWorld());
 
     wkeDocumentReadyInfo info = { 0 };
-    info.frameJSState = jsWindow->globalExec();
-    info.mainFrameJSState = m_webView->globalExec();
+    info.frameJSState = (wkeJSState*)jsWindow->globalExec();
+    info.mainFrameJSState = (wkeJSState*)m_webView->globalExec();
 
     wke::CString url = window->url();
     info.url = &url;

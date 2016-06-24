@@ -158,421 +158,421 @@ void wkeSetFileSystem(FILE_OPEN pfn_open, FILE_CLOSE pfn_close, FILE_SIZE pfn_si
     libcurl_set_file_system(pfn_open, pfn_close, pfn_size, pfn_read, pfn_seek);
 }
 
-const char* wkeGetName(wkeWebView webView)
+const char* wkeGetName(wkeWebView* webView)
 {
     return webView->name();
 }
 
-void wkeSetName(wkeWebView webView, const char* name)
+void wkeSetName(wkeWebView* webView, const char* name)
 {
     webView->setName(name);
 }
 
-bool wkeIsTransparent(wkeWebView webView)
+bool wkeIsTransparent(wkeWebView* webView)
 {
     return webView->isTransparent();
 }
 
-void wkeSetTransparent(wkeWebView webView, bool transparent)
+void wkeSetTransparent(wkeWebView* webView, bool transparent)
 {
     webView->setTransparent(transparent);
 }
 
-void wkeSetUserAgent(wkeWebView webView, const utf8* userAgent)
+void wkeSetUserAgent(wkeWebView* webView, const utf8* userAgent)
 {
     webView->setUserAgent(userAgent);
 }
 
-void wkeSetUserAgentW(wkeWebView webView, const wchar_t* userAgent)
+void wkeSetUserAgentW(wkeWebView* webView, const wchar_t* userAgent)
 {
     webView->setUserAgent(userAgent);
 }
 
-void wkePostURL(wkeWebView wkeView,const utf8 * url,const char *szPostData,int nLen)
+void wkePostURL(wkeWebView* wkeView,const utf8 * url,const char *szPostData,int nLen)
 {
 	wkeView->loadPostURL(url,szPostData,nLen);
 }
-void wkePostURLW(wkeWebView wkeView,const wchar_t * url,const char *szPostData,int nLen)
+void wkePostURLW(wkeWebView* wkeView,const wchar_t * url,const char *szPostData,int nLen)
 {
     wkeView->loadPostURL(url,szPostData,nLen);
 }
-void wkeLoadURL(wkeWebView webView, const utf8* url)
+void wkeLoadURL(wkeWebView* webView, const utf8* url)
 {
     webView->loadURL(url);
 }
 
-void wkeLoadURLW(wkeWebView webView, const wchar_t* url)
+void wkeLoadURLW(wkeWebView* webView, const wchar_t* url)
 {
     webView->loadURL(url);
 }
 
-void wkeLoadHTML(wkeWebView webView, const utf8* html)
+void wkeLoadHTML(wkeWebView* webView, const utf8* html)
 {
     webView->loadHTML(html);
 }
 
-void wkeLoadHTMLW(wkeWebView webView, const wchar_t* html)
+void wkeLoadHTMLW(wkeWebView* webView, const wchar_t* html)
 {
     webView->loadHTML(html);
 }
 
-void wkeLoadFile(wkeWebView webView, const utf8* filename)
+void wkeLoadFile(wkeWebView* webView, const utf8* filename)
 {
     return webView->loadFile(filename);
 }
 
-void wkeLoadFileW(wkeWebView webView, const wchar_t* filename)
+void wkeLoadFileW(wkeWebView* webView, const wchar_t* filename)
 {
     return webView->loadFile(filename);
 }
 
-void wkeLoad(wkeWebView webView, const utf8* str)
+void wkeLoad(wkeWebView* webView, const utf8* str)
 {
     return webView->load(str);
 }
 
-void wkeLoadW(wkeWebView webView, const wchar_t* str)
+void wkeLoadW(wkeWebView* webView, const wchar_t* str)
 {
     return webView->load(str);
 }
 
-bool wkeIsLoadingSucceeded(wkeWebView webView)
+bool wkeIsLoadingSucceeded(wkeWebView* webView)
 {
     return webView->isLoadingSucceeded();
 }
 
-bool wkeIsLoadingFailed(wkeWebView webView)
+bool wkeIsLoadingFailed(wkeWebView* webView)
 {
     return webView->isLoadingFailed();
 }
 
-bool wkeIsLoadingCompleted(wkeWebView webView)
+bool wkeIsLoadingCompleted(wkeWebView* webView)
 {
     return webView->isLoadingCompleted();
 }
 
-bool wkeIsDocumentReady(wkeWebView webView)
+bool wkeIsDocumentReady(wkeWebView* webView)
 {
     return webView->isDocumentReady();
 }
 
-void wkeStopLoading(wkeWebView webView)
+void wkeStopLoading(wkeWebView* webView)
 {
     webView->stopLoading();
 }
 
-void wkeReload(wkeWebView webView)
+void wkeReload(wkeWebView* webView)
 {
     webView->reload();
 }
 
-const utf8* wkeGetTitle(wkeWebView webView)
+const utf8* wkeGetTitle(wkeWebView* webView)
 {
     return webView->title();
 }
 
-const wchar_t* wkeGetTitleW(wkeWebView webView)
+const wchar_t* wkeGetTitleW(wkeWebView* webView)
 {
     return webView->titleW();
 }
 
-void wkeResize(wkeWebView webView, int w, int h)
+void wkeResize(wkeWebView* webView, int w, int h)
 {
     webView->resize(w, h);
 }
 
-int wkeGetWidth(wkeWebView webView)
+int wkeGetWidth(wkeWebView* webView)
 {
     return webView->width();
 }
 
-int wkeGetHeight(wkeWebView webView)
+int wkeGetHeight(wkeWebView* webView)
 {
     return webView->height();
 }
 
-int wkeGetContentWidth(wkeWebView webView)
+int wkeGetContentWidth(wkeWebView* webView)
 {
     return webView->contentWidth();
 }
 
-int wkeGetContentHeight(wkeWebView webView)
+int wkeGetContentHeight(wkeWebView* webView)
 {
     return webView->contentHeight();
 }
 
-void wkeSetDirty(wkeWebView webView, bool dirty)
+void wkeSetDirty(wkeWebView* webView, bool dirty)
 {
     webView->setDirty(dirty);
 }
 
-bool wkeIsDirty(wkeWebView webView)
+bool wkeIsDirty(wkeWebView* webView)
 {
     return webView->isDirty();
 }
 
-void wkeAddDirtyArea(wkeWebView webView, int x, int y, int w, int h)
+void wkeAddDirtyArea(wkeWebView* webView, int x, int y, int w, int h)
 {
     webView->addDirtyArea(x, y, w, h);
 }
 
-void wkeLayoutIfNeeded(wkeWebView webView)
+void wkeLayoutIfNeeded(wkeWebView* webView)
 {
     webView->layoutIfNeeded();
 }
 
-void wkePaint(wkeWebView webView,void* bits, int bufWid, int bufHei, int xDst, int yDst, int w, int h, int xSrc, int ySrc, bool bCopyAlpha)
+void wkePaint(wkeWebView* webView,void* bits, int bufWid, int bufHei, int xDst, int yDst, int w, int h, int xSrc, int ySrc, bool bCopyAlpha)
 {
     webView->paint(bits, bufWid,  bufHei,  xDst,  yDst,  w,  h,  xSrc,  ySrc, bCopyAlpha);
 }
 
-void wkePaint2(wkeWebView webView, void* bits,int pitch)
+void wkePaint2(wkeWebView* webView, void* bits,int pitch)
 {
     webView->paint(bits, pitch);
 }
 
-bool wkeRepaintIfNeeded(wkeWebView webView)
+bool wkeRepaintIfNeeded(wkeWebView* webView)
 {
     return webView->repaintIfNeeded();
 }
 
-void* wkeGetViewDC(wkeWebView webView)
+void* wkeGetViewDC(wkeWebView* webView)
 {
     return webView->viewDC();
 }
 
-bool wkeCanGoBack(wkeWebView webView)
+bool wkeCanGoBack(wkeWebView* webView)
 {
     return webView->canGoBack();
 }
 
-bool wkeGoBack(wkeWebView webView)
+bool wkeGoBack(wkeWebView* webView)
 {
     return webView->goBack();
 }
 
-bool wkeCanGoForward(wkeWebView webView)
+bool wkeCanGoForward(wkeWebView* webView)
 {
     return webView->canGoForward();
 }
 
-bool wkeGoForward(wkeWebView webView)
+bool wkeGoForward(wkeWebView* webView)
 {
     return webView->goForward();
 }
 
-void wkeEditorSelectAll(wkeWebView webView)
+void wkeEditorSelectAll(wkeWebView* webView)
 {
     webView->editorSelectAll();
 }
 
-void wkeEditorCopy(wkeWebView webView)
+void wkeEditorCopy(wkeWebView* webView)
 {
     webView->editorCopy();
 }
 
-void wkeEditorCut(wkeWebView webView)
+void wkeEditorCut(wkeWebView* webView)
 {
     webView->editorCut();
 }
 
-void wkeEditorPaste(wkeWebView webView)
+void wkeEditorPaste(wkeWebView* webView)
 {
     webView->editorPaste();
 }
 
-void wkeEditorDelete(wkeWebView webView)
+void wkeEditorDelete(wkeWebView* webView)
 {
     webView->editorDelete();
 }
 
-const wchar_t * wkeGetCookieW(wkeWebView webView)
+const wchar_t * wkeGetCookieW(wkeWebView* webView)
 {
     return webView->cookieW();
 }
 
-const utf8* wkeGetCookie(wkeWebView webView)
+const utf8* wkeGetCookie(wkeWebView* webView)
 {
     return webView->cookie();
 }
 
 
-void wkeSetCookieEnabled(wkeWebView webView, bool enable)
+void wkeSetCookieEnabled(wkeWebView* webView, bool enable)
 {
     webView->setCookieEnabled(enable);
 }
 
-bool wkeIsCookieEnabled(wkeWebView webView)
+bool wkeIsCookieEnabled(wkeWebView* webView)
 {
     return webView->isCookieEnabled();
 }
 
-void wkeSetMediaVolume(wkeWebView webView, float volume)
+void wkeSetMediaVolume(wkeWebView* webView, float volume)
 {
     webView->setMediaVolume(volume);
 }
 
-float wkeGetMediaVolume(wkeWebView webView)
+float wkeGetMediaVolume(wkeWebView* webView)
 {
     return webView->mediaVolume();
 }
 
-bool wkeFireMouseEvent(wkeWebView webView, unsigned int message, int x, int y, unsigned int flags)
+bool wkeFireMouseEvent(wkeWebView* webView, unsigned int message, int x, int y, unsigned int flags)
 {
     return webView->fireMouseEvent(message, x, y, flags);
 }
 
-bool wkeFireContextMenuEvent(wkeWebView webView, int x, int y, unsigned int flags)
+bool wkeFireContextMenuEvent(wkeWebView* webView, int x, int y, unsigned int flags)
 {
     return webView->fireContextMenuEvent(x, y, flags);
 }
 
-bool wkeFireMouseWheelEvent(wkeWebView webView, int x, int y, int delta, unsigned int flags)
+bool wkeFireMouseWheelEvent(wkeWebView* webView, int x, int y, int delta, unsigned int flags)
 {
     return webView->fireMouseWheelEvent(x, y, delta, flags);
 }
 
-bool wkeFireKeyUpEvent(wkeWebView webView, unsigned int virtualKeyCode, unsigned int flags, bool systemKey)
+bool wkeFireKeyUpEvent(wkeWebView* webView, unsigned int virtualKeyCode, unsigned int flags, bool systemKey)
 {
     return webView->fireKeyUpEvent(virtualKeyCode, flags, systemKey);
 }
 
-bool wkeFireKeyDownEvent(wkeWebView webView, unsigned int virtualKeyCode, unsigned int flags, bool systemKey)
+bool wkeFireKeyDownEvent(wkeWebView* webView, unsigned int virtualKeyCode, unsigned int flags, bool systemKey)
 {
     return webView->fireKeyDownEvent(virtualKeyCode, flags, systemKey);
 }
 
-bool wkeFireKeyPressEvent(wkeWebView webView, unsigned int charCode, unsigned int flags, bool systemKey)
+bool wkeFireKeyPressEvent(wkeWebView* webView, unsigned int charCode, unsigned int flags, bool systemKey)
 {
     return webView->fireKeyPressEvent(charCode, flags, systemKey);
 }
 
-void wkeSetFocus(wkeWebView webView)
+void wkeSetFocus(wkeWebView* webView)
 {
     webView->setFocus();
 }
 
-void wkeKillFocus(wkeWebView webView)
+void wkeKillFocus(wkeWebView* webView)
 {
     webView->killFocus();
 }
 
-wkeRect wkeGetCaretRect(wkeWebView webView)
+wkeRect wkeGetCaretRect(wkeWebView* webView)
 {
     return webView->caretRect();
 }
 
-jsValue wkeRunJS(wkeWebView webView, const utf8* script)
+wkeJSValue wkeRunJS(wkeWebView* webView, const utf8* script)
 {
     return webView->runJS(script);
 }
 
-jsValue wkeRunJSW(wkeWebView webView, const wchar_t* script)
+wkeJSValue wkeRunJSW(wkeWebView* webView, const wchar_t* script)
 {
     return webView->runJS(script);
 }
 
-jsExecState wkeGlobalExec(wkeWebView webView)
+wkeJSState* wkeGlobalExec(wkeWebView* webView)
 {
     return webView->globalExec();
 }
 
-void wkeSleep(wkeWebView webView)
+void wkeSleep(wkeWebView* webView)
 {
     webView->sleep();
 }
 
-void wkeWake(wkeWebView webView)
+void wkeWake(wkeWebView* webView)
 {
     webView->wake();
 }
 
-bool wkeIsAwake(wkeWebView webView)
+bool wkeIsAwake(wkeWebView* webView)
 {
     return webView->isAwake();
 }
 
-void wkeSetZoomFactor(wkeWebView webView, float factor)
+void wkeSetZoomFactor(wkeWebView* webView, float factor)
 {
     webView->setZoomFactor(factor);
 }
 
-float wkeGetZoomFactor(wkeWebView webView)
+float wkeGetZoomFactor(wkeWebView* webView)
 {
     return webView->zoomFactor();
 }
 
-void wkeSetEditable(wkeWebView webView, bool editable)
+void wkeSetEditable(wkeWebView* webView, bool editable)
 {
     webView->setEditable(editable);
 }
 
-void wkeOnTitleChanged(wkeWebView webView, wkeTitleChangedCallback callback, void* callbackParam)
+void wkeOnTitleChanged(wkeWebView* webView, wkeTitleChangedCallback callback, void* callbackParam)
 {
     webView->onTitleChanged(callback, callbackParam);
 }
 
-void wkeOnURLChanged(wkeWebView webView, wkeURLChangedCallback callback, void* callbackParam)
+void wkeOnURLChanged(wkeWebView* webView, wkeURLChangedCallback callback, void* callbackParam)
 {
     webView->onURLChanged(callback, callbackParam);
 }
 
-void wkeOnPaintUpdated(wkeWebView webView, wkePaintUpdatedCallback callback, void* callbackParam)
+void wkeOnPaintUpdated(wkeWebView* webView, wkePaintUpdatedCallback callback, void* callbackParam)
 {
     webView->onPaintUpdated(callback, callbackParam);
 }
 
-void wkeOnAlertBox(wkeWebView webView, wkeAlertBoxCallback callback, void* callbackParam)
+void wkeOnAlertBox(wkeWebView* webView, wkeAlertBoxCallback callback, void* callbackParam)
 {
     webView->onAlertBox(callback, callbackParam);
 }
 
-void wkeOnConfirmBox(wkeWebView webView, wkeConfirmBoxCallback callback, void* callbackParam)
+void wkeOnConfirmBox(wkeWebView* webView, wkeConfirmBoxCallback callback, void* callbackParam)
 {
     webView->onConfirmBox(callback, callbackParam);
 }
 
-void wkeOnPromptBox(wkeWebView webView, wkePromptBoxCallback callback, void* callbackParam)
+void wkeOnPromptBox(wkeWebView* webView, wkePromptBoxCallback callback, void* callbackParam)
 {
     webView->onPromptBox(callback, callbackParam);
 }
 
-void wkeOnNavigation(wkeWebView webView, wkeNavigationCallback callback, void* param)
+void wkeOnNavigation(wkeWebView* webView, wkeNavigationCallback callback, void* param)
 {
     webView->onNavigation(callback, param);
 }
 
-void wkeOnCreateView(wkeWebView webView, wkeCreateViewCallback callback, void* param)
+void wkeOnCreateView(wkeWebView* webView, wkeCreateViewCallback callback, void* param)
 {
     webView->onCreateView(callback, param);
 }
 
-void wkeOnDocumentReady(wkeWebView webView, wkeDocumentReadyCallback callback, void* param)
+void wkeOnDocumentReady(wkeWebView* webView, wkeDocumentReadyCallback callback, void* param)
 {
     webView->onDocumentReady(callback, param);
 }
 
-void wkeOnLoadingFinish(wkeWebView webView, wkeLoadingFinishCallback callback, void* param)
+void wkeOnLoadingFinish(wkeWebView* webView, wkeLoadingFinishCallback callback, void* param)
 {
     webView->onLoadingFinish(callback, param);
 }
 
-void wkeOnConsoleMessage(wkeWebView webView, wkeConsoleMessageCallback callback, void* callbackParam)
+void wkeOnConsoleMessage(wkeWebView* webView, wkeConsoleMessageCallback callback, void* callbackParam)
 {
     webView->onConsoleMessage(callback, callbackParam);
 }
 
-const utf8* wkeGetString(const wkeString s)
+const utf8* wkeGetString(const wkeString* s)
 {
     return s ? s->string() : "";
 }
 
-const wchar_t* wkeGetStringW(const wkeString string)
+const wchar_t* wkeGetStringW(const wkeString* string)
 {
     return string ? string->stringW() : L"";
 }
 
-void wkeSetString(wkeString string, const utf8* str, size_t len)
+void wkeSetString(wkeString* string, const utf8* str, size_t len)
 {
     if (!string)
         return;
@@ -591,7 +591,7 @@ void wkeSetString(wkeString string, const utf8* str, size_t len)
     string->assign(str, len);
 }
 
-void wkeSetStringW(wkeString string, const wchar_t* str, size_t len)
+void wkeSetStringW(wkeString* string, const wchar_t* str, size_t len)
 {
     if (!string)
         return;
@@ -663,7 +663,7 @@ STDAPI_(BOOL) DllMain( HMODULE hModule, DWORD  ul_reason_for_call, LPVOID /*lpRe
 
 static Vector<wke::CWebView*> s_webViews;
 
-wkeWebView wkeCreateWebWindow(wkeWindowType type, void* parent, int x, int y, int width, int height)
+wkeWebView* wkeCreateWebWindow(wkeWindowType type, void* parent, int x, int y, int width, int height)
 {
     wke::CWebWindow* webWindow = new wke::CWebWindow();
     if (!webWindow->create((HWND)parent, type, x, y, width, height))
@@ -676,13 +676,13 @@ wkeWebView wkeCreateWebWindow(wkeWindowType type, void* parent, int x, int y, in
     return webWindow;
 }
 
-void wkeDestroyWebWindow(wkeWebView webWindow)
+void wkeDestroyWebWindow(wkeWebView* webWindow)
 {
     webWindow->destroy();
 }
 
 
-void* wkeGetWindowHandle(wkeWebView webWindow)
+void* wkeGetWindowHandle(wkeWebView* webWindow)
 {
     if (wke::CWebWindow* window = dynamic_cast<wke::CWebWindow*>(webWindow))
         return window->windowHandle();
@@ -690,94 +690,94 @@ void* wkeGetWindowHandle(wkeWebView webWindow)
         return NULL;
 }
 
-void wkeOnWindowClosing(wkeWebView webWindow, wkeWindowClosingCallback callback, void* param)
+void wkeOnWindowClosing(wkeWebView* webWindow, wkeWindowClosingCallback callback, void* param)
 {
     if (wke::CWebWindow* window = dynamic_cast<wke::CWebWindow*>(webWindow))
         return window->onClosing(callback, param);
 }
 
-void wkeOnWindowDestroy(wkeWebView webWindow, wkeWindowDestroyCallback callback, void* param)
+void wkeOnWindowDestroy(wkeWebView* webWindow, wkeWindowDestroyCallback callback, void* param)
 {
     if (wke::CWebWindow* window = dynamic_cast<wke::CWebWindow*>(webWindow))
         return window->onDestroy(callback, param);
 }
 
-void wkeShowWindow(wkeWebView webWindow, bool showFlag)
+void wkeShowWindow(wkeWebView* webWindow, bool showFlag)
 {
     if (wke::CWebWindow* window = dynamic_cast<wke::CWebWindow*>(webWindow))
         return window->show(showFlag);
 }
 
-void wkeEnableWindow(wkeWebView webWindow, bool enableFlag)
+void wkeEnableWindow(wkeWebView* webWindow, bool enableFlag)
 {
     if (wke::CWebWindow* window = dynamic_cast<wke::CWebWindow*>(webWindow))
         return window->enable(enableFlag);
 }
 
-void wkeMoveWindow(wkeWebView webWindow, int x, int y, int width, int height)
+void wkeMoveWindow(wkeWebView* webWindow, int x, int y, int width, int height)
 {
     if (wke::CWebWindow* window = dynamic_cast<wke::CWebWindow*>(webWindow))
         return window->move(x, y, width, height);
 }
 
-void wkeMoveToCenter(wkeWebView webWindow)
+void wkeMoveToCenter(wkeWebView* webWindow)
 {
     if (wke::CWebWindow* window = dynamic_cast<wke::CWebWindow*>(webWindow))
         return window->moveToCenter();
 }
 
-void wkeResizeWindow(wkeWebView webWindow, int width, int height)
+void wkeResizeWindow(wkeWebView* webWindow, int width, int height)
 {
     if (wke::CWebWindow* window = dynamic_cast<wke::CWebWindow*>(webWindow))
         return window->resize(width, height);
 }
 
-void wkeSetWindowTitle(wkeWebView webWindow, const utf8* title)
+void wkeSetWindowTitle(wkeWebView* webWindow, const utf8* title)
 {
     if (wke::CWebWindow* window = dynamic_cast<wke::CWebWindow*>(webWindow))
         return window->setTitle(title);
 }
 
-void wkeSetWindowTitleW(wkeWebView webWindow, const wchar_t* title)
+void wkeSetWindowTitleW(wkeWebView* webWindow, const wchar_t* title)
 {
     if (wke::CWebWindow* window = dynamic_cast<wke::CWebWindow*>(webWindow))
         return window->setTitle(title);
 }
 
-void wkeSetHostWindow(wkeWebView webView, void* host)
+void wkeSetHostWindow(wkeWebView* webView, void* host)
 {
     webView->setHostWindow((HWND)host);
 }
 
-void* wkeGetHostWindow(wkeWebView webView)
+void* wkeGetHostWindow(wkeWebView* webView)
 {
     return webView->hostWindow();
 }
 
-void wkeSetRepaintInterval(wkeWebView webView, int ms)
+void wkeSetRepaintInterval(wkeWebView* webView, int ms)
 {
     webView->setRepaintInterval(ms);
 }
 
-int wkeGetRepaintInterval(wkeWebView webView)
+int wkeGetRepaintInterval(wkeWebView* webView)
 {
     return webView->repaintInterval();
 }
 
-bool wkeRepaintIfNeededAfterInterval(wkeWebView webView)
+bool wkeRepaintIfNeededAfterInterval(wkeWebView* webView)
 {
     return webView->repaintIfNeededAfterInterval();
 }
 
 
-wkeWebView wkeCreateWebView()
+wkeWebView* wkeCreateWebView()
 {
     wke::CWebView* webView = new wke::CWebView;
     s_webViews.append(webView);
     return webView;
 }
 
-wkeWebView wkeGetWebView(const char* name)
+wkeWebView* wkeGetWebView(const char* name)
 {
     for (size_t i = 0; i < s_webViews.size(); ++i)
     {
@@ -788,7 +788,7 @@ wkeWebView wkeGetWebView(const char* name)
     return 0;
 }
 
-void wkeDestroyWebView(wkeWebView webView)
+void wkeDestroyWebView(wkeWebView* webView)
 {
     size_t pos = s_webViews.find(webView);
 

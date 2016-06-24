@@ -630,7 +630,7 @@ LRESULT CWebWindow::_windowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM l
     return DefWindowProcW(hwnd, message, wParam, lParam);
 }
 
-void CWebWindow::_staticOnPaintUpdated(wkeWebView webView, void* param, const void* hdc, int x, int y, int cx, int cy)
+void CWebWindow::_staticOnPaintUpdated(wkeWebView* webView, void* param, const void* hdc, int x, int y, int cx, int cy)
 {
     CWebWindow* pthis = (CWebWindow*)param;
     pthis->_onPaintUpdated((HDC)hdc, x, y, cx, cy);
@@ -655,19 +655,19 @@ void CWebWindow::_onPaintUpdated(const HDC sourceDC, int x, int y, int cx, int c
         m_originalPaintUpdatedCallback(this, m_originalPaintUpdatedCallbackParam, sourceDC, x, y, cx, cy);
 }
 
-void CWebWindow::_staticOnLoadingFinish(wkeWebView webView, void* param, const wkeString url, wkeLoadingResult result, const wkeString failedReason)
+void CWebWindow::_staticOnLoadingFinish(wkeWebView* webView, void* param, const wkeString* url, wkeLoadingResult result, const wkeString* failedReason)
 {
     CWebWindow* pthis = (CWebWindow*)param;
     pthis->_onLoadingFinish(url, result, failedReason);
 }
 
-void CWebWindow::_onLoadingFinish(const wkeString url, wkeLoadingResult result, const wkeString failedReason)
+void CWebWindow::_onLoadingFinish(const wkeString* url, wkeLoadingResult result, const wkeString* failedReason)
 {
     if (m_originalLoadingFinishCallback)
         m_originalLoadingFinishCallback(this, m_originalLoadingFinishCallbackParam, url, result, failedReason);
 }
 
-void CWebWindow::_staticOnDocumentReady(wkeWebView webView, void* param, const wkeDocumentReadyInfo* info)
+void CWebWindow::_staticOnDocumentReady(wkeWebView* webView, void* param, const wkeDocumentReadyInfo* info)
 {
     CWebWindow* pthis = (CWebWindow*)param;
     pthis->_onDocumentReady(info);
