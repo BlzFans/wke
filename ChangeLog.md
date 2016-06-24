@@ -1,4 +1,20 @@
-﻿#### 2016-06-24 12:05 规范命名、类型定义。
+﻿#### 2016-06-24 12:05 规范JS接口，增加 wkeJSAddRef、wkeJSReleaseRef 。
+* 所有JS接口上，添加 wkeJSState* 参数。
+* 添加 wkeJSAddRef、wkeJSReleaseRef 函数，显式地引用变量，避免被 GC。
+
+改动如下：
+- wkeWebView -> wkeWebView *
+- wkeString -> wkeString *
+- jsExecState -> wkeJSState *
+- jsValue -> wkeJSValue
+- ....
+- jsCall -> wkeJSCall
+- jsGet -> wkeJSGet
+- ...
+
+* 修改版本号为 1.2.2.0
+
+#### 2016-06-24 12:05 规范命名、类型定义。
 * wke有几个命名，我想调整一下，问一下大家的意见，主要是基于两点原因
  1.现在句柄类型(wkeWebView、wkeString等)、指针类型(wkeSettings*、wkeConsoleMessaget*等）都在用，比较混乱。
  2.JS函数族，命名上加上wke。

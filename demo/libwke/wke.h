@@ -95,7 +95,7 @@ typedef enum
 
 
 typedef char utf8;
-typedef struct _tagWkeJSState wkeJSState;
+typedef struct __wkeJSState wkeJSState;
 typedef __int64 wkeJSValue;
 
 
@@ -475,20 +475,20 @@ WKE_API void        WKE_CALL wkeJSBindGetter(const char* name, wkeJSNativeFuncti
 WKE_API void        WKE_CALL wkeJSBindSetter(const char* name, wkeJSNativeFunction fn); /*set property*/
 
 WKE_API int         WKE_CALL wkeJSParamCount(wkeJSState* es);
-WKE_API wkeJSType   WKE_CALL wkeJSParamType(wkeJSState* es, int argIdx);
-WKE_API wkeJSValue  WKE_CALL wkeJSParam(wkeJSState* es, int argIdx);
+WKE_API wkeJSType   WKE_CALL wkeJSParamType(wkeJSState* es, int index);
+WKE_API wkeJSValue  WKE_CALL wkeJSParam(wkeJSState* es, int index);
 
-WKE_API wkeJSType   WKE_CALL wkeJSTypeOf(wkeJSValue v);
-WKE_API bool        WKE_CALL wkeJSIsNumber(wkeJSValue v);
-WKE_API bool        WKE_CALL wkeJSIsString(wkeJSValue v);
-WKE_API bool        WKE_CALL wkeJSIsBool(wkeJSValue v);
-WKE_API bool        WKE_CALL wkeJSIsObject(wkeJSValue v);
-WKE_API bool        WKE_CALL wkeJSIsFunction(wkeJSValue v);
-WKE_API bool        WKE_CALL wkeJSIsUndefined(wkeJSValue v);
-WKE_API bool        WKE_CALL wkeJSIsNull(wkeJSValue v);
-WKE_API bool        WKE_CALL wkeJSIsArray(wkeJSValue v);
-WKE_API bool        WKE_CALL wkeJSIsTrue(wkeJSValue v);
-WKE_API bool        WKE_CALL wkeJSIsFalse(wkeJSValue v);
+WKE_API wkeJSType   WKE_CALL wkeJSTypeOf(wkeJSState* es, wkeJSValue v);
+WKE_API bool        WKE_CALL wkeJSIsNumber(wkeJSState* es, wkeJSValue v);
+WKE_API bool        WKE_CALL wkeJSIsString(wkeJSState* es, wkeJSValue v);
+WKE_API bool        WKE_CALL wkeJSIsBool(wkeJSState* es, wkeJSValue v);
+WKE_API bool        WKE_CALL wkeJSIsObject(wkeJSState* es, wkeJSValue v);
+WKE_API bool        WKE_CALL wkeJSIsFunction(wkeJSState* es, wkeJSValue v);
+WKE_API bool        WKE_CALL wkeJSIsUndefined(wkeJSState* es, wkeJSValue v);
+WKE_API bool        WKE_CALL wkeJSIsNull(wkeJSState* es, wkeJSValue v);
+WKE_API bool        WKE_CALL wkeJSIsArray(wkeJSState* es, wkeJSValue v);
+WKE_API bool        WKE_CALL wkeJSIsTrue(wkeJSState* es, wkeJSValue v);
+WKE_API bool        WKE_CALL wkeJSIsFalse(wkeJSState* es, wkeJSValue v);
 
 WKE_API int         WKE_CALL wkeJSToInt(wkeJSState* es, wkeJSValue v);
 WKE_API float       WKE_CALL wkeJSToFloat(wkeJSState* es, wkeJSValue v);
@@ -497,15 +497,15 @@ WKE_API bool        WKE_CALL wkeJSToBool(wkeJSState* es, wkeJSValue v);
 WKE_API const utf8* WKE_CALL wkeJSToTempString(wkeJSState* es, wkeJSValue v);
 WKE_API const wchar_t* WKE_CALL wkeJSToTempStringW(wkeJSState* es, wkeJSValue v);
 
-WKE_API wkeJSValue  WKE_CALL wkeJSInt(int n);
-WKE_API wkeJSValue  WKE_CALL wkeJSFloat(float f);
-WKE_API wkeJSValue  WKE_CALL wkeJSDouble(double d);
-WKE_API wkeJSValue  WKE_CALL wkeJSBool(bool b);
+WKE_API wkeJSValue  WKE_CALL wkeJSInt(wkeJSState* es, int n);
+WKE_API wkeJSValue  WKE_CALL wkeJSFloat(wkeJSState* es, float f);
+WKE_API wkeJSValue  WKE_CALL wkeJSDouble(wkeJSState* es, double d);
+WKE_API wkeJSValue  WKE_CALL wkeJSBool(wkeJSState* es, bool b);
 
-WKE_API wkeJSValue  WKE_CALL wkeJSUndefined();
-WKE_API wkeJSValue  WKE_CALL wkeJSNull();
-WKE_API wkeJSValue  WKE_CALL wkeJSTrue();
-WKE_API wkeJSValue  WKE_CALL wkeJSFalse();
+WKE_API wkeJSValue  WKE_CALL wkeJSUndefined(wkeJSState* es);
+WKE_API wkeJSValue  WKE_CALL wkeJSNull(wkeJSState* es);
+WKE_API wkeJSValue  WKE_CALL wkeJSTrue(wkeJSState* es);
+WKE_API wkeJSValue  WKE_CALL wkeJSFalse(wkeJSState* es);
 
 WKE_API wkeJSValue  WKE_CALL wkeJSString(wkeJSState* es, const utf8* str);
 WKE_API wkeJSValue  WKE_CALL wkeJSStringW(wkeJSState* es, const wchar_t* str);

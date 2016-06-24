@@ -90,20 +90,20 @@ wkeJSValue JS_CALL js_msgBox(wkeJSState* es)
 
     MessageBoxW(hMainWnd, text, title, MB_OK);
 
-    return wkeJSUndefined();
+    return wkeJSUndefined(es);
 }
 
 static int s_testCount = 0;
 wkeJSValue JS_CALL js_getTestCount(wkeJSState* es)
 {
-    return wkeJSInt(s_testCount);
+    return wkeJSInt(es, s_testCount);
 }
 
 wkeJSValue JS_CALL js_setTestCount(wkeJSState* es)
 {
     s_testCount = wkeJSToInt(es, wkeJSParam(es, 0));
 
-    return wkeJSUndefined();
+    return wkeJSUndefined(es);
 }
 
 void onTitleChanged(wkeWebView* webView, void* param, const wkeString* title)
@@ -248,7 +248,7 @@ struct BindTestFunction
             wcsncpy(title, wkeJSToTempStringW(es, wkeJSParam(es, 1)), 1024);
 
         MessageBoxW(NULL, text, title[0] ? title : NULL, MB_OK);
-        return wkeJSInt(0);
+        return wkeJSInt(es, 0);
     }
 
     static void js_releaseFunction(wkeJSData* data)
@@ -351,7 +351,7 @@ protected:
 				wcsncpy(title, wkeJSToTempStringW(es, wkeJSParam(es, 1)), 1024);
 
             pthis->m_obj->msgbox(text, title[0] ? title : NULL);
-			return wkeJSInt(0);
+			return wkeJSInt(es, 0);
 		}
 
 	protected:
@@ -362,14 +362,14 @@ protected:
 	{
 		BindTestObject* pthis = (BindTestObject*)wkeJSGetData(es, object);
 		if (strcmp(propertyName, "value") == 0)
-			return wkeJSInt(pthis->m_value);
+			return wkeJSInt(es, pthis->m_value);
 
 		else if (strcmp(propertyName, "msgbox") == 0)
 		{
 			return wkeJSFunction(es, new BindTestMsgbox(pthis));
 		}
 		else
-			return wkeJSUndefined();
+			return wkeJSUndefined(es);
 	}
 
 protected:

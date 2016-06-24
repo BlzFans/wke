@@ -1096,7 +1096,7 @@ namespace wke
         String string(script);
         WebCore::ScriptValue value = m_mainFrame->script()->executeScript(string, true);
         if (value.hasNoValue())
-            return wkeJSUndefined();
+            return wkeJSUndefined(globalExec());
 
         return (wkeJSValue)JSC::JSValue::encode(value.jsValue());
     }
@@ -1106,7 +1106,7 @@ namespace wke
         String string = String::fromUTF8(script);
         WebCore::ScriptValue value = m_mainFrame->script()->executeScript(string, true);
         if (value.hasNoValue())
-            return wkeJSUndefined();
+            return wkeJSUndefined(globalExec());
 
         return (wkeJSValue)JSC::JSValue::encode(value.jsValue());
     }
