@@ -1,4 +1,7 @@
-﻿#### 2016-06-24 12:05 规范JS接口，增加 wkeJSAddRef、wkeJSReleaseRef 。
+﻿#### 2016-07-28 23:37 项目根目录增加 FAQ 文档。
+* 项目根目录增加 FAQ 文档，记录一下经常被问到的问题。
+
+#### 2016-06-24 12:05 规范JS接口，增加 wkeJSAddRef、wkeJSReleaseRef 。
 * 所有JS接口上，添加 wkeJSState* 参数。
 * 添加 wkeJSAddRef、wkeJSReleaseRef 函数，显式地引用变量，避免被 GC。
 
