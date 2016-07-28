@@ -1,26 +1,25 @@
+wke 项目文档
+===========================
 
-项目介绍
+目录
+---------
+
+- [项目介绍](#introduce)
+- [FAQ](#FAQ)
+    - [FAQ1. 编译出错解决办法](#FAQ1)
+    - [FAQ2. 为什么解决方案中 wke 项目没有设置为依赖 WebCore 项目](#FAQ2)
+    
+
+项目介绍 <a name="introduce"></a>
 ---------
 
 wke 是一个基于 WebKit 精简的浏览器引擎，原项目地址 <https://github.com/BlzFans/wke>。原作者已停止更新，本人出于技术研究的目的 fork 过来，业余时间继续维护，既学习 WebKit 的相关技术，也实验将 web 技术用于桌面UI。如果你对本项目感兴趣，欢迎请关注并随时提出你的宝贵意见。如果你也是一名 WebKit 的研究者、开发者，也欢迎你通过本项目来分享你宝贵的经验。
 
+若想快速浏览一下本项目完整的修改历史，可以浏览[提交日志](https://github.com/cexer/wke/commits/master)。也可以查看[修改记录](https://github.com/cexer/wke/blob/master/Document/history.md)了解最近的修改。若有任何与项目相关的问题或建议，欢迎加入QQ群 **178168957** [WebUI:wke/cef/mshtml/miniblink](http://shang.qq.com/wpa/qunwpa?idkey=ebe64628d19349ed41e2e77b6dfdb4bdd11fc1cb46f6721f24de1a674bd3bf9b) 反馈，内有大神。
 
-注意事项
+
+FAQ  <a name="FAQ"></a>
 ---------
-
-为了使本项目长期良好地发展下去，所有的开发维护都需要在准确细致的规范下进行。本人拍拍脑袋先写了一个简单的[规范文档](https://github.com/cexer/wke/blob/master/Document/rules.md)，目前远不够完善，但希望能投石引玉，吸引到大家的宝贝意见。
-
-若你想快速浏览一下本项目完整的修改历史，可以浏览[提交日志](https://github.com/cexer/wke/commits/master)。也可以查看[修改记录](https://github.com/cexer/wke/blob/master/Document/history.md)了解最近的修改。
-
-若你有任何与项目相关的问题或建议，请联系本人邮箱 <cexer@qq.com>，或者加入QQ群 *178168957* 和大家一起讨论。
-
-
-FAQ
----------
-
-- [Q1. 编译出错解决办法](#Q1)
-- [Q2. 为什么解决方案中 wke 项目没有设置为依赖 WebCore 项目](#Q2)
-
 
 ### <a name="Q1"></a>Q1. 编译出错解决办法。
 
@@ -40,7 +39,7 @@ JavaScriptCore、WebCore 项目编译时需要利用 perl、python 等脚本来从模板生成源码文
 
 如上所述 JavaScriptCore、WebCore 项目编译时需要利用 perl、python 等脚本来生成一堆文件，而 perl、python 是VS通过自家的 nmake 调起来的。然而患了肥胖症兼老年痴呆的 VS2010 - VS2015，默认找不到 自家的 nmake，必须在启动VS之前调用一下 vsvars32.bat 设置环境变量。项目根目录 vs2010.bat、vs2015.bat 等文件的作用其实就是这个。VS2008 倒是没有这个问题，但为统一起见，也在根目录下放了一个 vs2008.bat。
 
-执行以上操作若仍未解决问题，请加群 [WebUI:wke/cef/mshtml/miniblink](http://shang.qq.com/wpa/qunwpa?idkey=ebe64628d19349ed41e2e77b6dfdb4bdd11fc1cb46f6721f24de1a674bd3bf9b) 反馈，内有大神。
+执行以上操作若仍未解决问题，请加QQ群 **178168957** [WebUI:wke/cef/mshtml/miniblink](http://shang.qq.com/wpa/qunwpa?idkey=ebe64628d19349ed41e2e77b6dfdb4bdd11fc1cb46f6721f24de1a674bd3bf9b) 反馈。
 
 ### <a name="Q2"></a>Q2. 为什么解决方案中 wke 项目没有设置为依赖 WebCore 项目？
 
