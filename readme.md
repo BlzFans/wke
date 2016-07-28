@@ -18,10 +18,10 @@ wke 是一个基于 WebKit 精简的浏览器引擎，原项目地址 <https://github.com/BlzFans/w
 若想快速浏览一下本项目完整的修改历史，可以浏览[提交日志](https://github.com/cexer/wke/commits/master)。也可以查看[修改记录](https://github.com/cexer/wke/blob/master/Document/history.md)了解最近的修改。若有任何与项目相关的问题或建议，欢迎加入QQ群 **178168957** [WebUI:wke/cef/mshtml/miniblink](http://shang.qq.com/wpa/qunwpa?idkey=ebe64628d19349ed41e2e77b6dfdb4bdd11fc1cb46f6721f24de1a674bd3bf9b) 反馈，内有大神。
 
 
-FAQ  <a name="FAQ"></a>
+FAQ <a name="FAQ"></a>
 ---------
 
-### <a name="Q1"></a>Q1. 编译出错解决办法。
+### FAQ1. 编译出错解决办法。<a name="FAQ1"></a>
 
 **若出现编译出错，首先按照以下步骤操作， 99% 可以解决问题：**
 
@@ -41,7 +41,7 @@ JavaScriptCore、WebCore 项目编译时需要利用 perl、python 等脚本来从模板生成源码文
 
 执行以上操作若仍未解决问题，请加QQ群 **178168957** [WebUI:wke/cef/mshtml/miniblink](http://shang.qq.com/wpa/qunwpa?idkey=ebe64628d19349ed41e2e77b6dfdb4bdd11fc1cb46f6721f24de1a674bd3bf9b) 反馈。
 
-### <a name="Q2"></a>Q2. 为什么解决方案中 wke 项目没有设置为依赖 WebCore 项目？
+### FAQ2. 为什么解决方案中 wke 项目没有设置为依赖 WebCore 项目？<a name="FAQ2"></a>
 
-如 [编译出错解决办法](#Q1) 中的原因所描述的，因 JavaScriptCore、WebCore 等项目编译前会有很多的脚本调用，不论项目是否已经编译成功过，这些调用每次都会执行一遍，很费时间，而实际上 WebCore、JavaScriptCore 这两个项目在开发当中，是极少会有修改真正需要重新编译的。如果把 wke 设置为依赖 WebCore，那么每次 wke 编译都会导致 WebCore、JavaScriptCore 项目进行脚本调用，花费不必要的时间，因此折衷处理：设置 wke 不依赖 WebCore，在项目初始编译或者 WebCore 真正有修改时时，手动编译一次 WebCore，然后绝大多时间编译都不用花费不必要的脚本调用时间了。
+如 [编译出错解决办法](#FAQ1) 中的原因所描述的，因 JavaScriptCore、WebCore 等项目编译前会有很多的脚本调用，不论项目是否已经编译成功过，这些调用每次都会执行一遍，很费时间，而实际上 WebCore、JavaScriptCore 这两个项目在开发当中，是极少会有修改真正需要重新编译的。如果把 wke 设置为依赖 WebCore，那么每次 wke 编译都会导致 WebCore、JavaScriptCore 项目进行脚本调用，花费不必要的时间，因此折衷处理：设置 wke 不依赖 WebCore，在项目初始编译或者 WebCore 真正有修改时时，手动编译一次 WebCore，然后绝大多时间编译都不用花费不必要的脚本调用时间了。
 
