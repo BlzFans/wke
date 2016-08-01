@@ -1,4 +1,8 @@
-﻿#### 2016-07-29 22:47 在 readme.md 中添加编译指南、一条 FAQ。
+﻿#### 2016-08-01 13:23 版本 1.2.1.2 使用 libcurl 7.50，修正 HTTPS 问题。
+* 使用最新的 libcurl 7.50 源码，LIB Release - DLL Windows SSPI + MT 生成新的 libcurl_imp.lib，修正了有时 HTTPS 失败的问题（例如 https://wx.qq.com 无法打开的问题）。
+* 修改版本号为 1.2.1.2。
+
+#### 2016-07-29 22:47 在 readme.md 中添加编译指南、一条 FAQ。
 * 在 readme.md 中，将编译指南从 FAQ 中单独提出来。
 * 增加一条 FAQ：`FAQ1. wke 对 HTML5 的支持如何？`。
 

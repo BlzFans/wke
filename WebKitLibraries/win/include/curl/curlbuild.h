@@ -7,11 +7,11 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2009, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2016, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
- * are also available at http://curl.haxx.se/docs/copyright.html.
+ * are also available at https://curl.haxx.se/docs/copyright.html.
  *
  * You may opt to use, copy, modify, merge, publish, distribute and/or sell
  * copies of the Software, and permit persons to whom the Software is
@@ -20,7 +20,6 @@
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
  *
- * $Id: curlbuild.h.dist,v 1.28 2009-05-12 01:57:54 yangtse Exp $
  ***************************************************************************/
 
 /* ================================================================ */
@@ -50,7 +49,7 @@
  *
  * If you think that something actually needs to be changed, adjusted
  * or fixed in this file, then, report it on the libcurl development
- * mailing list: http://cool.haxx.se/mailman/listinfo/curl-library/
+ * mailing list: https://cool.haxx.se/mailman/listinfo/curl-library/
  *
  * Try to keep one section per platform, compiler and architecture,
  * otherwise, if an existing section is reused for a different one and
@@ -68,7 +67,7 @@
  *
  * For any given platform/compiler curl_off_t must be typedef'ed to a
  * 64-bit wide signed integral data type. The width of this data type
- * must remain constant and independant of any possible large file
+ * must remain constant and independent of any possible large file
  * support settings.
  *
  * As an exception to the above, curl_off_t shall be typedef'ed to a
@@ -76,7 +75,7 @@
  *
  * As a general rule, curl_off_t shall not be mapped to off_t. This
  * rule shall only be violated if off_t is the only 64-bit data type
- * available and the size of off_t is independant of large file support
+ * available and the size of off_t is independent of large file support
  * settings. Keep your build on the safe side avoiding an off_t gating.
  * If you have a 64-bit off_t then take for sure that another 64-bit
  * data type exists, dig deeper and you will find it.
@@ -90,7 +89,7 @@
  * when the libcurl source code distribution archive file is created.
  *
  * File include/curl/curlbuild.h.dist is not included in the distribution
- * archive. File include/curl/curlbuild.h is not present in the CVS tree.
+ * archive. File include/curl/curlbuild.h is not present in the git tree.
  *
  * The distributed include/curl/curlbuild.h file is only intended to be used
  * on systems which can not run the also distributed configure script.
@@ -100,7 +99,7 @@
  * is suitable and specific to the library being configured and built, which
  * is generated from the include/curl/curlbuild.h.in template file.
  *
- * If you check out from CVS on a non-configure platform, you must run the
+ * If you check out from git on a non-configure platform, you must run the
  * appropriate buildconf* script to set up curlbuild.h and other local files.
  *
  */
@@ -370,16 +369,7 @@
 #  define CURL_SIZEOF_CURL_SOCKLEN_T 4
 
 #elif defined(__VMS)
-#  if defined(__alpha) || defined(__ia64)
-#    define CURL_SIZEOF_LONG           4
-#    define CURL_TYPEOF_CURL_OFF_T     long long
-#    define CURL_FORMAT_CURL_OFF_T     "lld"
-#    define CURL_FORMAT_CURL_OFF_TU    "llu"
-#    define CURL_FORMAT_OFF_T          "%lld"
-#    define CURL_SIZEOF_CURL_OFF_T     8
-#    define CURL_SUFFIX_CURL_OFF_T     LL
-#    define CURL_SUFFIX_CURL_OFF_TU    ULL
-#  else
+#  if defined(__VAX)
 #    define CURL_SIZEOF_LONG           4
 #    define CURL_TYPEOF_CURL_OFF_T     long
 #    define CURL_FORMAT_CURL_OFF_T     "ld"
@@ -388,6 +378,15 @@
 #    define CURL_SIZEOF_CURL_OFF_T     4
 #    define CURL_SUFFIX_CURL_OFF_T     L
 #    define CURL_SUFFIX_CURL_OFF_TU    UL
+#  else
+#    define CURL_SIZEOF_LONG           4
+#    define CURL_TYPEOF_CURL_OFF_T     long long
+#    define CURL_FORMAT_CURL_OFF_T     "lld"
+#    define CURL_FORMAT_CURL_OFF_TU    "llu"
+#    define CURL_FORMAT_OFF_T          "%lld"
+#    define CURL_SIZEOF_CURL_OFF_T     8
+#    define CURL_SUFFIX_CURL_OFF_T     LL
+#    define CURL_SUFFIX_CURL_OFF_TU    ULL
 #  endif
 #  define CURL_TYPEOF_CURL_SOCKLEN_T unsigned int
 #  define CURL_SIZEOF_CURL_SOCKLEN_T 4
@@ -528,7 +527,9 @@
 /* ===================================== */
 
 #elif defined(__GNUC__)
-#  if defined(__i386__) || defined(__ppc__)
+#  if !defined(__LP64__) && (defined(__ILP32__) || \
+      defined(__i386__) || defined(__ppc__) || defined(__arm__) || \
+      defined(__sparc__) || defined(__mips__) || defined(__sh__))
 #    define CURL_SIZEOF_LONG           4
 #    define CURL_TYPEOF_CURL_OFF_T     long long
 #    define CURL_FORMAT_CURL_OFF_T     "lld"
@@ -537,7 +538,8 @@
 #    define CURL_SIZEOF_CURL_OFF_T     8
 #    define CURL_SUFFIX_CURL_OFF_T     LL
 #    define CURL_SUFFIX_CURL_OFF_TU    ULL
-#  elif defined(__x86_64__) || defined(__ppc64__)
+#  elif defined(__LP64__) || \
+        defined(__x86_64__) || defined(__ppc64__) || defined(__sparc64__)
 #    define CURL_SIZEOF_LONG           8
 #    define CURL_TYPEOF_CURL_OFF_T     long
 #    define CURL_FORMAT_CURL_OFF_T     "ld"
