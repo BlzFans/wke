@@ -6,8 +6,8 @@ wke 项目文档
 
 - [项目介绍](#introduce)
 - [编译指南](#build)
-    - [无脑版](#build-flathead-way)
-    - [深究版](#build-hotshot-way)
+    - [无脑版：不能保持源码同步](#build-flathead-way)
+    - [深究版：可保持源码同步](#build-hotshot-way)
 - [FAQ](#FAQ)
     - [FAQ1. wke 对 HTML5 的支持如何？](#FAQ1)
     - [FAQ2. 为什么编译出错？](#FAQ2)
@@ -21,7 +21,7 @@ wke 项目文档
     - [SOUI作者](#flyhigh)
     - [其它贡献者](#others)
 
-项目介绍 <a name="introduce"></a>
+<a name="introduce"></a> 项目介绍
 ---------
 
 wke 是一个基于 WebKit 精简的浏览器引擎，原项目地址 <https://github.com/BlzFans/wke>。原作者已停止更新，本人出于技术研究的目的 fork 过来，业余时间继续维护，既学习 WebKit 的相关技术，也实验将 web 技术用于桌面UI。如果你对本项目感兴趣，欢迎请关注并随时提出你的宝贵意见。如果你也是一名 WebKit 的研究者、开发者，也欢迎你通过本项目来分享你宝贵的经验。
@@ -29,10 +29,10 @@ wke 是一个基于 WebKit 精简的浏览器引擎，原项目地址 <https://github.com/BlzFans/w
 若想快速浏览一下本项目完整的修改历史，可以浏览[提交日志](https://github.com/cexer/wke/commits/master)。也可以查看[修改记录](https://github.com/cexer/wke/blob/master/Document/history.md)了解最近的修改。若有任何与项目相关的问题或建议，欢迎加入QQ群 **178168957** [WebUI:wke/cef/mshtml/miniblink](http://shang.qq.com/wpa/qunwpa?idkey=ebe64628d19349ed41e2e77b6dfdb4bdd11fc1cb46f6721f24de1a674bd3bf9b) 反馈，内有大神。
 
 
-编译指南 <a name="build"></a>
+<a name="build"></a> 编译指南
 ---------
 
-**无脑版**<a name="build-flathead-way"></a>
+<a name="build-flathead-way"></a> **无脑版：不能保持源码同步**
 
 此方法是最简单、最顺利的编译办法，缺点是下载的 ZIP 源码包无仓库信息，无法保持和 git 仓库同步。
 
@@ -42,7 +42,7 @@ wke 是一个基于 WebKit 精简的浏览器引擎，原项目地址 <https://github.com/BlzFans/w
 
 严格按照上述步骤编译可避免99%的的踩坑翻车。如果想了解为什么必须这样编译，请见 [FAQ2. 为什么编译出错](#FAQ2)。
 
-**深究版**<a name="build-hotshot-way"></a>
+<a name="build-hotshot-way"></a> **深究版：可保持源码同步**
 
 若你是一个凡事穷根究底的人，或者想保持与 git 仓库同步，建议采集此方法。
 
@@ -53,15 +53,15 @@ wke 是一个基于 WebKit 精简的浏览器引擎，原项目地址 <https://github.com/BlzFans/w
 无脑版下载 zip 包的主要目的是规避 git 客户端在 clone 时的一个巨坑：[GitHub 第一坑：换行符自动转换](http://blog.jobbole.com/46200/)，只要按照链接中的方法，设置好 git 客户端，就可以正常 clone、pull、push 仓库代码了。
 
 
-FAQ <a name="FAQ"></a>
+<a name="FAQ"></a> FAQ
 ---------
 
-### FAQ1. wke 对 HTML5 的支持如何？<a name="FAQ1"></a>
+### <a name="FAQ1"></a> FAQ1. wke 对 HTML5 的支持如何？
 
 wke 是由 WebKit 2011 年的版本精简而来，之后一直没有同步 WebKit 更新过，因此 wke 对 HTML5 的支持能力停留在 2011 年，一直未改进。一个更加直观的、然而不是很准确的概念就是 wke 对 HTML5 的支持大约是在 IE9 之上，在 IE10 之下，在 <http://html5test.com> 上跑分为 222 分，远在 CEF 的 530 分之下。因此若是对 HTML5 要求较高的环境，不建议使用 wke，请考虑 CEF 或者正在开发当中的 miniblink 内核。
 
 
-### FAQ2. 为什么编译出错？<a name="FAQ2"></a>
+### <a name="FAQ2"></a> FAQ2. 为什么编译出错？
 
 99%的可能性是由于以下两个原因：
 
@@ -77,44 +77,44 @@ JavaScriptCore、WebCore 项目编译时需要利用 perl、python 等脚本来从模板生成源码文
 
 执行以上操作若仍未解决问题，请加QQ群 **178168957** [WebUI:wke/cef/mshtml/miniblink](http://shang.qq.com/wpa/qunwpa?idkey=ebe64628d19349ed41e2e77b6dfdb4bdd11fc1cb46f6721f24de1a674bd3bf9b) 反馈。
 
-### FAQ3. 为什么解决方案中 wke 项目没有设置为依赖 WebCore 项目？<a name="FAQ3"></a>
+### <a name="FAQ3"></a> FAQ3. 为什么解决方案中 wke 项目没有设置为依赖 WebCore 项目？
 
 如 [FAQ2. 为什么编译出错](#FAQ2) 中的原因所描述的，因 JavaScriptCore、WebCore 等项目编译前会有很多的脚本调用，不论项目是否已经编译成功过，这些调用每次都会执行一遍，很费时间，而实际上 WebCore、JavaScriptCore 这两个项目在开发当中，是极少会有修改真正需要重新编译的。如果把 wke 设置为依赖 WebCore，那么每次 wke 编译都会导致 WebCore、JavaScriptCore 项目进行脚本调用，花费不必要的时间，因此折衷处理：设置 wke 不依赖 WebCore，在项目初始编译或者 WebCore 真正有修改时时，手动编译一次 WebCore，然后绝大多时间编译都不用花费不必要的脚本调用时间了。
 
 
-贡献者名单 <a name="contributors"></a>
+<a name="contributors"></a> 贡献者名单
 ---------
 
-### BlzFans <a name="blzfans"></a>
+### <a name="blzfans"></a> BlzFans 
 
 `BlzFans` 此位大侠功力深不可测然而为人极低调，将 wke 项目甩给开源界之后，从容离开去实现自己更高的人生价值了，挥一挥衣袖，不带走一声膜拜。感谢他的努力，如今我们除了在他开凿的道路上逶迤前进，也希望有一天他能够再次回到 WebUI 的队伍中来，带我们直接飞往 WebUI 技术的巅峰。
 
-### Vincent.Lin√<a name="vincent-lin"></a>
+### <a name="vincent-lin"></a> Vincent.Lin√
 
 `Vincent.Lin√` 是促成建立QQ群、建立 github 项目的原老。wke 之前一直没有QQ群和持续维护的开源项目，直到某次偶遇 `Vincent.Lin√` 并和他一起解决了几个 wke 的BUG，才萌生了要建立一个QQ群，新建个开源项目的想法，从此BUG修复、新增功能之类的有了一个分享和积累的仓库，wke 的用户有一个交流的场所。
 
 
-### （__少 <a name="shao"></a>
+### <a name="shao"></a> （__少 
 
 `（__少` 也是群的原老之一，为 wke 贡献了不少代码，比如增加了 cookie 操作的接口、增加了 POST 方式加载页面的接口等。作为群管理员（老鸨）之一，任劳任怨，XX如一日每日参与讨论技术问题、闲聊扯谈、为新人答疑解惑。
 
 
-###  光 光 <a name="guang-guang"></a>
+### <a name="guang-guang"></a> 光 光 
 
 `光 光` 此君也是来无影去无踪的大神。wke 之前只有 vs2005、vs2008 的VS项目文件，经常有人想用 vs2010、vs2015 等版本来编译而不知法，苦得哭爹喊娘，`光 光` 这时候出来为 wke 贡献了 vs2010、vs2013、vs2015 的工程。然后他也神秘消失了。然而也许 vs2017、vs2018 上市，我们为编译问题焦头烂额的时候，他又会踏着七色云彩出来解救众生。
 
 
-### 蚂蚁 <a name="ma-yi"></a>
+### <a name="ma-yi"></a> 蚂蚁 
 
 `蚂蚁` 老师是如今 wke 群的中坚技术力量，久经杀场，经验丰富，上能架构集群，下能逆向驱动。`蚂蚁` 老师不仅解决了困扰我们已久的 wke 绘制慢的问题（比如某些情况下会导致 codemirror 滚动条卡顿）,并且实现了人民呼声很高的 websocket 功能（现在 wke 也能玩蝌蚪聊天了），功莫大焉。
 
 
-### SOUI作者 <a name="flyhigh"></a>
+### <a name="flyhigh"></a> SOUI作者 
 
 `SOUI` 是新一代 DirectUI 界面库，其作者在我的记忆中是最早将 wke 从开源网站中拿到实际的 SOUI 工程中。他为 wke 增强了不少功能、修复了一些 BUG，比如绘制回调、URL改变回调等。也是从他的 SOUI 群里 wke 被越来越多的人知道。我们的这个项目仓库里，就有他最早的贡献，有兴趣的可以加他的 SOUI QQ群 **229313785**。
 
 
-### 其它贡献者 <a name="others"></a>
+### <a name="others"></a> 其它贡献者
 
 其实还有很多其它人，也为 wke 项目做过贡献过，不管是代码上的还是别的方法的的贡献，在此一并感谢。
 
