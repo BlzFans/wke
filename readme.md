@@ -6,6 +6,8 @@ wke 项目文档
 
 - [项目介绍](#introduce)
 - [编译指南](#build)
+    - [无脑版](#build-flathead-way)
+    - [深究版](#build-hotshot-way)
 - [FAQ](#FAQ)
     - [FAQ1. wke 对 HTML5 的支持如何？](#FAQ1)
     - [FAQ2. 为什么编译出错？](#FAQ2)
@@ -30,13 +32,25 @@ wke 是一个基于 WebKit 精简的浏览器引擎，原项目地址 <https://github.com/BlzFans/w
 编译指南 <a name="build"></a>
 ---------
 
-请严格按照以下步骤进行编译：
+**无脑版**<a name="build-flathead-way"></a>
+
+此方法是最简单、最顺利的编译办法，缺点是下载的 ZIP 源码包无仓库信息，无法保持和 git 仓库同步。
 
 1. 从 [本项目（https://www.github.com/cexer/wke）](https://www.github.com/cexer/wke) 下载源码的 **ZIP 包**并解压项目目录。
 2. 根据需要选择执行项目根目录的 vs2008.bat、vs2010.bat、vs2015.bat，该批处理会设置好依赖环境并用 VS 打开解决方案。
 3. 在解决方案中，首先编译 WebCore 项目，成功之后再编译 wkeBrowser、wkexe 项目。
 
-若不严格按照上述步骤编译，99%的可能性会踩坑翻车。如果想了解为什么必须这样编译，请见 [FAQ2. 为什么编译出错](#FAQ2)。
+严格按照上述步骤编译可避免99%的的踩坑翻车。如果想了解为什么必须这样编译，请见 [FAQ2. 为什么编译出错](#FAQ2)。
+
+**深究版**<a name="build-hotshot-way"></a>
+
+若你是一个凡事穷根究底的人，或者想保持与 git 仓库同步，建议采集此方法。
+
+1. 仔细阅读[GitHub 第一坑：换行符自动转换](http://blog.jobbole.com/46200/)，然后按其说明设置好 git 客户端。
+2. 根据需要选择执行项目根目录的 vs2008.bat、vs2010.bat、vs2015.bat，该批处理会设置好依赖环境并用 VS 打开解决方案。
+3. 在解决方案中，首先编译 WebCore 项目，成功之后再编译 wkeBrowser、wkexe 项目。
+
+无脑版下载 zip 包的主要目的是规避 git 客户端在 clone 时的一个巨坑：[GitHub 第一坑：换行符自动转换](http://blog.jobbole.com/46200/)，只要按照链接中的方法，设置好 git 客户端，就可以正常 clone、pull、push 仓库代码了。
 
 
 FAQ <a name="FAQ"></a>
