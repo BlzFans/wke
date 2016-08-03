@@ -1,4 +1,8 @@
-﻿#### 2016-08-01 13:23 版本 1.2.1.2 使用 libcurl 7.50，修正 HTTPS 问题。
+﻿#### 2016-08-03 11:03 版本 1.2.1.3 处理 WM_SETCURSOR 消息，修正编辑框当中光标闪烁的问题。
+* 处理 WM_SETCURSOR 消息，修正编辑框当中光标闪烁的问题。
+* 修改版本号为 1.2.1.3。
+
+#### 2016-08-01 13:23 版本 1.2.1.2 使用 libcurl 7.50，修正 HTTPS 问题。
 * 使用最新的 libcurl 7.50 源码，LIB Release - DLL Windows SSPI + MT 生成新的 libcurl_imp.lib，修正了有时 HTTPS 失败的问题（例如 https://wx.qq.com 无法打开的问题）。
 * 修改版本号为 1.2.1.2。
 

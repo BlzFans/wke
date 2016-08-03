@@ -625,6 +625,10 @@ LRESULT CWebWindow::_windowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM l
             ImmReleaseContext(hwnd, hIMC);
         }
         return 0;
+
+    case WM_SETCURSOR:
+        if (LOWORD(lParam) == HTCLIENT)
+            return TRUE;
     }
 
     return DefWindowProcW(hwnd, message, wParam, lParam);
