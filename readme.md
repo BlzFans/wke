@@ -37,7 +37,7 @@ wke 是一个基于 WebKit 精简的浏览器引擎，原项目地址 <https://github.com/BlzFans/w
 此方法是最简单、最顺利的编译办法，缺点是下载的 ZIP 源码包无仓库信息，无法保持和 git 仓库同步。
 
 1. 从 [本项目（https://www.github.com/cexer/wke）](https://www.github.com/cexer/wke) 下载源码的 **ZIP 包**并解压项目目录。
-2. 根据需要选择执行项目根目录的 vs2008.bat、vs2010.bat、vs2015.bat，该批处理会设置好依赖环境并用 VS 打开解决方案。
+2. 根据需要选择执行项目根目录的 vs2008.bat、vs2010.bat、vs2013.bat，该批处理会设置好依赖环境并用 VS 打开解决方案。
 3. 在解决方案中，首先编译 WebCore 项目，成功之后再编译 wkeBrowser、wkexe 项目。
 
 严格按照上述步骤编译可避免99%的的踩坑翻车。如果想了解为什么必须这样编译，请见 [FAQ2. 为什么编译出错](#FAQ2)。
@@ -47,7 +47,7 @@ wke 是一个基于 WebKit 精简的浏览器引擎，原项目地址 <https://github.com/BlzFans/w
 若你是一个凡事穷根究底的人，或者想保持与 git 仓库同步，建议采集此方法。
 
 1. 仔细阅读[GitHub 第一坑：换行符自动转换](http://blog.jobbole.com/46200/)，然后按其说明设置好 git 客户端。
-2. 根据需要选择执行项目根目录的 vs2008.bat、vs2010.bat、vs2015.bat，该批处理会设置好依赖环境并用 VS 打开解决方案。
+2. 根据需要选择执行项目根目录的 vs2008.bat、vs2010.bat、vs2013.bat，该批处理会设置好依赖环境并用 VS 打开解决方案。
 3. 在解决方案中，首先编译 WebCore 项目，成功之后再编译 wkeBrowser、wkexe 项目。
 
 无脑版下载 zip 包的主要目的是规避 git 客户端在 clone 时的一个巨坑：[GitHub 第一坑：换行符自动转换](http://blog.jobbole.com/46200/)，只要按照链接中的方法，设置好 git 客户端，就可以正常 clone、pull、push 仓库代码了。
@@ -71,9 +71,9 @@ JavaScriptCore、WebCore 项目编译时需要利用 perl、python 等脚本来从模板生成源码文
 
 如果想详细了解这个问题，请查看链接 [GitHub 第一坑：换行符自动转换](http://blog.jobbole.com/46200/)。
 
-**2. 智障的 VS2010 - VS2015 找不到自己 nmake 问题：**
+**2. 智障的 VS2010 - VS2013 找不到自己 nmake 问题：**
 
-如上所述 JavaScriptCore、WebCore 项目编译时需要利用 perl、python 等脚本来生成一堆文件，而 perl、python 是VS通过自家的 nmake 调起来的。然而患了肥胖症兼老年痴呆的 VS2010 - VS2015，默认找不到 自家的 nmake，必须在启动VS之前调用一下 vsvars32.bat 设置环境变量。项目根目录 vs2010.bat、vs2015.bat 等文件的作用其实就是这个。VS2008 倒是没有这个问题，但为统一起见，也在根目录下放了一个 vs2008.bat。
+如上所述 JavaScriptCore、WebCore 项目编译时需要利用 perl、python 等脚本来生成一堆文件，而 perl、python 是VS通过自家的 nmake 调起来的。然而患了肥胖症兼老年痴呆的 VS2010 - VS2013，默认找不到 自家的 nmake，必须在启动VS之前调用一下 vsvars32.bat 设置环境变量。项目根目录 vs2010.bat、vs2013.bat 等文件的作用其实就是这个。VS2008 倒是没有这个问题，但为统一起见，也在根目录下放了一个 vs2008.bat。
 
 执行以上操作若仍未解决问题，请加QQ群 **178168957** [WebUI:wke/cef/mshtml/miniblink](http://shang.qq.com/wpa/qunwpa?idkey=ebe64628d19349ed41e2e77b6dfdb4bdd11fc1cb46f6721f24de1a674bd3bf9b) 反馈。
 
@@ -101,7 +101,7 @@ JavaScriptCore、WebCore 项目编译时需要利用 perl、python 等脚本来从模板生成源码文
 
 ### <a name="guang-guang"></a> 光 光 
 
-`光 光` 此君也是来无影去无踪的大神。wke 之前只有 vs2005、vs2008 的VS项目文件，经常有人想用 vs2010、vs2015 等版本来编译而不知法，苦得哭爹喊娘，`光 光` 这时候出来为 wke 贡献了 vs2010、vs2013、vs2015 的工程。然后他也神秘消失了。然而也许 vs2017、vs2018 上市，我们为编译问题焦头烂额的时候，他又会踏着七色云彩出来解救众生。
+`光 光` 此君也是来无影去无踪的大神。wke 之前只有 vs2005、vs2008 的VS项目文件，经常有人想用 vs2010、vs2013 等版本来编译而不知法，苦得哭爹喊娘，`光 光` 这时候出来为 wke 贡献了 vs2010、vs2013 的工程。然后他也神秘消失了。然而也许 vs2017、vs2018 上市，我们为编译问题焦头烂额的时候，他又会踏着七色云彩出来解救众生。
 
 
 ### <a name="ma-yi"></a> 蚂蚁 
