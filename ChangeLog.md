@@ -1,4 +1,8 @@
-﻿#### 2016-08-03 12:28 readme.md 中去掉 vs2015 工程相关描述，现在还没有 vs2015 工程。
+﻿#### 2016-11-09 10:53 修正更新 libcurl 之后 wkeSetFileSystem 无效的问题。
+* 修正更新 libcurl 之后 wkeSetFileSystem 无效的问题，失效是因为 libcurl 的函数没有替换为 wkeSetFileSystem 设置的。
+* wkexe.exe 增加 --useragent 参数设置 UserAgent。
+
+#### 2016-08-03 12:28 readme.md 中去掉 vs2015 工程相关描述，现在还没有 vs2015 工程。
 * readme.md 中去掉 vs2015，现在还没有 vs2015 工程。
 
 #### 2016-08-03 12:07 readme.md 细节调整。

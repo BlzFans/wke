@@ -12,11 +12,12 @@ typedef struct
 
 static OPTIONW s_options[] =
 {
-    {{ L"help",          ARG_NONE,   NULL,       L'h' }, L"打印帮助信息\n"},
-    {{ L"html",          ARG_REQ,    NULL,       L'x' }, L"设置要打开的HTML文件"},
+    {{ L"help",         ARG_NONE,   NULL,       L'h' }, L"打印帮助信息\n"},
+    {{ L"html",         ARG_REQ,    NULL,       L'x' }, L"设置要打开的HTML文件"},
     {{ L"transparent",  ARG_OPT,    0,          L't' }, L"支持使用分层窗口透明"},
-    {{ L"cookie",        ARG_OPT,    0,          L'c' }, L"设置cookie文件路径"},
-    {{ NULL,              ARG_NULL,   0,             0 }, NULL}
+    {{ L"cookie",       ARG_OPT,    0,          L'c' }, L"设置cookie文件路径"},
+    {{ L"useragent",    ARG_OPT,    0,          L'u' }, L"设置UserAgent"},
+    {{ NULL,            ARG_NULL,   0,             0 }, NULL}
 };
 
 void ParseOptions(CommandOptions* options, int argc, LPWSTR* argv)
@@ -71,8 +72,8 @@ void ParseOptions(CommandOptions* options, int argc, LPWSTR* argv)
             }
             break;
 
-        case L'c':
-            wcscpy(options->cookiePath, optarg_w);
+        case L'u':
+            wcscpy(options->userAgent, optarg_w);
             break;
         }
     }

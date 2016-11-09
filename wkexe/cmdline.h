@@ -11,6 +11,7 @@ typedef struct
     WCHAR* html;
     int showHelp;
     WCHAR cookiePath[MAX_PATH];
+    WCHAR userAgent[1024];
 
 } CommandOptions;
 

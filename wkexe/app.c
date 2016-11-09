@@ -93,6 +93,11 @@ wkeWebView* HandleCreateView(wkeWebView* webWindow, void* param, const wkeNewVie
 // 创建主页面窗口
 BOOL CreateWebWindow(Application* app)
 {
+    //wkeSettings settings;
+    //settings.proxy.type = WKE_PROXY_HTTP;
+    //settings.proxy.hostname = "127.0.0.1:8888";
+    //wkeConfigure(&settings);
+
     if (app->options.transparent)
         app->window = wkeCreateWebWindow(WKE_WINDOW_TYPE_TRANSPARENT, NULL, 0, 0, 640, 480);
     else
@@ -100,6 +105,9 @@ BOOL CreateWebWindow(Application* app)
 
     if (!app->window)
         return FALSE;
+
+    wkeSetUserAgentW(app->window, app->options.userAgent);
+    //wkeSetProxy(app->window, app->options.userAgent);
 
     wkeOnWindowClosing(app->window, HandleWindowClosing, app);
     wkeOnWindowDestroy(app->window, HandleWindowDestroy, app);
@@ -134,13 +142,19 @@ void RunApplication(Application* app)
     if (!FixupHtmlUrl(app))
         FillDefaultUrl(app);
 
-    if (!CreateWebWindow(app))
+    wkeInitialize();
+    do
     {
-        PrintHelpAndQuit(app);
-        return;
-    }
+        if (!CreateWebWindow(app))
+        {
+            PrintHelpAndQuit(app);
+            break;
+        }
 
-    RunMessageLoop(app);
+        RunMessageLoop(app);
+    }
+    while (0);
+    wkeFinalize();
 }
 
 void QuitApplication(Application* app)
