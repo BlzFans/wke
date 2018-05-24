@@ -162,7 +162,10 @@ namespace wke
 
         RefPtr<WebCore::SharedBuffer> sharedBuffer = WebCore::SharedBuffer::create(html, strlen(html));
 
-        WebCore::KURL url(WebCore::KURL(), "");
+        //cexer 这里必须提供一个假的 file:/// URL，否则 wkeSetFileSystem 的回调不会被调用
+        //WebCore::KURL url(WebCore::KURL(), "");
+        WebCore::KURL url(WebCore::KURL(), WTF::String::fromUTF8("file:///dummy"), WebCore::UTF8Encoding());
+
         WebCore::ResourceRequest request(url);
         WebCore::SubstituteData substituteData(sharedBuffer.release(), mime, WebCore::UTF8Encoding().name(), url);
 
@@ -175,7 +178,10 @@ namespace wke
 
         RefPtr<WebCore::SharedBuffer> sharedBuffer = WebCore::SharedBuffer::create((const char*)html, wcslen(html)*2);
 
-        WebCore::KURL url(WebCore::KURL(), "");
+        //cexer 这里必须提供一个假的 file:/// URL，否则 wkeSetFileSystem 的回调不会被调用
+        //WebCore::KURL url(WebCore::KURL(), "");
+        WebCore::KURL url(WebCore::KURL(), WTF::String::fromUTF8("file:///dummy"), WebCore::UTF8Encoding());
+
         WebCore::ResourceRequest request(url);
         WebCore::SubstituteData substituteData(sharedBuffer.release(), mime, WebCore::UTF16LittleEndianEncoding().name(), url);
 
