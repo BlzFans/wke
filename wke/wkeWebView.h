@@ -1,127 +1,267 @@
 #ifndef WKE_WEB_VIEW_H
 #define WKE_WEB_VIEW_H
 
-#include "wke.h"
+
+//////////////////////////////////////////////////////////////////////////
+
+
+#include <WebCore/config.h>
+#include <WebCore/ChromeClient.h>
+#include <WebCore/FrameLoaderClient.h>
+#include <WebCore/ResourceError.h>
+#include <WebCore/Page.h>
+#include <WebCore/Frame.h>
+#include <WebCore/FileChooser.h>
+#include <WebCore/FormState.h>
+#include <WebCore/HTMLFormElement.h>
+#include <WebCore/FrameView.h>
+#include <WebCore/BitmapInfo.h>
+#include <WebCore/Settings.h>
+#include <WebCore/PlatformWheelEvent.h>
+#include <WebCore/PlatformKeyboardEvent.h>
+#include <WebCore/FocusController.h>
+#include <WebCore/ScriptValue.h>
+#include <WebCore/BackForwardList.h>
+#include <WebCore/TextEncoding.h>
+#include <WebCore/ContextMenuController.h>
+#include <WebCore/Chrome.h>
+
+//cexer: 必须包含在后面，因为其中的 windows.h 会定义 max、min，导致 WebCore 内部的 max、min 出现错乱。
+#include "wkeString.h"
+
+
+//////////////////////////////////////////////////////////////////////////
+
+
+
 
 namespace wke
 {
-    class CWebView : public IWebView
-    {
-    public:
-        CWebView();
-        ~CWebView();
 
-        virtual void destroy();
 
-        virtual const char* name() const;
-        virtual void setName(const char* name);
-        
-        virtual bool transparent() const;
-        virtual void setTransparent(bool transparent);
+struct CWebViewHandler
+{
+    wkeTitleChangedCallback titleChangedCallback;
+    void* titleChangedCallbackParam;
 
-        virtual void loadURL(const utf8* inUrl);
-        virtual void loadURL(const wchar_t* url);
+    wkeURLChangedCallback urlChangedCallback;
+    void* urlChangedCallbackParam;
 
-        virtual void loadHTML(const utf8* html);
-        virtual void loadHTML(const wchar_t* html);
+    wkePaintUpdatedCallback paintUpdatedCallback;
+    void* paintUpdatedCallbackParam;
 
-        virtual void loadFile(const utf8* filename);
-        virtual void loadFile(const wchar_t* filename);
-        
-        virtual bool isLoaded() const;
-        virtual bool isLoadFailed() const;
-        virtual bool isLoadComplete() const;
-        virtual bool isDocumentReady() const;
-        virtual void stopLoading();
-        virtual void reload();
+    wkeAlertBoxCallback alertBoxCallback;
+    void* alertBoxCallbackParam;
 
-        virtual const utf8* title();
-        virtual const wchar_t* titleW();
-        
-        virtual void resize(int w, int h);
-        virtual int width() const;
-        virtual int height() const;
+    wkeConfirmBoxCallback confirmBoxCallback;
+    void* confirmBoxCallbackParam;
 
-        virtual int contentsWidth() const;
-        virtual int contentsHeight() const;
-        
-        virtual void setDirty(bool dirty);
-        virtual bool isDirty() const;
-        virtual void addDirtyArea(int x, int y, int w, int h);
+    wkePromptBoxCallback promptBoxCallback;
+    void* promptBoxCallbackParam;
 
-        virtual void layoutIfNeeded();
-        virtual void paint(void* dst, int pitch);
+    wkeNavigationCallback navigationCallback;
+    void* navigationCallbackParam;
 
-        virtual bool canGoBack() const;
-        virtual bool goBack();
-        virtual bool canGoForward() const;
-        virtual bool goForward();
-        
-        virtual void selectAll();
-        virtual void copy();
-        virtual void cut();
-        virtual void paste();
-        virtual void delete_();
-        
-        virtual void setCookieEnabled(bool enable);
-        virtual bool cookieEnabled() const;
-        
-        virtual void setMediaVolume(float volume);
-        virtual float mediaVolume() const;
-        
-        virtual bool mouseEvent(unsigned int message, int x, int y, unsigned int flags);
-        virtual bool contextMenuEvent(int x, int y, unsigned int flags);
-        virtual bool mouseWheel(int x, int y, int delta, unsigned int flags);
-        virtual bool keyUp(unsigned int virtualKeyCode, unsigned int flags, bool systemKey);
-        virtual bool keyDown(unsigned int virtualKeyCode, unsigned int flags, bool systemKey);
-        virtual bool keyPress(unsigned int charCode, unsigned int flags, bool systemKey);
-        
-        virtual void focus();
-        virtual void unfocus();
-        
-        virtual wkeRect getCaret();
-        
-        virtual jsValue runJS(const wchar_t* script);
-        virtual jsValue runJS(const utf8* script);
-        virtual jsExecState globalExec();
-        
-        virtual void sleep();
-        virtual void awaken();
-        virtual bool isAwake() const;
+    wkeCreateViewCallback createViewCallback;
+    void* createViewCallbackParam;
 
-        void setZoomFactor(float factor);
-        float zoomFactor() const;
+    wkeDocumentReadyCallback documentReadyCallback;
+    void* documentReadyCallbackParam;
 
-        void setEditable(bool editable);
+    wkeLoadingFinishCallback loadingFinishCallback;
+    void* loadingFinishCallbackParam;
 
-        virtual void setClientHandler(const wkeClientHandler* handler);
-        virtual const wkeClientHandler* getClientHandler() const;
+    wkeConsoleMessageCallback consoleMessageCallback;
+    void* consoleMessageCallbackParam;
+};
 
-        WebCore::Page* page() const { return page_.get(); }
-        WebCore::Frame* mainFrame() const { return mainFrame_; }
 
-    protected:
-        OwnPtr<WebCore::Page> page_;
-        WebCore::Frame* mainFrame_;
+class CWebView
+{
+public:
+    CWebView();
+    virtual ~CWebView();
 
-        const char* name_;
-        bool transparent_;
+    virtual bool create();
+    virtual void destroy();
 
-        int width_;
-        int height_;
+    const utf8* name() const;
+    const wchar_t* nameW() const;
 
-        bool dirty_;
-        WebCore::IntRect dirtyArea_;
+    void setName(const utf8* name);
+    void setName(const wchar_t* name);
 
-        WebCore::GraphicsContext* gfxContext_;
-        OwnPtr<HDC> hdc_;
-        OwnPtr<HBITMAP> hbmp_;
-        void* pixels_;
+    bool isTransparent() const;
+    void setTransparent(bool transparent);
 
-        bool awake_;
+    void loadURL(const utf8* inUrl);
+    void loadURL(const wchar_t* url);
+    
+    void loadPostURL(const utf8* inUrl,const char * poastData,int nLen );
+    void loadPostURL(const wchar_t * inUrl,const char * poastData,int nLen );
 
-        const wkeClientHandler* clientHandler_;
-    };
-}
+    void loadHTML(const utf8* html);
+    void loadHTML(const wchar_t* html);
 
-#endif //
+    void loadFile(const utf8* filename);
+    void loadFile(const wchar_t* filename);
+
+    void load(const utf8* str);
+    void load(const wchar_t* str);
+
+	void setUserAgent(const utf8 * useragent);
+    void setUserAgent(const wchar_t * useragent);
+
+    bool isLoadingSucceeded() const;
+    bool isLoadingFailed() const;
+    bool isLoadingCompleted() const;
+    bool isDocumentReady() const;
+    void stopLoading();
+    void reload();
+
+    const utf8* title();
+    const wchar_t* titleW();
+    
+    virtual void resize(int w, int h);
+    int width() const;
+    int height() const;
+
+    int contentWidth() const;
+    int contentHeight() const;
+    
+    void setDirty(bool dirty);
+    bool isDirty() const;
+    void addDirtyArea(int x, int y, int w, int h);
+
+    void layoutIfNeeded();
+    void paint(void* bits, int pitch);
+    void paint(void* bits, int bufWid, int bufHei, int xDst, int yDst, int w, int h, int xSrc, int ySrc, bool fKeepAlpha);
+	bool repaintIfNeeded();
+    HDC viewDC();
+    
+    bool canGoBack() const;
+    bool goBack();
+    bool canGoForward() const;
+    bool goForward();
+    
+    void editorSelectAll();
+    void editorCopy();
+    void editorCut();
+    void editorPaste();
+    void editorDelete();
+
+    const wchar_t* cookieW();
+    const utf8* cookie();
+
+    void setCookieW(const wchar_t* val);
+    void setCookie(const utf8* val);
+
+    void setCookieEnabled(bool enable);
+    bool isCookieEnabled() const;
+    
+    void setMediaVolume(float volume);
+    float mediaVolume() const;
+    
+    void setHostWindow(HWND win);
+    HWND hostWindow() const;
+
+    bool fireMouseEvent(unsigned int message, int x, int y, unsigned int flags);
+    bool fireContextMenuEvent(int x, int y, unsigned int flags);
+    bool fireMouseWheelEvent(int x, int y, int delta, unsigned int flags);
+    bool fireKeyUpEvent(unsigned int virtualKeyCode, unsigned int flags, bool systemKey);
+    bool fireKeyDownEvent(unsigned int virtualKeyCode, unsigned int flags, bool systemKey);
+    bool fireKeyPressEvent(unsigned int charCode, unsigned int flags, bool systemKey);
+    
+    void setFocus();
+    void killFocus();
+    
+    wkeRect caretRect();
+    
+    wkeJSValue runJS(const wchar_t* script);
+    wkeJSValue runJS(const utf8* script);
+    wkeJSState* globalExec();
+    
+    void sleep();
+    void wake();
+    bool isAwake() const;
+
+    void setZoomFactor(float factor);
+    float zoomFactor() const;
+
+    void setEditable(bool editable);
+
+    WebCore::Page* page() const { return m_page.get(); }
+    WebCore::Frame* mainFrame() const { return m_mainFrame; }
+
+    void onURLChanged(wkeURLChangedCallback callback, void* callbackParam);
+    void onTitleChanged(wkeTitleChangedCallback callback, void* callbackParam);
+    virtual void onPaintUpdated(wkePaintUpdatedCallback callback, void* callbackParam);
+
+    void onAlertBox(wkeAlertBoxCallback callback, void* callbackParam);
+    void onConfirmBox(wkeConfirmBoxCallback callback, void* callbackParam);
+    void onPromptBox(wkePromptBoxCallback callback, void* callbackParam);
+
+    void onNavigation(wkeNavigationCallback callback, void* callbackParam);
+    void onCreateView(wkeCreateViewCallback callback, void* callbackParam);
+
+    void onConsoleMessage(wkeConsoleMessageCallback callback, void* callbackParam);
+
+    virtual void onLoadingFinish(wkeLoadingFinishCallback callback, void* callbackParam);
+    virtual void onDocumentReady(wkeDocumentReadyCallback callback, void* callbackParam);
+
+    void setRepaintInterval(int ms);
+    int repaintInterval() const;
+    bool repaintIfNeededAfterInterval();
+
+protected:
+    void _initHandler();
+    void _initPage();
+    void _initMemoryDC();
+
+    //按理这些接口应该使用CWebView来实现的，可以把它们想像成一个类，因此设置为友员符合情理。
+    friend class ToolTip;
+    friend class ChromeClient;
+    friend class ContextMenuClient;
+    friend class DrawClient;
+    friend class EditorClient;
+    friend class FrameLoaderClient;
+    friend class InspectorClient;
+    friend class PlatformStrategies;
+
+    OwnPtr<WebCore::Page> m_page;
+    WebCore::Frame* m_mainFrame;
+    wke::CString m_title;
+    wke::CString m_cookie;
+
+    wke::CString m_name;
+    bool m_transparent;
+
+    int m_width;
+    int m_height;
+
+    bool m_dirty;
+    WebCore::IntRect m_dirtyArea;
+
+    WebCore::GraphicsContext* m_graphicsContext;
+    OwnPtr<HDC> m_hdc;
+    OwnPtr<HBITMAP> m_hbitmap;
+    void* m_pixels;
+
+    bool m_awake;
+    HWND m_hostWindow;
+
+    CWebViewHandler m_handler;
+
+    DWORD m_paintInterval;
+    DWORD m_lastPaintTimeTick;
+};
+
+
+
+
+};//namespace wke
+
+
+
+
+#endif//#ifndef WKE_WEB_VIEW_H

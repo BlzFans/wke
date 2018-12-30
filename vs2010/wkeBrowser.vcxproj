@@ -1,0 +1,189 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug_Cairo_CFLite|Win32">
+      <Configuration>Debug_Cairo_CFLite</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release_Cairo_CFLite|Win32">
+      <Configuration>Release_Cairo_CFLite</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{5C21D8AD-3930-4AC3-9E32-21FCA602DB76}</ProjectGuid>
+    <RootNamespace>wkeBrowser</RootNamespace>
+    <Keyword>Win32Proj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_Cairo_CFLite|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Cairo_CFLite|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release_Cairo_CFLite|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Cairo_CFLite|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.40219.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug_Cairo_CFLite|Win32'">..\build\vs2010\$(Configuration)\bin\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug_Cairo_CFLite|Win32'">..\build\vs2010\$(Configuration)\obj\$(ProjectName)\</IntDir>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug_Cairo_CFLite|Win32'">true</LinkIncremental>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release_Cairo_CFLite|Win32'">..\build\vs2010\$(Configuration)\bin\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release_Cairo_CFLite|Win32'">..\build\vs2010\$(Configuration)\obj\$(ProjectName)\</IntDir>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release_Cairo_CFLite|Win32'">false</LinkIncremental>
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug_Cairo_CFLite|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug_Cairo_CFLite|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug_Cairo_CFLite|Win32'" />
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release_Cairo_CFLite|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release_Cairo_CFLite|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release_Cairo_CFLite|Win32'" />
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Cairo_CFLite|Win32'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>..\wke;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>Imm32.lib;wke.lib;shell32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\build\vs2010\$(Configuration)\lib;..\build\vs2010\$(Configuration)\bin;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Link>
+    <PostBuildEvent>
+      <Command>REM Do not edit from the Visual Studio IDE! Customize via a $(ProjectName)PostBuild.cmd file
+if not exist "$(ProjectDir)$(ProjectName)PostBuild.cmd" exit /b
+
+set CONFIGURATIONNAME=$(Configuration)
+set INPUTDIR=$(ProjectDir)
+set INPUTFILENAME=$(ProjectFileName)
+set INPUTPATH=$(ProjectPath)
+set INTDIR=$(IntDir)
+set OUTDIR=$(OutDir)
+set PLATFORMNAME=$(Platform)
+set PROJECTDIR=$(ProjectDir)
+set PROJECTFILENAME=$(ProjectFileName)
+set PROJECTNAME=$(ProjectName)
+set PROJECTPATH=$(ProjectPath)
+set SOLUTIONDIR=$(SolutionDir)
+set SOLUTIONFILENAME=$(SolutionFileName)
+set SOLUTIONNAME=$(SolutionName)
+set SOLUTIONPATH=$(SolutionPath)
+set TARGETDIR=$(TargetDir)
+set TARGETEXT=$(TargetExt)
+set TARGETFILENAME=$(TargetFileName)
+set TARGETPATH=$(TargetPath)
+
+REM If any of the above variables didn%27t exist previously and
+REM were set to an empty string, set will set the errorlevel to 1,
+REM which will cause the project-specific script to think the build
+REM has failed. This cmd /c call will clear the errorlevel.
+cmd /c
+
+"$(ProjectDir)$(ProjectName)PostBuild.cmd"
+</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_Cairo_CFLite|Win32'">
+    <ClCompile>
+      <Optimization>MaxSpeed</Optimization>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <AdditionalIncludeDirectories>..\wke;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>Imm32.lib;wke.lib;shell32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\build\vs2010\$(Configuration)\lib;..\build\vs2010\$(Configuration)\bin;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Link>
+    <PostBuildEvent>
+      <Command>REM Do not edit from the Visual Studio IDE! Customize via a $(ProjectName)PostBuild.cmd file
+if not exist "$(ProjectDir)$(ProjectName)PostBuild.cmd" exit /b
+
+set CONFIGURATIONNAME=$(Configuration)
+set INPUTDIR=$(ProjectDir)
+set INPUTFILENAME=$(ProjectFileName)
+set INPUTPATH=$(ProjectPath)
+set INTDIR=$(IntDir)
+set OUTDIR=$(OutDir)
+set PLATFORMNAME=$(Platform)
+set PROJECTDIR=$(ProjectDir)
+set PROJECTFILENAME=$(ProjectFileName)
+set PROJECTNAME=$(ProjectName)
+set PROJECTPATH=$(ProjectPath)
+set SOLUTIONDIR=$(SolutionDir)
+set SOLUTIONFILENAME=$(SolutionFileName)
+set SOLUTIONNAME=$(SolutionName)
+set SOLUTIONPATH=$(SolutionPath)
+set TARGETDIR=$(TargetDir)
+set TARGETEXT=$(TargetExt)
+set TARGETFILENAME=$(TargetFileName)
+set TARGETPATH=$(TargetPath)
+
+REM If any of the above variables didn%27t exist previously and
+REM were set to an empty string, set will set the errorlevel to 1,
+REM which will cause the project-specific script to think the build
+REM has failed. This cmd /c call will clear the errorlevel.
+cmd /c
+
+"$(ProjectDir)$(ProjectName)PostBuild.cmd"
+</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="..\wkeBrowser\hyperlink.h" />
+    <ClInclude Include="..\wkeBrowser\render.h" />
+    <ClInclude Include="..\wkeBrowser\renderD3D.h" />
+    <ClInclude Include="..\wkeBrowser\renderGDI.h" />
+    <ClInclude Include="..\wkeBrowser\Resource.h" />
+    <ClInclude Include="targetver.h" />
+    <ClInclude Include="..\wkeBrowser\wkeBrowser.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\wkeBrowser\render.cpp" />
+    <ClCompile Include="..\wkeBrowser\renderD3D.cpp" />
+    <ClCompile Include="..\wkeBrowser\wkeBrowser.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\wkeBrowser\small.ico" />
+    <None Include="..\wkeBrowser\wkeBrowser.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\wkeBrowser\wkeBrowser.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="wke.vcxproj">
+      <Project>{011d10f1-b656-4a1b-a0c3-3842f02122c6}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

@@ -141,7 +141,11 @@ inline long long abs(long long num) { return _abs64(num); }
 
 inline bool isinf(double num) { return !_finite(num) && !_isnan(num); }
 inline bool isnan(double num) { return !!_isnan(num); }
+
+// cexer vs2013以上的math.h当中包含了些函数
+#if defined(_MSC_VER) && (_MSC_VER < 1800) //< VS2013
 inline bool signbit(double num) { return _copysign(1.0, num) < 0; }
+#endif
 
 inline double nextafter(double x, double y) { return _nextafter(x, y); }
 inline float nextafterf(float x, float y) { return x > y ? x - FLT_EPSILON : x + FLT_EPSILON; }

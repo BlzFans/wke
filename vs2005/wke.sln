@@ -37,6 +37,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "wkeBrowser", "wkeBrowser.vc
 		{011D10F1-B656-4A1B-A0C3-3842F02122C6} = {011D10F1-B656-4A1B-A0C3-3842F02122C6}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "wkexe", "wkexe.vcproj", "{5C21D8AD-3930-4AC3-9E32-21FCA603DB76}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug_Cairo_CFLite|Win32 = Debug_Cairo_CFLite|Win32
@@ -71,6 +73,10 @@ Global
 		{5C21D8AD-3930-4AC3-9E32-21FCA602DB76}.Debug_Cairo_CFLite|Win32.Build.0 = Debug_Cairo_CFLite|Win32
 		{5C21D8AD-3930-4AC3-9E32-21FCA602DB76}.Release_Cairo_CFLite|Win32.ActiveCfg = Release_Cairo_CFLite|Win32
 		{5C21D8AD-3930-4AC3-9E32-21FCA602DB76}.Release_Cairo_CFLite|Win32.Build.0 = Release_Cairo_CFLite|Win32
+		{5C21D8AD-3930-4AC3-9E32-21FCA603DB76}.Debug_Cairo_CFLite|Win32.ActiveCfg = Debug_Cairo_CFLite|Win32
+		{5C21D8AD-3930-4AC3-9E32-21FCA603DB76}.Debug_Cairo_CFLite|Win32.Build.0 = Debug_Cairo_CFLite|Win32
+		{5C21D8AD-3930-4AC3-9E32-21FCA603DB76}.Release_Cairo_CFLite|Win32.ActiveCfg = Release_Cairo_CFLite|Win32
+		{5C21D8AD-3930-4AC3-9E32-21FCA603DB76}.Release_Cairo_CFLite|Win32.Build.0 = Release_Cairo_CFLite|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -83,3 +89,4 @@ Global
 		{1C16337B-ACF3-4D03-AA90-851C5B5EADA6} = {0E50E567-2DE0-49A9-A34F-7984F3809FE3}
 	EndGlobalSection
 EndGlobal
+

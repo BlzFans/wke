@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets">
+    <Import Project="..\..\WebKitLibraries\win\tools\vsprops\FeatureDefinesCairo.props" />
+    <Import Project="common.props" />
+    <Import Project="..\..\WebKitLibraries\win\tools\vsprops\releaseproduction.props" />
+    <Import Project="..\..\WebKitLibraries\win\tools\vsprops\release.props" />
+    <Import Project="..\..\WebKitLibraries\win\tools\vsprops\cURL.props" />
+    <Import Project="..\..\WebKitLibraries\win\tools\vsprops\WinCairo.props" />
+    <Import Project="wkeCommon.props" />
+  </ImportGroup>
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.40219.1</_ProjectFileVersion>
+  </PropertyGroup>
+</Project>

@@ -137,8 +137,10 @@ void PluginDatabase::getPluginPathsInDirectories(HashSet<String>& paths) const
                 continue;
 
             String filename = String(findFileData.cFileName, wcslen(findFileData.cFileName));
-            if ((!filename.startsWith("np", false) || !filename.endsWith("dll", false)) &&
-                (!equalIgnoringCase(filename, "Plugin.dll") || !it->endsWith("Shockwave 10", false)))
+
+            //cexer 允许非np开头的插件自动加载
+            //if ((!filename.startsWith("np", false) || !filename.endsWith("dll", false)) &&
+            if (!filename.endsWith("dll", false) && (!equalIgnoringCase(filename, "Plugin.dll") || !it->endsWith("Shockwave 10", false)))
                 continue;
 
             String fullPath = *it + "\\" + filename;
@@ -401,6 +403,26 @@ exit:
     return pluginsDirectory;
 }
 
+static inline String safariWorkingPluginDirectory()
+{
+    WCHAR workingDir[_MAX_PATH];
+    static String pluginsDirectory;
+    static bool cachedPluginDirectory = false;
+
+    if (!cachedPluginDirectory) {
+        cachedPluginDirectory = true;
+
+        int workingDirLen = GetCurrentDirectoryW(_MAX_PATH, workingDir);
+
+        if (!workingDirLen || workingDirLen == _MAX_PATH)
+            goto exit;
+
+        pluginsDirectory = String(workingDir) + "\\Plugins";
+    }
+exit:
+    return pluginsDirectory;
+}
+
 static inline void addMacromediaPluginDirectories(Vector<String>& directories)
 {
 #if !OS(WINCE)
@@ -426,6 +448,11 @@ Vector<String> PluginDatabase::defaultPluginDirectories()
 
     if (!ourDirectory.isNull())
         directories.append(ourDirectory);
+
+    ourDirectory = safariWorkingPluginDirectory();
+    if (!ourDirectory.isNull())
+        directories.append(ourDirectory);
+
     addQuickTimePluginDirectory(directories);
     addAdobeAcrobatPluginDirectory(directories);
     addMozillaPluginDirectories(directories);

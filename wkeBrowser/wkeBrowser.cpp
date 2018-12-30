@@ -1,5 +1,10 @@
 
 #define WIN32_LEAN_AND_MEAN
+#if !defined(_WIN32_WINNT) || (_WIN32_WINNT < 0x501)
+#undef _WIN32_WINNT
+#define _WIN32_WINNT 0x501
+#endif
+
 #include <windows.h>
 #include <windowsx.h>
 #include <stdio.h>
@@ -7,12 +12,15 @@
 #include <memory.h>
 #include <tchar.h>
 #include <time.h>
+#include <stdlib.h>
+#include <ShellAPI.h>
 
 #include <wke.h>
 
 #include "wkeBrowser.h"
 #include "render.h"
 #include "hyperlink.h"
+
 
 class CTimer
 {
@@ -56,94 +64,385 @@ HWND hViewWindow = NULL;
 TCHAR szTitle[MAX_LOADSTRING];
 TCHAR szWindowClass[MAX_LOADSTRING];
 
-wkeWebView g_webView = NULL;
+wkeWebView* g_webView = NULL;
 CRender* g_render = NULL;
 
-ATOM                MyRegisterClass(HINSTANCE hInstance);
-BOOL                InitInstance(HINSTANCE, int);
-LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
-INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
+ATOM				MyRegisterClass(HINSTANCE hInstance);
+BOOL				InitInstance(HINSTANCE, int);
+LRESULT CALLBACK	WndProc(HWND, UINT, WPARAM, LPARAM);
+INT_PTR CALLBACK	About(HWND, UINT, WPARAM, LPARAM);
 
 WNDPROC DefEditProc = NULL;
 LRESULT CALLBACK UrlEditProc(HWND, UINT, WPARAM, LPARAM);
 
 void resizeSubViews();
 LRESULT CALLBACK WebViewWndProc(HWND, UINT, WPARAM, LPARAM);
-const LPCWSTR wkeWebViewClassName = L"wkeWebView";
+const LPCWSTR wkeWebViewClassName = L"wkeWebView*";
 bool registerWebViewWindowClass();
 
-jsValue JS_CALL js_msgBox(jsExecState es)
+wkeJSValue JS_CALL js_msgBox(wkeJSState* es)
 {
-    const wchar_t* text = jsToStringW(es, jsArg(es, 0));
-    const wchar_t* title = jsToStringW(es, jsArg(es, 1));
+    wchar_t text[1025] = { 0 };
+    wcsncpy(text, wkeJSToTempStringW(es, wkeJSParam(es, 0)), 1024);
 
-    MessageBox(hMainWnd, text, title, 0);
+    wchar_t title[1025] = { 0 };
+    wcsncpy(title, wkeJSToTempStringW(es, wkeJSParam(es, 1)), 1024);
 
-    return jsUndefined();
+    MessageBoxW(hMainWnd, text, title, MB_OK);
+
+    return wkeJSUndefined(es);
 }
 
 static int s_testCount = 0;
-jsValue JS_CALL js_getTestCount(jsExecState es)
+wkeJSValue JS_CALL js_getTestCount(wkeJSState* es)
 {
-    return jsInt(s_testCount);
+    return wkeJSInt(es, s_testCount);
 }
 
-jsValue JS_CALL js_setTestCount(jsExecState es)
+wkeJSValue JS_CALL js_setTestCount(wkeJSState* es)
 {
-    s_testCount = jsToInt(es, jsArg(es, 0));
+    s_testCount = wkeJSToInt(es, wkeJSParam(es, 0));
 
-    return jsUndefined();
+    return wkeJSUndefined(es);
 }
 
-void onTitleChanged(const wkeClientHandler*, wkeString title)
+void onTitleChanged(wkeWebView* webView, void* param, const wkeString* title)
 {
-    SetWindowText(hMainWnd, wkeToStringW(title));
+    SetWindowTextW(hMainWnd, wkeGetStringW(title));
 }
 
-void onURLChanged(const wkeClientHandler*, wkeString url)
+void onURLChanged(wkeWebView* webView, void* param, const wkeString* url)
 {
-    SetWindowText(hURLBarWnd, wkeToStringW(url));
+    SetWindowTextW(hURLBarWnd, wkeGetStringW(url));
 }
+
+bool onNavigation(wkeWebView* webView, void* param, wkeNavigationType type, const wkeString* url_)
+{
+    const wchar_t* url = wkeGetStringW(url_);
+    //if (wcsstr(url, L"baidu.com") != NULL)
+    //    return false;
+
+    if (wcsstr(url, L"exec://") == url)
+    {
+        PROCESS_INFORMATION processInfo = { 0 };
+        STARTUPINFOW startupInfo = { 0 };
+        startupInfo.cb = sizeof(startupInfo);
+        BOOL succeeded = CreateProcessW(NULL, (LPWSTR)url + 7, NULL, NULL, FALSE, 0, NULL, NULL, &startupInfo, &processInfo);
+        if (succeeded)
+        {
+            CloseHandle(processInfo.hProcess);
+            CloseHandle(processInfo.hThread);
+        }
+        return false;
+    }
+
+    return true;
+}
+
+wkeWebView* onCreateView(wkeWebView* webView, void* param, const wkeNewViewInfo* info)
+{
+    const wchar_t* target = wkeGetStringW(info->target);
+    const wchar_t* url = wkeGetStringW(info->url);
+
+    if (wcscmp(target, L"") == 0 || wcscmp(target, L"_blank") == 0)
+    {
+        if (wcsnicmp(url, L"file:///", 8) == 0)
+            url += 8;
+        ShellExecuteW(NULL, L"open", (LPWSTR)url, NULL, NULL, SW_SHOW);
+        return NULL;
+    }
+    else if (wcscmp(target, L"_self") == 0)
+    {
+        return webView;
+    }
+    else if (wcscmp(target, L"wontOpen") == 0)
+    {
+        return NULL;
+    }
+    else
+    {
+        wkeWebView* newWindow = wkeCreateWebWindow(WKE_WINDOW_TYPE_POPUP, NULL, info->x, info->y, info->width, info->height);
+        wkeShowWindow(newWindow, SW_SHOW);
+        return newWindow;
+    }
+
+    return NULL;
+}
+
+const wchar_t* messageSourceName(int i)
+{
+    const wchar_t* s_names[] = {
+        L"html",
+        L"xml",
+        L"js",
+        L"network",
+        L"console",
+        L"other"
+    };
+    return s_names[i];
+}
+
+const wchar_t* messageTypeName(int i)
+{
+    const wchar_t* s_names[] = {
+        L"log",
+        L"dir",
+        L"dir-xml",
+        L"trace",
+        L"start-group",
+        L"start-group-collapsed",
+        L"end-group",
+        L"assert"
+    };
+    return s_names[i];
+}
+
+const wchar_t* messageLevelName(int i)
+{
+    const wchar_t* s_names[] = {
+        L"tip",
+        L"log",
+        L"warning",
+        L"error",
+        L"debug"
+    };
+    return s_names[i];
+}
+
+FILE* g_consoleLog = NULL;
+void onConsoleMessage(wkeWebView* webView, void* param, const wkeConsoleMessage* message)
+{
+    wchar_t msg[1024 * 10 + 1] = { 0 };
+    int len = swprintf(msg, 1024*10, L"[%s:%s:%s] %s in %s(%d)",
+        messageSourceName(message->source),
+        messageTypeName(message->type),
+        messageLevelName(message->level),
+        wkeGetStringW(message->message),
+        wkeGetStringW(message->url), (int)message->lineNumber);
+    if (len < 0)
+        len = 1024 * 10;
+    msg[len] = 0;
+
+    if (g_consoleLog)
+        fputws(msg, g_consoleLog);
+
+    OutputDebugStringW(msg);
+}
+
+/*
+## 测试绑定对象功能
+运行wkeWebBrowser.exe，在地址栏输入`inject`回车，即可注册JS对象`test`，注册后就JS中可访问`test`对象的成员变量`value`和成员函数`msgbox`了。
+在地址栏输入`javascript:test.msgbox('1')`测试调用成员函数。
+在地址栏输入`javascript:document.write(test.value)`测试访问成员变量。
+*/
+struct BindTestFunction
+{
+    static wkeJSValue js_callAsFunction(wkeJSState* es, wkeJSValue object, wkeJSValue* args, int argCount)
+    {
+        wchar_t text[1025] = { 0 };
+        wchar_t title[1025] = { 0 };
+
+        if (argCount >= 1)
+            wcsncpy(text, wkeJSToTempStringW(es, wkeJSParam(es, 0)), 1024);
+        if (argCount >= 2)
+            wcsncpy(title, wkeJSToTempStringW(es, wkeJSParam(es, 1)), 1024);
+
+        MessageBoxW(NULL, text, title[0] ? title : NULL, MB_OK);
+        return wkeJSInt(es, 0);
+    }
+
+    static void js_releaseFunction(wkeJSData* data)
+    {
+        delete data;
+    }
+
+    static void bindToGlobal(wkeJSState* es)
+    {
+        wkeJSData* data = new wkeJSData();
+        memset(data, 0, sizeof(wkeJSData));
+        strcpy(data->typeName, "Function");
+        data->callAsFunction = js_callAsFunction;
+        data->finalize = js_releaseFunction;
+
+        wkeJSValue func = wkeJSFunction(es, data);
+        wkeJSSetGlobal(es, "popup", func);
+    }
+
+    static void bindToObject(wkeJSState* es, wkeJSValue obj)
+    {
+        wkeJSData* data = new wkeJSData();
+        memset(data, 0, sizeof(wkeJSData));
+        strcpy(data->typeName, "Function");
+        data->callAsFunction = js_callAsFunction;
+        data->finalize = js_releaseFunction;
+
+        wkeJSValue func = wkeJSFunction(es, data);
+        wkeJSSet(es, obj, "popup", func);
+    }
+};
+
+
+class BindTestObject : public wkeJSData
+{
+public:
+	BindTestObject()
+		: m_value(0)
+	{
+		wkeJSData* data = this;
+        memset(data, 0, sizeof(wkeJSData));
+        strcpy(data->typeName, "Object");
+        data->propertyGet = js_getObjectProp;
+        data->propertySet = js_setObjectProp;
+        data->finalize = js_releaseObject;
+	}
+
+	void msgbox(const wchar_t* msg, const wchar_t* title)
+	{
+		MessageBoxW(NULL, msg, title, MB_OK);
+	}
+
+protected:
+	static bool js_setObjectProp(wkeJSState* es, wkeJSValue object, const char* propertyName, wkeJSValue value)
+	{
+		BindTestObject* pthis = (BindTestObject*)wkeJSGetData(es, object);
+		if (strcmp(propertyName, "value") == 0)
+			return pthis->m_value = wkeJSToInt(es, value), true;
+		else
+			return false;
+	}
+
+	static void js_releaseObject(wkeJSData* data)
+	{
+		BindTestObject* pthis = (BindTestObject*)data;
+		delete pthis;
+	}
+
+	class BindTestMsgbox : public wkeJSData
+	{
+	public:
+		BindTestMsgbox(BindTestObject* obj)
+		{
+			wkeJSData* data = this;
+			memset(data, 0, sizeof(wkeJSData));
+			strcpy(data->typeName, "Function");
+			data->callAsFunction = js_callAsFunction;
+			data->finalize = js_releaseFunction;
+
+			m_obj = obj;
+		}
+
+	protected:
+		static void js_releaseFunction(wkeJSData* data)
+		{
+			BindTestMsgbox* pthis = (BindTestMsgbox*)data;
+			delete pthis;
+		}
+
+		static wkeJSValue js_callAsFunction(wkeJSState* es, wkeJSValue object, wkeJSValue* args, int argCount)
+		{
+			BindTestMsgbox* pthis = (BindTestMsgbox*)wkeJSGetData(es, object);
+    
+            wchar_t text[1025] = { 0 };
+            wchar_t title[1025] = { 0 };
+            
+			if (argCount >= 1)
+				wcsncpy(text, wkeJSToTempStringW(es, wkeJSParam(es, 0)), 1024);
+			if (argCount >= 2)
+				wcsncpy(title, wkeJSToTempStringW(es, wkeJSParam(es, 1)), 1024);
+
+            pthis->m_obj->msgbox(text, title[0] ? title : NULL);
+			return wkeJSInt(es, 0);
+		}
+
+	protected:
+		BindTestObject* m_obj;
+	};
+
+	static wkeJSValue js_getObjectProp(wkeJSState* es, wkeJSValue object, const char* propertyName)
+	{
+		BindTestObject* pthis = (BindTestObject*)wkeJSGetData(es, object);
+		if (strcmp(propertyName, "value") == 0)
+			return wkeJSInt(es, pthis->m_value);
+
+		else if (strcmp(propertyName, "msgbox") == 0)
+		{
+			return wkeJSFunction(es, new BindTestMsgbox(pthis));
+		}
+		else
+			return wkeJSUndefined(es);
+	}
+
+protected:
+	int m_value;
+};
+
 
 int APIENTRY _tWinMain(HINSTANCE hInstance,
                      HINSTANCE hPrevInstance,
                      LPTSTR    lpCmdLine,
                      int       nCmdShow)
 {
-    UNREFERENCED_PARAMETER(hPrevInstance);
-    UNREFERENCED_PARAMETER(lpCmdLine);
+	UNREFERENCED_PARAMETER(hPrevInstance);
+	UNREFERENCED_PARAMETER(lpCmdLine);
 
-    LoadString(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
-    LoadString(hInstance, IDC_WKEBROWSER, szWindowClass, MAX_LOADSTRING);
-    MyRegisterClass(hInstance);
+	LoadString(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
+	LoadString(hInstance, IDC_WKEBROWSER, szWindowClass, MAX_LOADSTRING);
+	MyRegisterClass(hInstance);
 
-    if (!InitInstance (hInstance, nCmdShow))
-        return FALSE;
+	if (!InitInstance (hInstance, nCmdShow))
+		return FALSE;
 
     CTimer t1, t2, t3;
-
+    wkeInitialize();
     t1.Start();
-    wkeInit();
+
+    wkeSettings settings;
+    memset(&settings, 0, sizeof(settings));
+
+#if defined(WKE_BROWSER_USE_LOCAL_PROXY)
+    settings.proxy.type = WKE_PROXY_SOCKS5;
+    strcpy(settings.proxy.hostname, "127.0.0.1");
+    settings.proxy.port = 1080;
+    settings.mask |= WKE_SETTING_PROXY;
+#endif
+    //wkeInitializeEx(&settings);
+    wkeConfigure(&settings);
+
     t1.End();
 
-    jsBindFunction("msgBox", js_msgBox, 2);
-    jsBindGetter("testCount", js_getTestCount);
-    jsBindSetter("testCount", js_setTestCount);
+	//jsBindObject("testObj", js_getObjectProp, js_setObjectProp);
+    wkeJSBindFunction("msgBox", js_msgBox, 2);
+    wkeJSBindGetter("testCount", js_getTestCount);
+    wkeJSBindSetter("testCount", js_setTestCount);
 
     t2.Start();
     g_webView = wkeCreateWebView();
-    g_webView->setTransparent(false);
     t2.End();
 
-    wkeClientHandler handler;
-    handler.onTitleChanged = onTitleChanged;
-    handler.onURLChanged = onURLChanged;
-    g_webView->setClientHandler(&handler);
 
     t3.Start();
-    //g_webView->loadURL("file:///html/mac-osx-lion.html");
-    //g_webView->loadHTML(L"<p style=\"background-color: #00FF00\">Testing</p><img id=\"webkit logo\" src=\"http://webkit.org/images/icon-gold.png\" alt=\"Face\"><div style=\"border: solid blue; background: white;\" contenteditable=\"true\">div with blue border</div><ul><li>foo<li>bar<li>baz</ul>");
-    g_webView->loadFile("html/mac-osx-lion.html");
+    wkeSetTransparent(g_webView, false);
+    wkeOnTitleChanged(g_webView, onTitleChanged, NULL);
+    wkeOnURLChanged(g_webView, onURLChanged, NULL);
+    wkeOnNavigation(g_webView, onNavigation, NULL);
+    wkeOnCreateView(g_webView, onCreateView, NULL);
+
+    if (g_consoleLog = fopen("wkeBrowserConsole.txt", "wb"))
+        fwrite("\xFF\xFE", 2, 1, g_consoleLog);
+
+    wkeOnConsoleMessage(g_webView, onConsoleMessage, NULL);
+    //wkeLoadUrl("file:///test/test.html");
+
+    //设置UserAgent
+    wkeSetUserAgent(g_webView, "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36");
+
+    int argc = 0;
+    LPWSTR* argv = CommandLineToArgvW(GetCommandLineW(), &argc);
+    if (argc > 1)
+        wkeLoadW(g_webView, argv[1]);
+    else
+        wkeLoadHTMLW(g_webView, L"<p style=\"background-color: #00FF00\">Testing</p><img id=\"webkit logo\" src=\"http://webkit.org/images/icon-gold.png\" alt=\"Face\"><div style=\"border: solid blue; background: white;\" contenteditable=\"true\">div with blue border</div><ul><li>foo<li>bar<li>baz</ul>");
+    LocalFree(argv);
     t3.End();
 
     unsigned int ms1 = t1.GetTime();
@@ -165,22 +464,25 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
         0, 
         hInstance, 0);
 
+    //有窗口句柄插件必须设置
+    wkeSetHostWindow(g_webView, hViewWindow);
+
     resizeSubViews();
 
     DefEditProc = reinterpret_cast<WNDPROC>(GetWindowLongPtr(hURLBarWnd, GWL_WNDPROC));
     SetWindowLongPtr(hURLBarWnd, GWL_WNDPROC, reinterpret_cast<LONG_PTR>(UrlEditProc));
     SetFocus(hURLBarWnd);
 
-    g_render = CRender::create(CRender::D3D_RENDER);
+    g_render = CRender::create(CRender::GDI_RENDER);
     g_render->init(hViewWindow);
 
 
-    HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_WKEBROWSER));
+	HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_WKEBROWSER));
 
     MSG msg;
     msg.message = WM_NULL;
-    while (msg.message != WM_QUIT)
-    {
+	while (msg.message != WM_QUIT)
+	{
         if (PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE))
         {
             if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
@@ -189,7 +491,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
                 DispatchMessage(&msg);
             }
         }
-        else if (!IsIconic(hMainWnd) && g_webView->isDirty())
+        else if (!IsIconic(hMainWnd) && wkeIsDirty(g_webView))
         {
             g_render->render(g_webView);
         }
@@ -200,31 +502,34 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
     }
 
     g_render->destroy();
-    g_webView->destroy();
-    wkeShutdown();
+    wkeDestroyWebView(g_webView);
+    wkeFinalize();
 
-    return (int) msg.wParam;
+    if (g_consoleLog)
+        fclose(g_consoleLog);
+
+	return (int) msg.wParam;
 }
 
 ATOM MyRegisterClass(HINSTANCE hInstance)
 {
-    WNDCLASSEX wcex;
+	WNDCLASSEX wcex;
 
-    wcex.cbSize = sizeof(WNDCLASSEX);
+	wcex.cbSize = sizeof(WNDCLASSEX);
 
-    wcex.style          = CS_HREDRAW | CS_VREDRAW;
-    wcex.lpfnWndProc    = WndProc;
-    wcex.cbClsExtra     = 0;
-    wcex.cbWndExtra     = 0;
-    wcex.hInstance      = hInstance;
-    wcex.hIcon          = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_WKEBROWSER));
-    wcex.hCursor        = LoadCursor(NULL, IDC_ARROW);
-    wcex.hbrBackground  = (HBRUSH)(COLOR_WINDOW+1);
-    wcex.lpszMenuName   = MAKEINTRESOURCE(IDC_WKEBROWSER);
-    wcex.lpszClassName  = szWindowClass;
-    wcex.hIconSm        = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
+	wcex.style			= CS_HREDRAW | CS_VREDRAW;
+	wcex.lpfnWndProc	= WndProc;
+	wcex.cbClsExtra		= 0;
+	wcex.cbWndExtra		= 0;
+	wcex.hInstance		= hInstance;
+	wcex.hIcon			= LoadIcon(hInstance, MAKEINTRESOURCE(IDI_WKEBROWSER));
+	wcex.hCursor		= LoadCursor(NULL, IDC_ARROW);
+	wcex.hbrBackground	= (HBRUSH)(COLOR_WINDOW+1);
+	wcex.lpszMenuName	= MAKEINTRESOURCE(IDC_WKEBROWSER);
+	wcex.lpszClassName	= szWindowClass;
+	wcex.hIconSm		= LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
 
-    return RegisterClassEx(&wcex);
+	return RegisterClassEx(&wcex);
 }
 
 BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
@@ -273,14 +578,14 @@ void zoom(bool zoomIn)
 
     s_currentZoom = s_zoomLevels[i];
 
-    g_webView->setZoomFactor(s_currentZoom / 100.f);
+    wkeSetZoomFactor(g_webView, s_currentZoom / 100.f);
 }
 
 void resetZoom()
 {
     s_currentZoom = 100;
     if (g_webView)
-        g_webView->setZoomFactor(s_currentZoom / 100.f);
+        wkeSetZoomFactor(g_webView, s_currentZoom / 100.f);
 }
 
 void convertFilename(wchar_t* filename)
@@ -352,52 +657,61 @@ void takeScreenshot()
     if (g_webView == NULL)
         return;
 
-    g_webView->runJS("document.body.style.overflow='hidden'");	
-    int w = g_webView->contentsWidth();
-    int h = g_webView->contentsHeight();
+    wkeRunJS(g_webView, "document.body.style.overflow='hidden'");	
+	int w = wkeGetContentWidth(g_webView);
+	int h = wkeGetContentHeight(g_webView);
     
-    int oldwidth = g_webView->width();
-    int oldheight = g_webView->height();
-    g_webView->resize(w, h);
+    int oldwidth = wkeGetWidth(g_webView);
+    int oldheight = wkeGetHeight(g_webView);
+    wkeResize(g_webView, w, h);
     wkeUpdate();
 
     void* pixels = malloc(w*h*4);
-    g_webView->paint(pixels, 0);
+    wkePaint2(g_webView, pixels, 0);
 
     //save bitmap
-    saveBitmap(pixels, w, h, g_webView->titleW());
+    saveBitmap(pixels, w, h, wkeGetTitleW(g_webView));
 
     free(pixels);
 
-    g_webView->resize(oldwidth, oldheight);
-    g_webView->runJS("document.body.style.overflow='visible'");
+    wkeResize(g_webView, oldwidth, oldheight);
+    wkeRunJS(g_webView, "document.body.style.overflow='visible'");
+}
+
+void viewCookie()
+{
+    if (g_webView == NULL)
+        return;
+
+    const wchar_t* cookie = wkeGetCookieW(g_webView);
+    MessageBoxW(NULL, cookie, L"Cookie", MB_OK|MB_ICONINFORMATION);
 }
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-    int wmId, wmEvent;
-    PAINTSTRUCT ps;
-    HDC hdc;
+	int wmId, wmEvent;
+	PAINTSTRUCT ps;
+	HDC hdc;
 
-    switch (message)
-    {
-    case WM_COMMAND:
-        wmId    = LOWORD(wParam);
-        wmEvent = HIWORD(wParam);
-        switch (wmId)
-        {
-        case IDM_ABOUT:
-            DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
-            break;
+	switch (message)
+	{
+	case WM_COMMAND:
+		wmId    = LOWORD(wParam);
+		wmEvent = HIWORD(wParam);
+		switch (wmId)
+		{
+		case IDM_ABOUT:
+			DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
+			break;
 
         case ID_FILE_GOBACK:
             if (g_webView)
-                g_webView->goBack();
+                wkeGoBack(g_webView);
             break;
 
         case ID_FILE_GOFORWARD:
             if (g_webView)
-                g_webView->goForward();
+                wkeGoForward(g_webView);
             break;
 
         case ID_ZOOM_IN:
@@ -416,6 +730,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             takeScreenshot();
             break;
 
+        case ID_TOOLS_VIEWCOOKIE:
+            viewCookie();
+            break;
+
         case ID_SET_EDITABLE:
             if (g_webView)
             {
@@ -423,12 +741,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 UINT state = GetMenuState(hMenu, ID_SET_EDITABLE, MF_BYCOMMAND);
                 if (state & MF_CHECKED)
                 {
-                    g_webView->setEditable(false);
+                    wkeSetEditable(g_webView, false);
                     CheckMenuItem(hMenu, ID_SET_EDITABLE, MF_BYCOMMAND | MF_UNCHECKED); 
                 }
                 else
                 {
-                    g_webView->setEditable(true);
+                    wkeSetEditable(g_webView, true);
                     CheckMenuItem(hMenu, ID_SET_EDITABLE, MF_BYCOMMAND | MF_CHECKED); 
                 }
             }
@@ -444,24 +762,24 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             SendMessage(hURLBarWnd, WM_CHAR, L'\r', 0);
             break;
 
-        case IDM_EXIT:
-            DestroyWindow(hWnd);
-            break;
+		case IDM_EXIT:
+			DestroyWindow(hWnd);
+			break;
 
-        default:
-            return DefWindowProc(hWnd, message, wParam, lParam);
-        }
-        break;
+		default:
+			return DefWindowProc(hWnd, message, wParam, lParam);
+		}
+		break;
 
     case WM_INITMENU:
         {
             bool canGoBack = false;
             bool canGoForward = false;
 
-            if (g_webView && g_webView->canGoBack())
+            if (g_webView && wkeCanGoBack(g_webView))
                 canGoBack = true;
 
-            if (g_webView && g_webView->canGoForward())
+            if (g_webView && wkeCanGoForward(g_webView))
                 canGoForward = true;
 
             EnableMenuItem((HMENU)wParam, ID_FILE_GOBACK, canGoBack ? MF_ENABLED : MF_DISABLED);
@@ -470,33 +788,31 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         break;
 
 
-    case WM_PAINT:
-        hdc = BeginPaint(hWnd, &ps);
-        if (g_webView)
-            g_webView->setDirty(true);
-        EndPaint(hWnd, &ps);
-        break;
+	case WM_PAINT:
+		hdc = BeginPaint(hWnd, &ps);
+		EndPaint(hWnd, &ps);
+		break;
 
-    case WM_DESTROY:
-        PostQuitMessage(0);
-        break;
+	case WM_DESTROY:
+		PostQuitMessage(0);
+		break;
 
     case WM_SIZE:
         resizeSubViews();
         break;
 
-    default:
-        return DefWindowProc(hWnd, message, wParam, lParam);
-    }
-    return 0;
+	default:
+		return DefWindowProc(hWnd, message, wParam, lParam);
+	}
+	return 0;
 }
 
 INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
-    UNREFERENCED_PARAMETER(lParam);
-    switch (message)
-    {
-    case WM_INITDIALOG:
+	UNREFERENCED_PARAMETER(lParam);
+	switch (message)
+	{
+	case WM_INITDIALOG:
         {
             RECT rect;
             rect.left = 63;
@@ -513,22 +829,53 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         }
         return (INT_PTR)TRUE;
 
-    case WM_COMMAND:
-        if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL)
-        {
-            EndDialog(hDlg, LOWORD(wParam));
-            return (INT_PTR)TRUE;
-        }
-        break;
-    }
-    return (INT_PTR)FALSE;
+	case WM_COMMAND:
+		if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL)
+		{
+			EndDialog(hDlg, LOWORD(wParam));
+			return (INT_PTR)TRUE;
+		}
+		break;
+	}
+	return (INT_PTR)FALSE;
 }
 
 LRESULT CALLBACK WebViewWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     bool handled = true;
-    switch (message)
-    {
+	switch (message)
+	{
+    //cexer 增加拖放加载
+    case WM_CREATE:
+        {
+            DragAcceptFiles(hWnd, TRUE);
+        }
+        return 0;
+
+    case WM_DROPFILES:
+        {
+            if (g_webView)
+            {
+                wchar_t szFile[MAX_PATH + 8] = {0};
+                wcscpy(szFile, L"file:///");
+
+                HDROP hDrop = reinterpret_cast<HDROP>(wParam);
+
+                UINT uFilesCount = DragQueryFileW(hDrop, 0xFFFFFFFF, szFile, MAX_PATH);
+                if (uFilesCount != 0)
+                {
+                    UINT uRet = DragQueryFileW(hDrop, 0, (wchar_t*)szFile + 8, MAX_PATH);
+                    if ( uRet != 0)
+                    {
+                        wkeLoadURLW(g_webView, szFile);
+                        SetWindowTextW(hWnd, szFile);
+                    }
+                }
+                DragFinish(hDrop);
+            }
+        }
+        return 0;
+
     case WM_COMMAND:
         SendMessage(GetParent(hWnd), message, wParam, lParam);
         return 0;
@@ -536,7 +883,7 @@ LRESULT CALLBACK WebViewWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
     case WM_SIZE:
         if (g_webView && g_render)
         {
-            g_webView->resize(LOWORD(lParam), HIWORD(lParam));
+            wkeResize(g_webView, LOWORD(lParam), HIWORD(lParam));
             g_render->resize(LOWORD(lParam), HIWORD(lParam));
         }
         break;
@@ -552,7 +899,7 @@ LRESULT CALLBACK WebViewWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 
             //flags = HIWORD(lParam);
 
-            handled = g_webView->keyDown(virtualKeyCode, flags, false);
+            handled = wkeFireKeyDownEvent(g_webView, virtualKeyCode, flags, false);
         }
         break;
 
@@ -567,7 +914,7 @@ LRESULT CALLBACK WebViewWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 
             //flags = HIWORD(lParam);
 
-            handled = g_webView->keyUp(virtualKeyCode, flags, false);
+            handled = wkeFireKeyUpEvent(g_webView, virtualKeyCode, flags, false);
         }
         break;
 
@@ -582,7 +929,7 @@ LRESULT CALLBACK WebViewWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 
             //flags = HIWORD(lParam);
 
-            handled = g_webView->keyPress(charCode, flags, false);
+            handled = wkeFireKeyPressEvent(g_webView, charCode, flags, false);
         }
         break;
 
@@ -627,7 +974,7 @@ LRESULT CALLBACK WebViewWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 
             //flags = wParam;
 
-            handled = g_webView->mouseEvent(message, x, y, flags);
+            handled = wkeFireMouseEvent(g_webView, message, x, y, flags);
         }
         break;
 
@@ -654,7 +1001,7 @@ LRESULT CALLBACK WebViewWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
             if (wParam & MK_RBUTTON)
                 flags |= WKE_RBUTTON;
 
-            handled = g_webView->contextMenuEvent(pt.x, pt.y, flags);
+            handled = wkeFireContextMenuEvent(g_webView, pt.x, pt.y, flags);
         }
         break;
 
@@ -683,21 +1030,21 @@ LRESULT CALLBACK WebViewWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 
             //flags = wParam;
 
-            handled = g_webView->mouseWheel(pt.x, pt.y, delta, flags);
+            handled = wkeFireMouseWheelEvent(g_webView, pt.x, pt.y, delta, flags);
         }
         break;
 
     case WM_SETFOCUS:
-        g_webView->focus();
+        wkeSetFocus(g_webView);
         break;
 
     case WM_KILLFOCUS:
-        g_webView->unfocus();
+        wkeKillFocus(g_webView);
         break;
 
     case WM_IME_STARTCOMPOSITION:
         {
-            wkeRect caret = g_webView->getCaret();
+            wkeRect caret = wkeGetCaretRect(g_webView);
 
             CANDIDATEFORM form;
             form.dwIndex = 0;
@@ -718,7 +1065,7 @@ LRESULT CALLBACK WebViewWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
     default:
         handled = false;
         break;
-    }
+	}
     
     if (!handled)
         return DefWindowProc(hWnd, message, wParam, lParam);
@@ -735,7 +1082,7 @@ void resizeSubViews()
         MoveWindow(hURLBarWnd, 0, 0, rcClient.right, URLBAR_HEIGHT, TRUE);
         MoveWindow(hViewWindow, 0, URLBAR_HEIGHT, rcClient.right, rcClient.bottom - URLBAR_HEIGHT, TRUE);
 
-        g_webView->resize(rcClient.right, rcClient.bottom - URLBAR_HEIGHT);
+        wkeResize(g_webView, rcClient.right, rcClient.bottom - URLBAR_HEIGHT);
     }
 }
 
@@ -766,17 +1113,69 @@ LRESULT CALLBACK UrlEditProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 {
     if (message == WM_CHAR && wParam == 13) //Enter Key
     {
-        wchar_t url[MAX_URL_LENGTH];
+		wchar_t url[MAX_URL_LENGTH] = {0};
         *((LPWORD)url) = MAX_URL_LENGTH; 
         int len = SendMessage(hDlg, EM_GETLINE, 0, (LPARAM)url);
         if (len == 0)
             return 0;
 
-        url[len] = L'\0';
-        g_webView->loadURL(url);
-        SetFocus(hViewWindow);
+		if (wcsstr(url, L"inject") == url)
+		{
+			//jsObjectData* data = new jsObjectData();
+   //         memset(data, 0, sizeof(jsObjectData));
+   //         strcpy(data->typeName, "Test");
+   //         data->propertyGet = js_getObjectProp;
+   //         data->propertySet = js_setObjectProp;
+   //         data->finalize = js_releaseObject;
+
+			BindTestObject* testObj = new BindTestObject();
+            wkeJSState* es = wkeGlobalExec(g_webView);
+            wkeJSValue obj = wkeJSObject(es, testObj);
+            wkeJSSetGlobal(es, "test", obj);
+
+            BindTestFunction::bindToGlobal(es);
+		}
+		else if (wcsstr(url, L"javascript:") == url)
+		{
+			url[len] = L'\0';
+			wkeRunJSW(g_webView, url + wcslen(L"javascript:"));
+		}
+		else if (wcsstr(url, L"call") == url)
+		{
+			wkeJSState* es = wkeGlobalExec(g_webView);
+			wkeJSValue jsDocument = wkeJSGet(es, wkeJSGlobalObject(es), "document");
+
+			{
+				char prop[10] = { 0 };
+				strcpy(prop, "URL");
+				wkeJSValue jsUrl = wkeJSGet(es, jsDocument, prop);
+				MessageBoxW(NULL, wkeJSToTempStringW(es, jsUrl), NULL, MB_OK);
+			}
+
+			{
+				char prop[10] = { 0 };
+				strcpy(prop, "title");
+				wkeJSValue jsTitle = wkeJSGet(es, jsDocument, prop);
+				MessageBoxW(NULL, wkeJSToTempStringW(es, jsTitle), NULL, MB_OK);
+			}
+
+			{
+				char prop[10] = { 0 };
+				strcpy(prop, "cookie");
+				wkeJSValue jsCookie = wkeJSGet(es, jsDocument, prop);
+				MessageBoxW(NULL, wkeJSToTempStringW(es, jsCookie), NULL, MB_OK);
+			}
+
+		}
+		else
+		{
+			url[len] = L'\0';
+			wkeLoadURLW(g_webView, url);
+			SetFocus(hViewWindow);
+		}
         return 0;
     }
     
     return (LRESULT)CallWindowProc((WNDPROC)DefEditProc,hDlg,message,wParam,lParam);
 }
+

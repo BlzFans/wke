@@ -129,7 +129,8 @@ JSObjectRef JSObjectMakeFunction(JSContextRef ctx, JSStringRef name, unsigned pa
         if (exception)
             *exception = toRef(exec, exec->exception());
         exec->clearException();
-        result = 0;
+        //cexer 非法值应该在被调用者生成错误时就返回，不应该由调用者来生成。
+        //result = 0;
     }
     return toRef(result);
 }
@@ -153,7 +154,8 @@ JSObjectRef JSObjectMakeArray(JSContextRef ctx, size_t argumentCount, const JSVa
         if (exception)
             *exception = toRef(exec, exec->exception());
         exec->clearException();
-        result = 0;
+        //cexer 非法值应该在被调用者生成错误时就返回，不应该由调用者来生成。
+        //result = 0;
     }
 
     return toRef(result);
@@ -173,7 +175,8 @@ JSObjectRef JSObjectMakeDate(JSContextRef ctx, size_t argumentCount, const JSVal
         if (exception)
             *exception = toRef(exec, exec->exception());
         exec->clearException();
-        result = 0;
+        //cexer 非法值应该在被调用者生成错误时就返回，不应该由调用者来生成。
+        //result = 0;
     }
 
     return toRef(result);
@@ -192,7 +195,8 @@ JSObjectRef JSObjectMakeError(JSContextRef ctx, size_t argumentCount, const JSVa
         if (exception)
             *exception = toRef(exec, exec->exception());
         exec->clearException();
-        result = 0;
+        //cexer 非法值应该在被调用者生成错误时就返回，不应该由调用者来生成。
+        //result = 0;
     }
 
     return toRef(result);
@@ -212,7 +216,8 @@ JSObjectRef JSObjectMakeRegExp(JSContextRef ctx, size_t argumentCount, const JSV
         if (exception)
             *exception = toRef(exec, exec->exception());
         exec->clearException();
-        result = 0;
+        //cexer 非法值应该在被调用者生成错误时就返回，不应该由调用者来生成。
+        //result = 0;
     }
     
     return toRef(result);
@@ -445,7 +450,8 @@ JSValueRef JSObjectCallAsFunction(JSContextRef ctx, JSObjectRef object, JSObject
         if (exception)
             *exception = toRef(exec, exec->exception());
         exec->clearException();
-        result = 0;
+        //cexer 非法值应该在被调用者生成错误时就返回，不应该由调用者来生成。
+        //result = 0;
     }
     return result;
 }
@@ -477,7 +483,8 @@ JSObjectRef JSObjectCallAsConstructor(JSContextRef ctx, JSObjectRef object, size
         if (exception)
             *exception = toRef(exec, exec->exception());
         exec->clearException();
-        result = 0;
+        //cexer 非法值应该在被调用者生成错误时就返回，不应该由调用者来生成。
+        //result = 0;
     }
     return result;
 }

@@ -1,0 +1,110 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug_Cairo_CFLite|Win32">
+      <Configuration>Debug_Cairo_CFLite</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release_Cairo_CFLite|Win32">
+      <Configuration>Release_Cairo_CFLite</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{011D10F1-B656-4A1B-A0C3-3842F02122C6}</ProjectGuid>
+    <RootNamespace>wke</RootNamespace>
+    <Keyword>Win32Proj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_Cairo_CFLite|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Cairo_CFLite|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release_Cairo_CFLite|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="vsprops\wkeRelease.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Cairo_CFLite|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="vsprops\wkeDebug.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.40219.1</_ProjectFileVersion>
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug_Cairo_CFLite|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug_Cairo_CFLite|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug_Cairo_CFLite|Win32'" />
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release_Cairo_CFLite|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release_Cairo_CFLite|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release_Cairo_CFLite|Win32'" />
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Cairo_CFLite|Win32'">
+    <ClCompile />
+    <Link>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <IgnoreSpecificDefaultLibraries>msvcrt.lib;LIBCMT.lib</IgnoreSpecificDefaultLibraries>
+      <IgnoreAllDefaultLibraries>
+      </IgnoreAllDefaultLibraries>
+    </Link>
+    <ClCompile>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_Cairo_CFLite|Win32'">
+    <ClCompile>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\wke\icuwin.cpp" />
+    <ClCompile Include="..\wke\jsBind.cpp" />
+    <ClCompile Include="..\wke\wke.cpp" />
+    <ClCompile Include="..\wke\wkeChromeClient.cpp" />
+    <ClCompile Include="..\wke\wkeContextMenuClient.cpp" />
+    <ClCompile Include="..\wke\wkeDebug.cpp" />
+    <ClCompile Include="..\wke\wkeDragClient.cpp" />
+    <ClCompile Include="..\wke\wkeEditorClient.cpp" />
+    <ClCompile Include="..\wke\wkeFrameLoaderClient.cpp" />
+    <ClCompile Include="..\wke\wkeInspectorClient.cpp" />
+    <ClCompile Include="..\wke\wkePlatformStrategies.cpp" />
+    <ClCompile Include="..\wke\wkePopupMenu.cpp" />
+    <ClCompile Include="..\wke\wkeString.cpp" />
+    <ClCompile Include="..\wke\wkeWebView.cpp" />
+    <ClCompile Include="..\wke\wkeWebWindow.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\wke\icuwin.h" />
+    <ClInclude Include="..\wke\wke.h" />
+    <ClInclude Include="..\wke\wkeChromeClient.h" />
+    <ClInclude Include="..\wke\wkeContextMenuClient.h" />
+    <ClInclude Include="..\wke\wkeDebug.h" />
+    <ClInclude Include="..\wke\wkeDragClient.h" />
+    <ClInclude Include="..\wke\wkeEditorClient.h" />
+    <ClInclude Include="..\wke\wkeFrameLoaderClient.h" />
+    <ClInclude Include="..\wke\wkeInspectorClient.h" />
+    <ClInclude Include="..\wke\wkePlatformStrategies.h" />
+    <ClInclude Include="..\wke\wkePopupMenu.h" />
+    <ClInclude Include="..\wke\wkeString.h" />
+    <ClInclude Include="..\wke\wkeWebView.h" />
+    <ClInclude Include="..\wke\wkeWebWindow.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\wke\wke.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="WebCore.vcxproj">
+      <Project>{1c16337b-acf3-4d03-aa90-851c5b5eada6}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

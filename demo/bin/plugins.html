@@ -1,0 +1,35 @@
+<HTML>
+<HEAD>
+</HEAD>
+<BODY>
+<input type="button" onclick="resizePlugin()" value="调整插件大小" />
+<embed id="plugin" type="application/qscintilla" />
+<div id="output"></div>
+<script>
+	function resizePlugin()
+	{
+		jQuery("#plugin").width(100);
+		jQuery("#plugin").height(100);
+	}
+</script>
+</BODY>
+
+<script src="jQuery.min.js" type="text/javascript"></script>
+<script>
+for(var i=0; i<navigator.plugins.length; i++){
+	var name = navigator.plugins[i].name;
+	var output = jQuery("#output");
+	var html = output.html();
+	output.html(html + name + "<BR>");
+}
+function hasPlugin(name){
+      name = name.toLowerCase();
+      for(var i=0; i<navigator.plugins.length; i++){
+            if(navigator.plugins[i].name.toLowerCase().indexOf(name) > -1){
+                   return true;
+            }
+      }
+       return false;
+}
+</script>
+</HTML>

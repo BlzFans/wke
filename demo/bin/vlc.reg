@@ -1,0 +1,8 @@
+Windows Registry Editor Version 5.00 
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\MozillaPlugins\@videolan.org/vlc,version=2.0.3] 
+"Description"="VLC Multimedia Plugin" 
+"Path"="D:\\program\\VLCPortable2.0.3\\App\\vlc\\npvlc.dll" 
+"Product"="VLC media player" 
+"Vendor"="VideoLAN" 
+"Version"="2.0.3"

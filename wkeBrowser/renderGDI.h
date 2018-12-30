@@ -50,14 +50,14 @@ public:
         m_pixels = NULL;
     }
 
-    virtual void render(wkeWebView webView)
+    virtual void render(wkeWebView* webView)
     {
-        if (webView->isDirty())
+        if (wkeIsDirty(webView))
         {
             if (m_pixels == NULL)
                 createBitmap();
 
-            webView->paint(m_pixels, 0);
+            wkePaint2(webView, m_pixels, 0);
 
             HDC hDC = GetDC(m_hView);
             BitBlt(hDC, 0, 0, m_width, m_height, m_hDC, 0, 0, SRCCOPY);

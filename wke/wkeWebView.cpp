@@ -1,150 +1,107 @@
-#include <WebCore/config.h>
 
-#include <WebCore/ChromeClient.h>
-#include <WebCore/FrameLoaderClient.h>
-#include <WebCore/ResourceError.h>
-#include <WebCore/Page.h>
-#include <WebCore/Frame.h>
-#include <WebCore/FileChooser.h>
-#include <WebCore/FormState.h>
-#include <WebCore/HTMLFormElement.h>
-
-#include <WebCore/FrameView.h>
-#include <WebCore/BitmapInfo.h>
-#include <WebCore/Settings.h>
-#include <WebCore/PlatformWheelEvent.h>
-#include <WebCore/PlatformKeyboardEvent.h>
-#include <WebCore/FocusController.h>
-#include <WebCore/ScriptValue.h>
-#include <WebCore/BackForwardList.h>
-#include <WebCore/TextEncoding.h>
-#include <WebCore/ContextMenuController.h>
-#include <WebCore/Chrome.h>
+#include "wkeChromeClient.h"
+#include "wkeFrameLoaderClient.h"
+#include "wkeContextMenuClient.h"
+#include "wkeInspectorClient.h"
+#include "wkeEditorClient.h"
+#include "wkeDragClient.h"
 
 #include "icuwin.h"
-#include "stringTable.h"
+
+//cexer: 必须包含在后面，因为其中的 wke.h -> windows.h 会定义 max、min，导致 WebCore 内部的 max、min 出现错乱。
+#include "wkeDebug.h"
 #include "wkeWebView.h"
 
-#include "wkeDebug.h"
-#include "wkeChromeClient.inl"
-#include "wkeFrameLoaderClient.inl"
-#include "wkeContextMenuClient.inl"
-#include "wkeInspectorClient.inl"
-#include "wkeEditorClient.inl"
-#include "wkeDragClient.inl"
+#include <shlwapi.h>
+#pragma comment(lib, "shlwapi.lib")
+
 
 namespace wke
 {
 
+
+
     CWebView::CWebView()
-        :name_(StringTable::emptyString())
-        ,transparent_(false)
-        ,dirty_(false)
-        ,width_(0)
-        ,height_(0)
-        ,gfxContext_(NULL)
-        ,awake_(true)
-        ,clientHandler_(NULL)
+        : m_name("")
+        , m_transparent(false)
+        , m_dirty(false)
+        , m_width(0)
+        , m_height(0)
+        , m_graphicsContext(NULL)
+        , m_awake(true)
+        , m_title("")
+        , m_cookie("")
+        , m_hostWindow(NULL)
+        , m_paintInterval(15)
+        , m_lastPaintTimeTick(0)
     {
-        WebCore::Page::PageClients pageClients;
-        pageClients.chromeClient = new ChromeClient(this);
-        pageClients.contextMenuClient = new ContextMenuClient;
-        pageClients.inspectorClient = new InspectorClient;
-        pageClients.editorClient = new EditorClient;
-        pageClients.dragClient = new DragClient;
-
-        page_ = adoptPtr(new WebCore::Page(pageClients));
-        WebCore::Settings* settings = page_->settings();
-        settings->setMinimumFontSize(0);
-        settings->setMinimumLogicalFontSize(9);
-        settings->setDefaultFontSize(16);
-        settings->setDefaultFixedFontSize(13);
-        settings->setJavaScriptEnabled(true);
-        settings->setPluginsEnabled(true);
-        settings->setLoadsImagesAutomatically(true);
-        settings->setDefaultTextEncodingName(icuwin_getDefaultEncoding());
-        
-        settings->setStandardFontFamily("Times New Roman");
-        settings->setFixedFontFamily("Courier New");
-        settings->setSerifFontFamily("Times New Roman");
-        settings->setSansSerifFontFamily("Arial");
-        settings->setCursiveFontFamily("Comic Sans MS");
-        settings->setFantasyFontFamily("Times New Roman");
-        settings->setPictographFontFamily("Times New Roman");
-
-        settings->setAllowUniversalAccessFromFileURLs(true);
-        settings->setAllowFileAccessFromFileURLs(true);
-
-        settings->setJavaScriptCanAccessClipboard(true);
-        settings->setShouldPrintBackgrounds(true);
-        settings->setTextAreasAreResizable(true);
-
-        settings->setLocalStorageEnabled(true);
-        
-        UChar dir[256];
-        GetCurrentDirectory(256, dir);
-        wcscat(dir, L"\\localStorage");
-        settings->setLocalStorageDatabasePath(dir);
-        WebCore::DatabaseTracker::tracker().setDatabaseDirectoryPath(dir);
-
-        FrameLoaderClient* loader = new FrameLoaderClient(this, page_.get());
-        mainFrame_ = WebCore::Frame::create(page_.get(), NULL, loader).get();
-        loader->setFrame(mainFrame_);
-        mainFrame_->init();
-
-        page()->focusController()->setActive(true);
-
-        hdc_ = adoptPtr(::CreateCompatibleDC(0));
+        _initHandler();
+        _initPage();
+        _initMemoryDC();
     }
 
     CWebView::~CWebView()
     {
-        delete gfxContext_;
-        mainFrame_->loader()->detachFromParent();
+        delete m_graphicsContext;
+        m_mainFrame->loader()->detachFromParent();
+    }
+
+    bool CWebView::create()
+    {
+        return true;
     }
 
     void CWebView::destroy()
     {
-        wkeDestroyWebView(this);
+        delete this;
     }
 
-    const char* CWebView::name() const
+    const utf8* CWebView::name() const
     {
-        return name_;
+        return m_name.string();
     }
 
-    void CWebView::setName(const char* name)
+    const wchar_t* CWebView::nameW() const
     {
-        name_ = StringTable::addString(name);
+        return m_name.stringW();
     }
 
-    bool CWebView::transparent() const
+    void CWebView::setName(const utf8* name)
     {
-        return transparent_;
+        m_name.assign(name);
+    }
+    void CWebView::setName(const wchar_t* name)
+    {
+        m_name.assign(name);
+    }
+
+    bool CWebView::isTransparent() const
+    {
+        return m_transparent;
     }
 
     void CWebView::setTransparent(bool transparent)
     {
-        if (transparent_ == transparent)
+        if (m_transparent == transparent)
             return;
 
-        transparent_ = transparent;
-        dirtyArea_ = WebCore::IntRect(0, 0, width_, height_);
+        m_transparent = transparent;
+        m_dirtyArea = WebCore::IntRect(0, 0, m_width, m_height);
         setDirty(true);
 
-        if (gfxContext_)
+        if (m_graphicsContext)
         {
-            delete gfxContext_;
-            gfxContext_ = NULL;
+            delete m_graphicsContext;
+            m_graphicsContext = NULL;
         }
 
         WebCore::Color backgroundColor = transparent ? WebCore::Color::transparent : WebCore::Color::white;
-        mainFrame_->view()->updateBackgroundRecursively(backgroundColor, transparent);
+        m_mainFrame->view()->updateBackgroundRecursively(backgroundColor, transparent);
     }
 
-    void CWebView::loadURL(const utf8* inUrl)
+    void CWebView::loadPostURL(const utf8* inUrl,const char * poastData,int nLen )
     {
-        WebCore::KURL url(WebCore::KURL(), inUrl, WebCore::UTF8Encoding());
+        WebCore::KURL url(WebCore::KURL(), WTF::String::fromUTF8(inUrl), WebCore::UTF8Encoding());
         if (!url.isValid())
             url.setProtocol("http:");
 
@@ -153,7 +110,37 @@ namespace wke
 
         if (WebCore::protocolIsJavaScript(url))
         {
-            mainFrame_->script()->executeIfJavaScriptURL(url);
+            m_mainFrame->script()->executeIfJavaScriptURL(url);
+            return;
+        }
+
+        WebCore::ResourceRequest request(url);
+        request.setCachePolicy(WebCore::UseProtocolCachePolicy);
+        request.setTimeoutInterval(60.f);
+        request.setHTTPMethod("POST");
+        request.setHTTPBody(WebCore::FormData::create(poastData, nLen));
+        m_mainFrame->loader()->load(request, false);
+    }
+
+    void CWebView::loadPostURL(const wchar_t * inUrl,const char * poastData,int nLen )
+    {
+        loadPostURL(String(inUrl).utf8().data(),poastData,nLen);
+    }
+
+    void CWebView::loadURL(const utf8* inUrl)
+    {
+        //cexer 必须调用String::fromUTF8显示构造第二个参数，否则String::String会把inUrl当作latin1处理。
+        //WebCore::KURL url(WebCore::KURL(), inUrl, WebCore::UTF8Encoding());
+        WebCore::KURL url(WebCore::KURL(), WTF::String::fromUTF8(inUrl), WebCore::UTF8Encoding());
+        if (!url.isValid())
+            url.setProtocol("http:");
+
+        if (!url.isValid())
+            return;
+
+        if (WebCore::protocolIsJavaScript(url))
+        {
+            m_mainFrame->script()->executeIfJavaScriptURL(url);
             return;
         }
 
@@ -161,7 +148,7 @@ namespace wke
         request.setCachePolicy(WebCore::UseProtocolCachePolicy);
         request.setTimeoutInterval(60.f);
         request.setHTTPMethod("GET");
-        mainFrame_->loader()->load(request, false);
+        m_mainFrame->loader()->load(request, false);
     }
 
     void CWebView::loadURL(const wchar_t* url)
@@ -175,11 +162,14 @@ namespace wke
 
         RefPtr<WebCore::SharedBuffer> sharedBuffer = WebCore::SharedBuffer::create(html, strlen(html));
 
-        WebCore::KURL url(WebCore::KURL(), "");
+        //cexer 这里必须提供一个假的 file:/// URL，否则 wkeSetFileSystem 的回调不会被调用
+        //WebCore::KURL url(WebCore::KURL(), "");
+        WebCore::KURL url(WebCore::KURL(), WTF::String::fromUTF8("file:///dummy"), WebCore::UTF8Encoding());
+
         WebCore::ResourceRequest request(url);
         WebCore::SubstituteData substituteData(sharedBuffer.release(), mime, WebCore::UTF8Encoding().name(), url);
 
-        mainFrame_->loader()->load(request, substituteData, false);
+        m_mainFrame->loader()->load(request, substituteData, false);
     }
 
     void CWebView::loadHTML(const wchar_t* html)
@@ -188,50 +178,210 @@ namespace wke
 
         RefPtr<WebCore::SharedBuffer> sharedBuffer = WebCore::SharedBuffer::create((const char*)html, wcslen(html)*2);
 
-        WebCore::KURL url(WebCore::KURL(), "");
+        //cexer 这里必须提供一个假的 file:/// URL，否则 wkeSetFileSystem 的回调不会被调用
+        //WebCore::KURL url(WebCore::KURL(), "");
+        WebCore::KURL url(WebCore::KURL(), WTF::String::fromUTF8("file:///dummy"), WebCore::UTF8Encoding());
+
         WebCore::ResourceRequest request(url);
         WebCore::SubstituteData substituteData(sharedBuffer.release(), mime, WebCore::UTF16LittleEndianEncoding().name(), url);
 
-        mainFrame_->loader()->load(request, substituteData, false);
+        m_mainFrame->loader()->load(request, substituteData, false);
     }
 
     void CWebView::loadFile(const utf8* filename)
     {
-        char url[1024];
-        _snprintf(url, 1023, "file:///%s", filename);
-        url[1023] = '\0';
+        char url[4096+1] = { 0 };
+        _snprintf(url, 4096, "file:///%s", filename);
+        url[4096] = '\0';
         loadURL(url);
     }
 
     void CWebView::loadFile(const wchar_t* filename)
     {
-        wchar_t url[1024];
-        _snwprintf(url, 1024, L"file:///%s", filename);
-        url[1023] = L'\0';
+        wchar_t url[4096+1] = { 0 };
+        _snwprintf(url, 4096, L"file:///%s", filename);
+        url[4096] = L'\0';
         loadURL(url);
     }
 
-    bool CWebView::isLoaded() const
+    void CWebView::load(const utf8* str)
+    {
+        wchar_t* wstr = NULL;
+        int wlen = MultiByteToWideChar(CP_UTF8, 0, str, strlen(str), NULL, 0);
+        wstr = new wchar_t[wlen + 1];
+        MultiByteToWideChar(CP_UTF8, 0, str, strlen(str), wstr, wlen);
+        wstr[wlen] = 0;
+
+        load(wstr);
+
+        delete [] wstr;
+    }
+
+
+
+    LPCWSTR GetWorkingDirectory(LPWSTR buffer, size_t bufferSize)
+    {
+        GetCurrentDirectoryW(bufferSize, buffer);
+        wcscat(buffer, L"\\");
+        return buffer;
+    }
+
+    LPCWSTR GetWorkingPath(LPWSTR buffer, size_t bufferSize, LPCWSTR relatedPath)
+    {
+        WCHAR dir[MAX_PATH + 1] = { 0 };
+        GetWorkingDirectory(dir, MAX_PATH);
+        _snwprintf(buffer, bufferSize, L"%s%s", dir, relatedPath);
+        return buffer;
+    }
+
+    LPCWSTR FormatWorkingPath(LPWSTR buffer, size_t bufferSize, LPCWSTR fmt, ...)
+    {
+        WCHAR relatedPath[MAX_PATH + 1] = { 0 };
+        va_list args;
+        va_start(args, fmt);
+        _vsnwprintf(relatedPath, MAX_PATH, fmt, args);
+        va_end(args);
+
+        return GetWorkingPath(buffer, bufferSize, relatedPath);
+    }
+
+    LPCWSTR GetProgramDirectory(LPWSTR buffer, size_t bufferSize)
+    {
+        DWORD i = GetModuleFileNameW(NULL, buffer, bufferSize);
+
+        -- i;
+        while (buffer[i] != '\\' && i != 0)
+            -- i;
+
+        buffer[i+1] = 0;
+        return buffer;
+    }
+
+    LPCWSTR GetProgramPath(LPWSTR buffer, size_t bufferSize, LPCWSTR relatedPath)
+    {
+        WCHAR dir[MAX_PATH + 1] = { 0 };
+        GetProgramDirectory(dir, MAX_PATH);
+        _snwprintf(buffer, bufferSize, L"%s%s", dir, relatedPath);
+        return buffer;
+    }
+
+    LPCWSTR FormatProgramPath(LPWSTR buffer, size_t bufferSize, LPCWSTR fmt, ...)
+    {
+        WCHAR relatedPath[MAX_PATH + 1] = { 0 };
+        va_list args;
+        va_start(args, fmt);
+        _vsnwprintf(relatedPath, MAX_PATH, fmt, args);
+        va_end(args);
+
+        return GetProgramPath(buffer, bufferSize, relatedPath);
+    }
+
+    void CWebView::load(const wchar_t* str)
+    {
+        if (!str || str[0] == 0)
+        {
+            loadHTML(L"no url specificed");
+            return;
+        }
+
+        //有明确的 scheme，是合法的 url。
+        static const wchar_t* HTTP_SCHEME = L"http://";
+        static const wchar_t* HTTPS_SCHEME = L"https://";
+        static const wchar_t* FILE_SCHEME = L"file:///";
+        if (wcsnicmp(str, HTTP_SCHEME, wcslen(HTTP_SCHEME)) == 0 || 
+            wcsnicmp(str, HTTPS_SCHEME, wcslen(HTTPS_SCHEME)) == 0 ||
+            wcsnicmp(str, FILE_SCHEME, wcslen(FILE_SCHEME)) == 0)
+        {
+            loadURL(str);
+            return;
+        }
+
+        //包含 < 和 > 不可能是路径，很有可能是 HTML。
+        if (wcschr(str, L'<') && wcschr(str, L'>'))
+        {
+            loadHTML(str);
+            return;
+        }
+
+        bool pathValid = true;
+
+        //既不是明确的 url，也没有明确的非路径字符，当作本地路径处理。
+        wchar_t fullPath[MAX_PATH + 1] = { 0 };
+
+        //about:blank 特殊处理
+        if (0 == wcscmp(str, L"about:blank"))
+        {
+            pathValid = false;
+        }
+        //路径中包含 : 字符，说明是绝对路径
+        else if (wcschr(str, L':'))
+        {
+            int strLen = wcslen(str);
+            wcsncpy(fullPath, str, strLen < MAX_PATH ? strLen : MAX_PATH);
+        }
+        //相对路径，需要补全为绝对路径。
+        else
+        {
+            do
+            {
+                //从工作目录中找
+                GetWorkingPath(fullPath, MAX_PATH, str);
+                if (PathFileExistsW(fullPath))
+                    break;
+
+                //从EXE目录中找
+                GetProgramPath(fullPath, MAX_PATH, str);
+                if (PathFileExistsW(fullPath))
+                    break;
+
+                pathValid = false;
+            }
+            while (0);       
+        }
+
+        //确定是合法文件路径。
+        if (pathValid)
+        {
+            loadFile(fullPath);
+            return;
+        }
+
+        //不是合法文件路径，只能当作自定义 scheme 的 url 处理。
+        loadURL(str);
+    }
+
+    bool CWebView::isLoadingSucceeded() const
     {
         FrameLoaderClient* client = (FrameLoaderClient*)mainFrame()->loader()->client();
         return client->isLoaded();
     }
 
-    bool CWebView::isLoadFailed() const
+    bool CWebView::isLoadingFailed() const
     {
         FrameLoaderClient* client = (FrameLoaderClient*)mainFrame()->loader()->client();
         return client->isLoadFailed();
     }
 
-    bool CWebView::isLoadComplete() const
+    bool CWebView::isLoadingCompleted() const
     {
-        return isLoaded() || isLoadFailed();
+        return isLoadingSucceeded() || isLoadingFailed();
     }
 
     bool CWebView::isDocumentReady() const
     {
         FrameLoaderClient* client = (FrameLoaderClient*)mainFrame()->loader()->client();
         return client->isDocumentReady();
+    }
+
+    void CWebView::setUserAgent(const utf8 * useragent)
+    {
+        FrameLoaderClient* client = (FrameLoaderClient*)mainFrame()->loader()->client();
+        client->setUserAgent( WTF::String::fromUTF8(useragent));
+    }
+
+    void CWebView::setUserAgent(const wchar_t * useragent )
+    {
+        setUserAgent(String(useragent).utf8().data());
     }
 
     void CWebView::stopLoading()
@@ -246,137 +396,196 @@ namespace wke
 
     const utf8* CWebView::title()
     {
-        if (mainFrame()->loader()->documentLoader())
-        {
-            const String& str = mainFrame()->loader()->documentLoader()->title().string();
-            return StringTable::addString(str.characters(), str.length());
-        }
+        if (!mainFrame()->loader()->documentLoader())
+            return "notitle";
 
-        return StringTable::addString("notitle");
+        m_title = mainFrame()->loader()->documentLoader()->title().string();
+        return m_title.string();
     }
 
     const wchar_t* CWebView::titleW()
     {
-        if (mainFrame()->loader()->documentLoader())
-        {
-            const String& str = mainFrame()->loader()->documentLoader()->title().string();
-            return StringTableW::addString(str.characters(), str.length());
-        }
+        if (!mainFrame()->loader()->documentLoader())
+            return L"notitle";
 
-        return StringTableW::addString(L"notitle");
+        m_title = mainFrame()->loader()->documentLoader()->title().string();
+        return m_title.stringW();
     }
 
     void CWebView::resize(int w, int h)
     {
-        if (w != width_ || h != height_)
+        if (w != m_width || h != m_height)
         {
-            mainFrame_->view()->resize(w, h);
+            m_mainFrame->view()->resize(w, h);
 
-            width_ = w;
-            height_ = h;
+            m_width = w;
+            m_height = h;
 
-            dirtyArea_ = WebCore::IntRect(0, 0, w, h);
+            m_dirtyArea = WebCore::IntRect(0, 0, w, h);
             setDirty(true);
 
-            if (gfxContext_)
+            if (m_graphicsContext)
             {
-                delete gfxContext_;
-                gfxContext_ = NULL;
+                delete m_graphicsContext;
+                m_graphicsContext = NULL;
             }
         }
     }
 
     int CWebView::width() const 
     { 
-        return width_; 
+        return m_width; 
     }
 
     int CWebView::height() const 
     { 
-        return height_; 
+        return m_height; 
     }
 
-    int CWebView::contentsWidth() const
+    int CWebView::contentWidth() const
     {
         return mainFrame()->view()->contentsWidth();
     }
 
-    int CWebView::contentsHeight() const
+    int CWebView::contentHeight() const
     {
         return mainFrame()->view()->contentsHeight();
     }
 
     void CWebView::setDirty(bool dirty)
     {
-        dirty_ = dirty;
+        m_dirty = dirty;
     }
 
     bool CWebView::isDirty() const
     {
-        return dirty_;
+        return m_dirty;
     }
 
     void CWebView::addDirtyArea(int x, int y, int w, int h)
     {
         if (w > 0 && h > 0)
         {
-            dirtyArea_.unite(WebCore::IntRect(x, y, w, h));
-            dirty_ = true;
+            m_dirtyArea.unite(WebCore::IntRect(x, y, w, h));
+            m_dirty = true;
         }
     }
 
     void CWebView::layoutIfNeeded()
     {
-        mainFrame_->view()->updateLayoutAndStyleIfNeededRecursive();
+        m_mainFrame->view()->updateLayoutAndStyleIfNeededRecursive();
+    }
+
+    bool CWebView::repaintIfNeeded()
+    {
+        if(!m_dirty) 
+            return false;
+
+        layoutIfNeeded();
+
+        if (m_graphicsContext == NULL)
+        {
+            WebCore::BitmapInfo bmp = WebCore::BitmapInfo::createBottomUp(WebCore::IntSize(m_width, m_height));
+            HBITMAP hbmp = ::CreateDIBSection(0, &bmp, DIB_RGB_COLORS, &m_pixels, NULL, 0);
+            ::SelectObject(m_hdc.get(), hbmp);
+            m_hbitmap = adoptPtr(hbmp);
+
+            m_graphicsContext = new WebCore::GraphicsContext(m_hdc.get(), m_transparent);
+        }
+
+        m_graphicsContext->save();
+
+        if (m_transparent)
+            m_graphicsContext->clearRect(m_dirtyArea);
+
+        m_graphicsContext->clip(m_dirtyArea);
+
+        m_mainFrame->view()->paint(m_graphicsContext, m_dirtyArea);
+
+        m_graphicsContext->restore();
+        ChromeClient* client = (ChromeClient*)page()->chrome()->client();
+        client->paintPopupMenu(m_pixels,  m_width*4);
+
+        if(m_handler.paintUpdatedCallback)
+        {
+            WebCore::IntPoint pt = m_dirtyArea.location();
+            WebCore::IntSize sz = m_dirtyArea.size();
+            m_handler.paintUpdatedCallback(this, m_handler.paintUpdatedCallbackParam, m_hdc.get(),pt.x(),pt.y(),sz.width(),sz.height());	
+        }
+        m_dirtyArea = WebCore::IntRect();
+        m_dirty = false;
+
+        return true;
+    }
+
+    HDC CWebView::viewDC()
+    {
+        return m_hdc.get();
     }
 
     void CWebView::paint(void* bits, int pitch)
     {
-        layoutIfNeeded();
+        if(m_dirty) repaintIfNeeded();
 
-        if (gfxContext_ == NULL)
+        if (pitch == 0 || pitch == m_width*4)
         {
-            WebCore::BitmapInfo bmp = WebCore::BitmapInfo::createBottomUp(WebCore::IntSize(width_, height_));
-            HBITMAP hbmp = ::CreateDIBSection(0, &bmp, DIB_RGB_COLORS, &pixels_, NULL, 0);
-            ::SelectObject(hdc_.get(), hbmp);
-            hbmp_ = adoptPtr(hbmp);
-
-            gfxContext_ = new WebCore::GraphicsContext(hdc_.get(), transparent_);
-        }
-
-        gfxContext_->save();
-
-        if (transparent_)
-            gfxContext_->clearRect(dirtyArea_);
-
-        gfxContext_->clip(dirtyArea_);
-
-        mainFrame_->view()->paint(gfxContext_, dirtyArea_);
-
-        gfxContext_->restore();
-
-        dirty_ = false;
-        dirtyArea_ = WebCore::IntRect(0, 0, 0, 0);
-
-        if (pitch == 0 || pitch == width_*4)
-        {
-            memcpy(bits, pixels_, width_*height_*4);
+            memcpy(bits, m_pixels, m_width*m_height*4);
         }
         else
         {
-            unsigned char* src = (unsigned char*)pixels_; 
+            unsigned char* src = (unsigned char*)m_pixels; 
             unsigned char* dst = (unsigned char*)bits; 
-            for(int i = 0; i < height_; ++i) 
+            for(int i = 0; i < m_height; ++i) 
             {
-                memcpy(dst, src, width_*4);
-                src += width_*4;
+                memcpy(dst, src, m_width*4);
+                src += m_width*4;
                 dst += pitch;
             }
         }
 
-        ChromeClient* client = (ChromeClient*)page()->chrome()->client();
-        client->paintPopupMenu(bits, pitch);
-        client->paintToolTip(bits, pitch);
+    }
+
+    void CWebView::paint(void* bits, int bufWid, int bufHei, int xDst, int yDst, int w, int h, int xSrc, int ySrc, bool bCopyAlpha)
+    {
+        if(m_dirty) repaintIfNeeded();
+
+
+        if(xSrc + w > m_width) w = m_width - xSrc;
+        if(ySrc + h > m_height) h = m_height -ySrc;
+
+        if(xDst + w > bufWid) w =bufWid - xDst;
+        if(yDst + h > bufHei) h = bufHei - yDst;
+
+        int pitchDst = bufWid*4;
+        int pitchSrc = m_width*4;
+
+        unsigned char* src = (unsigned char*)m_pixels; 
+        unsigned char* dst = (unsigned char*)bits; 
+        src += pitchSrc*ySrc + xSrc*4;
+        dst += yDst*pitchDst + xDst*4;
+
+        if(bCopyAlpha)
+        {
+            for(int j = 0; j< h; j++)
+            {
+                memcpy(dst,src,w*4);
+                dst += pitchDst;
+                src += pitchSrc;
+            }
+        }else
+        {
+            for(int j = 0; j< h; j++)
+            {
+                for(int i=0;i<w;i++)
+                {
+                    memcpy(dst,src,3);
+                    dst += 4;
+                    src += 4;
+                }
+                dst += (bufWid - w)*4;
+                src += (m_width - w)*4;
+            }
+        }
     }
 
     bool CWebView::canGoBack() const
@@ -399,27 +608,27 @@ namespace wke
         return page()->goForward();
     }
 
-    void CWebView::selectAll()
+    void CWebView::editorSelectAll()
     {
         mainFrame()->editor()->command("SelectAll").execute();
     }
 
-    void CWebView::copy()
+    void CWebView::editorCopy()
     {
         page()->focusController()->focusedOrMainFrame()->editor()->command("Copy").execute();
     }
 
-    void CWebView::cut()
+    void CWebView::editorCut()
     {
         page()->focusController()->focusedOrMainFrame()->editor()->command("Cut").execute();
     }
 
-    void CWebView::paste()
+    void CWebView::editorPaste()
     {
         page()->focusController()->focusedOrMainFrame()->editor()->command("Paste").execute();
     }
 
-    void CWebView::delete_()
+    void CWebView::editorDelete()
     {
         page()->focusController()->focusedOrMainFrame()->editor()->command("Delete").execute();
     }
@@ -429,7 +638,39 @@ namespace wke
         page()->setCookieEnabled(enable);
     }
 
-    bool CWebView::cookieEnabled() const
+    //获取cookies
+    const wchar_t* CWebView::cookieW()
+    {
+        int e = 0;
+        m_cookie	= mainFrame()->document()->cookie(e);
+        return m_cookie.stringW();
+    }
+
+    const utf8* CWebView::cookie()
+    {
+        int e = 0;
+        m_cookie = mainFrame()->document()->cookie(e);
+        return m_cookie.string();
+    }
+
+    void CWebView::setCookieW(const wchar_t* val)
+    {
+        m_cookie = val;
+
+        int e = 0;
+        mainFrame()->document()->setCookie(val, e);
+    }
+
+    void CWebView::setCookie(const utf8* val)
+    {
+        m_cookie = val;
+
+        String string = String::fromUTF8(val);
+        int e = 0;
+        mainFrame()->document()->setCookie(val, e);
+    }
+
+    bool CWebView::isCookieEnabled() const
     {
         return page()->cookieEnabled();
     }
@@ -442,6 +683,16 @@ namespace wke
     float CWebView::mediaVolume() const
     {
         return page()->mediaVolume();
+    }
+
+    void CWebView::setHostWindow(HWND win)
+    {
+        m_hostWindow = win;
+    }
+
+    HWND CWebView::hostWindow() const
+    {
+        return m_hostWindow;
     }
 
     static WebCore::MouseEventType messageToEventType(unsigned int message)
@@ -511,7 +762,7 @@ namespace wke
         }
     }
 
-    #define SPI_GETWHEELSCROLLCHARS (0x006C)
+#define SPI_GETWHEELSCROLLCHARS (0x006C)
     static int horizontalScrollChars()
     {
         static ULONG scrollChars;
@@ -529,7 +780,7 @@ namespace wke
     }
 
 
-    bool CWebView::mouseEvent(unsigned int message, int x, int y, unsigned int flags)
+    bool CWebView::fireMouseEvent(unsigned int message, int x, int y, unsigned int flags)
     {
         if (!mainFrame()->view()->didFirstLayout())
             return true;
@@ -618,7 +869,7 @@ namespace wke
         return handled;
     }
 
-    bool CWebView::contextMenuEvent(int x, int y, unsigned int flags)
+    bool CWebView::fireContextMenuEvent(int x, int y, unsigned int flags)
     {
         page()->contextMenuController()->clearContextMenu();
 
@@ -651,7 +902,7 @@ namespace wke
         return targetFrame->eventHandler()->sendContextMenuEvent(mouseEvent);
     }
 
-    bool CWebView::mouseWheel(int x, int y, int wheelDelta, unsigned int flags)
+    bool CWebView::fireMouseWheelEvent(int x, int y, int wheelDelta, unsigned int flags)
     {
         if (!mainFrame()->view()->didFirstLayout())
             return true;
@@ -695,7 +946,7 @@ namespace wke
         return mainFrame()->eventHandler()->handleWheelEvent(wheelEvent);
     }
 
-    bool CWebView::keyUp(unsigned int virtualKeyCode, unsigned int flags, bool systemKey)
+    bool CWebView::fireKeyUpEvent(unsigned int virtualKeyCode, unsigned int flags, bool systemKey)
     {
         LPARAM keyData = MAKELPARAM(0, (WORD)flags);
         WebCore::PlatformKeyboardEvent keyEvent(0, virtualKeyCode, keyData, WebCore::PlatformKeyboardEvent::KeyUp, systemKey);
@@ -704,7 +955,7 @@ namespace wke
         return frame->eventHandler()->keyEvent(keyEvent);
     }
 
-    bool CWebView::keyDown(unsigned int virtualKeyCode, unsigned int flags, bool systemKey)
+    bool CWebView::fireKeyDownEvent(unsigned int virtualKeyCode, unsigned int flags, bool systemKey)
     {
         LPARAM keyData = MAKELPARAM(0, (WORD)flags);
         WebCore::PlatformKeyboardEvent keyEvent(0, virtualKeyCode, keyData, WebCore::PlatformKeyboardEvent::RawKeyDown, systemKey);
@@ -739,48 +990,48 @@ namespace wke
         WebCore::ScrollDirection direction;
         WebCore::ScrollGranularity granularity;
         switch (virtualKeyCode) {
-        case VK_LEFT:
-            granularity = WebCore::ScrollByLine;
-            direction = WebCore::ScrollLeft;
-            break;
+    case VK_LEFT:
+        granularity = WebCore::ScrollByLine;
+        direction = WebCore::ScrollLeft;
+        break;
 
-        case VK_RIGHT:
-            granularity = WebCore::ScrollByLine;
-            direction = WebCore::ScrollRight;
-            break;
+    case VK_RIGHT:
+        granularity = WebCore::ScrollByLine;
+        direction = WebCore::ScrollRight;
+        break;
 
-        case VK_UP:
-            granularity = WebCore::ScrollByLine;
-            direction = WebCore::ScrollUp;
-            break;
+    case VK_UP:
+        granularity = WebCore::ScrollByLine;
+        direction = WebCore::ScrollUp;
+        break;
 
-        case VK_DOWN:
-            granularity = WebCore::ScrollByLine;
-            direction = WebCore::ScrollDown;
-            break;
+    case VK_DOWN:
+        granularity = WebCore::ScrollByLine;
+        direction = WebCore::ScrollDown;
+        break;
 
-        case VK_HOME:
-            granularity = WebCore::ScrollByDocument;
-            direction = WebCore::ScrollUp;
-            break;
+    case VK_HOME:
+        granularity = WebCore::ScrollByDocument;
+        direction = WebCore::ScrollUp;
+        break;
 
-        case VK_END:
-            granularity = WebCore::ScrollByDocument;
-            direction = WebCore::ScrollDown;
-            break;
+    case VK_END:
+        granularity = WebCore::ScrollByDocument;
+        direction = WebCore::ScrollDown;
+        break;
 
-        case VK_PRIOR:
-            granularity = WebCore::ScrollByPage;
-            direction = WebCore::ScrollUp;
-            break;
+    case VK_PRIOR:
+        granularity = WebCore::ScrollByPage;
+        direction = WebCore::ScrollUp;
+        break;
 
-        case VK_NEXT:
-            granularity = WebCore::ScrollByPage;
-            direction = WebCore::ScrollDown;
-            break;
-        
-        default:
-            return false;
+    case VK_NEXT:
+        granularity = WebCore::ScrollByPage;
+        direction = WebCore::ScrollDown;
+        break;
+
+    default:
+        return false;
         }
 
         if (frame->eventHandler()->scrollRecursively(direction, granularity))
@@ -793,7 +1044,7 @@ namespace wke
         return false;
     }
 
-    bool CWebView::keyPress(unsigned int charCode, unsigned int flags, bool systemKey)
+    bool CWebView::fireKeyPressEvent(unsigned int charCode, unsigned int flags, bool systemKey)
     {
         LPARAM keyData = MAKELPARAM(0, (WORD)flags);
         WebCore::PlatformKeyboardEvent keyEvent(0, charCode, keyData, WebCore::PlatformKeyboardEvent::Char, systemKey);
@@ -809,19 +1060,19 @@ namespace wke
         return frame->eventHandler()->keyEvent(keyEvent);
     }
 
-    void CWebView::focus()
+    void CWebView::setFocus()
     {
         WebCore::FocusController* focusController = page()->focusController();
         focusController->setFocused(true);
     }
 
-    void CWebView::unfocus()
+    void CWebView::killFocus()
     {
         WebCore::FocusController* focusController = page()->focusController();
         focusController->setFocused(false);
     }
 
-    wkeRect CWebView::getCaret()
+    wkeRect CWebView::caretRect()
     {
         wkeRect rect;
         rect.x = rect.y = 0;
@@ -846,58 +1097,58 @@ namespace wke
         return rect;
     }
 
-    jsValue CWebView::runJS(const wchar_t* script)
+    wkeJSValue CWebView::runJS(const wchar_t* script)
     {
         String string(script);
-        WebCore::ScriptValue value = mainFrame_->script()->executeScript(string, true);
+        WebCore::ScriptValue value = m_mainFrame->script()->executeScript(string, true);
         if (value.hasNoValue())
-            return jsUndefined();
+            return wkeJSUndefined(globalExec());
 
-        return JSC::JSValue::encode(value.jsValue());
+        return (wkeJSValue)JSC::JSValue::encode(value.jsValue());
     }
 
-    jsValue CWebView::runJS(const utf8* script)
+    wkeJSValue CWebView::runJS(const utf8* script)
     {
         String string = String::fromUTF8(script);
-        WebCore::ScriptValue value = mainFrame_->script()->executeScript(string, true);
+        WebCore::ScriptValue value = m_mainFrame->script()->executeScript(string, true);
         if (value.hasNoValue())
-            return jsUndefined();
+            return wkeJSUndefined(globalExec());
 
-        return JSC::JSValue::encode(value.jsValue());
+        return (wkeJSValue)JSC::JSValue::encode(value.jsValue());
     }
 
-    jsExecState CWebView::globalExec()
+    wkeJSState* CWebView::globalExec()
     {
-        return mainFrame_->script()->globalObject(WebCore::mainThreadNormalWorld())->globalExec();
+        return (wkeJSState*)m_mainFrame->script()->globalObject(WebCore::mainThreadNormalWorld())->globalExec();
     }
 
     void CWebView::sleep()
     {
-        awake_ = false;
+        m_awake = false;
         page()->setCanStartMedia(false);
         page()->willMoveOffscreen();
     }
 
-    void CWebView::awaken()
+    void CWebView::wake()
     {
-        awake_ = true;
+        m_awake = true;
         page()->didMoveOnscreen();
         page()->setCanStartMedia(true);
     }
 
     bool CWebView::isAwake() const
     {
-        return awake_;
+        return m_awake;
     }
 
     void CWebView::setZoomFactor(float factor)
     {
-        mainFrame_->setPageZoomFactor(factor);
+        m_mainFrame->setPageZoomFactor(factor);
     }
 
     float CWebView::zoomFactor() const
     {
-        return mainFrame_->pageZoomFactor();
+        return m_mainFrame->pageZoomFactor();
     }
 
     void CWebView::setEditable(bool editable)
@@ -907,49 +1158,353 @@ namespace wke
             page()->setEditable(editable);
             page()->setTabKeyCyclesThroughElements(!editable);
             if (editable)
-                mainFrame_->editor()->applyEditingStyleToBodyElement();
+                m_mainFrame->editor()->applyEditingStyleToBodyElement();
         }
     }
 
-    void CWebView::setClientHandler(const wkeClientHandler* handler)
+    void CWebView::onTitleChanged(wkeTitleChangedCallback callback, void* callbackParam)
     {
-        clientHandler_ = handler;
+        m_handler.titleChangedCallback = callback;
+        m_handler.titleChangedCallbackParam = callbackParam;
     }
 
-    const wkeClientHandler* CWebView::getClientHandler() const
+    void CWebView::onURLChanged(wkeURLChangedCallback callback, void* callbackParam)
     {
-        return clientHandler_;
-    }
-}
-
-static Vector<wke::IWebView*> s_webViews;
-
-wkeWebView wkeCreateWebView()
-{
-    wke::CWebView* webView = new wke::CWebView;
-    s_webViews.append(webView);
-    return webView;
-}
-
-wkeWebView wkeGetWebView(const char* name)
-{
-    for (size_t i = 0; i < s_webViews.size(); ++i)
-    {
-        if (strcmp(s_webViews[i]->name(), name) == 0)
-            return s_webViews[i];
+        m_handler.urlChangedCallback = callback;
+        m_handler.urlChangedCallbackParam = callbackParam;
     }
 
-    return 0;
-}
-
-void wkeDestroyWebView(wkeWebView webView)
-{
-    size_t pos = s_webViews.find(webView);
-
-    ASSERT(pos != notFound);
-    if (pos != notFound)
+    void CWebView::onPaintUpdated(wkePaintUpdatedCallback callback, void* callbackParam)
     {
-        s_webViews.remove(pos);
-        delete (wke::CWebView*)webView;
+        m_handler.paintUpdatedCallback = callback;
+        m_handler.paintUpdatedCallbackParam = callbackParam;
     }
-}
+
+    void CWebView::onAlertBox(wkeAlertBoxCallback callback, void* callbackParam)
+    {
+        m_handler.alertBoxCallback = callback;
+        m_handler.alertBoxCallbackParam = callbackParam;
+    }
+
+    void CWebView::onConfirmBox(wkeConfirmBoxCallback callback, void* callbackParam)
+    {
+        m_handler.confirmBoxCallback = callback;
+        m_handler.confirmBoxCallbackParam = callbackParam;
+    }
+
+    void CWebView::onPromptBox(wkePromptBoxCallback callback, void* callbackParam)
+    {
+        m_handler.promptBoxCallback = callback;
+        m_handler.promptBoxCallbackParam = callbackParam;
+    }
+
+    void defaultRunAlertBox(wkeWebView* webView, void* param, const wkeString* msg)
+    {
+        MessageBoxW(NULL, wkeGetStringW(msg), L"wke", MB_OK);
+    }
+
+    bool defaultRunConfirmBox(wkeWebView* webView, void* param, const wkeString* msg)
+    {
+        int result = MessageBoxW(NULL, wkeGetStringW(msg), L"wke", MB_OKCANCEL);
+        return result == IDOK;
+    }
+
+    static unsigned char definputbox_dlg[] = 
+    {
+        0x01,0x00,0xff,0xff,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xc8,0x00,0xc8,0x00,0x06,
+        0x00,0x16,0x00,0x11,0x00,0x41,0x01,0x6f,0x00,0x00,0x00,0x00,0x00,0x57,0x00,0x69,
+        0x00,0x6e,0x00,0x33,0x00,0x32,0x00,0x49,0x00,0x6e,0x00,0x70,0x00,0x75,0x00,0x74,
+        0x00,0x42,0x00,0x6f,0x00,0x78,0x00,0x00,0x00,0x08,0x00,0xbc,0x02,0x00,0x00,0x4d,
+        0x00,0x53,0x00,0x20,0x00,0x53,0x00,0x68,0x00,0x65,0x00,0x6c,0x00,0x6c,0x00,0x20,
+        0x00,0x44,0x00,0x6c,0x00,0x67,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+        0x00,0x00,0x00,0x80,0x00,0x81,0x50,0x04,0x00,0x27,0x00,0x38,0x01,0x0e,0x00,0xe9,
+        0x03,0x00,0x00,0xff,0xff,0x81,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+        0x00,0x00,0x00,0x01,0x00,0x03,0x50,0x0e,0x01,0x04,0x00,0x2e,0x00,0x0e,0x00,0x01,
+        0x00,0x00,0x00,0xff,0xff,0x80,0x00,0x4f,0x00,0x4b,0x00,0x73,0x00,0x00,0x00,0x00,
+        0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x03,0x50,0x0e,
+        0x01,0x15,0x00,0x2e,0x00,0x0e,0x00,0x02,0x00,0x00,0x00,0xff,0xff,0x80,0x00,0x43,
+        0x00,0x41,0x00,0x4e,0x00,0x43,0x00,0x45,0x00,0x4c,0x00,0x00,0x00,0x00,0x00,0x00,
+        0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x02,0x40,0x21,0x00,0x16,0x00,0x08,
+        0x00,0x08,0x00,0xff,0xff,0xff,0xff,0xff,0xff,0x82,0x00,0x00,0x00,0x00,0x00,0x00,
+        0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x80,0x00,0x02,0x50,0x06,0x00,0x04,0x00,0x00,
+        0x01,0x1d,0x00,0xe8,0x03,0x00,0x00,0xff,0xff,0x82,0x00,0x50,0x00,0x72,0x00,0x6f,
+        0x00,0x6d,0x00,0x70,0x00,0x74,0x00,0x3a,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+        0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x84,0x10,0xa1,0x50,0x04,0x00,0x39,0x00,0x38,
+        0x01,0x31,0x00,0xea,0x03,0x00,0x00,0xff,0xff,0x81,0x00,0x00,0x00,0x00,0x00
+    };
+
+    static const INT_PTR definputbox_buttonids[] = { IDOK, IDCANCEL };
+    static LPCWSTR definputbox_buttonnames[] = { L"确定", L"取消" };
+    static const INT definputbox_id_prompt = 1000;
+    static const INT definputbox_id_edit1 = 1001;
+    static const INT definputbox_id_edit2 = 1002;
+
+    class CWin32InputBox
+    {
+    public:
+        CWin32InputBox()
+            : m_hdlg(NULL)
+            , m_edit(NULL)
+            , m_pwszResult(NULL)
+            , m_pwszMessage(NULL)
+            , m_hParent(NULL)
+        {}
+
+        ~CWin32InputBox()
+        {
+            delete [] m_pwszResult;
+            m_pwszResult = NULL;
+        }
+
+        int prompt(HWND hParent, LPCWSTR pwszMsg, LPCWSTR pwszDefaultResult, LPCWSTR* ppwszResult)
+        {
+            m_pwszMessage = pwszMsg;
+            m_pwszDefaultResult = pwszDefaultResult;
+            m_hParent = hParent;
+            int ret = DialogBoxIndirectParamW(NULL, (LPDLGTEMPLATEW)definputbox_dlg, hParent, (DLGPROC)&CWin32InputBox::DlgProc, (LPARAM)this);
+            *ppwszResult = m_pwszResult;
+            return ret;
+        }
+
+    protected:
+        HWND m_hParent;
+        HWND m_hdlg;
+        HWND m_edit;
+        LPCWSTR m_pwszDefaultResult;
+        LPWSTR m_pwszResult;
+        LPCWSTR m_pwszMessage;
+
+        void onInitDialog(HWND hDlg)
+        {
+            m_hdlg = hDlg;
+            SetWindowLongPtr(hDlg, GWLP_USERDATA, (LONG_PTR)this);
+
+            // Set the button captions
+            SetDlgItemTextW(m_hdlg, (int) definputbox_buttonids[0], definputbox_buttonnames[0]);
+            SetDlgItemTextW(m_hdlg, (int) definputbox_buttonids[1], definputbox_buttonnames[1]);
+            SetWindowTextW(m_hdlg, L"wke");
+            SetDlgItemTextW(m_hdlg, definputbox_id_prompt, m_pwszMessage);
+
+            m_edit = GetDlgItem(m_hdlg, definputbox_id_edit1);
+            SetWindowText(m_edit, m_pwszDefaultResult);
+
+            RECT rectDlg = { 0 };
+            RECT rectEdit = { 0 };
+            GetWindowRect(m_hdlg, &rectDlg);
+            GetWindowRect(m_edit, &rectEdit);
+            SetWindowPos(m_hdlg, HWND_NOTOPMOST, 0, 0, rectDlg.right - rectDlg.left, rectEdit.bottom - rectDlg.top + 5, SWP_NOMOVE);
+            ShowWindow(GetDlgItem(m_hdlg, definputbox_id_edit2), SW_HIDE);
+
+            int width = 0;
+            int height = 0;
+            {
+                RECT rect = { 0 };
+                GetWindowRect(m_hdlg, &rect);
+                width = rect.right - rect.left;
+                height = rect.bottom - rect.top;
+            }
+
+            int parentWidth = 0;
+            int parentHeight = 0;
+            if (HWND parent = GetParent(m_hdlg))
+            {
+                RECT rect = { 0 };
+                GetClientRect(parent, &rect);
+                parentWidth = rect.right - rect.left;
+                parentHeight = rect.bottom - rect.top;
+            }
+            else
+            {
+                parentWidth = GetSystemMetrics(SM_CXSCREEN);
+                parentHeight = GetSystemMetrics(SM_CYSCREEN);
+            }
+
+            int x = (parentWidth - width) / 2;
+            int y = (parentHeight - height) / 2;
+
+            MoveWindow(m_hdlg, x, y, width, height, FALSE);
+        }
+
+        void onOK()
+        {
+            int len = GetWindowTextLengthW(m_edit);
+            m_pwszResult = new WCHAR[len + 1];
+            memset(m_pwszResult, 0, (len + 1) * sizeof(WCHAR));
+            GetWindowTextW(m_edit, m_pwszResult, len + 1);
+            EndDialog(m_hdlg, IDOK);
+        }
+
+        void onCancel()
+        {
+            m_pwszResult = new WCHAR[1];
+            *m_pwszResult = 0;
+            EndDialog(m_hdlg, IDCANCEL);
+        }
+
+        static LRESULT CALLBACK DlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+        {
+            CWin32InputBox* pthis = (CWin32InputBox*)GetWindowLongPtr(hDlg, GWLP_USERDATA);
+            switch (message)
+            {
+            case WM_INITDIALOG:
+                {
+                    pthis = (CWin32InputBox*)lParam;
+                    pthis->onInitDialog(hDlg);    
+                }
+                return TRUE;
+
+            case WM_COMMAND:
+                {
+                    INT_PTR id = LOWORD(wParam);
+                    switch (id)
+                    {
+                    case IDOK:
+                        pthis->onOK();
+                        break;
+
+                    case IDCANCEL:
+                        pthis->onCancel();
+                        break;
+                    }
+                }
+                break;
+            }
+            return FALSE;
+        }
+    };
+
+    bool defaultRunPromptBox(wkeWebView* webView, void* param, const wkeString* msg, const wkeString* defaultResult, wkeString* result)
+    {
+        LPCWSTR pwszResult = NULL;
+
+        CWin32InputBox inputBox;        
+        if (IDCANCEL == inputBox.prompt(webView->hostWindow(), wkeGetStringW(msg), wkeGetStringW(defaultResult), &pwszResult))
+            return false;
+
+        wkeSetStringW(result, pwszResult, wcslen(pwszResult));
+        return true;
+    }
+
+    void CWebView::_initHandler()
+    {
+        memset(&m_handler, 0, sizeof(m_handler));
+        m_handler.alertBoxCallback = defaultRunAlertBox;
+        m_handler.confirmBoxCallback = defaultRunConfirmBox;
+        m_handler.promptBoxCallback = defaultRunPromptBox;
+        m_handler.promptBoxCallbackParam = this;
+    }
+    
+    extern "C" IMAGE_DOS_HEADER __ImageBase;
+
+    void CWebView::_initPage()
+    {
+        WebCore::Page::PageClients pageClients;
+        pageClients.chromeClient = new ChromeClient(this);
+        pageClients.contextMenuClient = new ContextMenuClient;
+        pageClients.inspectorClient = new InspectorClient;
+        pageClients.editorClient = new EditorClient;
+        pageClients.dragClient = new DragClient;
+
+        m_page = adoptPtr(new WebCore::Page(pageClients));
+        WebCore::Settings* settings = m_page->settings();
+        settings->setMinimumFontSize(0);
+        settings->setMinimumLogicalFontSize(9);
+        settings->setDefaultFontSize(16);
+        settings->setDefaultFixedFontSize(13);
+        settings->setJavaScriptEnabled(true);
+        settings->setPluginsEnabled(true);
+        settings->setLoadsImagesAutomatically(true);
+        settings->setDefaultTextEncodingName(icuwin_getDefaultEncoding());
+
+        settings->setStandardFontFamily("Times New Roman");
+        settings->setFixedFontFamily("Courier New");
+        settings->setSerifFontFamily("Times New Roman");
+        settings->setSansSerifFontFamily("Arial");
+        settings->setCursiveFontFamily("Comic Sans MS");
+        settings->setFantasyFontFamily("Times New Roman");
+        settings->setPictographFontFamily("Times New Roman");
+
+        settings->setAllowUniversalAccessFromFileURLs(true);
+        settings->setAllowFileAccessFromFileURLs(true);
+        settings->setJavaScriptCanAccessClipboard(true);
+        settings->setShouldPrintBackgrounds(true);
+        settings->setTextAreasAreResizable(true);
+        settings->setLocalStorageEnabled(true);
+        settings->setUseHixie76WebSocketProtocol( false );
+
+        WCHAR storageDir[MAX_PATH + 1] = { 0 };
+        GetModuleFileNameW((HMODULE)&__ImageBase, storageDir, MAX_PATH);
+        PathRemoveFileSpecW(storageDir);
+        wcscat(storageDir, L"\\wkeStorage");
+        settings->setLocalStorageDatabasePath(storageDir);
+
+        FrameLoaderClient* loader = new FrameLoaderClient(this, m_page.get());
+        m_mainFrame = WebCore::Frame::create(m_page.get(), NULL, loader).get();
+        loader->setFrame(m_mainFrame);
+        m_mainFrame->init();
+
+        page()->focusController()->setActive(true);
+    }
+
+    void CWebView::_initMemoryDC()
+    {
+        m_hdc = adoptPtr(::CreateCompatibleDC(0));
+    }
+
+    void CWebView::onNavigation(wkeNavigationCallback callback, void* callbackParam)
+    {
+        m_handler.navigationCallback = callback;
+        m_handler.navigationCallbackParam = callbackParam;
+    }
+
+    void CWebView::onCreateView(wkeCreateViewCallback callback, void* callbackParam)
+    {
+        m_handler.createViewCallback = callback;
+        m_handler.createViewCallbackParam = callbackParam;
+    }
+
+    void CWebView::onConsoleMessage(wkeConsoleMessageCallback callback, void* callbackParam)
+    {
+        m_handler.consoleMessageCallback = callback;
+        m_handler.consoleMessageCallbackParam = callbackParam;
+    }
+
+    void CWebView::onLoadingFinish(wkeLoadingFinishCallback callback, void* callbackParam)
+    {
+        m_handler.loadingFinishCallback = callback;
+        m_handler.loadingFinishCallbackParam = callbackParam;
+    }
+
+    void CWebView::onDocumentReady(wkeDocumentReadyCallback callback, void* callbackParam)
+    {
+        m_handler.documentReadyCallback = callback;
+        m_handler.documentReadyCallbackParam = callbackParam;
+    }
+
+    void CWebView::setRepaintInterval(int ms)
+    {
+        m_paintInterval = ms > 0 ? ms : 15;
+    }
+
+    int CWebView::repaintInterval() const
+    {
+        return m_paintInterval;
+    }
+
+
+    bool CWebView::repaintIfNeededAfterInterval()
+    {
+        DWORD nowTick = timeGetTime();
+        if (nowTick - m_lastPaintTimeTick < m_paintInterval)
+            return false;
+
+        bool repainted = repaintIfNeeded();
+        if (!repainted)
+            return false;
+
+        m_lastPaintTimeTick = timeGetTime();
+        return true;
+    }
+
+};//namespace wke
+

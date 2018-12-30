@@ -1,0 +1,313 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="win">
+      <UniqueIdentifier>{df08bdf0-be78-4ece-b469-ddcedcac8b77}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="unicode">
+      <UniqueIdentifier>{35de3352-f067-4799-b019-bf85ee3fb06f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="unicode\icu">
+      <UniqueIdentifier>{ce9a1906-5528-4130-b881-1fab8d5d6cf0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="text">
+      <UniqueIdentifier>{3ba56a39-9ca9-4a45-b084-bfef8b5954a4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="dtoa">
+      <UniqueIdentifier>{045d38bf-85fa-442f-b8c7-f0366f22e952}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="threads">
+      <UniqueIdentifier>{f42b70c7-8461-4e56-bbf2-efc5703ee91d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="threads\win">
+      <UniqueIdentifier>{9fdeeb36-9fa5-4a2e-b69f-580c91b18615}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\Source\JavaScriptCore\wtf\win\MainThreadWin.cpp">
+      <Filter>win</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\JavaScriptCore\wtf\win\OwnPtrWin.cpp">
+      <Filter>win</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\JavaScriptCore\wtf\unicode\UTF8.cpp">
+      <Filter>unicode</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\JavaScriptCore\wtf\unicode\icu\CollatorICU.cpp">
+      <Filter>unicode\icu</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\JavaScriptCore\wtf\text\AtomicString.cpp">
+      <Filter>text</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\JavaScriptCore\wtf\text\CString.cpp">
+      <Filter>text</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\JavaScriptCore\wtf\text\StringBuilder.cpp">
+      <Filter>text</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\JavaScriptCore\wtf\text\StringImpl.cpp">
+      <Filter>text</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\JavaScriptCore\wtf\text\StringStatics.cpp">
+      <Filter>text</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\JavaScriptCore\wtf\text\WTFString.cpp">
+      <Filter>text</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\JavaScriptCore\wtf\dtoa\bignum-dtoa.cc">
+      <Filter>dtoa</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\JavaScriptCore\wtf\dtoa\bignum.cc">
+      <Filter>dtoa</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\JavaScriptCore\wtf\dtoa\cached-powers.cc">
+      <Filter>dtoa</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\JavaScriptCore\wtf\dtoa\diy-fp.cc">
+      <Filter>dtoa</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\JavaScriptCore\wtf\dtoa\double-conversion.cc">
+      <Filter>dtoa</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\JavaScriptCore\wtf\dtoa\fast-dtoa.cc">
+      <Filter>dtoa</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\JavaScriptCore\wtf\dtoa\fixed-dtoa.cc">
+      <Filter>dtoa</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\JavaScriptCore\wtf\dtoa\strtod.cc">
+      <Filter>dtoa</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\JavaScriptCore\wtf\threads\win\BinarySemaphoreWin.cpp">
+      <Filter>threads\win</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\JavaScriptCore\wtf\threads\BinarySemaphore.cpp">
+      <Filter>threads</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\JavaScriptCore\wtf\Assertions.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\wtf\BitVector.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\wtf\ByteArray.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\wtf\CryptographicallyRandomNumber.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\wtf\CurrentTime.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\wtf\DecimalNumber.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\wtf\DynamicAnnotations.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\wtf\dtoa.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\wtf\FastMalloc.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\wtf\HashTable.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\wtf\MainThread.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\wtf\MetaAllocator.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\wtf\MD5.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\wtf\NullPtr.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\wtf\OSAllocatorWin.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\wtf\OSRandomSource.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\wtf\PageAllocationAligned.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\wtf\PageBlock.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\wtf\ParallelJobsGeneric.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\wtf\RandomNumber.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\wtf\RefCountedLeakCounter.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\wtf\SHA1.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\wtf\SizeLimits.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\wtf\StackBounds.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\wtf\StringExtras.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\wtf\TCSystemAlloc.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\wtf\Threading.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\wtf\ThreadingWin.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\wtf\ThreadSpecificWin.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\wtf\TypeTraits.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\wtf\WTFThreadData.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\unicode\CharacterNames.h">
+      <Filter>unicode</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\unicode\Collator.h">
+      <Filter>unicode</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\unicode\Unicode.h">
+      <Filter>unicode</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\unicode\UnicodeMacrosFromICU.h">
+      <Filter>unicode</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\unicode\UTF8.h">
+      <Filter>unicode</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\unicode\icu\UnicodeIcu.h">
+      <Filter>unicode\icu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\text\AtomicString.h">
+      <Filter>text</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\text\AtomicStringHash.h">
+      <Filter>text</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\text\AtomicStringImpl.h">
+      <Filter>text</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\text\CString.h">
+      <Filter>text</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\text\StringBuffer.h">
+      <Filter>text</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\text\StringBuilder.h">
+      <Filter>text</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\text\StringConcatenate.h">
+      <Filter>text</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\text\StringHash.h">
+      <Filter>text</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\text\StringImpl.h">
+      <Filter>text</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\text\StringOperators.h">
+      <Filter>text</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\text\WTFString.h">
+      <Filter>text</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\dtoa\bignum-dtoa.h">
+      <Filter>dtoa</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\dtoa\bignum.h">
+      <Filter>dtoa</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\dtoa\cached-powers.h">
+      <Filter>dtoa</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\dtoa\diy-fp.h">
+      <Filter>dtoa</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\dtoa\double-conversion.h">
+      <Filter>dtoa</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\dtoa\double.h">
+      <Filter>dtoa</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\dtoa\fast-dtoa.h">
+      <Filter>dtoa</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\dtoa\fixed-dtoa.h">
+      <Filter>dtoa</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\dtoa\strtod.h">
+      <Filter>dtoa</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\dtoa\utils.h">
+      <Filter>dtoa</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\threads\BinarySemaphore.h">
+      <Filter>threads</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\Alignment.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\AlwaysInline.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\ASCIICType.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\Assertions.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\Atomics.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\AVLTree.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\BitVector.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\Bitmap.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\BlockStack.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\BloomFilter.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\BoundsCheckedPointer.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\BumpPointerAllocator.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\ByteArray.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\CheckedArithmetic.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\Compiler.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\Complex.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\CrossThreadRefCounted.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\CryptographicallyRandomNumber.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\CurrentTime.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\DecimalNumber.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\Decoder.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\Deque.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\DisallowCType.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\DoublyLinkedList.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\DynamicAnnotations.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\dtoa.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\Encoder.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\FastAllocBase.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\FastMalloc.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\FixedArray.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\Forward.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\GetPtr.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\HashCountedSet.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\HashFunctions.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\HashIterators.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\HashMap.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\HashSet.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\HashTable.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\HashTraits.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\HexNumber.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\ListHashSet.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\ListRefPtr.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\Locker.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\MainThread.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\MallocZoneSupport.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\MathExtras.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\MetaAllocator.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\MetaAllocatorHandle.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\MD5.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\MessageQueue.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\Noncopyable.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\NonCopyingSort.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\NotFound.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\NullPtr.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\OSRandomSource.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\OwnArrayPtr.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\OwnFastMallocPtr.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\OwnPtr.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\OwnPtrCommon.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\PackedIntVector.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\PageAllocation.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\PageAllocationAligned.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\PageBlock.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\PageReservation.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\PassOwnArrayPtr.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\PassOwnPtr.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\PassRefPtr.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\PassTraits.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\ParallelJobs.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\ParallelJobsGeneric.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\ParallelJobsLibdispatch.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\ParallelJobsOpenMP.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\Platform.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\PossiblyNull.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\RandomNumber.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\RandomNumberSeed.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\RedBlackTree.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\RefCounted.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\RefCountedLeakCounter.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\RefPtr.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\RefPtrHashMap.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\RetainPtr.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\SegmentedVector.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\SentinelLinkedList.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\SHA1.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\SinglyLinkedList.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\StackBounds.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\StaticConstructors.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\StdLibExtras.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\StringExtras.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\StringHasher.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\TCPackedCache.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\TCPageMap.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\TCSpinLock.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\TCSystemAlloc.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\Threading.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\ThreadingPrimitives.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\ThreadRestrictionVerifier.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\ThreadSafeRefCounted.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\ThreadSpecific.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\TypeTraits.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\UnusedParam.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\ValueCheck.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\Vector.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\Vector3.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\VectorTraits.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\VMTags.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\WTFThreadData.h" />
+  </ItemGroup>
+</Project>

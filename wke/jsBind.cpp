@@ -1,8 +1,14 @@
+//////////////////////////////////////////////////////////////////////////
+
+
 #include <WebCore/config.h>
 #include <JavaScriptCore/JSGlobalObject.h>
 #include <JavaScriptCore/JSFunction.h>
 #include <JavaScriptCore/SourceCode.h>
+#include <JavaScriptCore/JavaScript.h>
+#include <JavaScriptCore/APICast.h>
 #include <JavaScriptCore/Completion.h>
+#include <JavaScriptCore/OpaqueJSString.h>
 #include <WebCore/GCController.h>
 #include <WebCore/JSDOMWindowCustom.h>
 #include <WebCore/Page.h>
@@ -10,31 +16,38 @@
 #include <WebCore/Chrome.h>
 #include <WebCore/ChromeClient.h>
 
-#include "wke.h"
 #include "wkeDebug.h"
-#include "stringTable.h"
 
-int jsArgCount(jsExecState es)
+//cexer: 必须包含在后面，因为其中的 wke.h -> windows.h 会定义 max、min，导致 WebCore 内部的 max、min 出现错乱。
+#include "wkeWebView.h"
+
+
+//////////////////////////////////////////////////////////////////////////
+
+
+
+
+int wkeJSParamCount(wkeJSState* es)
 {
     JSC::ExecState* exec = (JSC::ExecState*)es;
     return (int)exec->argumentCount();
 }
 
-jsType jsArgType(jsExecState es, int argIdx)
+wkeJSType wkeJSParamType(wkeJSState* es, int argIdx)
 {
-    return jsTypeOf(jsArg(es, argIdx));
+    return wkeJSTypeOf(es, wkeJSParam(es, argIdx));
 }
 
-jsValue jsArg(jsExecState es, int argIdx)
+wkeJSValue wkeJSParam(wkeJSState* es, int argIdx)
 {
     JSC::ExecState* exec = (JSC::ExecState*)es;
     JSC::JSValue value = exec->argument(argIdx);
-    return JSC::JSValue::encode(value);
+    return (wkeJSValue)JSC::JSValue::encode(value);
 }
 
-jsType jsTypeOf(jsValue v)
+wkeJSType wkeJSTypeOf(wkeJSState* es, wkeJSValue v)
 {
-    JSC::JSValue value = JSC::JSValue::decode(v);
+    JSC::JSValue value = JSC::JSValue::decode((JSC::EncodedJSValue)v);
 
     if (value.isUndefined())
         return JSTYPE_UNDEFINED;
@@ -63,194 +76,233 @@ jsType jsTypeOf(jsValue v)
     return JSTYPE_OBJECT;
 }
 
-bool jsIsNumber(jsValue v)
+bool wkeJSIsNumber(wkeJSState* es, wkeJSValue v)
 {
-    return jsTypeOf(v) == JSTYPE_NUMBER ? true : false;
+    return wkeJSTypeOf(es, v) == JSTYPE_NUMBER ? true : false;
 }
 
-bool jsIsString(jsValue v)
+bool wkeJSIsString(wkeJSState* es, wkeJSValue v)
 {
-    return jsTypeOf(v) == JSTYPE_STRING ? true : false;
+    return wkeJSTypeOf(es, v) == JSTYPE_STRING ? true : false;
 }
 
-bool jsIsBoolean(jsValue v)
+bool wkeJSIsBool(wkeJSState* es, wkeJSValue v)
 {
-    return jsTypeOf(v) == JSTYPE_BOOLEAN ? true : false;
+    return wkeJSTypeOf(es, v) == JSTYPE_BOOLEAN ? true : false;
 }
 
-bool jsIsObject(jsValue v)
+bool wkeJSIsObject(wkeJSState* es, wkeJSValue v)
 {
-    return jsTypeOf(v) == JSTYPE_OBJECT ? true : false;
+    return wkeJSTypeOf(es, v) == JSTYPE_OBJECT ? true : false;
 }
 
-bool jsIsFunction(jsValue v)
+bool wkeJSIsFunction(wkeJSState* es, wkeJSValue v)
 {
-    return jsTypeOf(v) == JSTYPE_FUNCTION ? true : false;
+    return wkeJSTypeOf(es, v) == JSTYPE_FUNCTION ? true : false;
 }
 
-bool jsIsUndefined(jsValue v)
+bool wkeJSIsUndefined(wkeJSState* es, wkeJSValue v)
 {
-    return jsTypeOf(v) == JSTYPE_UNDEFINED ? true : false;
+    return wkeJSTypeOf(es, v) == JSTYPE_UNDEFINED ? true : false;
 }
 
-bool jsIsNull(jsValue v)
+bool wkeJSIsNull(wkeJSState* es, wkeJSValue v)
 {
-    JSC::JSValue value = JSC::JSValue::decode(v);
+    JSC::JSValue value = JSC::JSValue::decode((JSC::EncodedJSValue)v);
     return value.isNull();
 }
 
-bool jsIsArray(jsValue v)
+bool wkeJSIsArray(wkeJSState* es, wkeJSValue v)
 {
-    JSC::JSValue value = JSC::JSValue::decode(v);
+    JSC::JSValue value = JSC::JSValue::decode((JSC::EncodedJSValue)v);
     if (!value.isObject())
         return false;
 
     return value.inherits(&JSC::JSArray::s_info);
 }
 
-bool jsIsTrue(jsValue v)
+bool wkeJSIsTrue(wkeJSState* es, wkeJSValue v)
 {
-    JSC::JSValue value = JSC::JSValue::decode(v);
+    JSC::JSValue value = JSC::JSValue::decode((JSC::EncodedJSValue)v);
     return value.isTrue();
 }
 
-bool jsIsFalse(jsValue v)
+bool wkeJSIsFalse(wkeJSState* es, wkeJSValue v)
 {
-    JSC::JSValue value = JSC::JSValue::decode(v);
+    JSC::JSValue value = JSC::JSValue::decode((JSC::EncodedJSValue)v);
     return value.isFalse();
 }
 
-int jsToInt(jsExecState es, jsValue v)
+int wkeJSToInt(wkeJSState* es, wkeJSValue v)
 {
-    JSC::JSValue value = JSC::JSValue::decode(v);
+    JSC::JSValue value = JSC::JSValue::decode((JSC::EncodedJSValue)v);
     return value.toInt32((JSC::ExecState*)es);
 }
 
-float jsToFloat(jsExecState es, jsValue v)
+float wkeJSToFloat(wkeJSState* es, wkeJSValue v)
 {
-    JSC::JSValue value = JSC::JSValue::decode(v);
+    JSC::JSValue value = JSC::JSValue::decode((JSC::EncodedJSValue)v);
     return value.toFloat((JSC::ExecState*)es);
 }
 
-double jsToDouble(jsExecState es, jsValue v)
+double wkeJSToDouble(wkeJSState* es, wkeJSValue v)
 {
-    JSC::JSValue value = JSC::JSValue::decode(v);
+    JSC::JSValue value = JSC::JSValue::decode((JSC::EncodedJSValue)v);
     return value.toNumber((JSC::ExecState*)es);
 }
 
-bool jsToBoolean(jsExecState es, jsValue v)
+bool wkeJSToBool(wkeJSState* es, wkeJSValue v)
 {
-    JSC::JSValue value = JSC::JSValue::decode(v);
+    JSC::JSValue value = JSC::JSValue::decode((JSC::EncodedJSValue)v);
     return value.toBoolean((JSC::ExecState*)es);
 }
 
-const utf8* jsToString(jsExecState es, jsValue v)
+
+template <class T>
+class wkeSimpleStringT
 {
-    JSC::JSValue value = JSC::JSValue::decode(v);
+public:
+    wkeSimpleStringT()
+        : m_buffer(NULL)
+        , m_capacity(0)
+        , m_size(0)
+    {}
+
+   ~wkeSimpleStringT()
+    {
+        delete [] m_buffer;
+    }
+
+public:
+    void assign(const T* ptr, size_t len)
+    {
+        if (!m_buffer || m_capacity < len)
+        {
+            delete [] m_buffer;
+            m_buffer = new T[len * 2 + 1];
+            m_capacity = len * 2;
+        }
+        memcpy(m_buffer, ptr, len * sizeof(T));
+        m_buffer[len] = 0;
+    }
+
+    const T* c_str() const
+    {
+        return m_buffer;
+    }
+
+protected:
+    T* m_buffer;
+    size_t m_size;
+    size_t m_capacity;
+};
+
+static wkeSimpleStringT<char> s_sharedStringBuffer;
+static wkeSimpleStringT<wchar_t> s_sharedStringBufferW;
+
+const utf8* wkeJSToTempString(wkeJSState* es, wkeJSValue v)
+{
+    JSC::JSValue value = JSC::JSValue::decode((JSC::EncodedJSValue)v);
     JSC::UString str = value.toString((JSC::ExecState*)es);
 
-    return StringTable::addString(str.characters(), str.length());
+    CString utf8 = str.utf8();
+    s_sharedStringBuffer.assign(utf8.data(), utf8.length());
+    return s_sharedStringBuffer.c_str();
 }
 
-const wchar_t* jsToStringW(jsExecState es, jsValue v)
+const wchar_t* wkeJSToTempStringW(wkeJSState* es, wkeJSValue v)
 {
-    JSC::JSValue value = JSC::JSValue::decode(v);
+    JSC::JSValue value = JSC::JSValue::decode((JSC::EncodedJSValue)v);
     JSC::UString str = value.toString((JSC::ExecState*)es);
 
-    return StringTableW::addString(str.characters(), str.length());
+    s_sharedStringBufferW.assign(str.characters(), str.length());
+    return s_sharedStringBufferW.c_str();
 }
 
-jsValue jsInt(int n)
+wkeJSValue wkeJSInt(wkeJSState* es, int n)
 {
-    return JSC::JSValue::encode(JSC::jsNumber(n));
+    return (wkeJSValue)JSC::JSValue::encode(JSC::jsNumber(n));
 }
 
-jsValue jsFloat(float f)
+wkeJSValue wkeJSFloat(wkeJSState* es, float f)
 {
-    return JSC::JSValue::encode(JSC::jsDoubleNumber(f));
+    return (wkeJSValue)JSC::JSValue::encode(JSC::jsDoubleNumber(f));
 }
 
-jsValue jsDouble(double d)
+wkeJSValue wkeJSDouble(wkeJSState* es, double d)
 {
-    return JSC::JSValue::encode(JSC::jsDoubleNumber(d));
+    return (wkeJSValue)JSC::JSValue::encode(JSC::jsDoubleNumber(d));
 }
 
-jsValue jsBoolean(bool b)
+wkeJSValue wkeJSBool(wkeJSState* es, bool b)
 {
-    return JSC::JSValue::encode(JSC::jsBoolean(b));
+    return (wkeJSValue)JSC::JSValue::encode(JSC::jsBoolean(b));
 }
 
-jsValue jsUndefined()
+wkeJSValue wkeJSUndefined(wkeJSState* es)
 {
-    return JSC::JSValue::encode(JSC::jsUndefined());
+    return (wkeJSValue)JSC::JSValue::encode(JSC::jsUndefined());
 }
 
-jsValue jsNull()
+wkeJSValue wkeJSNull(wkeJSState* es)
 {
-    return JSC::JSValue::encode(JSC::jsNull());
+    return (wkeJSValue)JSC::JSValue::encode(JSC::jsNull());
 }
 
-jsValue jsTrue()
+wkeJSValue wkeJSTrue(wkeJSState* es)
 {
-    return JSC::JSValue::encode(JSC::jsBoolean(true));
+    return (wkeJSValue)JSC::JSValue::encode(JSC::jsBoolean(true));
 }
 
-jsValue jsFalse()
+wkeJSValue wkeJSFalse(wkeJSState* es)
 {
-    return JSC::JSValue::encode(JSC::jsBoolean(false));
+    return (wkeJSValue)JSC::JSValue::encode(JSC::jsBoolean(false));
 }
 
-jsValue jsString(jsExecState es, const utf8* str)
+wkeJSValue wkeJSString(wkeJSState* es, const utf8* str)
 {
     String s = String::fromUTF8(str);
     JSC::JSValue value = JSC::jsString((JSC::ExecState*)es, JSC::UString(s.impl()));
-    return JSC::JSValue::encode(value);
+    return (wkeJSValue)JSC::JSValue::encode(value);
 }
 
-jsValue jsStringW(jsExecState es, const wchar_t* str)
+wkeJSValue wkeJSStringW(wkeJSState* es, const wchar_t* str)
 {
     JSC::JSValue value = JSC::jsString((JSC::ExecState*)es, JSC::UString(str));
-    return JSC::JSValue::encode(value);
+    return (wkeJSValue)JSC::JSValue::encode(value);
 }
 
-jsValue jsObject(jsExecState es)
+wkeJSValue wkeJSEmptyObject(wkeJSState* es)
 {
     JSC::JSValue value(JSC::constructEmptyObject((JSC::ExecState*)es));
-    return JSC::JSValue::encode(value);
+    return (wkeJSValue)JSC::JSValue::encode(value);
 }
 
-jsValue jsArray(jsExecState es)
+wkeJSValue wkeJSEmptyArray(wkeJSState* es)
 {
     JSC::JSValue value(JSC::constructEmptyArray((JSC::ExecState*)es));
-    return JSC::JSValue::encode(value);
+    return (wkeJSValue)JSC::JSValue::encode(value);
 }
 
-jsValue jsFunction(jsExecState es, jsNativeFunction fn, unsigned int argCount)
-{
-    JSC::ExecState* exec = (JSC::ExecState*)es;
-    JSC::JSGlobalObject* globalObject = (JSC::JSGlobalObject*)exec->lexicalGlobalObject()->toThisObject(exec);
 
-    JSC::JSValue value(JSC::JSFunction::create(exec, globalObject, argCount, JSC::Identifier(), (JSC::NativeFunction)fn));
-    return JSC::JSValue::encode(value);
-}
 
 
 //return the window object
-jsValue jsGlobalObject(jsExecState es)
+wkeJSValue wkeJSGlobalObject(wkeJSState* es)
 {
     JSC::ExecState* exec = (JSC::ExecState*)es;
     JSC::JSValue value(exec->lexicalGlobalObject()->toThisObject(exec));
 
-    return JSC::JSValue::encode(value);
+    return (wkeJSValue)JSC::JSValue::encode(value);
 }
 
-jsValue jsEval(jsExecState es, const utf8* str)
+wkeJSValue wkeJSEval(wkeJSState* es, const utf8* str)
 {
     String s = String::fromUTF8(str);
-    return jsEvalW(es, s.charactersWithNullTermination());
+    return (wkeJSValue)wkeJSEvalW(es, s.charactersWithNullTermination());
 }
 
-jsValue jsEvalW(jsExecState es, const wchar_t* str)
+wkeJSValue wkeJSEvalW(wkeJSState* es, const wchar_t* str)
 {
     JSC::ExecState* exec = (JSC::ExecState*)es;
 
@@ -260,118 +312,158 @@ jsValue jsEvalW(jsExecState es, const wchar_t* str)
 
     JSC::JSValue returnValue = JSC::evaluate(globalObject->globalExec(), globalObject->globalScopeChain(), source);
     if (returnValue)
-        return JSC::JSValue::encode(returnValue);
+        return (wkeJSValue)JSC::JSValue::encode(returnValue);
 
     // happens, for example, when the only statement is an empty (';') statement
-    return jsUndefined();
+    return wkeJSUndefined(es);
 }
 
-jsValue jsCall(jsExecState es, jsValue func, jsValue thisValue, jsValue* args, int argCount)
+wkeJSValue wkeJSCall(wkeJSState* es, wkeJSValue func, wkeJSValue thisValue, wkeJSValue* args, int argCount)
 {
     JSC::ExecState* exec = (JSC::ExecState*)es;
 
-    if (!jsIsFunction(func))
-        return jsUndefined();
+    if (!wkeJSIsFunction(es, func))
+        return wkeJSUndefined(es);
 
-    JSC::JSValue jsThisValue = JSC::JSValue::decode(thisValue);
+    JSC::JSValue jsThisValue = JSC::JSValue::decode((JSC::EncodedJSValue)thisValue);
     if (!jsThisValue.isObject())
         jsThisValue = exec->globalThisValue();
 
     JSC::MarkedArgumentBuffer argList;
     for (int i = 0; i < argCount; i++)
-        argList.append(JSC::JSValue::decode(args[i]));
+        argList.append(JSC::JSValue::decode((JSC::EncodedJSValue)args[i]));
 
     JSC::CallData callData;
-    JSC::JSObject* object = JSC::asObject(JSC::JSValue::decode(func));
+    JSC::JSObject* object = JSC::asObject(JSC::JSValue::decode((JSC::EncodedJSValue)func));
     JSC::CallType callType = object->methodTable()->getCallData(object, callData);
 
     JSC::JSValue value = JSC::call(exec, object, callType, callData, jsThisValue, argList);
-    return JSC::JSValue::encode(value);
+    return (wkeJSValue)JSC::JSValue::encode(value);
 }
 
-jsValue jsCallGlobal(jsExecState es, jsValue func, jsValue* args, int argCount)
+wkeJSValue wkeJSCallGlobal(wkeJSState* es, wkeJSValue func, wkeJSValue* args, int argCount)
 {
-    return jsCall(es, func, jsUndefined(), args, argCount);
+    return wkeJSCall(es, func, wkeJSUndefined(es), args, argCount);
 }
 
-jsValue jsGet(jsExecState es, jsValue object, const char* prop)
+wkeJSValue wkeJSGet(wkeJSState* es, wkeJSValue object, const char* prop)
 {
-    JSC::JSValue o = JSC::JSValue::decode(object);
+    //cexer
+    //不能使用JSC::Identifier((JSC::ExecState*)es, prop)构造JSC::Identifier，因JSC::UString内部把const char*地址作为hash值，
+    //如果使用相同的内存地址，每次存放不同的属性名称来调用此函数，却都访问的是第一次调用时的属性。
+    //JSC::JSValue o = JSC::JSValue::decode(object);
+    //JSC::JSValue ret = o.get((JSC::ExecState*)es, JSC::Identifier((JSC::ExecState*)es, prop));
+    //return JSC::JSValue::encode(ret);
 
-    JSC::JSValue ret = o.get((JSC::ExecState*)es, JSC::Identifier((JSC::ExecState*)es, prop));
-    return JSC::JSValue::encode(ret);
+    wkeJSValue ret = wkeJSUndefined(es);
+
+    JSC::ExecState* exec = (JSC::ExecState*)es;
+    if (JSC::JSGlobalData* data = exec->scopeChain()->globalData)
+    {
+        JSContextRef ctx = toRef(exec);
+        JSObjectRef objectRef = JSValueToObject(ctx, toRef(exec, JSC::JSValue::decode((JSC::EncodedJSValue)object)), NULL);
+        JSStringRef propertyName = JSStringCreateWithUTF8CString(prop);
+        JSValueRef valueRef = JSObjectGetProperty(ctx, objectRef, propertyName, NULL);
+        ret = (wkeJSValue)JSC::JSValue::encode(toJS(exec, valueRef));
+    }
+    return ret;
 }
 
-void jsSet(jsExecState es, jsValue object, const char* prop, jsValue value)
+void wkeJSSet(wkeJSState* es, wkeJSValue object, const char* prop, wkeJSValue value)
 {
-    JSC::JSValue o = JSC::JSValue::decode(object);
-    JSC::JSValue v = JSC::JSValue::decode(value);
+    //cexer
+    //不能使用JSC::Identifier((JSC::ExecState*)es, prop)构造JSC::Identifier，因JSC::UString内部把const char*地址作为hash值，
+    //如果使用相同的内存地址，每次存放不同的属性名称来调用此函数，却都访问的是第一次调用时的属性。
+    //JSC::JSValue o = JSC::JSValue::decode(object);
+    //JSC::JSValue v = JSC::JSValue::decode(value);
+    //JSC::PutPropertySlot slot;
+    //o.put((JSC::ExecState*)es, JSC::Identifier((JSC::ExecState*)es, prop), v, slot);
 
-    JSC::PutPropertySlot slot;
-    o.put((JSC::ExecState*)es, JSC::Identifier((JSC::ExecState*)es, prop), v, slot);
+    JSC::ExecState* exec = (JSC::ExecState*)es;
+    if (JSC::JSGlobalData* data = exec->scopeChain()->globalData)
+    {
+        JSContextRef ctx = toRef(exec);
+        JSObjectRef objectRef = JSValueToObject(ctx, toRef(exec, JSC::JSValue::decode((JSC::EncodedJSValue)object)), NULL);
+        JSStringRef propertyName = JSStringCreateWithUTF8CString(prop);
+        JSValueRef valueRef = toRef(exec, JSC::JSValue::decode((JSC::EncodedJSValue)value));
+
+        JSObjectSetProperty(ctx, objectRef, propertyName, valueRef, kJSClassAttributeNone, NULL);
+    }
 }
 
-jsValue jsGetGlobal(jsExecState es, const char* prop)
+wkeJSValue wkeJSGetGlobal(wkeJSState* es, const char* prop)
 {
-    return jsGet(es, jsGlobalObject(es), prop);
+    return wkeJSGet(es, wkeJSGlobalObject(es), prop);
 }
 
-void jsSetGlobal(jsExecState es, const char* prop, jsValue v)
+void wkeJSSetGlobal(wkeJSState* es, const char* prop, wkeJSValue v)
 {
-    jsSet(es, jsGlobalObject(es), prop, v);
+    wkeJSSet(es, wkeJSGlobalObject(es), prop, v);
 }
 
-jsValue jsGetAt(jsExecState es, jsValue object, int index)
+wkeJSValue wkeJSGetAt(wkeJSState* es, wkeJSValue object, int index)
 {
-    JSC::JSValue o = JSC::JSValue::decode(object);
+    JSC::JSValue o = JSC::JSValue::decode((JSC::EncodedJSValue)object);
 
     JSC::JSValue ret = o.get((JSC::ExecState*)es, index);
-    return JSC::JSValue::encode(ret);
+    return (wkeJSValue)JSC::JSValue::encode(ret);
 }
 
-void jsSetAt(jsExecState es, jsValue object, int index, jsValue value)
+void wkeJSSetAt(wkeJSState* es, wkeJSValue object, int index, wkeJSValue value)
 {
-    JSC::JSValue o = JSC::JSValue::decode(object);
-    JSC::JSValue v = JSC::JSValue::decode(value);
+    JSC::JSValue o = JSC::JSValue::decode((JSC::EncodedJSValue)object);
+    JSC::JSValue v = JSC::JSValue::decode((JSC::EncodedJSValue)value);
 
     o.put((JSC::ExecState*)es, index, v);
 }
 
-int jsGetLength(jsExecState es, jsValue object)
+int wkeJSGetLength(wkeJSState* es, wkeJSValue object)
 {
     JSC::ExecState* exec = (JSC::ExecState*)es;
-    JSC::JSValue o = JSC::JSValue::decode(object);
+    JSC::JSValue o = JSC::JSValue::decode((JSC::EncodedJSValue)object);
     return o.get(exec, JSC::Identifier(exec, "length")).toInt32(exec);
 }
 
-void jsSetLength(jsExecState es, jsValue object, int length)
+void wkeJSSetLength(wkeJSState* es, wkeJSValue object, int length)
 {
     JSC::ExecState* exec = (JSC::ExecState*)es;
-    JSC::JSValue o = JSC::JSValue::decode(object);
+    JSC::JSValue o = JSC::JSValue::decode((JSC::EncodedJSValue)object);
 
     JSC::PutPropertySlot slot;
     o.put(exec, JSC::Identifier(exec, "length"), JSC::jsNumber(length), slot);
 }
 
-wkeWebView jsGetWebView(jsExecState es)
+wkeWebView* wkeJSGetWebView(wkeJSState* es)
 {
     JSC::ExecState* exec = (JSC::ExecState*)es;
     WebCore::JSDOMWindow* window = WebCore::asJSDOMWindow(exec->lexicalGlobalObject());
     if (window)
-        return (wkeWebView)window->impl()->frame()->page()->chrome()->client()->webView();
+        return (wkeWebView*)window->impl()->frame()->page()->chrome()->client()->webView();
 
     return 0;
 }
 
-void jsGC()
+void wkeJSCollectGarbge()
 {
     WebCore::gcController().garbageCollectNow();
 }
 
 
+void wkeJSAddRef(wkeJSState* es, wkeJSValue val)
+{
+    JSC::JSValue v = JSC::JSValue::decode((JSC::EncodedJSValue)val);
+    JSC::gcProtect(v);
+}
+
+void wkeJSReleaseRef(wkeJSState* es, wkeJSValue val)
+{
+    JSC::JSValue v = JSC::JSValue::decode((JSC::EncodedJSValue)val);
+    JSC::gcUnprotect(v);
+}
 
 
-static void addFunction(JSC::JSGlobalObject* globalObject, const char* name, jsNativeFunction function, unsigned int argCount)
+
+static void addFunction(JSC::JSGlobalObject* globalObject, const char* name, wkeJSNativeFunction function, unsigned int argCount)
 {
     JSC::ExecState* exec = globalObject->globalExec();
 
@@ -381,7 +473,7 @@ static void addFunction(JSC::JSGlobalObject* globalObject, const char* name, jsN
     globalObject->putDirect(globalObject->globalData(), identifier, funcObject);
 }
 
-static void addGetter(JSC::JSGlobalObject* globalObject, const char* name, jsNativeFunction function)
+static void addGetter(JSC::JSGlobalObject* globalObject, const char* name, wkeJSNativeFunction function)
 {
     JSC::ExecState* exec = globalObject->globalExec();
 
@@ -390,7 +482,7 @@ static void addGetter(JSC::JSGlobalObject* globalObject, const char* name, jsNat
     globalObject->defineGetter(exec, identifier, getterFunc, 0);
 }
 
-static void addSetter(JSC::JSGlobalObject* globalObject, const char* name, jsNativeFunction function)
+static void addSetter(JSC::JSGlobalObject* globalObject, const char* name, wkeJSNativeFunction function)
 {
     JSC::ExecState* exec = globalObject->globalExec();
 
@@ -409,14 +501,14 @@ static void addSetter(JSC::JSGlobalObject* globalObject, const char* name, jsNat
 struct jsFunctionInfo
 {
     char name[MAX_NAME_LENGTH];
-    jsNativeFunction fn;
+    wkeJSNativeFunction fn;
     unsigned int argCount;
     unsigned int funcType;
 };
 
 static Vector<jsFunctionInfo> s_jsFunctions;
 
-void jsBindFunction(const char* name, jsNativeFunction fn, unsigned int argCount)
+void wkeJSBindFunction(const char* name, wkeJSNativeFunction fn, unsigned int argCount)
 {
     for (unsigned int i = 0; i < s_jsFunctions.size(); ++i)
     {
@@ -439,7 +531,7 @@ void jsBindFunction(const char* name, jsNativeFunction fn, unsigned int argCount
     s_jsFunctions.append(funcInfo);
 }
 
-void jsBindGetter(const char* name, jsNativeFunction fn)
+void wkeJSBindGetter(const char* name, wkeJSNativeFunction fn)
 {
     for (unsigned int i = 0; i < s_jsFunctions.size(); ++i)
     {
@@ -461,7 +553,7 @@ void jsBindGetter(const char* name, jsNativeFunction fn)
     s_jsFunctions.append(funcInfo);
 }
 
-void jsBindSetter(const char* name, jsNativeFunction fn)
+void wkeJSBindSetter(const char* name, wkeJSNativeFunction fn)
 {
     for (unsigned int i = 0; i < s_jsFunctions.size(); ++i)
     {
@@ -485,31 +577,134 @@ void jsBindSetter(const char* name, jsNativeFunction fn)
 
 
 
-jsValue JS_CALL js_outputMsg(jsExecState es)
+wkeJSValue JS_CALL js_outputMsg(wkeJSState* es)
 {
-    //ASSERT(jsArgCount(es) == 1);
-    //ASSERT(jsArgType(es, 0) == JSTYPE_STRING);
+    //ASSERT(wkeJSParamCount(es) == 1);
+    //ASSERT(wkeJSParamType(es, 0) == JSTYPE_STRING);
 
-    jsValue value = jsArg(es, 0);
-    OutputDebugStringW(jsToStringW(es, value));
+    wkeJSValue value = wkeJSParam(es, 0);
+    OutputDebugStringW(wkeJSToTempStringW(es, value));
 
-    return jsUndefined();
+    return wkeJSUndefined(es);
 }
 
-jsValue JS_CALL js_getWebViewName(jsExecState es)
+wkeJSValue JS_CALL js_getWebViewName(wkeJSState* es)
 {
-    wkeWebView webView = jsGetWebView(es);
-    return jsString(es, webView->name());
+    wkeWebView* webView = wkeJSGetWebView(es);
+    return wkeJSString(es, webView->name());
 }
 
-jsValue JS_CALL js_setWebViewName(jsExecState es)
+wkeJSValue JS_CALL js_setWebViewName(wkeJSState* es)
 {
-    const char* name = jsToString(es, jsArg(es, 0));
-    wkeWebView webView = jsGetWebView(es);
+    const char* name = wkeJSToTempString(es, wkeJSParam(es, 0));
+    wkeWebView* webView = wkeJSGetWebView(es);
     webView->setName(name);
 
-    return jsUndefined();
+    return wkeJSUndefined(es);
 }
+
+JSValueRef objectGetPropertyCallback(JSContextRef ctx, JSObjectRef object, JSStringRef propertyName, JSValueRef* exception)
+{
+    JSC::ExecState* exec = toJS(ctx);
+    JSC::JSObject* obj = toJS(object);
+
+    wkeJSData* p = (wkeJSData*)JSObjectGetPrivate(object);
+    if (!p || !p->propertyGet)
+        return false;
+
+    WTF::CString str = propertyName->ustring().latin1();
+    const char* name = str.data();
+    wkeJSValue ret = p->propertyGet((wkeJSState*)exec, (wkeJSValue)JSC::JSValue::encode(obj), name);
+
+    return toRef(exec, JSC::JSValue::decode((JSC::EncodedJSValue)ret));
+}
+
+bool objectSetPropertyCallback(JSContextRef ctx, JSObjectRef object, JSStringRef propertyName, JSValueRef value, JSValueRef* exception)
+{
+    JSC::ExecState* exec = toJS(ctx);
+    JSC::JSObject* obj = toJS(object);
+
+    wkeJSData* p = (wkeJSData*)JSObjectGetPrivate(object);
+    if (!p || !p->propertySet)
+        return false;
+
+    WTF::CString str = propertyName->ustring().latin1();
+    const char* name = str.data();
+    return p->propertySet((wkeJSState*)exec, (wkeJSValue)JSC::JSValue::encode(obj), name, (wkeJSValue)JSC::JSValue::encode(toJS(exec,value)));
+}
+
+void objectFinalize(JSObjectRef object)
+{
+    wkeJSData* p = (wkeJSData*)JSObjectGetPrivate(object);
+    if (p && p->finalize)
+        p->finalize(p);
+}
+
+JSValueRef objectCallAsFunctionCallback(JSContextRef ctx, JSObjectRef function, JSObjectRef thisObject, size_t argumentCount, const JSValueRef arguments[], JSValueRef* exception)
+{
+    JSC::ExecState* exec = toJS(ctx);
+    JSC::JSObject* obj = toJS(function);
+
+    wkeJSData* p = (wkeJSData*)JSObjectGetPrivate(function);
+    if (!p || !p->callAsFunction)
+        return false;
+
+    wkeJSValue args[10] = { 0 };
+    for (int i = 0; i < argumentCount; ++i)
+        args[i] = (wkeJSValue)JSC::JSValue::encode(toJS(exec, arguments[i]));
+
+    wkeJSValue ret = p->callAsFunction((wkeJSState*)exec, (wkeJSValue)JSC::JSValue::encode(toJS(function)), args, argumentCount);
+    return toRef(exec, JSC::JSValue::decode((JSC::EncodedJSValue)ret));
+}
+
+
+WKE_API wkeJSValue wkeJSObject(wkeJSState* es, wkeJSData* data)
+{
+    JSC::ExecState* exec = (JSC::ExecState*)es;
+    JSC::JSGlobalObject* globalObject = (JSC::JSGlobalObject*)exec->lexicalGlobalObject();
+    JSContextRef ctx = toRef(exec);
+
+    JSClassDefinition classDef = kJSClassDefinitionEmpty;
+    classDef.getProperty = objectGetPropertyCallback;
+    classDef.setProperty = objectSetPropertyCallback;
+    classDef.finalize = objectFinalize;
+
+    JSClassRef globalClass = JSClassCreate(&classDef);  
+    JSObjectRef obj = JSObjectMake(ctx, globalClass, NULL);
+    JSObjectSetPrivate(obj ,data);
+
+    JSC::JSValue value = toJS(obj);
+    return (wkeJSValue)JSC::JSValue::encode(value);
+}
+
+WKE_API wkeJSValue wkeJSFunction(wkeJSState* es, wkeJSData* data)
+{
+    JSC::ExecState* exec = (JSC::ExecState*)es;
+    JSC::JSGlobalObject* globalObject = (JSC::JSGlobalObject*)exec->lexicalGlobalObject();
+    JSContextRef ctx = toRef(exec);
+
+    JSClassDefinition classDef = kJSClassDefinitionEmpty;
+    classDef.finalize = objectFinalize;
+    classDef.callAsFunction = objectCallAsFunctionCallback;
+
+    JSClassRef globalClass = JSClassCreate(&classDef);  
+    JSObjectRef obj = JSObjectMake(ctx, globalClass, NULL);
+    JSObjectSetPrivate(obj ,data);
+
+    JSC::JSValue value = toJS(obj);
+    return (wkeJSValue)JSC::JSValue::encode(value);
+}
+
+
+WKE_API wkeJSData* wkeJSGetData(wkeJSState* es, wkeJSValue object)
+{
+    JSC::ExecState* exec = (JSC::ExecState*)es;
+    JSC::JSValue val = JSC::JSValue::decode((JSC::EncodedJSValue)object);
+    JSValueRef valRef = toRef(exec, val);
+    JSContextRef ctxRef = toRef(exec);
+    return (wkeJSData*)JSObjectGetPrivate(JSValueToObject(ctxRef, valRef, NULL));
+}
+
 
 void onCreateGlobalObject(JSC::JSGlobalObject* globalObject)
 {
@@ -518,7 +713,7 @@ void onCreateGlobalObject(JSC::JSGlobalObject* globalObject)
     addSetter(globalObject, "webViewName", js_setWebViewName);
 
     JSC::ExecState* exec = globalObject->globalExec();
-    jsSetGlobal(exec, "wke", ::jsString(exec, wkeVersionString()));
+    wkeJSSetGlobal((wkeJSState*)exec, "wke", ::wkeJSString((wkeJSState*)exec, wkeGetVersionString()));
 
     for (size_t i = 0; i < s_jsFunctions.size(); ++i)
     {

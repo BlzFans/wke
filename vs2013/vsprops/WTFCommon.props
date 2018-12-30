@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?> 
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <OutDir>$(ConfigurationBuildDir)\lib\</OutDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(ConfigurationBuildDir)\obj\JavaScriptCore\DerivedSources\;../Source/JavaScriptCore/;../Source/JavaScriptCore/os-win32/;../Source/JavaScriptCore/wtf/;../Source/JavaScriptCore/wtf/threads/;../Source/JavaScriptCore/wtf/unicode/;$(ConfigurationBuildDir)\include\private;$(WebKitLibrariesDir)\include;$(ConfigurationBuildDir)\include\JavaScriptCore;$(WebKitLibrariesDir)\include\pthreads;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ForcedIncludeFiles>ICUVersion.h</ForcedIncludeFiles>
+      <PreprocessorDefinitions>__STD_C;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+  </ItemDefinitionGroup>
+</Project>

@@ -1,0 +1,430 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug_Cairo_CFLite|Win32">
+      <Configuration>Debug_Cairo_CFLite</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release_Cairo_CFLite|Win32">
+      <Configuration>Release_Cairo_CFLite</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{011D10F1-B656-4A1B-A0C3-3842F02122C5}</ProjectGuid>
+    <RootNamespace>JavaScriptCore</RootNamespace>
+    <Keyword>Win32Proj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_Cairo_CFLite|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Cairo_CFLite|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release_Cairo_CFLite|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="vsprops\JavaScriptCoreReleaseCairoCFLite.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Cairo_CFLite|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="vsprops\JavaScriptCoreDebugCairoCFLite.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.40219.1</_ProjectFileVersion>
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug_Cairo_CFLite|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug_Cairo_CFLite|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug_Cairo_CFLite|Win32'" />
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release_Cairo_CFLite|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release_Cairo_CFLite|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release_Cairo_CFLite|Win32'" />
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\ArgList.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\Arguments.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\ArrayConstructor.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\ArrayPrototype.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\BooleanConstructor.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\BooleanObject.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\BooleanPrototype.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\CallData.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\CommonIdentifiers.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\Completion.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\ConstructData.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\DateConstructor.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\DateConversion.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\DateInstance.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\wtf\DateMath.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\DatePrototype.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\Error.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\ErrorConstructor.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\ErrorInstance.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\ErrorPrototype.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\ExceptionHelpers.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\Executable.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\FunctionConstructor.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\FunctionPrototype.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\GCActivityCallback.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\GetterSetter.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\Heuristics.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\Identifier.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\InitializeThreading.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\InternalFunction.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\JSActivation.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\JSArray.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\JSByteArray.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\JSCell.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\JSFunction.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\JSBoundFunction.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\JSGlobalData.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\JSGlobalObject.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\JSGlobalObjectFunctions.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\JSLock.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\JSNotAnObject.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\JSObject.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\JSONObject.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\JSPropertyNameIterator.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\JSStaticScopeObject.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\JSString.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\JSValue.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\JSVariableObject.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\JSWrapperObject.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\LiteralParser.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\Lookup.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\MathObject.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\NativeErrorConstructor.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\NativeErrorPrototype.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\NumberConstructor.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\NumberObject.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\NumberPrototype.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\ObjectConstructor.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\ObjectPrototype.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\Operations.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\PropertyDescriptor.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\PropertyNameArray.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\PropertySlot.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\RegExp.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\RegExpCache.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\RegExpConstructor.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\RegExpObject.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\RegExpPrototype.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\ScopeChain.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\SamplingCounter.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\SmallStrings.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\StrictEvalActivation.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\StringConstructor.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\StringObject.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\StringPrototype.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\StringRecursionChecker.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\Structure.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\StructureChain.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\TimeoutChecker.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\UString.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\runtime\JSAPIValueWrapper.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\API\JSBase.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\API\JSCallbackConstructor.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\API\JSCallbackFunction.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\API\JSCallbackObject.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\API\JSClassRef.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\API\JSContextRef.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\API\JSObjectRef.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\API\JSStringRef.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\API\JSStringRefBSTR.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\API\JSStringRefCF.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\API\JSValueRef.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\API\JSWeakObjectMapRefPrivate.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\API\OpaqueJSString.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\profiler\Profile.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\profiler\ProfileGenerator.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\profiler\ProfileNode.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\profiler\Profiler.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\bytecode\CodeBlock.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\bytecode\JumpTable.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\bytecode\Opcode.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\bytecode\PredictedType.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\bytecode\SamplingTool.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\bytecode\StructureStubInfo.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\bytecode\ValueProfile.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\debugger\Debugger.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\debugger\DebuggerActivation.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\debugger\DebuggerCallFrame.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\yarr\YarrInterpreter.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\yarr\YarrJIT.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\yarr\YarrPattern.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\yarr\YarrSyntaxChecker.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\jit\ExecutableAllocator.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\jit\JIT.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\jit\JITArithmetic.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\jit\JITArithmetic32_64.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\jit\JITCall.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\jit\JITCall32_64.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\jit\JITOpcodes.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\jit\JITOpcodes32_64.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\jit\JITPropertyAccess.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\jit\JITPropertyAccess32_64.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\jit\JITStubs.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\jit\ThunkGenerators.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\interpreter\CallFrame.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\interpreter\Interpreter.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\interpreter\RegisterFile.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\bytecompiler\BytecodeGenerator.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\bytecompiler\NodesCodegen.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\parser\JSParser.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\parser\Lexer.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\parser\Nodes.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\parser\Parser.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\parser\ParserArena.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\parser\SourceProviderCache.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\heap\AllocationSpace.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\heap\ConservativeRoots.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\heap\MachineStackMarker.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\heap\MarkedBlock.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\heap\MarkedSpace.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\heap\MarkStack.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\heap\Heap.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\heap\HandleHeap.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\heap\HandleStack.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\heap\JettisonedCodeBlocks.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\heap\VTableSpectrum.cpp" />
+    <ClCompile Include="..\Source\JavaScriptCore\heap\WriteBarrierSupport.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\ArgList.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\Arguments.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\ArrayConstructor.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\ArrayPrototype.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\BatchedTransitionOptimizer.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\BooleanConstructor.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\BooleanObject.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\BooleanPrototype.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\CallData.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\ClassInfo.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\CommonIdentifiers.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\Completion.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\ConstructData.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\DateConstructor.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\DateConversion.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\DateInstance.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\DateInstanceCache.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\wtf\DateMath.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\DatePrototype.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\Error.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\ErrorConstructor.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\ErrorInstance.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\ErrorPrototype.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\interpreter\ExceptionHelpers.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\Executable.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\FunctionConstructor.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\FunctionPrototype.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\GCActivityCallback.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\GetterSetter.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\Heuristics.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\Identifier.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\InitializeThreading.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\InternalFunction.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\JSActivation.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\JSArray.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\JSByteArray.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\JSCell.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\JSFunction.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\JSBoundFunction.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\JSGlobalData.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\JSGlobalObject.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\JSGlobalObjectFunctions.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\JSLock.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\JSNotAnObject.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\JSObject.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\JSONObject.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\JSPropertyNameIterator.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\JSStaticScopeObject.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\JSString.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\JSType.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\JSTypeInfo.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\JSValue.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\JSValueInlineMethods.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\JSVariableObject.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\JSWrapperObject.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\LiteralParser.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\Lookup.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\MathObject.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\NativeErrorConstructor.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\NativeErrorPrototype.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\NumberConstructor.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\NumberObject.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\NumberPrototype.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\NumericStrings.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\ObjectConstructor.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\ObjectPrototype.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\Operations.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\PropertyDescriptor.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\PropertyMapHashTable.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\PropertyNameArray.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\PropertySlot.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\Protect.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\RegExp.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\RegExpCache.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\RegExpConstructor.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\RegExpKey.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\RegExpMatchesArray.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\RegExpObject.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\RegExpPrototype.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\ScopeChain.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\ScopeChainMark.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\SamplingCounter.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\SmallStrings.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\StrictEvalActivation.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\StringConstructor.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\StringObject.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\StringPrototype.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\StringRecursionChecker.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\Structure.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\StructureChain.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\StructureTransitionTable.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\SymbolTable.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\Terminator.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\TimeoutChecker.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\UString.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\UStringBuilder.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\UStringConcatenate.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\UStringImpl.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\WeakGCMap.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\WeakRandom.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\API\APICast.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\API\JavaScript.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\API\JavaScriptCore.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\runtime\JSAPIValueWrapper.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\API\JSBase.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\API\JSBasePrivate.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\API\JSCallbackConstructor.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\API\JSCallbackFunction.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\API\JSCallbackObject.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\API\JSCallbackObjectFunctions.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\API\JSClassRef.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\API\JSContextRef.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\API\JSContextRefPrivate.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\API\JSObjectRef.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\API\JSRetainPtr.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\API\JSStringRef.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\API\JSStringRefBSTR.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\API\JSStringRefCF.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\API\JSValueRef.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\API\JSWeakObjectMapRefInternal.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\API\JSWeakObjectMapRefPrivate.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\API\OpaqueJSString.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\API\WebKitAvailability.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\profiler\CallIdentifier.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\profiler\Profile.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\profiler\ProfileGenerator.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\profiler\ProfileNode.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\profiler\Profiler.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\bytecode\CodeBlock.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\bytecode\CodeOrigin.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\bytecode\EvalCodeCache.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\bytecode\Instruction.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\bytecode\JumpTable.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\bytecode\Opcode.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\bytecode\PredictedType.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\bytecode\SamplingTool.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\bytecode\StructureStubInfo.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\bytecode\ValueProfile.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\debugger\Debugger.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\debugger\DebuggerActivation.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\debugger\DebuggerCallFrame.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\assembler\AbstractMacroAssembler.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\assembler\AssemblerBuffer.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\assembler\CodeLocation.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\assembler\LinkBuffer.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\assembler\MacroAssembler.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\assembler\MacroAssemblerX86.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\assembler\MacroAssemblerX86Common.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\assembler\RepatchBuffer.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\assembler\X86Assembler.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\dfg\DFGDriver.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\dfg\DFGIntrinsic.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\dfg\DFGOSREntry.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\yarr\Yarr.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\yarr\YarrInterpreter.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\yarr\YarrJIT.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\yarr\YarrParser.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\yarr\YarrPattern.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\yarr\YarrSyntaxChecker.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\jit\ExecutableAllocator.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\jit\JIT.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\jit\JITCode.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\jit\JITInlineMethods.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\jit\JITStubCall.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\jit\JITStubs.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\jit\JSInterfaceJIT.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\jit\SpecializedThunkJIT.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\jit\ThunkGenerators.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\interpreter\CachedCall.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\interpreter\CallFrame.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\interpreter\CallFrameClosure.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\interpreter\Interpreter.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\interpreter\Register.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\interpreter\RegisterFile.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\bytecompiler\BytecodeGenerator.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\bytecompiler\Label.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\bytecompiler\LabelScope.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\bytecompiler\RegisterID.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\parser\ASTBuilder.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\parser\JSParser.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\parser\Lexer.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\parser\NodeConstructors.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\parser\NodeInfo.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\parser\Nodes.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\parser\Parser.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\parser\ParserArena.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\parser\ResultType.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\parser\SourceCode.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\parser\SourceProvider.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\parser\SourceProviderCache.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\parser\SourceProviderCacheItem.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\parser\SyntaxChecker.h" />
+    <ClInclude Include="$(ConfigurationBuildDir)\obj\$(ProjectName)\DerivedSources\ArrayPrototype.lut.h" />
+    <ClInclude Include="$(ConfigurationBuildDir)\obj\$(ProjectName)\DerivedSources\DatePrototype.lut.h" />
+    <ClInclude Include="$(ConfigurationBuildDir)\obj\$(ProjectName)\DerivedSources\lexer.lut.h" />
+    <ClInclude Include="$(ConfigurationBuildDir)\obj\$(ProjectName)\DerivedSources\MathObject.lut.h" />
+    <ClInclude Include="$(ConfigurationBuildDir)\obj\$(ProjectName)\DerivedSources\NumberConstructor.lut.h" />
+    <ClInclude Include="$(ConfigurationBuildDir)\obj\$(ProjectName)\DerivedSources\RegExpConstructor.lut.h" />
+    <ClInclude Include="$(ConfigurationBuildDir)\obj\$(ProjectName)\DerivedSources\RegExpObject.lut.h" />
+    <ClInclude Include="$(ConfigurationBuildDir)\obj\$(ProjectName)\DerivedSources\StringPrototype.lut.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\heap\AllocationSpace.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\heap\ConservativeRoots.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\heap\MachineStackMarker.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\heap\MarkedBlock.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\heap\MarkedSpace.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\heap\MarkStack.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\heap\HeapRootVisitor.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\heap\Heap.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\heap\Strong.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\heap\StrongInlines.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\heap\Handle.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\heap\HandleHeap.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\heap\HandleStack.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\heap\JettisonedCodeBlocks.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\heap\Local.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\heap\LocalScope.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\heap\VTableSpectrum.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\heap\Weak.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\heap\WriteBarrierSupport.h" />
+    <ClInclude Include="..\Source\JavaScriptCore\config.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="WTF.vcxproj">
+      <Project>{aa8a5a85-592b-4357-bc60-e0e91e026af6}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

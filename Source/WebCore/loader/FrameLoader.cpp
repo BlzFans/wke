@@ -668,7 +668,7 @@ void FrameLoader::finishedParsing()
     // Null-checking the FrameView indicates whether or not we're in the destructor.
     RefPtr<Frame> protector = m_frame->view() ? m_frame : 0;
 
-    m_client->dispatchDidFinishDocumentLoad();
+    m_client->dispatchDidFinishDocumentLoad(this);
 
     checkCompleted();
 
@@ -2860,7 +2860,7 @@ void FrameLoader::continueLoadAfterNewWindowPolicy(const ResourceRequest& reques
         return;
 
     RefPtr<Frame> frame = m_frame;
-    RefPtr<Frame> mainFrame = m_client->dispatchCreatePage(action);
+    RefPtr<Frame> mainFrame = m_client->dispatchCreatePage(action, request, formState, frameName);
     if (!mainFrame)
         return;
 

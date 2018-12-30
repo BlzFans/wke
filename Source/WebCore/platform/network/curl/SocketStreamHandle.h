@@ -37,6 +37,8 @@
 #include <wtf/PassRefPtr.h>
 #include <wtf/RefCounted.h>
 
+typedef struct SocketInfo SocketInfo;
+
 namespace WebCore {
 
     class AuthenticationChallenge;
@@ -61,6 +63,12 @@ namespace WebCore {
         void receivedCredential(const AuthenticationChallenge&, const Credential&);
         void receivedRequestToContinueWithoutCredential(const AuthenticationChallenge&);
         void receivedCancellation(const AuthenticationChallenge&);
+	public:
+		SocketInfo*        info;
+		USHORT             HostPort(){ return m_url.port(); }
+		ULONG              GetHostIp();
+		void               SetState_Opend(){ m_state = Open; }
+		void               SetState_Closed(){ m_state = Closed; }
     };
 
 }  // namespace WebCore
